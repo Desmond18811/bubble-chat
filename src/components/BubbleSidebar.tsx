@@ -24,9 +24,8 @@ const BubbleSidebar = () => {
       <nav className="flex-1 flex flex-col items-center gap-1">
         {navItems.map((item) => {
           const isActive =
-            (item.label === "FEED" && location.pathname === "/") ||
-            (item.label === "CHATS" && location.pathname === "/messages") ||
-            (item.label === "WORK" && location.pathname === "/workspace");
+            (item.label === "FEED" && (location.pathname === "/" || location.pathname === "/feed")) ||
+            location.pathname === item.path;
           return (
             <Link
               key={item.label}
