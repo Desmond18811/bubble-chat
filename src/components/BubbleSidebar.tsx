@@ -4,12 +4,12 @@ import { Link, useLocation } from "react-router-dom";
 const navItems = [
   { icon: MessageSquare, label: "CHATS", path: "/messages" },
   { icon: Briefcase, label: "WORK", path: "/workspace" },
-  { icon: MessageCircle, label: "MEET", path: "/" },
-  { icon: Users, label: "COMMUNITY", path: "/" },
+  { icon: MessageCircle, label: "MEET", path: "/meet" },
+  { icon: Users, label: "COMMUNITY", path: "/community" },
   { icon: Rss, label: "FEED", path: "/" },
-  { icon: Bookmark, label: "SAVED", path: "/" },
-  { icon: Calendar, label: "CALENDAR", path: "/" },
-  { icon: CreditCard, label: "PAYMENTS", path: "/" },
+  { icon: Bookmark, label: "SAVED", path: "/saved" },
+  { icon: Calendar, label: "CALENDAR", path: "/calendar" },
+  { icon: CreditCard, label: "PAYMENTS", path: "/payments" },
 ];
 
 const BubbleSidebar = () => {
@@ -24,9 +24,8 @@ const BubbleSidebar = () => {
       <nav className="flex-1 flex flex-col items-center gap-1">
         {navItems.map((item) => {
           const isActive =
-            (item.label === "FEED" && location.pathname === "/") ||
-            (item.label === "CHATS" && location.pathname === "/messages") ||
-            (item.label === "WORK" && location.pathname === "/workspace");
+            (item.label === "FEED" && (location.pathname === "/" || location.pathname === "/feed")) ||
+            location.pathname === item.path;
           return (
             <Link
               key={item.label}
@@ -48,10 +47,15 @@ const BubbleSidebar = () => {
       </nav>
 
       <div className="flex flex-col items-center gap-1 mt-auto">
-        <button className="flex flex-col items-center gap-1 w-14 py-2 rounded-lg text-[10px] tracking-wider text-sidebar-foreground hover:text-foreground transition-colors">
+        <Link
+          to="/settings"
+          className={`flex flex-col items-center gap-1 w-14 py-2 rounded-lg text-[10px] tracking-wider transition-colors ${
+            location.pathname === "/settings" ? "text-primary" : "text-sidebar-foreground hover:text-foreground"
+          }`}
+        >
           <Settings className="w-5 h-5" />
           <span>SETTINGS</span>
-        </button>
+        </Link>
         <button className="flex flex-col items-center gap-1 w-14 py-2 rounded-lg text-[10px] tracking-wider text-sidebar-foreground hover:text-foreground transition-colors">
           <LogOut className="w-5 h-5" />
           <span>LOGOUT</span>
