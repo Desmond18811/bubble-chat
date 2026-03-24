@@ -47,10 +47,15 @@ const BubbleSidebar = () => {
       </nav>
 
       <div className="flex flex-col items-center gap-1 mt-auto">
-        <button className="flex flex-col items-center gap-1 w-14 py-2 rounded-lg text-[10px] tracking-wider text-sidebar-foreground hover:text-foreground transition-colors">
+        <Link
+          to="/settings"
+          className={`flex flex-col items-center gap-1 w-14 py-2 rounded-lg text-[10px] tracking-wider transition-colors ${
+            location.pathname === "/settings" ? "text-primary" : "text-sidebar-foreground hover:text-foreground"
+          }`}
+        >
           <Settings className="w-5 h-5" />
           <span>SETTINGS</span>
-        </button>
+        </Link>
         <button className="flex flex-col items-center gap-1 w-14 py-2 rounded-lg text-[10px] tracking-wider text-sidebar-foreground hover:text-foreground transition-colors">
           <LogOut className="w-5 h-5" />
           <span>LOGOUT</span>
