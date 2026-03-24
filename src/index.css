@@ -6,53 +6,53 @@
 
 @layer base {
   :root {
-    --background: 220 25% 8%;
+    --background: 216 100% 5%;
     --foreground: 210 30% 90%;
 
-    --card: 220 22% 12%;
+    --card: 215 60% 12%;
     --card-foreground: 210 30% 90%;
 
-    --popover: 220 22% 12%;
+    --popover: 215 60% 12%;
     --popover-foreground: 210 30% 90%;
 
-    --primary: 45 90% 55%;
-    --primary-foreground: 220 25% 8%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 216 100% 5%;
 
-    --secondary: 220 20% 16%;
+    --secondary: 213 100% 18%;
     --secondary-foreground: 210 30% 90%;
 
-    --muted: 220 18% 18%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 215 50% 16%;
+    --muted-foreground: 215 25% 50%;
 
-    --accent: 45 90% 55%;
-    --accent-foreground: 220 25% 8%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 216 100% 5%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 45 90% 55%;
+    --border: 215 40% 18%;
+    --input: 215 40% 18%;
+    --ring: 48 100% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 220 25% 6%;
-    --sidebar-foreground: 215 15% 55%;
-    --sidebar-primary: 45 90% 55%;
-    --sidebar-primary-foreground: 220 25% 8%;
-    --sidebar-accent: 220 22% 14%;
+    --sidebar-background: 216 100% 4%;
+    --sidebar-foreground: 215 25% 50%;
+    --sidebar-primary: 48 100% 50%;
+    --sidebar-primary-foreground: 216 100% 5%;
+    --sidebar-accent: 215 60% 14%;
     --sidebar-accent-foreground: 210 30% 90%;
-    --sidebar-border: 220 15% 15%;
-    --sidebar-ring: 45 90% 55%;
+    --sidebar-border: 215 40% 14%;
+    --sidebar-ring: 48 100% 50%;
 
-    --bubble-gold: 45 90% 55%;
-    --bubble-gold-dim: 45 60% 40%;
-    --bubble-navy: 220 25% 8%;
-    --bubble-navy-light: 220 22% 14%;
-    --bubble-surface: 220 22% 12%;
-    --bubble-surface-hover: 220 20% 16%;
+    --bubble-gold: 48 100% 50%;
+    --bubble-gold-dim: 48 70% 38%;
+    --bubble-navy: 216 100% 5%;
+    --bubble-navy-light: 215 60% 14%;
+    --bubble-surface: 215 60% 12%;
+    --bubble-surface-hover: 213 100% 18%;
     --bubble-text-primary: 210 30% 90%;
-    --bubble-text-secondary: 215 15% 55%;
+    --bubble-text-secondary: 215 25% 50%;
     --bubble-green: 145 60% 45%;
   }
 }
