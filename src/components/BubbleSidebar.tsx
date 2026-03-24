@@ -4,12 +4,12 @@ import { Link, useLocation } from "react-router-dom";
 const navItems = [
   { icon: MessageSquare, label: "CHATS", path: "/messages" },
   { icon: Briefcase, label: "WORK", path: "/workspace" },
-  { icon: MessageCircle, label: "MEET", path: "/" },
-  { icon: Users, label: "COMMUNITY", path: "/" },
+  { icon: MessageCircle, label: "MEET", path: "/meet" },
+  { icon: Users, label: "COMMUNITY", path: "/community" },
   { icon: Rss, label: "FEED", path: "/" },
-  { icon: Bookmark, label: "SAVED", path: "/" },
-  { icon: Calendar, label: "CALENDAR", path: "/" },
-  { icon: CreditCard, label: "PAYMENTS", path: "/" },
+  { icon: Bookmark, label: "SAVED", path: "/saved" },
+  { icon: Calendar, label: "CALENDAR", path: "/calendar" },
+  { icon: CreditCard, label: "PAYMENTS", path: "/payments" },
 ];
 
 const BubbleSidebar = () => {
