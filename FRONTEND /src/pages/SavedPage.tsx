@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+
 
 /* ─── Icon helper ─────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, style = {}, className = "" }) => (
@@ -77,60 +79,7 @@ const AUTHOR_IMG = "https://lh3.googleusercontent.com/aida-public/AB6AXuDBno3kQz
 const PROFILE_IMG = "https://lh3.googleusercontent.com/aida-public/AB6AXuB-Xzhf5tC-uNh7ogpOrpF197rUmVQlpgQMJpaeLdDgY06RlhL-hgoayPJkGqzjn0yx2g3UcSrtGWPfZcvovXBtbtlKNHxjv0joupsh7p3oDluu9nsTcPo0IpZrCnv6_epcgeCt7EuPtiUg4GXIVa1ALqmFtpE8t49yPoub6hZWG1YqFz7EOerKKHZJoIlBlFECeds1vFQ9JI1A31pZHNdTb74rgBJWra7gqrErlFu_I370RDBPpfRxc3UhJQ9I_HpSmDBMDQbUVa6j";
 
 /* ─── Sidebar ─────────────────────────────────────────────────────────────── */
-function Sidebar() {
-  return (
-    <aside style={{
-      position: "fixed", left: 0, top: 0, width: 85, height: "100vh", zIndex: 50,
-      background: "rgba(1,15,32,0.85)", backdropFilter: "blur(20px)",
-      display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0 16px",
-      boxShadow: "4px 0 32px rgba(0,0,0,0.5)",
-    }}>
-      {/* Logo */}
-      <div style={{
-        fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 20,
-        color: C.accent, background: C.bg, padding: "8px 10px", borderRadius: 8,
-        marginBottom: 16, letterSpacing: "-0.04em",
-      }}>BB</div>
 
-      {/* Nav items */}
-      <nav style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-        {NAV.map(({ icon, label, active }) => (
-          <button key={label} style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-            padding: "12px 0", width: "100%", border: "none", cursor: "pointer",
-            background: active ? "rgba(255,231,146,0.1)" : "transparent",
-            borderLeft: active ? `4px solid ${C.accent}` : "4px solid transparent",
-            color: active ? C.accent : "rgba(162,194,253,0.6)",
-            transition: "all 0.2s",
-          }}
-            onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,231,146,0.05)"; e.currentTarget.style.color = C.accent; } }}
-            onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(162,194,253,0.6)"; } }}
-          >
-            <Icon name={icon} fill={active} style={{ fontSize: 22 }} />
-            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 2, marginTop: "auto" }}>
-        <button style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "12px 0", border: "none", background: "transparent", cursor: "pointer", color: "rgba(162,194,253,0.6)", borderLeft: "4px solid transparent", transition: "all 0.2s" }}
-          onMouseEnter={e => { e.currentTarget.style.color = C.accent; e.currentTarget.style.background = "rgba(255,231,146,0.05)"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = "rgba(162,194,253,0.6)"; e.currentTarget.style.background = "transparent"; }}
-        >
-          <Icon name="settings" style={{ fontSize: 22 }} />
-          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em" }}>Settings</span>
-        </button>
-        <button style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "12px 0", border: "none", background: "transparent", cursor: "pointer", color: "rgba(162,194,253,0.6)", borderLeft: "4px solid transparent" }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", border: `1px solid rgba(59,73,92,0.3)` }}>
-            <img src={PROFILE_IMG} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </div>
-          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(162,194,253,0.6)" }}>Profile</span>
-        </button>
-      </div>
-    </aside>
-  );
-}
 
 /* ─── TopBar ──────────────────────────────────────────────────────────────── */
 function TopBar() {

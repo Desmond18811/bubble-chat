@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+
 
 /* ─── Icon helper ─────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, className = "", style = {} }) => (
@@ -90,73 +92,7 @@ const C = {
   error: "#ff716c",
 };
 
-/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
-function Sidebar() {
-  return (
-    <aside style={{
-      position: "fixed", left: 0, top: 0, width: 96, height: "100vh",
-      display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "32px 0", zIndex: 50,
-      background: "rgba(1,15,32,0.6)", backdropFilter: "blur(24px)",
-      borderRight: `1px solid ${C.border}`,
-      boxShadow: "20px 0 50px rgba(0,0,0,0.3)",
-    }}>
-      {/* Logo */}
-      <div style={{
-        width: 48, height: 48, display: "flex", alignItems: "center", justifyContent: "center",
-        border: `2px solid ${C.accent}`, marginBottom: 32,
-        fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 24,
-        color: C.accent, letterSpacing: "-0.04em",
-      }}>B</div>
 
-      <nav style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%" }}>
-        {/* Top items */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          {NAV_ITEMS.map(({ icon, label, active }) => (
-            <button key={label} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-              width: "100%", padding: "8px 0", background: "none", border: "none",
-              cursor: "pointer", position: "relative",
-              color: active ? C.accent : `rgba(162,194,253,0.6)`,
-              fontWeight: active ? 700 : 400,
-              transition: "color 0.2s, transform 0.2s",
-            }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.color = C.accent; e.currentTarget.style.transform = "translateX(4px)"; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "rgba(162,194,253,0.6)"; e.currentTarget.style.transform = "translateX(0)"; } }}
-            >
-              {active && (
-                <span style={{
-                  position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-                  width: 4, height: 32, background: C.accent, borderRadius: "4px 0 0 4px",
-                  boxShadow: `0 0 15px ${C.accent}`,
-                }} />
-              )}
-              <Icon name={icon} fill={active} style={{ fontSize: 24 }} />
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em" }}>{label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Bottom items */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, paddingTop: 32, borderTop: `1px solid ${C.border}` }}>
-          {[{ icon: "settings", label: "Settings" }, { icon: "logout", label: "Logout" }].map(({ icon, label }) => (
-            <button key={label} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-              width: "100%", padding: "8px 0", background: "none", border: "none",
-              cursor: "pointer", color: "rgba(162,194,253,0.6)", transition: "color 0.2s, transform 0.2s",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.color = C.accent; e.currentTarget.style.transform = "translateX(4px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "rgba(162,194,253,0.6)"; e.currentTarget.style.transform = "translateX(0)"; }}
-            >
-              <Icon name={icon} style={{ fontSize: 24 }} />
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em" }}>{label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
-    </aside>
-  );
-}
 
 /* ─── TopBar ──────────────────────────────────────────────────────────────── */
 function TopBar() {
@@ -319,7 +255,7 @@ function Post({ post }) {
               <Icon name="favorite" fill={liked} style={{ fontSize: 20 }} />
               <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14 }}>{post.stats.likes}</span>
             </button>
-            <StatBtn icon="share" hoverColor={C.secondary} />
+            <StatBtn icon="share" count={undefined} hoverColor={C.secondary} />
           </div>
         </div>
       </div>

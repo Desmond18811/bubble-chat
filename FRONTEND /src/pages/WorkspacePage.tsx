@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Sidebar from "@/components/Sidebar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,92 +112,6 @@ function MSIcon({
   );
 }
 
-// ─── SideNav (icon-only) ──────────────────────────────────────────────────────
-
-function SideNav() {
-  return (
-    <aside
-      className="fixed left-0 top-0 h-full w-[85px] z-50 flex flex-col items-center py-8 gap-y-6 shadow-2xl"
-      style={{
-        background: "rgba(1,15,32,0.80)",
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
-      }}
-    >
-      {/* Logo */}
-      <div
-        className="text-2xl font-bold p-2 rounded-lg mb-4"
-        style={{ ...SG, color: "#ffe792", background: "#010f20" }}
-        title="BUBBLE"
-      >
-        BB
-      </div>
-
-      {/* Nav icons */}
-      <nav className="flex flex-col w-full items-center gap-y-4 flex-1">
-        {NAV_ICONS.map(({ icon, active }) => (
-          <a
-            key={icon}
-            href="#"
-            className="w-full flex justify-center py-3 transition-all border-l-4"
-            style={
-              active
-                ? {
-                  color: "#ffe792",
-                  borderColor: "#ffe792",
-                  background: "rgba(255,231,146,0.10)",
-                  transform: "scale(0.95)",
-                }
-                : { color: "#a2c2fd", borderColor: "transparent" }
-            }
-            onMouseEnter={(e) => {
-              if (!active) {
-                (e.currentTarget as HTMLElement).style.color = "#ffe792";
-                (e.currentTarget as HTMLElement).style.background =
-                  "rgba(255,231,146,0.05)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!active) {
-                (e.currentTarget as HTMLElement).style.color = "#a2c2fd";
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-              }
-            }}
-          >
-            <MSIcon name={icon} />
-          </a>
-        ))}
-      </nav>
-
-      {/* Bottom */}
-      <div className="flex flex-col w-full items-center gap-y-4">
-        <a
-          href="#"
-          className="w-full flex justify-center py-3 transition-colors border-l-4"
-          style={{ color: "#a2c2fd", borderColor: "transparent" }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.color = "#ffe792")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.color = "#a2c2fd")
-          }
-        >
-          <MSIcon name="settings" />
-        </a>
-        <div
-          className="w-10 h-10 rounded-full overflow-hidden border"
-          style={{ borderColor: "rgba(59,73,92,0.30)" }}
-        >
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3o5i1Z2dyo73Q3Ehkt_EkjpBwHL0SLG1HFvGG6FCTQBJv_rF0DD2pIIVU-iwWrafJswP4gtu885inCknvDVA2WDkNZ5G14vZX6kKKnTqC28Fx8tl_q3U2RCqoSEPlJWoV8X6nG6S5uBHUkHe4DV-q5EvyckYOqfoblOoTdlrlzMIUPs-fxkJbQXWfZUAtVytZJJ3MjKjIvypVqvmw5Xq9tE7jSQuXtjImH4B65NnptOlDJ8hGQJ90y8NINa8zahaAY2ZYiULoXci-"
-            alt="User"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 // ─── TopBar ───────────────────────────────────────────────────────────────────
 
@@ -799,7 +714,7 @@ export default function WorkspacesPage() {
         ::-webkit-scrollbar-thumb { background: #3b495c; border-radius: 10px; }
       `}</style>
 
-      <SideNav />
+      <Sidebar />
       <TopBar />
 
       <main

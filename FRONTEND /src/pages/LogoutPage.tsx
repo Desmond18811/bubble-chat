@@ -1,153 +1,40 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-
-// ─── Tailwind custom color tokens (map to design tokens from original) ───────
-// These assume your tailwind.config extends with the original color palette.
-// Add them to your tailwind.config.ts if not already present.
-
-const NAV_ITEMS = [
-    { icon: "chat", label: "Chats" },
-    { icon: "work", label: "Work" },
-    { icon: "video_call", label: "Meet" },
-    { icon: "groups", label: "Community" },
-    { icon: "rss_feed", label: "Feed" },
-    { icon: "bookmark", label: "Saved" },
-    { icon: "calendar_today", label: "Calendar" },
-    { icon: "payments", label: "Payments" },
-    { icon: "settings", label: "Settings" },
-];
+import Sidebar from "@/components/Sidebar";
 
 function MaterialIcon({
     name,
     filled = false,
     className = "",
+    style,
 }: {
     name: string;
     filled?: boolean;
     className?: string;
+    style?: React.CSSProperties;
 }) {
     return (
         <span
             className={`material-symbols-outlined ${className}`}
-            style={
-                filled
-                    ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }
-                    : { fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }
-            }
+            style={{
+                fontVariationSettings: filled
+                    ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
+                    : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24",
+                ...style,
+            }}
         >
             {name}
         </span>
     );
 }
 
-function Sidebar({ onLogout }: { onLogout: () => void }) {
-    return (
-        <aside
-            className="fixed left-0 top-0 h-full w-64 z-40 flex flex-col py-8 px-4 gap-2 border-none"
-            style={{ background: "#010f20", fontFamily: "'Space Grotesk', sans-serif" }}
-        >
-            {/* Brand */}
-            <div className="mb-8 flex items-center gap-3 px-4">
-                <div className="relative w-8 h-8 shrink-0">
-                    <div
-                        className="absolute w-3 h-3 top-0 left-0"
-                        style={{ backgroundColor: "#ffe792" }}
-                    />
-                    <div
-                        className="absolute w-3 h-3 bottom-0 right-0 opacity-60"
-                        style={{ backgroundColor: "#ffe792" }}
-                    />
-                </div>
-                <span
-                    className="font-black text-2xl tracking-tighter"
-                    style={{ color: "#ffe792" }}
-                >
-                    BUBBLE
-                </span>
-            </div>
 
-            {/* Nav */}
-            <nav className="flex flex-col gap-1">
-                {NAV_ITEMS.map((item) => (
-                    <a
-                        key={item.label}
-                        href="#"
-                        className="flex items-center gap-4 px-4 py-3 rounded-xl opacity-70 transition-all duration-200 uppercase text-[10px] tracking-widest"
-                        style={{ color: "#a2c2fd" }}
-                        onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.color = "#ffe792";
-                            (e.currentTarget as HTMLElement).style.background =
-                                "rgba(162,194,253,0.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.color = "#a2c2fd";
-                            (e.currentTarget as HTMLElement).style.background = "transparent";
-                        }}
-                    >
-                        <MaterialIcon name={item.icon} className="text-xl" />
-                        <span>{item.label}</span>
-                    </a>
-                ))}
 
-                {/* Logout nav item */}
-                <button
-                    onClick={onLogout}
-                    className="flex items-center gap-4 px-4 py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest border-r-4 transition-all duration-200 cursor-pointer w-full text-left"
-                    style={{
-                        color: "#ffe792",
-                        borderColor: "#ffe792",
-                        background:
-                            "linear-gradient(to right, rgba(255,231,146,0.10), transparent)",
-                    }}
-                >
-                    <MaterialIcon name="logout" className="text-xl" />
-                    <span>Logout</span>
-                </button>
-            </nav>
-
-            {/* User profile */}
-            <div
-                className="mt-auto px-4 py-6 border-t"
-                style={{ borderColor: "rgba(59,73,92,0.10)" }}
-            >
-                <div className="flex items-center gap-3">
-                    <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center border overflow-hidden shrink-0"
-                        style={{
-                            background: "#11273f",
-                            borderColor: "rgba(59,73,92,0.20)",
-                        }}
-                    >
-                        <img
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3NFRl04Xm6G06LSDUTsxmr14vyToF9L4aevEKp2kIeYiFsfGimLQIuakF79yKXZd_7U1D_E9JBWccpy-8704_RjseUzZjTxqLuMFUcoUDQTa7-AVOyHwLfXMSbUAtSYK2hpH1RBOguI7ci0aPVTWo_Njohnuv9L0njuqTbRlOPHQ0b709JiOV6zdKfGFHSzL67DSU8r2tbyJXBVUcUKhoj5EMQQ0FotFQScdTbLrx4V8H_sBaAE2sHk0kzH82rDA8AHAtIP4sOKXo"
-                            alt="User Profile"
-                            className="rounded-full w-full h-full object-cover"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <span
-                            className="font-bold text-[11px] uppercase tracking-wide"
-                            style={{ color: "#d8e6ff" }}
-                        >
-                            ALEX_DRAKE
-                        </span>
-                        <span
-                            className="text-[9px] lowercase opacity-60"
-                            style={{ color: "#9eacc3" }}
-                        >
-                            Obsidian Edition
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </aside>
-    );
-}
 
 function DashboardBackground() {
     return (
         <main
-            className="ml-64 min-h-screen p-12 blur-md pointer-events-none select-none overflow-hidden"
+            className="ml-[96px] min-h-screen p-12 blur-md pointer-events-none select-none overflow-hidden transition-all duration-300"
             style={{ background: "#010f20" }}
         >
             <header className="mb-20">
@@ -416,7 +303,7 @@ export default function BubbleApp() {
         }
       `}</style>
 
-            <Sidebar onLogout={() => setShowModal(true)} />
+            <Sidebar />
             <DashboardBackground />
 
             {showModal && (

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import Sidebar from "@/components/Sidebar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -162,71 +163,6 @@ function TopBar() {
   );
 }
 
-// ─── SideNav ──────────────────────────────────────────────────────────────────
-
-function SideNav() {
-  return (
-    <aside
-      className="fixed left-0 top-0 h-full w-64 z-40 flex flex-col py-8 px-4 gap-2 pt-24"
-      style={{ background: "#010f20" }}
-    >
-      <div className="px-4 mb-8">
-        <h2
-          className="font-black text-2xl tracking-tighter"
-          style={{ ...SG, color: "#ffe792" }}
-        >
-          BUBBLE
-        </h2>
-        <p
-          className="text-[10px] tracking-widest opacity-70"
-          style={{ ...SG, color: "#a2c2fd" }}
-        >
-          OBSIDIAN EDITION
-        </p>
-      </div>
-      <nav className="flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => (
-          <a
-            key={item.label}
-            href="#"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-[10px] uppercase tracking-widest transition-all duration-200"
-            style={
-              item.active
-                ? {
-                  ...SG,
-                  color: "#ffe792",
-                  fontWeight: 700,
-                  borderRight: "4px solid #ffe792",
-                  background:
-                    "linear-gradient(to right, rgba(255,231,146,0.10), transparent)",
-                  transform: "translateX(4px)",
-                }
-                : { ...SG, color: "#a2c2fd", opacity: 0.7 }
-            }
-            onMouseEnter={(e) => {
-              if (!item.active) {
-                (e.currentTarget as HTMLElement).style.color = "#ffe792";
-                (e.currentTarget as HTMLElement).style.background =
-                  "rgba(162,194,253,0.05)";
-                (e.currentTarget as HTMLElement).style.opacity = "1";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!item.active) {
-                (e.currentTarget as HTMLElement).style.color = "#a2c2fd";
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.opacity = "0.7";
-              }
-            }}
-          >
-            <MSIcon name={item.icon} className="text-lg" />
-            <span>{item.label}</span>
-          </a>
-        ))}
-      </nav>
-    </aside>
-  );
-}
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
@@ -746,11 +682,11 @@ export default function SettingsPage() {
       `}</style>
 
       <TopBar />
-      <SideNav />
+      <Sidebar />
 
       <main
-        className="px-12 pb-20"
-        style={{ marginLeft: "16rem", paddingTop: "6rem" }}
+        className="px-12 pb-20 transition-all duration-300"
+        style={{ marginLeft: 96, paddingTop: "6rem" }}
       >
         {/* Page Header */}
         <header className="mb-16">

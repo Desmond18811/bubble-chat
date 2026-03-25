@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+
 
 /* ─── avatar URLs ─────────────────────────────────────────────────────────── */
 const AVATARS = {
@@ -64,64 +66,7 @@ const Icon = ({ name, fill = false, className = "", style = {} }) => (
 
 /* ─── sub-components ──────────────────────────────────────────────────────── */
 
-function Sidebar() {
-  return (
-    <aside style={{
-      width: 96, minHeight: "100vh", display: "flex", flexDirection: "column",
-      alignItems: "center", padding: "32px 0", position: "fixed", left: 0, top: 0,
-      zIndex: 50, background: "rgba(1,15,32,0.6)", backdropFilter: "blur(24px)",
-      borderRight: "1px solid rgba(59,73,92,0.15)",
-      boxShadow: "20px 0 50px rgba(0,0,0,0.3)",
-    }}>
-      <img src={AVATARS.logo} alt="Bubble" style={{ width: 48, height: 48, marginBottom: 32 }} />
 
-      <nav style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 32, width: "100%" }}>
-        {NAV_ITEMS.map(({ icon, label, fill, active }) => (
-          <button key={label} style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-            width: "100%", background: "none", border: "none", cursor: "pointer",
-            color: active ? "#ffe792" : "rgba(162,194,253,0.6)",
-            fontWeight: active ? 700 : 400,
-            position: "relative",
-            transition: "color 0.2s, transform 0.2s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.transform = "translateX(4px)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "translateX(0)"}
-          >
-            {active && (
-              <span style={{
-                position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-                width: 4, height: 32, background: "#ffe792", borderRadius: "4px 0 0 4px",
-                boxShadow: "0 0 15px #ffe792",
-              }} />
-            )}
-            <Icon name={icon} fill={fill} style={{ fontSize: 24 }} />
-            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em" }}>
-              {label}
-            </span>
-          </button>
-        ))}
-      </nav>
-
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, width: "100%", marginTop: "auto" }}>
-        <button style={{
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-          width: "100%", background: "none", border: "none", cursor: "pointer",
-          color: "rgba(162,194,253,0.6)", transition: "color 0.2s, transform 0.2s",
-        }}
-          onMouseEnter={e => e.currentTarget.style.transform = "translateX(4px)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "translateX(0)"}
-        >
-          <Icon name="settings" style={{ fontSize: 24 }} />
-          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em" }}>Settings</span>
-        </button>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", padding: 2, border: "2px solid #ffd709", boxShadow: "0 0 15px rgba(255,231,146,0.3)" }}>
-          <img src={AVATARS.me} alt="Me" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 function ChatList() {
   return (

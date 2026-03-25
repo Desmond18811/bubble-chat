@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import Sidebar from "@/components/Sidebar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -126,51 +127,7 @@ function MSIcon({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SideNav() {
-  return (
-    <aside className="fixed left-0 top-0 h-full w-[85px] z-50 bg-[#010f20]/80 backdrop-blur-xl flex flex-col items-center py-8 gap-y-6 shadow-2xl shadow-black/50">
-      {/* Logo */}
-      <div className="mb-4">
-        <div className="text-2xl font-bold text-[#ffe792] bg-[#010f20] p-2 rounded-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          BB
-        </div>
-      </div>
 
-      {/* Nav links */}
-      <nav className="flex flex-col items-center w-full gap-y-2">
-        {NAV_ICONS.map(({ icon, label, active, filled }) => (
-          <a
-            key={label}
-            href="#"
-            title={label}
-            className={cn(
-              "w-full flex justify-center py-3 border-l-4 transition-all duration-200",
-              active
-                ? "text-[#ffe792] border-[#ffe792] bg-[#ffe792]/10"
-                : "text-[#a2c2fd] border-transparent hover:text-[#ffe792] hover:bg-[#ffe792]/5"
-            )}
-          >
-            <MSIcon icon={icon} filled={filled} />
-          </a>
-        ))}
-      </nav>
-
-      {/* Bottom */}
-      <div className="mt-auto flex flex-col items-center w-full gap-y-4">
-        <a href="#" className="text-[#a2c2fd] hover:text-[#ffe792] transition-colors flex justify-center w-full py-2">
-          <MSIcon icon="settings" />
-        </a>
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#ffe792]/20">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcYf7ghmT8uWOjbWz83IkRbXO0C4oM9oNcFS4S67QYANFPEYBrNC5vqOz6D31DefcInaG28_xPWLhnaqOepvVq2DvjFo2FnDXOPHKxrSA1Tz83frSaXD4kPx8BW99tTyJoLU0RQPkRTxUkxYCIEYRbf2GENkpfeNVD9XNOgbBvIqV_NXKKCas_E3B4vijSRuJIlscm4w__dJXnf2oUZn3sZRWi89G-mzvjVxs0VvJIqquuVdE6SgVekbdMKUVTJum5B6NxXLRfNqPP"
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 function TopBar() {
   return (
@@ -333,7 +290,7 @@ export default function CommunityHub() {
         className="bg-[#010f20] text-[#d8e6ff] overflow-hidden min-h-screen"
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
-        <SideNav />
+        <Sidebar />
         <TopBar />
 
         <main className="ml-[85px] mt-20 p-10 h-[calc(100vh-80px)] overflow-y-auto">

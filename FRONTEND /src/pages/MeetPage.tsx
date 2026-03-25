@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import Sidebar from "@/components/Sidebar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -104,62 +105,7 @@ function MSIcon({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SideNav() {
-  return (
-    <nav className="fixed left-0 top-0 h-screen w-24 flex flex-col items-center py-8 z-50 bg-[#010f20]/40 backdrop-blur-2xl border-r border-[#3b495c]/15 shadow-[20px_0_50px_rgba(0,0,0,0.3)]">
-      {/* Logo mark */}
-      <div className="mb-8 text-[#ffe792]">
-        <div className="w-12 h-12 flex flex-wrap gap-1">
-          {[1, 0.4, 0.6, 1].map((opacity, i) => (
-            <div
-              key={i}
-              className="w-5 h-5 rounded-sm"
-              style={{ backgroundColor: `rgba(255, 231, 146, ${opacity})` }}
-            />
-          ))}
-        </div>
-      </div>
 
-      {/* Nav links */}
-      <div className="flex flex-col items-center space-y-8 w-full">
-        {NAV_ITEMS.map(({ icon, label, active }) => (
-          <button
-            key={label}
-            className={cn(
-              "flex flex-col items-center group cursor-pointer transition-all duration-500 relative",
-              active ? "text-[#ffe792]" : "text-[#a2c2fd]/60 hover:text-[#ffe792]"
-            )}
-          >
-            {active && (
-              <div className="absolute -right-6 h-8 w-1 bg-[#ffe792] rounded-l-full shadow-[0_0_15px_#ffe792]" />
-            )}
-            <MSIcon icon={icon} className="text-2xl" />
-            <span
-              className="text-[10px] uppercase tracking-widest mt-1"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Bottom */}
-      <div className="mt-auto flex flex-col items-center space-y-6 w-full">
-        <button className="text-[#a2c2fd]/60 hover:text-[#ffe792] transition-colors duration-500">
-          <MSIcon icon="settings" className="text-2xl" />
-        </button>
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#ffe792]/20">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCltLYuRV34KK0O1u-paS2wu-UTztavVtm7uDjvdCIgT0n_rcq9fe1-OVubP2vlSdJXswO6QgrisjXs3QWEJ1zFiq1LhiFnBb6Piq49c5dqvnz-Exg0mrT2u3C9rRIe5-CJpMAHhLkZT79XV4wEDN7QAzHA2YqTbDA3IxiimZZc3rQ4MXwF-KAfFjdmB1lRsYDxTH_6QQEuzuPNIT_a8H4JISpukfBeDVuIKrGceDZy2EwFzVT-o0LIXA0EvW6TwTQeoPcleMM1cgET"
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 function MeetHeader() {
   return (
@@ -385,7 +331,7 @@ export default function BubbleMeet() {
         className="bg-[#010f20] text-[#d8e6ff] overflow-hidden h-screen flex"
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
-        <SideNav />
+        <Sidebar />
 
         <main className="ml-24 flex-1 flex flex-col h-full relative p-6 gap-6">
           <MeetHeader />

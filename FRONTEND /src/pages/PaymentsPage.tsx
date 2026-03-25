@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Sidebar from "@/components/Sidebar";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -140,105 +142,7 @@ function MSIcon({
   );
 }
 
-function SideNav() {
-  return (
-    <aside
-      className="fixed left-0 top-0 h-screen w-24 flex flex-col items-center py-8 z-50 border-r"
-      style={{
-        background: "rgba(1,15,32,0.40)",
-        backdropFilter: "blur(24px)",
-        borderColor: "rgba(59,73,92,0.15)",
-        boxShadow: "20px 0 50px rgba(0,0,0,0.3)",
-      }}
-    >
-      {/* Logo */}
-      <div className="mb-8" style={{ color: "#ffe792" }}>
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-8 h-8 grid grid-cols-2 gap-0.5">
-            <div style={{ background: "rgba(255,231,146,0.40)" }} className="w-full h-full" />
-            <div style={{ background: "#ffe792" }} className="w-full h-full" />
-            <div style={{ background: "#ffe792" }} className="w-full h-full" />
-            <div style={{ background: "rgba(255,231,146,0.20)" }} className="w-full h-full" />
-          </div>
-          <span
-            className="font-bold text-[10px] tracking-widest"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            BUBBLE
-          </span>
-        </div>
-      </div>
 
-      {/* Nav items */}
-      <nav className="flex flex-col items-center gap-6 flex-1">
-        {NAV_ITEMS.map((item) => (
-          <a
-            key={item.label}
-            href="#"
-            className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-500 relative"
-            style={
-              item.active
-                ? { color: "#ffe792" }
-                : { color: "rgba(162,194,253,0.60)" }
-            }
-            onMouseEnter={(e) => {
-              if (!item.active) {
-                (e.currentTarget as HTMLElement).style.color = "#ffe792";
-                (e.currentTarget as HTMLElement).style.background =
-                  "rgba(255,231,146,0.10)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!item.active) {
-                (e.currentTarget as HTMLElement).style.color =
-                  "rgba(162,194,253,0.60)";
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-              }
-            }}
-          >
-            <MSIcon name={item.icon} className="text-xl" />
-            <span
-              className="text-[8px] uppercase tracking-widest"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {item.label}
-            </span>
-            {item.active && (
-              <span
-                className="absolute -right-2 top-1/2 -translate-y-1/2 w-1 h-8 rounded-l-full"
-                style={{
-                  background: "#ffe792",
-                  boxShadow: "0 0 15px #ffe792",
-                }}
-              />
-            )}
-          </a>
-        ))}
-      </nav>
-
-      {/* Bottom icons */}
-      <div className="flex flex-col items-center gap-6 mt-auto">
-        {["settings", "logout"].map((icon) => (
-          <a
-            key={icon}
-            href="#"
-            className="transition-colors duration-300"
-            style={{ color: "rgba(162,194,253,0.60)" }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.color = "#ffe792")
-            }
-            onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.color =
-              "rgba(162,194,253,0.60)")
-            }
-          >
-            <MSIcon name={icon} />
-          </a>
-        ))}
-      </div>
-    </aside>
-  );
-}
 
 function TopBar() {
   return (
@@ -882,7 +786,7 @@ export default function PaymentsDashboard() {
         }
       `}</style>
 
-      <SideNav />
+      <Sidebar />
       <TopBar />
 
       <main className="flex" style={{ marginLeft: "6rem", paddingTop: "5rem", minHeight: "100vh" }}>

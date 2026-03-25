@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import Sidebar from "@/components/Sidebar";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,48 +147,7 @@ function MSIcon({
   );
 }
 
-function SideNav() {
-  return (
-    <aside className="fixed left-0 top-0 h-full w-[85px] z-50 bg-[#010f20]/80 backdrop-blur-xl flex flex-col items-center py-8 gap-y-6 shadow-2xl shadow-black/50">
-      {/* Logo */}
-      <div className="text-2xl font-bold text-[#ffe792] bg-[#010f20] p-2 rounded-lg font-headline">
-        BB
-      </div>
 
-      {/* Main nav */}
-      <nav className="flex flex-col w-full gap-y-2 flex-grow">
-        {NAV_ICONS.map(({ icon, label, active, filled }) => (
-          <a
-            key={label}
-            href="#"
-            title={label}
-            className={cn(
-              "w-full flex justify-center py-3 border-l-4 transition-all",
-              active
-                ? "text-[#ffe792] border-[#ffe792] bg-[#ffe792]/10 scale-95 duration-200"
-                : "text-[#a2c2fd] border-transparent hover:bg-[#ffe792]/5 hover:text-[#ffe792]"
-            )}
-          >
-            <MSIcon icon={icon} filled={filled} />
-          </a>
-        ))}
-      </nav>
-
-      {/* Bottom */}
-      <div className="flex flex-col w-full gap-y-2">
-        {(["settings", "account_circle"] as const).map((icon) => (
-          <a
-            key={icon}
-            href="#"
-            className="w-full flex justify-center py-3 text-[#a2c2fd] border-l-4 border-transparent hover:bg-[#ffe792]/5 hover:text-[#ffe792] transition-all"
-          >
-            <MSIcon icon={icon} />
-          </a>
-        ))}
-      </div>
-    </aside>
-  );
-}
 
 function TopBar() {
   return (
@@ -462,7 +423,7 @@ export default function CalendarDashboard() {
         className="bg-[#010f20] text-[#d8e6ff] overflow-hidden h-screen flex"
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
-        <SideNav />
+        <Sidebar />
 
         <main className="ml-[85px] w-full h-full flex flex-col relative">
           <TopBar />
