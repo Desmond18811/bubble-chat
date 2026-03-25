@@ -1,175 +1,791 @@
-import BubbleLayout from "@/components/BubbleLayout";
-import { Pencil, ChevronRight, Key, Plus } from "lucide-react";
-import avatarLyra from "@/assets/avatar-lyra.jpg";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
-const themes = [
-  { name: "Obsidian Gold", colors: ["220 25% 8%", "45 90% 55%", "220 22% 14%"], active: true },
-  { name: "Cyber Mint", colors: ["180 30% 10%", "160 60% 50%", "180 25% 15%"], active: false },
-  { name: "Nebula Violet", colors: ["270 30% 12%", "280 60% 55%", "270 25% 18%"], active: false },
-  { name: "Monolith Gray", colors: ["220 10% 15%", "220 10% 50%", "220 8% 20%"], active: false },
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ThemePreset = {
+  id: string;
+  label: string;
+  swatches: string[];
+};
+
+type ConnectedApp = {
+  id: string;
+  name: string;
+  status: "connected" | "disconnected";
+  iconSrc: string;
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const NAV_ITEMS = [
+  { icon: "chat", label: "Chats" },
+  { icon: "work", label: "Work" },
+  { icon: "video_call", label: "Meet" },
+  { icon: "groups", label: "Community" },
+  { icon: "rss_feed", label: "Feed" },
+  { icon: "bookmark", label: "Saved" },
+  { icon: "calendar_today", label: "Calendar" },
+  { icon: "payments", label: "Payments" },
+  { icon: "settings", label: "Settings", active: true },
+  { icon: "logout", label: "Logout" },
 ];
 
-const integrations = [
-  { name: "Figma", status: "Connected", icon: "🎨" },
-  { name: "Slack", status: "Connected", icon: "💬" },
-  { name: "Notion", status: "Disconnected", icon: "📝" },
+const THEME_PRESETS: ThemePreset[] = [
+  { id: "obsidian-gold", label: "Obsidian Gold", swatches: ["#010f20", "#ffe792", "#a2c2fd"] },
+  { id: "cyber-mint", label: "Cyber Mint", swatches: ["#0a192f", "#64ffda", "#112240"] },
+  { id: "nebula-violet", label: "Nebula Violet", swatches: ["#1a0b2e", "#f0abfc", "#3b0764"] },
+  { id: "monolith-gray", label: "Monolith Gray", swatches: ["#1e1e1e", "#e5e5e5", "#404040"] },
 ];
 
-const SettingsPage = () => {
+const ACCENT_COLORS = ["#ffe792", "#ff716c", "#bcd2ff", "#f0dc2b"];
+
+const CONNECTED_APPS: ConnectedApp[] = [
+  {
+    id: "figma",
+    name: "Figma",
+    status: "connected",
+    iconSrc:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBVH9cArX99Il_0LZN_Mclf4J92ZSbNyRvq1YVGndQDucDaU1IeKGKtZgvzEKKfGKWai2GA9Hnzj2WxqzcaDEGlzZWrEUDpIjK9_FROsDmrEHztDFVJOHPNhk9_9-9NCyv6Y0LK8xTp3SSnBSak-mEVXbrUeQZq1YR5ZJiQ7_fYRWSCRfdO3QMvYpOTGIoNWabplMW1oj5BYfKiliLNoRM_4CGNzCbXrHvXyojoTGv1tjUZXChr-OL7paEN910YBlgoh1UWtoucUhuc",
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    status: "connected",
+    iconSrc:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBVfsgbil0KJpyKMxadvhsoZmE0eB3Ru4n2DazoIlwjghcJgwPwOW0U3bovYT3Xud8JwJ1oDjFur29P4lcj8DK_lBdiBQMHnfm3j_9fk74aBYt-NvqWhMDeDIzMrYMD0gFByjaprBsclaN0HsztK8KDtVqAkze8MFwXZEMabUyvKnetRyODWiJTvODButV_gcoYho_JCZssms_HLqSFst1I4RDEzHMRYNobEUHrxt7Qr_mfyRznClZxF3d4K1Ui_W0PIUi2GtBg2cVZ",
+  },
+  {
+    id: "notion",
+    name: "Notion",
+    status: "disconnected",
+    iconSrc:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDdI9_OlbbZt9r7EE8epYnJBlkzibbzNU9u_JpndEhSR-akgKRmgHWMFh3gLbQqvfxAFlI0LejrP3UCbLcw1OEHI1flOMzQXFoap5NAySEni8h4mXzjQkefvdgoWNNLtHDLfU6vFSUuK6AY9PD9HrO6d12T_7D5Z6hbvnGW1KT1o9kv3h5N10z7mUCp354iqu0jecQMp9VwBDHgmf5sCFkf7FlUABdgt1PM3jZD2vz2amICEbje1V9eaGWSs-N9fuSOxrxpCXxCq5OC",
+  },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const SG: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" };
+
+function MSIcon({
+  name,
+  filled = false,
+  className = "",
+  style,
+}: {
+  name: string;
+  filled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <BubbleLayout>
-      <div className="flex-1 overflow-auto scrollbar-thin p-6 max-w-5xl mx-auto">
-        <h1 className="font-display font-bold text-foreground text-4xl mb-2">Account Settings</h1>
-        <p className="text-muted-foreground text-sm mb-8 max-w-2xl">
-          Refine your digital existence within the Obsidian ecosystem. Personalize your interface, manage security protocols, and configure your profile identity.
+    <span
+      className={`material-symbols-outlined ${className}`}
+      style={{
+        fontVariationSettings: filled
+          ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
+          : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24",
+        ...style,
+      }}
+    >
+      {name}
+    </span>
+  );
+}
+
+// ─── TopBar ───────────────────────────────────────────────────────────────────
+
+function TopBar() {
+  return (
+    <header
+      className="fixed top-0 w-full z-50 flex items-center justify-between px-8 h-20"
+      style={{ background: "#010f20" }}
+    >
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="relative w-8 h-8 shrink-0">
+            <div
+              className="absolute top-0 left-0 w-5 h-5 border-2"
+              style={{ borderColor: "#ffe792" }}
+            />
+            <div
+              className="absolute bottom-0 right-0 w-5 h-5 border-2"
+              style={{ borderColor: "#ffe792" }}
+            />
+          </div>
+          <span
+            className="text-2xl font-bold tracking-tighter"
+            style={{ ...SG, color: "#ffe792" }}
+          >
+            BUBBLE
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-6">
+        <div
+          className="relative flex items-center px-4 py-2 rounded-full w-64"
+          style={{ background: "#11273f" }}
+        >
+          <MSIcon
+            name="search"
+            className="text-sm mr-2"
+            style={{ color: "#9eacc3", fontSize: "18px" }}
+          />
+          <Input
+            placeholder="Search settings..."
+            className="bg-transparent border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
+            style={{ color: "#d8e6ff" }}
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          {["notifications", "account_circle"].map((icon) => (
+            <button
+              key={icon}
+              className="transition-colors duration-300"
+              style={{ color: "#a2c2fd" }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLElement).style.color = "#ffe792")
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLElement).style.color = "#a2c2fd")
+              }
+            >
+              <MSIcon name={icon} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─── SideNav ──────────────────────────────────────────────────────────────────
+
+function SideNav() {
+  return (
+    <aside
+      className="fixed left-0 top-0 h-full w-64 z-40 flex flex-col py-8 px-4 gap-2 pt-24"
+      style={{ background: "#010f20" }}
+    >
+      <div className="px-4 mb-8">
+        <h2
+          className="font-black text-2xl tracking-tighter"
+          style={{ ...SG, color: "#ffe792" }}
+        >
+          BUBBLE
+        </h2>
+        <p
+          className="text-[10px] tracking-widest opacity-70"
+          style={{ ...SG, color: "#a2c2fd" }}
+        >
+          OBSIDIAN EDITION
         </p>
+      </div>
+      <nav className="flex flex-col gap-1">
+        {NAV_ITEMS.map((item) => (
+          <a
+            key={item.label}
+            href="#"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-[10px] uppercase tracking-widest transition-all duration-200"
+            style={
+              item.active
+                ? {
+                  ...SG,
+                  color: "#ffe792",
+                  fontWeight: 700,
+                  borderRight: "4px solid #ffe792",
+                  background:
+                    "linear-gradient(to right, rgba(255,231,146,0.10), transparent)",
+                  transform: "translateX(4px)",
+                }
+                : { ...SG, color: "#a2c2fd", opacity: 0.7 }
+            }
+            onMouseEnter={(e) => {
+              if (!item.active) {
+                (e.currentTarget as HTMLElement).style.color = "#ffe792";
+                (e.currentTarget as HTMLElement).style.background =
+                  "rgba(162,194,253,0.05)";
+                (e.currentTarget as HTMLElement).style.opacity = "1";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!item.active) {
+                (e.currentTarget as HTMLElement).style.color = "#a2c2fd";
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+                (e.currentTarget as HTMLElement).style.opacity = "0.7";
+              }
+            }}
+          >
+            <MSIcon name={item.icon} className="text-lg" />
+            <span>{item.label}</span>
+          </a>
+        ))}
+      </nav>
+    </aside>
+  );
+}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Identity Profile */}
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="font-display font-bold text-foreground text-xl">Identity Profile</h2>
-              <button className="bg-primary text-primary-foreground font-display font-semibold text-xs px-4 py-2 rounded-lg hover:opacity-90 transition-opacity tracking-wider">
-                SAVE CHANGES
-              </button>
+// ─── Toggle ───────────────────────────────────────────────────────────────────
+
+function Toggle({
+  enabled,
+  onToggle,
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-12 h-6 rounded-full relative p-1 transition-colors duration-300 shrink-0"
+      style={{ background: enabled ? "rgba(255,231,146,0.20)" : "rgba(59,73,92,0.30)" }}
+      aria-checked={enabled}
+      role="switch"
+    >
+      <div
+        className="w-4 h-4 rounded-full transition-all duration-300"
+        style={{
+          background: enabled ? "#ffe792" : "#68768b",
+          marginLeft: enabled ? "auto" : "0",
+        }}
+      />
+    </button>
+  );
+}
+
+// ─── Profile Section ──────────────────────────────────────────────────────────
+
+function ProfileSection() {
+  const [displayName, setDisplayName] = useState("Astrid Vance");
+  const [alias, setAlias] = useState("@astrid_v");
+  const [bio, setBio] = useState(
+    "Digital architect specializing in atmospheric UI/UX design. Obsessed with deep navy palettes and celestial interfaces."
+  );
+
+  return (
+    <section
+      className="p-8 rounded-2xl border"
+      style={{
+        background: "rgba(17,39,63,0.40)",
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(59,73,92,0.10)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h3
+            className="text-xl font-semibold mb-1"
+            style={{ ...SG, color: "#ffe792" }}
+          >
+            Identity Profile
+          </h3>
+          <p
+            className="text-[10px] uppercase tracking-widest"
+            style={{ ...SG, color: "#9eacc3" }}
+          >
+            Public Information
+          </p>
+        </div>
+        <Button
+          className="px-6 py-2 rounded-xl text-xs font-bold tracking-wider border-0 transition-all"
+          style={{ ...SG, background: "#ffe792", color: "#655400", height: "auto" }}
+          onMouseEnter={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#ffd709")
+          }
+          onMouseLeave={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#ffe792")
+          }
+        >
+          SAVE CHANGES
+        </Button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        {/* Avatar */}
+        <div className="relative group shrink-0">
+          <div
+            className="w-32 h-32 rounded-xl overflow-hidden relative"
+            style={{ background: "#11273f" }}
+          >
+            <img
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxQ2i_ZwK0zv8JDoxMaBJSYx52mrOo1wV1iH9Q6CQcqTXV3Qa4E2c73vlqWOWaI-LVRRPmhKQQXlJLVtiQqMydd_Wbd7vXWbMc3Oh5XRi2oBnzOL4vIPRKSjkF2mpD_VvItmcCL8RbfAGx3owkMw0RhLKbxv6Idz6keo4oBCnvxjT3fKF0LvVf6WDnQQ4F0SpwP2R5BhQUhhLpiV54Dw1sOvtOYxbC6guGgniXF8SguL2dHL26xEk2uyc7sqmhDohdC1ZisCgAF4yq"
+              alt="Profile"
+              className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ background: "rgba(255,231,146,0.20)" }}>
+              <MSIcon name="photo_camera" style={{ color: "#655400" }} />
             </div>
-            <p className="text-muted-foreground text-[10px] tracking-widest mb-5">PUBLIC INFORMATION</p>
+          </div>
+          <div
+            className="absolute -bottom-2 -right-2 w-6 h-6 rounded-lg flex items-center justify-center"
+            style={{ background: "#ffe792" }}
+          >
+            <MSIcon
+              name="edit"
+              filled
+              style={{ color: "#655400", fontSize: "14px" }}
+            />
+          </div>
+        </div>
 
-            <div className="flex items-start gap-5 mb-5">
-              <div className="relative">
-                <img src={avatarLyra} alt="Profile" className="w-24 h-24 rounded-xl object-cover" loading="lazy" />
-                <button className="absolute -bottom-2 -right-2 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <Pencil className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="flex-1 space-y-3">
-                <div>
-                  <label className="text-muted-foreground text-[10px] tracking-widest block mb-1">DISPLAY NAME</label>
-                  <input className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors" defaultValue="Astrid Vance" />
-                </div>
-                <div>
-                  <label className="text-muted-foreground text-[10px] tracking-widest block mb-1">UNIQUE ALIAS</label>
-                  <input className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors" defaultValue="@astrid_v" />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-muted-foreground text-[10px] tracking-widest block mb-1">EDITORIAL BIO</label>
-              <textarea
-                className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none h-20"
-                defaultValue="Digital architect specializing in atmospheric UI/UX design. Obsessed with deep navy palettes and celestial interfaces."
+        {/* Fields */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          {[
+            { label: "Display Name", value: displayName, setter: setDisplayName },
+            { label: "Unique Alias", value: alias, setter: setAlias },
+          ].map(({ label, value, setter }) => (
+            <div key={label} className="space-y-2">
+              <label
+                className="text-[10px] uppercase tracking-widest ml-1 block"
+                style={{ ...SG, color: "#9eacc3" }}
+              >
+                {label}
+              </label>
+              <Input
+                value={value}
+                onChange={(e) => setter(e.target.value)}
+                className="w-full border-none rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
+                style={{
+                  background: "#11273f",
+                  color: "#d8e6ff",
+                  focusRingColor: "rgba(255,231,146,0.20)",
+                }}
               />
             </div>
-          </div>
-
-          {/* Theme Customization */}
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <h2 className="font-display font-bold text-foreground text-xl mb-1">Theme Customization</h2>
-            <p className="text-muted-foreground text-[10px] tracking-widest mb-5">ATMOSPHERE & VISUALS</p>
-
-            <p className="text-muted-foreground text-[10px] tracking-widest mb-3">CORE ATMOSPHERE</p>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {themes.map((theme) => (
-                <div
-                  key={theme.name}
-                  className={`p-3 rounded-xl border cursor-pointer transition-colors ${
-                    theme.active ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
-                  }`}
-                >
-                  <div className="flex gap-1.5 mb-2">
-                    {theme.colors.map((c, i) => (
-                      <div key={i} className="w-7 h-7 rounded-md border border-border" style={{ background: `hsl(${c})` }} />
-                    ))}
-                    {theme.active && <span className="ml-auto text-primary text-sm">✓</span>}
-                  </div>
-                  <p className="font-display font-semibold text-foreground text-xs">{theme.name}</p>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-muted-foreground text-[10px] tracking-widest mb-3">GLASS PANEL REFRACTION</p>
-            <div className="mb-6">
-              <input type="range" className="w-full accent-primary" defaultValue={60} />
-              <div className="flex justify-between text-muted-foreground text-[10px] mt-1">
-                <span>MINIMAL BLUR</span><span>TOTAL OBSIDIAN</span>
-              </div>
-            </div>
-
-            <p className="text-muted-foreground text-[10px] tracking-widest mb-3">FOCUS ACCENT OVERRIDE</p>
-            <div className="flex gap-2">
-              {["hsl(200, 70%, 55%)", "hsl(0, 65%, 55%)", "hsl(270, 55%, 55%)", "hsl(45, 90%, 55%)"].map((c, i) => (
-                <div
-                  key={i}
-                  className={`w-10 h-10 rounded-full border-2 cursor-pointer ${i === 0 ? "border-foreground" : "border-transparent"}`}
-                  style={{ background: c }}
-                />
-              ))}
-              <button className="w-10 h-10 rounded-full border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Security */}
-        <div className="bg-card rounded-2xl border border-border p-6 mb-6">
-          <h2 className="font-display font-bold text-foreground text-xl mb-1">Security Protocols</h2>
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center justify-between p-4 bg-secondary rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center">
-                  <Key className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-display font-semibold text-foreground text-sm">Two-Factor Authentication</p>
-                  <p className="text-muted-foreground text-xs">Secure your account with biometric verification.</p>
-                </div>
-              </div>
-              <div className="w-12 h-7 bg-bubble-green rounded-full relative cursor-pointer">
-                <div className="absolute right-1 top-1 w-5 h-5 bg-foreground rounded-full" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-secondary rounded-xl cursor-pointer hover:bg-muted transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-card flex items-center justify-center">
-                  <Key className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-display font-semibold text-foreground text-sm">Passkey Synchronization</p>
-                  <p className="text-muted-foreground text-xs">Manage encrypted access across your devices.</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </div>
-          </div>
-        </div>
-
-        {/* Integrations */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-bold text-primary text-xl">Synchronized Ecosystem</h2>
-            <button className="text-primary text-xs font-display font-semibold tracking-wider hover:opacity-80">View All Integrations</button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {integrations.map((intg) => (
-              <div key={intg.name} className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-                <span className="text-2xl">{intg.icon}</span>
-                <div>
-                  <p className="font-display font-semibold text-foreground text-sm">{intg.name}</p>
-                  <p className={`text-xs ${intg.status === "Connected" ? "text-bubble-green" : "text-muted-foreground"}`}>{intg.status}</p>
-                </div>
-              </div>
-            ))}
-            <div className="bg-card rounded-xl border-2 border-dashed border-border p-4 flex items-center justify-center cursor-pointer hover:border-muted-foreground transition-colors">
-              <span className="text-muted-foreground text-xs font-display font-semibold tracking-wider">LINK NEW STREAM</span>
-            </div>
+          ))}
+          <div className="col-span-full space-y-2">
+            <label
+              className="text-[10px] uppercase tracking-widest ml-1 block"
+              style={{ ...SG, color: "#9eacc3" }}
+            >
+              Editorial Bio
+            </label>
+            <Textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              className="w-full border-none rounded-xl px-4 py-3 text-sm focus-visible:ring-2 resize-none transition-all"
+              style={{ background: "#11273f", color: "#d8e6ff" }}
+            />
           </div>
         </div>
       </div>
-    </BubbleLayout>
+    </section>
   );
-};
+}
 
-export default SettingsPage;
+// ─── Security Section ─────────────────────────────────────────────────────────
+
+function SecuritySection() {
+  const [twoFA, setTwoFA] = useState(true);
+
+  return (
+    <section
+      className="p-8 rounded-2xl border"
+      style={{
+        background: "rgba(17,39,63,0.40)",
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(59,73,92,0.10)",
+      }}
+    >
+      <h3
+        className="text-xl font-semibold mb-6"
+        style={{ ...SG, color: "#ffe792" }}
+      >
+        Security Protocols
+      </h3>
+      <div className="space-y-4">
+        {/* 2FA Row */}
+        <div
+          className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer"
+          style={{ background: "#031427" }}
+          onMouseEnter={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
+          }
+          onMouseLeave={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#031427")
+          }
+          onClick={() => setTwoFA((v) => !v)}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{
+                background: "rgba(36,71,122,0.30)",
+                color: "#a2c2fd",
+              }}
+            >
+              {/* <MSIcon name="authenticator" /> */}
+            </div>
+            <div>
+              <p className="font-medium text-sm" style={SG}>
+                Two-Factor Authentication
+              </p>
+              <p className="text-xs" style={{ color: "#9eacc3" }}>
+                Secure your account with biometric verification.
+              </p>
+            </div>
+          </div>
+          <Toggle enabled={twoFA} onToggle={() => setTwoFA((v) => !v)} />
+        </div>
+
+        {/* Passkey Row */}
+        <div
+          className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer"
+          style={{ background: "#031427" }}
+          onMouseEnter={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
+          }
+          onMouseLeave={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#031427")
+          }
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ background: "#11273f", color: "#9eacc3" }}
+            >
+              <MSIcon name="key" />
+            </div>
+            <div>
+              <p className="font-medium text-sm" style={SG}>
+                Passkey Synchronization
+              </p>
+              <p className="text-xs" style={{ color: "#9eacc3" }}>
+                Manage encrypted access across your devices.
+              </p>
+            </div>
+          </div>
+          <MSIcon
+            name="chevron_right"
+            className="group-hover:text-yellow-300 transition-colors"
+            style={{ color: "#9eacc3" }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Theme Section ────────────────────────────────────────────────────────────
+
+function ThemeSection() {
+  const [selectedTheme, setSelectedTheme] = useState("obsidian-gold");
+  const [accentColor, setAccentColor] = useState("#ffe792");
+  const [glassIntensity, setGlassIntensity] = useState(70);
+
+  return (
+    <section
+      className="p-8 rounded-2xl border h-full"
+      style={{
+        background: "rgba(17,39,63,0.40)",
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(59,73,92,0.10)",
+      }}
+    >
+      <div className="mb-8">
+        <h3
+          className="text-xl font-semibold mb-1"
+          style={{ ...SG, color: "#ffe792" }}
+        >
+          Theme Customization
+        </h3>
+        <p
+          className="text-[10px] uppercase tracking-widest"
+          style={{ ...SG, color: "#9eacc3" }}
+        >
+          Atmosphere &amp; Visuals
+        </p>
+      </div>
+
+      <div className="space-y-8">
+        {/* Palette Presets */}
+        <div>
+          <label
+            className="text-[10px] uppercase tracking-widest block mb-4"
+            style={{ ...SG, color: "#9eacc3" }}
+          >
+            Core Atmosphere
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            {THEME_PRESETS.map((preset) => {
+              const isSelected = selectedTheme === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => setSelectedTheme(preset.id)}
+                  className="relative flex flex-col gap-4 p-4 rounded-xl text-left transition-all"
+                  style={{
+                    background: isSelected ? "#11273f" : "#071a2f",
+                    border: isSelected
+                      ? "2px solid #ffe792"
+                      : "2px solid transparent",
+                    boxShadow: isSelected
+                      ? "0 0 0 4px rgba(255,231,146,0.05)"
+                      : "none",
+                    opacity: isSelected ? 1 : 0.6,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected)
+                      (e.currentTarget as HTMLElement).style.opacity = "1";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected)
+                      (e.currentTarget as HTMLElement).style.opacity = "0.6";
+                  }}
+                >
+                  <div className="flex gap-2">
+                    {preset.swatches.map((color) => (
+                      <div
+                        key={color}
+                        className="w-6 h-6 rounded-md"
+                        style={{ background: color }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold" style={SG}>
+                    {preset.label}
+                  </span>
+                  {isSelected && (
+                    <MSIcon
+                      name="check_circle"
+                      filled
+                      className="absolute top-3 right-3 text-sm"
+                      style={{ color: "#ffe792", fontSize: "16px" }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Glass Intensity Slider */}
+        <div>
+          <label
+            className="text-[10px] uppercase tracking-widest block mb-6"
+            style={{ ...SG, color: "#9eacc3" }}
+          >
+            Glass Panel Refraction
+          </label>
+          <div className="relative h-1 w-full rounded-full mb-3" style={{ background: "#11273f" }}>
+            <div
+              className="absolute top-0 left-0 h-full rounded-full"
+              style={{ width: `${glassIntensity}%`, background: "#ffe792" }}
+            />
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={glassIntensity}
+              onChange={(e) => setGlassIntensity(Number(e.target.value))}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ring-4 ring-yellow-300/20 cursor-pointer pointer-events-none"
+              style={{
+                left: `calc(${glassIntensity}% - 8px)`,
+                background: "#ffe792",
+              }}
+            />
+          </div>
+          <div
+            className="flex justify-between text-[10px]"
+            style={{ ...SG, color: "rgba(158,172,195,0.60)" }}
+          >
+            <span>MINIMAL BLUR</span>
+            <span>TOTAL OBSIDIAN</span>
+          </div>
+        </div>
+
+        {/* Accent Colors */}
+        <div>
+          <label
+            className="text-[10px] uppercase tracking-widest block mb-4"
+            style={{ ...SG, color: "#9eacc3" }}
+          >
+            Focus Accent Override
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {ACCENT_COLORS.map((color) => (
+              <button
+                key={color}
+                onClick={() => setAccentColor(color)}
+                className="w-8 h-8 rounded-full transition-transform hover:scale-110"
+                style={{
+                  background: color,
+                  ...(accentColor === color
+                    ? {
+                      boxShadow: `0 0 0 2px #010f20, 0 0 0 4px ${color}`,
+                    }
+                    : {}),
+                }}
+                aria-label={color}
+              />
+            ))}
+            <button
+              className="w-8 h-8 rounded-full flex items-center justify-center border transition-transform hover:scale-110"
+              style={{ background: "#11273f", borderColor: "#3b495c" }}
+            >
+              <MSIcon
+                name="add"
+                className="text-sm"
+                style={{ fontSize: "16px", color: "#9eacc3" }}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Ecosystem Section ────────────────────────────────────────────────────────
+
+function EcosystemSection() {
+  return (
+    <div
+      className="p-8 rounded-2xl border"
+      style={{
+        background: "rgba(17,39,63,0.40)",
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(59,73,92,0.10)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-8">
+        <h3
+          className="text-xl font-semibold"
+          style={{ ...SG, color: "#ffe792" }}
+        >
+          Synchronized Ecosystem
+        </h3>
+        <button
+          className="text-xs hover:underline transition-colors"
+          style={{ color: "#a2c2fd" }}
+        >
+          View All Integrations
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {CONNECTED_APPS.map((app) => (
+          <div
+            key={app.id}
+            className="flex items-center gap-4 p-4 rounded-xl"
+            style={{
+              background: "#031427",
+              opacity: app.status === "disconnected" ? 0.5 : 1,
+              filter:
+                app.status === "disconnected" ? "grayscale(100%)" : "none",
+            }}
+          >
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            >
+              <img src={app.iconSrc} alt={app.name} className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold" style={SG}>
+                {app.name}
+              </p>
+              <p
+                className="text-[10px]"
+                style={{ color: "#9eacc3", ...SG, textTransform: "capitalize" }}
+              >
+                {app.status}
+              </p>
+            </div>
+          </div>
+        ))}
+
+        {/* Add new */}
+        <button
+          className="flex items-center justify-center p-4 rounded-xl border border-dashed transition-colors group"
+          style={{ borderColor: "rgba(59,73,92,0.30)" }}
+          onMouseEnter={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
+          }
+          onMouseLeave={(e) =>
+            ((e.currentTarget as HTMLElement).style.background = "transparent")
+          }
+        >
+          <span
+            className="text-xs uppercase tracking-widest group-hover:text-yellow-200 transition-colors"
+            style={{ ...SG, color: "#9eacc3" }}
+          >
+            Link New Stream
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+  return (
+    <div
+      className="min-h-screen"
+      style={{ background: "#010f20", color: "#d8e6ff" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; }
+        input[type=range]::-moz-range-thumb { appearance: none; }
+      `}</style>
+
+      <TopBar />
+      <SideNav />
+
+      <main
+        className="px-12 pb-20"
+        style={{ marginLeft: "16rem", paddingTop: "6rem" }}
+      >
+        {/* Page Header */}
+        <header className="mb-16">
+          <h1
+            className="text-5xl font-bold tracking-tighter mb-2"
+            style={{ ...SG, color: "#d8e6ff" }}
+          >
+            Account Settings
+          </h1>
+          <p className="max-w-xl" style={{ color: "#9eacc3" }}>
+            Refine your digital existence within the Obsidian ecosystem.
+            Personalize your interface, manage security protocols, and configure
+            your profile identity.
+          </p>
+        </header>
+
+        {/* Bento Grid */}
+        <div className="grid grid-cols-12 gap-8 items-start">
+          {/* Left: Profile + Security */}
+          <div className="col-span-12 lg:col-span-7 space-y-8">
+            <ProfileSection />
+            <SecuritySection />
+          </div>
+
+          {/* Right: Theme */}
+          <div className="col-span-12 lg:col-span-5">
+            <ThemeSection />
+          </div>
+
+          {/* Full width: Ecosystem */}
+          <div className="col-span-12 pt-4">
+            <EcosystemSection />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
