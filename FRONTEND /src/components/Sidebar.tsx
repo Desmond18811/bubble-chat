@@ -48,27 +48,28 @@ export default function Sidebar() {
 
   return (
     <aside
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
       className={cn(
         "fixed left-0 top-0 h-full z-50 bg-[#010f20]/95 backdrop-blur-2xl flex flex-col py-8 border-r border-[#3b495c]/20 shadow-2xl transition-all duration-300",
         isExpanded ? "w-64" : "w-[85px]"
       )}
     >
-      {/* Toggle Button Container to make the whole top section clickable or just a button */}
       <div 
         className={cn(
-            "mb-8 flex items-center cursor-pointer px-6 transition-all",
-            isExpanded ? "justify-between" : "justify-center"
+            "mb-8 flex items-center px-6 transition-all h-8 overflow-hidden",
+            isExpanded ? "justify-start" : "justify-center"
         )}
-        onClick={toggleSidebar}
-        title="Toggle Sidebar"
       >
-        {isExpanded ? (
-           <img src="/placeholder.svg" alt="Bubble Logo" className="h-8 object-contain" />
-        ) : (
-           <div className="w-10 h-10 rounded-xl bg-[#ffe792] flex items-center justify-center">
-             <span className="font-bold text-[#655400] text-sm font-headline">BB</span>
-           </div>
-        )}
+        <img src="/icon.png" alt="Bubble Logo" className="h-8 w-8 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(255,231,146,0.6)]" />
+        <span 
+          className={cn(
+            "font-headline text-lg font-bold text-[#ffe792] ml-3 tracking-widest whitespace-nowrap overflow-hidden transition-all duration-300",
+            isExpanded ? "opacity-100 max-w-[200px]" : "opacity-0 max-w-0"
+          )}
+        >
+          BUBBLE
+        </span>
       </div>
 
       {/* Nav links */}
@@ -81,20 +82,20 @@ export default function Sidebar() {
               to={path}
               title={isExpanded ? undefined : label}
               className={cn(
-                "flex items-center py-3 border-l-4 transition-all duration-200 group mx-2 rounded-xl",
+                "flex items-center py-3 border-l-4 transition-all duration-200 group mx-2 rounded-xl shrink-0 overflow-hidden",
                 isActive
                   ? "text-[#ffe792] border-[#ffe792] bg-[#ffe792]/10"
                   : "text-[#a2c2fd] border-transparent hover:text-[#ffe792] hover:bg-[#ffe792]/5"
               )}
             >
-              <div className={cn("flex flex-shrink-0 items-center justify-center", isExpanded ? "w-16" : "w-16")}>
+              <div className="flex flex-shrink-0 items-center justify-center w-16">
                 <MSIcon icon={icon} filled={isActive} className="text-2xl" />
               </div>
               
               <span 
                 className={cn(
                   "font-headline text-sm font-medium tracking-wide whitespace-nowrap overflow-hidden transition-all duration-300",
-                  isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                  isExpanded ? "opacity-100 max-w-[200px] ml-1" : "opacity-0 max-w-0 ml-0"
                 )}
               >
                 {label}
@@ -122,7 +123,7 @@ export default function Sidebar() {
           <span 
             className={cn(
                 "font-headline text-sm font-medium tracking-wide whitespace-nowrap overflow-hidden transition-all duration-300",
-                isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                isExpanded ? "opacity-100 max-w-[200px] ml-1" : "opacity-0 max-w-0 ml-0"
             )}
            >
              Settings
@@ -146,8 +147,8 @@ export default function Sidebar() {
           </div>
           <div 
             className={cn(
-                "flex flex-col overflow-hidden transition-all duration-300",
-                isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+                "flex flex-col whitespace-nowrap overflow-hidden transition-all duration-300",
+                isExpanded ? "opacity-100 max-w-[200px] ml-2" : "opacity-0 max-w-0 ml-0"
             )}
           >
             <span className="font-headline text-sm font-bold text-[#d8e6ff] truncate">ALEX_DRAKE</span>
