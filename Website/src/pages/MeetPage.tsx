@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/Sidebar";
+import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -27,42 +27,7 @@ interface ControlButton {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
-const NAV_ITEMS: { icon: string; label: string; active?: boolean }[] = [
-  { icon: "chat", label: "Chats" },
-  { icon: "work", label: "Work" },
-  { icon: "video_chat", label: "Meet", active: true },
-  { icon: "groups", label: "Community" },
-  { icon: "rss_feed", label: "Feed" },
-];
-
 const PARTICIPANTS: Participant[] = [
-  {
-    id: "sarah",
-    name: "Sarah Jenkins",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC1_JYUoG2HKZzx49FlvhEx1VyhufMT2KUtGuPrAEo5x2dFD0Mj1D_f9bCODH2FP5BhMFLNgSDNsrxfJZ42gyBfME05jNkNBiJ77aMyPCf7cRFFBw52zwJfHNHlJcWSxKrKecnloks3_nRgGhwxQ3TfDyc7nrwSSAriUYPUgu9DekLQlTwICUM1e9EJM5cQlw4nYR12PQHMJ_EEVtWWJWVCXmOrXVy9j5-ok3nGukUKUNb8e2GJUlcNGaAPheJlyP_t8ElgccYwoCs4",
-    isMuted: true,
-  },
-  {
-    id: "marcus",
-    name: "Marcus Thorne",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCB8IfhhXlZNGp8b92x4cqG7Kff4FUZkAgHarSfAL3bfi4rPiCfCdRf8C0B27TTjKiKuKmmAH7RfzjbInDsDht5rdcgCp2rylJQlpI4wbNQnsMcesUZp4Sw4cMM1EkOLAMd1ba1XwD463o2dd3QS3o5q_TLktv_SMA0O-hYs6H9mactum2R1D1UN18KDX3JD4RCdCEy9_KTXgPcs1T9DieEB8K3SE8i_He3W6KiJdrVFdkagu_ei1UIK7xN9FpNej-tE__NSDJITzge",
-    isActiveSpeaker: true,
-  },
-  {
-    id: "me",
-    name: "You",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCRObp-LX7o3CkYQtAci0pv11oDAWNVlV1kfy3YQX3ds44GIwYt3ylKWXKalibW_8v9y18pqCxIdArof4pcab5yC06mUFMmipUJJ6z0kjrEv-FRctiuvtJZa8l3bzgtvK24VzkxO87rCjgXrTOJxQp7f_aD1pvqceus3Xt196d1vfXDj8eT-1xdjnC80U5Z7uO5xS-m-q4xfqSpsLRdaMh7vosCBAi75blVnoI5RZaWkWUoBFkR3lu9iY84iBqL3_ePCvnazI5hGfPs",
-    isSelf: true,
-  },
-  {
-    id: "elena",
-    name: "Elena K.",
-    initials: "EK",
-    isVideoOff: true,
-  },
   {
     id: "more",
     isMore: true,
@@ -105,11 +70,9 @@ function MSIcon({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-
-
 function MeetHeader() {
   return (
-    <header className="flex items-center justify-between z-10">
+    <header className="flex items-center justify-between z-10 w-full mb-6">
       <div className="flex items-center gap-4">
         <div className="bg-[#071a2f] px-4 py-2 rounded-xl flex items-center gap-3">
           <span className="w-2 h-2 rounded-full bg-[#ff716c] animate-pulse" />
@@ -120,7 +83,7 @@ function MeetHeader() {
             Internal Sync: Project Nebula
           </span>
         </div>
-        <span className="text-[#9eacc3] text-sm">00:42:15</span>
+        <span className="text-[#9eacc3] text-sm">Live Call</span>
       </div>
       <div className="flex items-center gap-2">
         {(["group", "chat_bubble"] as const).map((icon) => (
@@ -133,39 +96,6 @@ function MeetHeader() {
         ))}
       </div>
     </header>
-  );
-}
-
-function PrimarySpeaker() {
-  return (
-    <div
-      className="flex-[3] relative rounded-3xl overflow-hidden bg-[#031427]"
-      style={{ boxShadow: "inset 0 0 0 2px #ffe792" }}
-    >
-      <img
-        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxzykCVljOsQglSbYxH6j7zxCDY8Uk8S5RXtVSNEe84rHLu66BFfJN88PRfO4c5_djpU9UshXmSbXpJWgT5HnFm7qmGIuk-K-jKG9SoY-erNDHxhAoNlB0oxyzOYt7jdJqY8_ZBGLggCiGyNp1QuhC_nhXcARNrHXhYp7s7_0Dpz8FXy-gaQj8A5Bt4N8yi9OcY26D_dZXT42FFTReqaLHai8iNCfcBnNqahXAiOGoYK5Y6gSauQsjrp8yd6SXeioHh1qngK2dJiFd"
-        alt="Main Speaker"
-        className="w-full h-full object-cover"
-      />
-      {/* Name badge */}
-      <div className="absolute bottom-6 left-6 flex items-center gap-3">
-        <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
-          <MSIcon icon="mic" filled className="text-[#ffe792] text-sm" />
-          <span
-            className="font-bold text-sm tracking-tight text-white"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Alexander Chen
-          </span>
-        </div>
-      </div>
-      {/* Signal */}
-      <div className="absolute top-6 right-6">
-        <div className="w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center">
-          <MSIcon icon="signal_cellular_alt" className="text-[#ffe792] text-lg" />
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -182,132 +112,60 @@ function ParticipantCard({ participant }: { participant: Participant }) {
       </div>
     );
   }
-
-  if (participant.isVideoOff && participant.initials) {
-    return (
-      <div
-        className="relative aspect-video rounded-xl overflow-hidden bg-[#11273f] flex items-center justify-center"
-      >
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-full bg-[#a2c2fd]/20 flex items-center justify-center mx-auto mb-2">
-            <span
-              className="text-[#a2c2fd] font-bold"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {participant.initials}
-            </span>
-          </div>
-          <span
-            className="text-[10px] text-[#9eacc3]"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            {participant.name}
-          </span>
-        </div>
-        <div className="absolute top-2 right-2">
-          <MSIcon icon="videocam_off" className="text-[#9eacc3] text-sm" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="relative aspect-video rounded-xl overflow-hidden bg-[#071a2f]"
-      style={
-        participant.isActiveSpeaker ? { boxShadow: "inset 0 0 0 2px #ffe792" } : undefined
-      }
-    >
-      <img
-        src={participant.image}
-        alt={participant.name}
-        className={cn(
-          "w-full h-full object-cover",
-          participant.isSelf && "grayscale-[0.5]"
-        )}
-      />
-      <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-        {participant.name}
-      </div>
-      <div className="absolute top-2 right-2">
-        {participant.isMuted && (
-          <MSIcon icon="mic_off" className="text-[#ff716c] text-sm" />
-        )}
-        {participant.isActiveSpeaker && (
-          <div className="w-1 h-1 rounded-full bg-[#ffe792] animate-ping" />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ControlBar() {
-  const [micOn, setMicOn] = useState(true);
-  const [camOn, setCamOn] = useState(true);
-
-  const toggles: Record<string, [boolean, () => void]> = {
-    Mute: [micOn, () => setMicOn((v) => !v)],
-    Camera: [camOn, () => setCamOn((v) => !v)],
-  };
-
-  return (
-    <footer className="mt-auto mb-4 flex justify-center z-10">
-      <div
-        className="px-8 py-4 rounded-full flex items-center gap-6 shadow-2xl border border-white/5"
-        style={{ background: "rgba(1, 15, 32, 0.4)", backdropFilter: "blur(20px)" }}
-      >
-        {CONTROLS.map(({ icon, label }) => {
-          const toggle = toggles[label];
-          const isActive = toggle ? toggle[0] : true;
-          return (
-            <button
-              key={label}
-              onClick={toggle ? toggle[1] : undefined}
-              className="group flex flex-col items-center gap-1 transition-transform active:scale-90"
-            >
-              <div
-                className={cn(
-                  "w-12 h-12 rounded-full flex items-center justify-center transition-all",
-                  isActive
-                    ? "bg-[#11273f] text-[#d8e6ff] group-hover:bg-[#ffe792] group-hover:text-[#655400]"
-                    : "bg-[#ffe792]/20 text-[#ffe792]"
-                )}
-              >
-                <MSIcon icon={isActive ? icon : icon + "_off"} />
-              </div>
-              <span
-                className="text-[9px] uppercase tracking-widest text-[#9eacc3]"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                {label}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* Divider */}
-        <div className="w-px h-8 bg-[#3b495c]/30 mx-2" />
-
-        {/* End call */}
-        <button className="group flex flex-col items-center gap-1 transition-transform active:scale-90">
-          <div className="w-16 h-12 rounded-full bg-[#ff716c] flex items-center justify-center text-white hover:bg-[#9f0519] transition-all shadow-[0_0_20px_rgba(255,113,108,0.3)]">
-            <MSIcon icon="call_end" filled />
-          </div>
-          <span
-            className="text-[9px] uppercase tracking-widest text-[#d7383b]"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Leave
-          </span>
-        </button>
-      </div>
-    </footer>
-  );
+  return null;
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function BubbleMeet() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const appID = 123456789; // REPLACE WITH REAL APP ID from ENV
+    const serverSecret = "REPLACE_WITH_REAL_SECRET"; // REPLACE WITH REAL SECRET 
+    const roomID = "bubble-room-1";
+    const userID = Math.floor(Math.random() * 10000).toString();
+    const userName = "User_" + userID;
+
+    // Generate Kit Token
+    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+      appID,
+      serverSecret,
+      roomID,
+      userID,
+      userName
+    );
+
+    // Create instance
+    const zp = ZegoUIKitPrebuilt.create(kitToken);
+
+    // Join room
+    zp.joinRoom({
+      container: containerRef.current,
+      scenario: {
+        mode: ZegoUIKitPrebuilt.VideoConference, // Configured for high capacity
+      },
+      showPreJoinView: false,
+      turnOnMicrophoneWhenJoining: true,
+      turnOnCameraWhenJoining: true,
+      showMyCameraToggleButton: true,
+      showMyMicrophoneToggleButton: true,
+      showAudioVideoSettingsButton: true,
+      showScreenSharingButton: true,
+      showUserList: true,
+      maxUsers: 1000,
+      layout: "Sidebar",
+      showLayoutButton: true,
+      showNonVideoUser: true,
+      showTextChat: true,
+      // Reactions and comments can be custom or Zego native chat
+    });
+
+    return () => {
+      zp.destroy();
+    };
+  }, []);
+
   return (
     <>
       <style>{`
@@ -325,6 +183,9 @@ export default function BubbleMeet() {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(158,172,195,0.2); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(158,172,195,0.4); }
+        .zego-container > div {
+           background: transparent !important;
+        }
       `}</style>
 
       <div
@@ -333,22 +194,15 @@ export default function BubbleMeet() {
       >
         <Sidebar />
 
-        <main className="ml-24 flex-1 flex flex-col h-full relative p-6 gap-6">
+        <main className="ml-24 flex-1 flex flex-col h-full relative p-6 gap-6 overflow-hidden">
           <MeetHeader />
 
-          {/* Video grid */}
-          <div className="flex-1 flex gap-6 min-h-0">
-            <PrimarySpeaker />
-
-            {/* Participant sidebar */}
-            <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
-              {PARTICIPANTS.map((p) => (
-                <ParticipantCard key={p.id} participant={p} />
-              ))}
-            </div>
-          </div>
-
-          <ControlBar />
+          {/* Video grid container for Zego */}
+          <div 
+            ref={containerRef} 
+            className="flex-1 rounded-3xl overflow-hidden bg-[#031427] zego-container"
+            style={{ minHeight: 0 }}
+          />
 
           {/* Ambient glows */}
           <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />

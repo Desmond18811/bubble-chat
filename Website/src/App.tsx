@@ -13,7 +13,19 @@ import CalendarPage from "./pages/CalendarPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LogoutPage from "./pages/LogoutPage";
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import VerifyOTPPage from "./pages/auth/VerifyOTPPage";
 import NotFound from "./pages/NotFound";
+import { Navigate } from "react-router-dom";
+
+// Protected Route Component (Simpler version)
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
 
 const queryClient = new QueryClient();
 
@@ -24,18 +36,23 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<FeedPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/workspace" element={<WorkspacePage />} />
-          <Route path="/meet" element={<MeetPage />} />
-          <Route path="/community" element={<CommunityPage />} />
-          <Route path="/feed" element={<FeedPage />} />
-          <Route path="/saved" element={<SavedPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/payments" element={<PaymentsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-otp" element={<VerifyOTPPage />} />
+          
+          <Route path="/" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          <Route path="/workspace" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
+          <Route path="/meet" element={<ProtectedRoute><MeetPage /></ProtectedRoute>} />
+          <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+          <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
+          <Route path="/saved" element={<ProtectedRoute><SavedPage /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/logout" element={<LogoutPage />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

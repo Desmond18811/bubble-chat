@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
+import * as api from "@/api";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -407,7 +410,61 @@ function SecuritySection() {
   );
 }
 
+// ─── Billing Section ──────────────────────────────────────────────────────────
+
+function BillingSection() {
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async (isAnonymous: boolean) => {
+    setLoading(true);
+    try {
+      // Assuming api.ts has a createCheckout method, or fetch directly
+      const response = await fetch('http://localhost:3000/api/payment/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isAnonymous, planType: 'premium' }),
+      });
+      const data = await response.json();
+      if (data.url) {
+         window.location.href = data.url;
+      } else {
+         toast.error(data.error || 'Failed to initialize checkout');
+      }
+    } catch (error) {
+      toast.error('Payment gateway unavailable');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="p-8 rounded-2xl border" style={{ background: "rgba(17,39,63,0.40)", backdropFilter: "blur(20px)", borderColor: "rgba(59,73,92,0.10)" }}>
+      <h3 className="text-xl font-semibold mb-6" style={{ ...SG, color: "#f0abfc" }}>Financial Identity & Clearance</h3>
+      <div className="space-y-4">
+        {/* Standard Checkout */}
+        <div className="flex items-center justify-between p-4 rounded-xl group transition-all" style={{ background: "#031427" }}>
+          <div>
+            <p className="font-medium text-sm" style={SG}>Upgrade to Premium</p>
+            <p className="text-xs text-[#9eacc3]">Standard checkout with email tracking.</p>
+          </div>
+          <Button disabled={loading} onClick={() => handleCheckout(false)} className="bg-[#a2c2fd] text-[#010f20] hover:bg-[#c0d6fe] text-xs font-bold font-['Space_Grotesk'] h-8 px-4 rounded-lg">Buy Key</Button>
+        </div>
+
+        {/* Anonymous Checkout */}
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[#ffe792]/20 group transition-all" style={{ background: "rgba(255,231,146,0.05)" }}>
+          <div>
+            <p className="font-medium text-sm" style={{ ...SG, color: "#ffe792" }}>Phantom Mode Transaction</p>
+            <p className="text-xs text-[#9eacc3]">Complete financial anonymity via encrypted alias checkout.</p>
+          </div>
+          <Button disabled={loading} onClick={() => handleCheckout(true)} className="bg-[#ffe792] text-[#655400] hover:bg-[#ffd709] shadow-[0_0_15px_rgba(255,231,146,0.3)] text-xs font-bold font-['Space_Grotesk'] h-8 px-4 rounded-lg">Stealth Pay</Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Theme Section ────────────────────────────────────────────────────────────
+
 
 function ThemeSection() {
   const [selectedTheme, setSelectedTheme] = useState("obsidian-gold");
@@ -705,11 +762,13 @@ export default function SettingsPage() {
 
         {/* Bento Grid */}
         <div className="grid grid-cols-12 gap-8 items-start">
-          {/* Left: Profile + Security */}
+          {/* Left: Profile + Security + Billing */}
           <div className="col-span-12 lg:col-span-7 space-y-8">
             <ProfileSection />
             <SecuritySection />
+            <BillingSection />
           </div>
+
 
           {/* Right: Theme */}
           <div className="col-span-12 lg:col-span-5">
