@@ -11,7 +11,9 @@ router.use(passport.authenticate('jwt', { session: false }));
  * @swagger
  * /api/security/current:
  *   get:
+ *     tags: [Security]
  *     summary: Retrieve the current weekly security code
+
  *     security:
  *       - bearerAuth: []
  *     responses:

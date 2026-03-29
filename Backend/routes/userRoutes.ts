@@ -12,7 +12,9 @@ router.route('/contacts').get(passport.authenticate('jwt', { session: false }), 
  * @swagger
  * /api/user/contacts:
  *   get:
+ *     tags: [Users]
  *     summary: Search contacts or fetch all users
+
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -28,7 +30,9 @@ router.route('/contacts').get(passport.authenticate('jwt', { session: false }), 
  * @swagger
  * /api/user/online-scanner:
  *   get:
+ *     tags: [Users]
  *     summary: Scan database for all actively online users
+
  *     security:
  *       - bearerAuth: []
  */
@@ -38,7 +42,9 @@ router.route('/online-scanner').get(passport.authenticate('jwt', { session: fals
  * @swagger
  * /api/user/status/{userId}:
  *   get:
+ *     tags: [Users]
  *     summary: Fetch the online status of a given user
+
  *     security:
  *       - bearerAuth: []
  *     parameters:

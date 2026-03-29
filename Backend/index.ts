@@ -56,7 +56,17 @@ const swaggerOptions = {
         description: 'Development server',
       },
     ],
+    tags: [
+      { name: 'Authentication', description: 'User registration and login operations' },
+      { name: 'Messages', description: 'CRUD operations for real-time messaging' },
+      { name: 'Chat', description: '1-on-1 and Group Conversation management' },
+      { name: 'Users', description: 'User profile, status, and search operations' },
+      { name: 'Stories', description: 'User story uploads and retrieval' },
+      { name: 'Security', description: 'Protocol key rotation and security numbers' },
+      { name: 'Payment', description: 'Stripe anonymous and standard checkout flow' },
+    ],
     components: {
+
       securitySchemes: {
         bearerAuth: {
           type: 'http',

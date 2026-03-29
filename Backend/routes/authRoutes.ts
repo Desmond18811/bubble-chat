@@ -8,7 +8,9 @@ const router = express.Router();
  * @swagger
  * /api/auth/register:
  *   post:
+ *     tags: [Authentication]
  *     summary: Register a new user and send verification OTP
+
  *     requestBody:
  *       required: true
  *       content:
@@ -27,7 +29,9 @@ router.post('/register', register);
  * @swagger
  * /api/auth/verify-otp:
  *   post:
+ *     tags: [Authentication]
  *     summary: Verify email with OTP
+
  *     requestBody:
  *       required: true
  *       content:
@@ -44,7 +48,9 @@ router.post('/verify-otp', verifyOTP);
  * @swagger
  * /api/auth/login:
  *   post:
+ *     tags: [Authentication]
  *     summary: Login user with credentials
+
  *     requestBody:
  *       required: true
  *       content:
@@ -64,7 +70,9 @@ router.post('/login', login);
  * @swagger
  * /api/auth/forgot-password:
  *   post:
+ *     tags: [Authentication]
  *     summary: Request password reset OTP
+
  *     requestBody:
  *       required: true
  *       content:
@@ -80,7 +88,9 @@ router.post('/forgot-password', forgotPassword);
  * @swagger
  * /api/auth/reset-password:
  *   post:
+ *     tags: [Authentication]
  *     summary: Reset password with OTP
+
  *     requestBody:
  *       required: true
  *       content:

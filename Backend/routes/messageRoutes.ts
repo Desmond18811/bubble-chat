@@ -12,7 +12,9 @@ router.use(passport.authenticate('jwt', { session: false }));
  * @swagger
  * /api/message:
  *   post:
+ *     tags: [Messages]
  *     summary: Send a text message
+
  *     security:
  *       - bearerAuth: []
  */
@@ -26,7 +28,9 @@ router.route('/').post(
  * @swagger
  * /api/message/{chatId}:
  *   get:
+ *     tags: [Messages]
  *     summary: Get all messages for a specific chat ID
+
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -40,7 +44,9 @@ router.route('/').post(
  *         description: List of messages
  * /api/message/{messageId}:
  *   put:
+ *     tags: [Messages]
  *     summary: Edit a message (CRUD - Update)
+
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -59,7 +65,9 @@ router.route('/').post(
  *               content:
  *                 type: string
  *   delete:
+ *     tags: [Messages]
  *     summary: Delete a message (CRUD - Delete)
+
  *     security:
  *       - bearerAuth: []
  *     parameters:

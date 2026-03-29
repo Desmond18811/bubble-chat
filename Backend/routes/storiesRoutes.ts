@@ -11,7 +11,9 @@ router.use(passport.authenticate('jwt', { session: false }));
  * @swagger
  * /api/story:
  *   post:
+ *     tags: [Stories]
  *     summary: Upload a new story
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -37,7 +39,9 @@ router.route('/').post(
  * @swagger
  * /api/story:
  *   get:
+ *     tags: [Stories]
  *     summary: Get all active stories
+
  *     security:
  *       - bearerAuth: []
  *     responses:

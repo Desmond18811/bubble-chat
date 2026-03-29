@@ -18,7 +18,9 @@ router.use(passport.authenticate('jwt', { session: false }));
  * @swagger
  * /api/chat:
  *   post:
+ *     tags: [Chat]
  *     summary: Create or fetch a 1-on-1 chat
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -36,7 +38,9 @@ router.route('/').post(accessChat);
  * @swagger
  * /api/chat:
  *   get:
+ *     tags: [Chat]
  *     summary: Fetch all chats for the logged in user
+
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -49,7 +53,9 @@ router.route('/').get(fetchChats);
  * @swagger
  * /api/chat/group:
  *   post:
+ *     tags: [Chat]
  *     summary: Create a new group chat
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -68,7 +74,9 @@ router.route('/group').post(createGroupChat);
  * @swagger
  * /api/chat/rename:
  *   put:
+ *     tags: [Chat]
  *     summary: Rename an existing group
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -87,7 +95,9 @@ router.route('/rename').put(renameGroup);
  * @swagger
  * /api/chat/groupremove:
  *   put:
+ *     tags: [Chat]
  *     summary: Remove a user from a group
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -106,7 +116,9 @@ router.route('/groupremove').put(removeFromGroup);
  * @swagger
  * /api/chat/groupadd:
  *   put:
+ *     tags: [Chat]
  *     summary: Add a user to a group
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:

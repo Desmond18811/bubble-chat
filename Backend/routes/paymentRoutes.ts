@@ -15,7 +15,9 @@ const rawBodySaver = (req: express.Request, res: express.Response, buf: Buffer, 
  * @swagger
  * /api/payment/create-checkout-session:
  *   post:
+ *     tags: [Payment]
  *     summary: Initialize a Stripe Checkout (Standard or Anonymous)
+
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -34,7 +36,9 @@ router.post('/create-checkout-session', express.json(), createCheckoutSession);
  * @swagger
  * /api/payment/webhook:
  *   post:
+ *     tags: [Payment]
  *     summary: Stripe Webhook for payment confirmation (Auto-triggered by Stripe)
+
  */
 router.post('/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
