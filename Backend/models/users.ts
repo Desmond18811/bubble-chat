@@ -1,9 +1,9 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
-  name?: string;
+  full_name?: string;
   email?: string;
-  phone?: string;
+  phone_number?: string;
   googleId?: string;
   avatar?: string;
   
@@ -25,9 +25,11 @@ export interface IUser extends Document {
   // Auth
   password?: string;
   isVerified: boolean;
+  refreshToken?: string;
   
   // Privacy & Billing
   publicKey?: string; // Stored as base64 string
+  privateKey?: string; // Stored securely on backend for simplified E2EE
   isPremium: boolean;
 
 
@@ -39,7 +41,7 @@ export interface IUser extends Document {
 
 const UserSchema: Schema<IUser> = new Schema(
   {
-    name: {
+    full_name: {
       type: String,
       trim: true,
     },
@@ -51,7 +53,7 @@ const UserSchema: Schema<IUser> = new Schema(
       trim: true,
       lowercase: true,
     },
-    phone: {
+    phone_number: {
       type: String,
       unique: true,
       sparse: true,
@@ -77,6 +79,10 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       select: false, // Don't return password by default
     },
+    refreshToken: {
+      type: String,
+      select: false,
+    },
     isVerified: {
       type: Boolean,
       default: false,
@@ -86,6 +92,10 @@ const UserSchema: Schema<IUser> = new Schema(
     publicKey: {
       type: String, // Stringified Base64 Public Key for E2EE
       default: '',
+    },
+    privateKey: {
+      type: String,
+      select: false,
     },
     isPremium: {
       type: Boolean,

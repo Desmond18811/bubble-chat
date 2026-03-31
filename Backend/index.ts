@@ -15,6 +15,7 @@ import storiesRoutes from './routes/storiesRoutes';
 import authRoutes from './routes/authRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import securityRoutes from './routes/securityRoutes';
+import healthRoutes from './routes/healthRoutes';
 
 
 
@@ -121,7 +122,9 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/message', messageRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/story', storiesRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); // legacy
+app.use('/api/v1/auth', authRoutes); // revised v1
+app.use('/api/v1/health', healthRoutes); // system health
 app.use('/api/payment', paymentRoutes);
 app.use('/api/security', securityRoutes);
 
