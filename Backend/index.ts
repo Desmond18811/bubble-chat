@@ -118,15 +118,14 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 // API Routes
-app.use('/api/chat', chatRoutes);
-app.use('/api/message', messageRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/story', storiesRoutes);
-app.use('/api/auth', authRoutes); // legacy
-app.use('/api/v1/auth', authRoutes); // revised v1
-app.use('/api/v1/health', healthRoutes); // system health
-app.use('/api/payment', paymentRoutes);
-app.use('/api/security', securityRoutes);
+app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/message', messageRoutes);
+app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/story', storiesRoutes);
+app.use('/api/v1/auth', authRoutes); 
+app.use('/api/v1/health', healthRoutes); 
+app.use('/api/v1/payment', paymentRoutes);
+app.use('/api/v1/security', securityRoutes);
 
 
 

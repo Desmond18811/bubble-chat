@@ -7,8 +7,10 @@ import { sendOTPMail } from '../utils/mailer';
 import crypto from 'crypto';
 import passport from '../middleware/passport';
 
-const JWT_SECRET = process.env.JWT_KEY as string || 'default_jwt_secret_for_development';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_KEY as string || 'default_jwt_refresh_secret_for_development';
+const JWT_SECRET = process.env.JWT_KEY as string;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_KEY as string;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
 
 /**
  * Generate a 5-digit OTP
@@ -27,10 +29,10 @@ export const register = async (req: Request, res: Response) => {
   }
 
   try {
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { phone_number }] 
+    const existingUser = await User.findOne({
+      $or: [{ email }, { phone_number }]
     });
-    
+
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email or phone number' });
     }
@@ -81,7 +83,7 @@ export const resendOTP = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     const otp = generateOTP();
     await setCache(`otp:${email}`, otp, 600);
     await sendOTPMail(email, otp);
@@ -110,20 +112,20 @@ export const verifyOTP = async (req: Request, res: Response) => {
     await deleteCache(`otp:${email}`);
 
     // Generate Access & Refresh Tokens
-    const accessToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as any });
     const refreshTokenPayload = crypto.randomBytes(40).toString('hex');
     const refreshTokenHash = await bcrypt.hash(refreshTokenPayload, 10);
-    
-    const refresh_token = jwt.sign({ id: user._id, token: refreshTokenPayload }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
-    
+
+    const refresh_token = jwt.sign({ id: user._id, token: refreshTokenPayload }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
+
     // Save refresh hash to DB
     await User.findByIdAndUpdate(user._id, { refreshToken: refreshTokenHash });
 
-    res.status(200).json({ 
-      message: 'Email verified successfully', 
+    res.status(200).json({
+      message: 'Email verified successfully',
       access_token: accessToken,
       refresh_token,
-      user 
+      user
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -140,19 +142,19 @@ export const login = (req: Request, res: Response, next: any) => {
     if (!user.isVerified) return res.status(403).json({ message: 'Please verify your account first' });
 
     // Generate Tokens
-    const accessToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as any });
     const refreshTokenPayload = crypto.randomBytes(40).toString('hex');
     const refreshTokenHash = await bcrypt.hash(refreshTokenPayload, 10);
-    const refresh_token = jwt.sign({ id: user._id, token: refreshTokenPayload }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const refresh_token = jwt.sign({ id: user._id, token: refreshTokenPayload }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
 
     await User.findByIdAndUpdate(user._id, { refreshToken: refreshTokenHash });
 
     user.password = undefined;
     user.refreshToken = undefined;
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Logged in successfully',
-      access_token: accessToken, 
+      access_token: accessToken,
       refresh_token,
       user
     });
@@ -163,57 +165,57 @@ export const login = (req: Request, res: Response, next: any) => {
  * Refresh Access Token
  */
 export const refreshAccessToken = async (req: Request, res: Response) => {
-    const { refresh_token } = req.body;
-    if (!refresh_token) return res.status(401).json({ message: 'Refresh token required' });
+  const { refresh_token } = req.body;
+  if (!refresh_token) return res.status(401).json({ message: 'Refresh token required' });
 
-    try {
-        const decoded: any = jwt.verify(refresh_token, JWT_REFRESH_SECRET);
-        const user = await User.findById(decoded.id).select('+refreshToken');
-        
-        if (!user || !user.refreshToken) {
-            return res.status(403).json({ message: 'Invalid session' });
-        }
+  try {
+    const decoded: any = jwt.verify(refresh_token, JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id).select('+refreshToken');
 
-        const isValid = await bcrypt.compare(decoded.token, user.refreshToken);
-        if (!isValid) return res.status(403).json({ message: 'Invalid refresh token' });
-
-        // Rotate Tokens
-        const newAccessToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '15m' });
-        const newRefreshTokenPayload = crypto.randomBytes(40).toString('hex');
-        const newRefreshTokenHash = await bcrypt.hash(newRefreshTokenPayload, 10);
-        const new_refresh_token = jwt.sign({ id: user._id, token: newRefreshTokenPayload }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
-
-        await User.findByIdAndUpdate(user._id, { refreshToken: newRefreshTokenHash });
-
-        res.status(200).json({
-            access_token: newAccessToken,
-            refresh_token: new_refresh_token
-        });
-    } catch (err) {
-        res.status(403).json({ message: 'Expired or invalid refresh token' });
+    if (!user || !user.refreshToken) {
+      return res.status(403).json({ message: 'Invalid session' });
     }
+
+    const isValid = await bcrypt.compare(decoded.token, user.refreshToken);
+    if (!isValid) return res.status(403).json({ message: 'Invalid refresh token' });
+
+    // Rotate Tokens
+    const newAccessToken = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as any });
+    const newRefreshTokenPayload = crypto.randomBytes(40).toString('hex');
+    const newRefreshTokenHash = await bcrypt.hash(newRefreshTokenPayload, 10);
+    const new_refresh_token = jwt.sign({ id: user._id, token: newRefreshTokenPayload }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN as any });
+
+    await User.findByIdAndUpdate(user._id, { refreshToken: newRefreshTokenHash });
+
+    res.status(200).json({
+      access_token: newAccessToken,
+      refresh_token: new_refresh_token
+    });
+  } catch (err) {
+    res.status(403).json({ message: 'Expired or invalid refresh token' });
+  }
 };
 
 /**
  * Logout
  */
 export const logout = async (req: Request, res: Response) => {
-    // Requires JWT middleware (req.user)
-    try {
-        if (req.user) {
-            await User.findByIdAndUpdate((req.user as any)._id, { refreshToken: '' });
-        }
-        res.status(200).json({ message: 'Logged out successfully' });
-    } catch (err) {
-        res.status(500).json({ message: 'Failed to logout' });
+  // Requires JWT middleware (req.user)
+  try {
+    if (req.user) {
+      await User.findByIdAndUpdate((req.user as any)._id, { refreshToken: '' });
     }
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to logout' });
+  }
 };
 
 /**
  * Get Current Profile
  */
 export const getMe = async (req: Request, res: Response) => {
-    res.status(200).json({ user: req.user });
+  res.status(200).json({ user: req.user });
 }
 
 /**
