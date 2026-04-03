@@ -9,16 +9,26 @@ router.use(passport.authenticate('jwt', { session: false }));
 
 /**
  * @swagger
- * /api/security/current:
+ * /api/v1/security/current:
  *   get:
  *     tags: [Security]
  *     summary: Retrieve the current weekly security code
-
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Success
+ *         description: Current active security code and its metadata.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 code: { type: string, example: "88219" }
+ *                 expiresAt: { type: string, format: date-time }
+ *                 nextRotation: { type: string, format: date-time }
+ *       401:
+ *         description: Unauthorized. JWT required if user is not on premium plan.
  */
 router.get('/current', getCurrentSecurityCode);
 

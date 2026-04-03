@@ -16,9 +16,7 @@ import authRoutes from './routes/authRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import securityRoutes from './routes/securityRoutes';
 import healthRoutes from './routes/healthRoutes';
-
-
-
+import profileRoutes from './routes/profileRoutes';
 
 
 // Load environment variables
@@ -30,6 +28,16 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// JSON Parsing Error Handler
+app.use((err: any, req: any, res: any, next: any) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    console.error('❌ JSON Syntax Error:', err.message);
+    console.error('💡 Body Snippet:', err.body ? String(err.body).substring(0, 100) : 'N/A');
+    return res.status(400).json({ message: 'Invalid JSON payload: ' + err.message });
+  }
+  next();
+});
 
 // Attach Socket.io to every request for controller access
 app.use((req: any, res, next) => {
@@ -67,13 +75,110 @@ const swaggerOptions = {
       { name: 'Payment', description: 'Stripe anonymous and standard checkout flow' },
     ],
     components: {
-
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
         },
+      },
+      schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '60d0fe4f5311236168a109ca' },
+            full_name: { type: 'string', example: 'Desmond Ubi' },
+            username: { type: 'string', example: 'desmond_ubi' },
+            email: { type: 'string', example: 'ubi@example.com' },
+            phone_number: { type: 'string', example: '+1234567890' },
+            avatar: { type: 'string', example: 'https://cdn.example.com/avatar.png' },
+            gender: { type: 'string', enum: ['male', 'female', 'other', 'prefer_not_to_say'] },
+            date_of_birth: { type: 'string', format: 'date' },
+            status_message: { type: 'string', example: 'Available' },
+            mood_emoji: { type: 'string', example: '😊' },
+            hobbies: { type: 'array', items: { type: 'string' } },
+            location: {
+              type: 'object',
+              properties: {
+                city: { type: 'string' },
+                country: { type: 'string' },
+                timezone: { type: 'string', default: 'UTC' }
+              }
+            },
+            isOnline: { type: 'boolean' },
+            lastSeen: { type: 'string', format: 'date-time' },
+            uniqueTag: { type: 'string', example: 'bubble-A3F9X7K2' },
+            bio: { type: 'string' },
+            isVerified: { type: 'boolean' },
+            isPremium: { type: 'boolean' },
+            verified_badge: { type: 'boolean' },
+            publicKey: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Message: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            content: { type: 'string' },
+            message_type: { type: 'string', enum: ['text', 'image', 'video', 'voice', 'file', 'location', 'contact', 'system'] },
+            mediaUrl: { type: 'string' },
+            mediaType: { type: 'string' },
+            fileSize: { type: 'number' },
+            is_forwarded: { type: 'boolean' },
+            reactions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  user: { type: 'string' },
+                  emoji: { type: 'string' },
+                  timestamp: { type: 'string', format: 'date-time' }
+                }
+              }
+            },
+            sender: { $ref: '#/components/schemas/User' },
+            chat: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                chatName: { type: 'string' },
+                isGroupChat: { type: 'boolean' }
+              }
+            },
+            sentAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Conversation: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            chatName: { type: 'string' },
+            isGroupChat: { type: 'boolean' },
+            users: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+            groupAdmin: { $ref: '#/components/schemas/User' },
+            groupIcon: { type: 'string' },
+            groupDescription: { type: 'string' },
+            latestMessage: { $ref: '#/components/schemas/Message' },
+            totalMembers: { type: 'number' },
+            theme: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Story: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            mediaType: { type: 'string', enum: ['image', 'video', 'audio', 'text'] },
+            mediaUrl: { type: 'string' },
+            textContent: { type: 'string' },
+            author: { $ref: '#/components/schemas/User' },
+            viewCount: { type: 'number' },
+            remainingSeconds: { type: 'number' },
+            createdAt: { type: 'string', format: 'date-time' }
+          }
+        }
       },
     },
     security: [
@@ -84,7 +189,7 @@ const swaggerOptions = {
   },
 
   // Paths to files containing OpenAPI definitions
-  apis: ['./routes/*.ts', './index.ts'], 
+  apis: ['./routes/*.ts', './index.ts'],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -122,8 +227,9 @@ app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/message', messageRoutes);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/story', storiesRoutes);
-app.use('/api/v1/auth', authRoutes); 
-app.use('/api/v1/health', healthRoutes); 
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/security', securityRoutes);
 
@@ -133,20 +239,26 @@ app.use('/api/v1/security', securityRoutes);
 
 // Database Connection
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble-chat';
-mongoose.connect(mongoURI)
-  .then(() => console.log('✅ MongoDB connected successfully.'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// Create HTTP Server & Initialize Socket.IO
 const server = http.createServer(app);
+
+mongoose.connect(mongoURI)
+  .then(() => {
+    console.log('✅ MongoDB connected successfully.');
+
+    // Initialize services that depend on the database
+    initSecurityScheduler();
+
+    // Start the HTTP Server
+    server.listen(PORT, () => {
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
+      console.log(`📄 Swagger docs are available on http://localhost:${PORT}/api-docs`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1); // Exit if DB connection fails on startup
+  });
+
 initSocket(server);
 
-// Initialize Security Scheduler
-initSecurityScheduler();
-
-
-// Start the HTTP Server
-server.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📄 Swagger docs are available on http://localhost:${PORT}/api-docs`);
-});

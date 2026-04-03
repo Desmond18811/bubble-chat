@@ -14,12 +14,19 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await login({ email, password });
-      // Backend returns { message, access_token, refresh_token, user }
-      localStorage.setItem('access_token', response.access_token);
-      localStorage.setItem('refresh_token', response.refresh_token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      toast.success('Welcome back to the Bubble!');
-      navigate('/messages');
+      // Backend returns { message, data: { accessToken, refreshToken, user } }
+      const { accessToken, refreshToken, user, requiresVerification } = response.data;
+
+      if (requiresVerification || !user?.isVerified) {
+        toast.error('Please verify your account first. A new code has been sent.');
+        navigate('/verify-otp', { state: { email: user?.email || email } });
+      } else {
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('refresh_token', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        toast.success('Welcome back to the Bubble!');
+        navigate('/messages');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Invalid credentials');
     } finally {

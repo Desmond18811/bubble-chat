@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { verifyOTP } from '@/api';
+import { verifyOTP, resendOTP } from '@/api';
 import { toast } from 'sonner';
 
 const VerifyOTPPage: React.FC = () => {
@@ -8,28 +8,29 @@ const VerifyOTPPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const email = (location.state as any)?.email;
+  const email = (location.state as any)?.email as string | undefined;
 
   useEffect(() => {
     if (!email) {
-      toast.error('Session expired. Please sign up again.');
+      toast.error('Session expired. Please sign up or log in again.');
       navigate('/signup');
     }
   }, [email, navigate]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length !== 6) {
-      toast.error('Code must be 6 digits');
+    if (otp.length !== 5) {
+      toast.error('Code must be 5 digits');
       return;
     }
     setLoading(true);
     try {
-      const response = await verifyOTP(email, otp);
-      // Backend returns { message, access_token, refresh_token, user }
-      localStorage.setItem('access_token', response.access_token);
-      localStorage.setItem('refresh_token', response.refresh_token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      const response = await verifyOTP(email!, otp);
+      // Session born here — store tokens only after successful verification
+      const { accessToken, refreshToken, user } = response.data;
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user', JSON.stringify(user));
       toast.success('Verification successful! Welcome to the Bubble.');
       navigate('/messages');
     } catch (error: any) {
@@ -47,7 +48,7 @@ const VerifyOTPPage: React.FC = () => {
       <div className="w-full max-w-md p-8 bg-[#031427]/60 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl z-10">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold font-['Space_Grotesk'] text-[#ffe792] mb-2 tracking-tight">Security Check</h1>
-          <p className="text-[#9eacc3] text-sm tracking-wide uppercase font-['Space_Grotesk']">Enter 6-digit pulse code sent to your email</p>
+          <p className="text-[#9eacc3] text-sm tracking-wide uppercase font-['Space_Grotesk']">Enter 5-digit pulse code sent to your email</p>
           <p className="text-[#ffe792] text-xs font-bold mt-2">{email}</p>
         </div>
 
@@ -56,9 +57,9 @@ const VerifyOTPPage: React.FC = () => {
             <input
               type="text"
               required
-              maxLength={6}
+              maxLength={5}
               className="w-full bg-[#071a2f] border border-white/5 rounded-2xl px-6 py-5 text-[#d8e6ff] text-center text-4xl font-bold tracking-[1rem] focus:outline-none focus:border-[#ffe792]/50 transition-all placeholder:text-white/10"
-              placeholder="000000"
+              placeholder="00000"
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
             />
@@ -74,7 +75,21 @@ const VerifyOTPPage: React.FC = () => {
         </form>
 
         <p className="text-center mt-8 text-sm text-[#9eacc3] font-['Space_Grotesk']">
-          Didn't receive code? <button className="text-[#ffe792] font-bold ml-1 hover:underline">Resend Signal</button>
+          Didn't receive code?{' '}
+          <button 
+            type="button"
+            onClick={async () => {
+              try {
+                await resendOTP(email!);
+                toast.success('A new signal has been mapped to your frequency.');
+              } catch (err: any) {
+                toast.error(err.message || 'Failed to resend signal.');
+              }
+            }}
+            className="text-[#ffe792] font-bold hover:underline"
+          >
+            Resend Signal
+          </button>
         </p>
       </div>
     </div>

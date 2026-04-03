@@ -13,21 +13,46 @@ export interface AuthRequest extends Request {
 const formatSender = (u: any) => ({
   id: u._id,
   full_name: u.full_name || null,
+  username: u.username || null,
   email: u.email || null,
   avatar: u.avatar || null,
   uniqueTag: u.uniqueTag || null,
   isOnline: u.isOnline ?? false,
+  status_message: u.status_message || null,
 });
 
 const formatMessage = (m: any) => ({
   id: m._id,
   content: m.content || null,
+  
+  // Type & Context
+  message_type: m.message_type || 'text',
+  parent_message: m.parent_message ? {
+    id: m.parent_message._id,
+    content: m.parent_message.content || '[Media]',
+    sender: m.parent_message.sender ? {
+      full_name: m.parent_message.sender.full_name,
+      uniqueTag: m.parent_message.sender.uniqueTag
+    } : null
+  } : null,
+  is_forwarded: m.is_forwarded ?? false,
+  is_announcement: m.is_announcement ?? false,
+  is_encrypted: m.is_encrypted ?? false,
+  
+  // Media & Metadata
   mediaUrl: m.mediaUrl || null,
-  mediaType: m.mediaType || null,   // 'image' | 'video' | 'voice' | 'file' | null
+  mediaType: m.mediaType || null,
   fileSize: m.fileSize || null,
+  media_metadata: m.media_metadata || null,
+  location: m.location || null,
+
+  // Interactions & State
+  reactions: m.reactions || [],
+  edit_history: m.edit_history || [],
+  mentions: Array.isArray(m.mentions) ? m.mentions.map(formatSender) : [],
   isRead: m.isRead ?? false,
-  isEdited: m.isEdited ?? false,
-  isDeleted: m.isDeleted ?? false,
+  readBy: Array.isArray(m.readBy) ? m.readBy.map(formatSender) : [],
+  
   sender: m.sender ? formatSender(m.sender) : null,
   chat: m.chat
     ? {
@@ -85,18 +110,31 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
   }
 
   try {
+    const { message_type, parent_message, is_forwarded, location, mentions } = req.body;
+    
     let message = await Message.create({
       sender: req.user._id,
       content: content || '',
       chat: chatId,
+      message_type: message_type || (file ? 'image' : 'text'),
+      parent_message,
+      is_forwarded,
+      location,
+      mentions,
       ...(mediaUrl && { mediaUrl, mediaType, fileSize }),
     });
 
-    message = await message.populate('sender', 'full_name avatar email uniqueTag isOnline');
+    message = await message.populate('sender', 'full_name username avatar email uniqueTag isOnline status_message');
     message = await message.populate({
       path: 'chat',
       select: 'chatName isGroupChat',
     });
+    if (parent_message) {
+      message = await message.populate({
+        path: 'parent_message',
+        populate: { path: 'sender', select: 'full_name uniqueTag' }
+      });
+    }
 
     await Conversation.findByIdAndUpdate(chatId, { latestMessage: message._id });
 
@@ -116,8 +154,13 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 export const allMessages = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const messages = await Message.find({ chat: req.params.chatId })
-      .populate('sender', 'full_name avatar email uniqueTag isOnline')
+      .populate('sender', 'full_name username avatar email uniqueTag status_message isOnline')
       .populate('chat', 'chatName isGroupChat')
+      .populate('readBy', 'full_name avatar uniqueTag')
+      .populate({
+        path: 'parent_message',
+        populate: { path: 'sender', select: 'full_name uniqueTag' }
+      })
       .sort({ createdAt: 1 });
 
     res.status(200).json({

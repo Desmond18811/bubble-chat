@@ -5,6 +5,18 @@ export interface IStory extends Document {
   mediaType: 'image' | 'video' | 'audio' | 'text';
   mediaUrl: string;
   textContent?: string;
+  
+  // Engagement
+  views: mongoose.Types.ObjectId[];
+  reactions: {
+    user: mongoose.Types.ObjectId;
+    emoji: string;
+  }[];
+  mentions: mongoose.Types.ObjectId[];
+  
+  // Settings
+  is_close_friends_only: boolean;
+  
   createdAt: Date;
   expiresAt: Date;
 }
@@ -29,6 +41,33 @@ const StorySchema: Schema<IStory> = new Schema(
       type: String,
       default: '',
     },
+    
+    // Interactions
+    views: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    reactions: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        emoji: { type: String },
+      },
+    ],
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    
+    // Privacy settings
+    is_close_friends_only: {
+      type: Boolean,
+      default: false,
+    },
+
     createdAt: {
       type: Date,
       default: Date.now,

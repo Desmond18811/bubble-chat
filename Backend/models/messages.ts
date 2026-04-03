@@ -6,17 +6,50 @@ export interface IMessage extends Document {
   chat: mongoose.Types.ObjectId;
   readBy: mongoose.Types.ObjectId[];
   
-  // High-Quality File Storage Support
+  // Rich Messaging Metadata
+  message_type: 'text' | 'image' | 'video' | 'voice' | 'file' | 'location' | 'contact' | 'system';
+  parent_message?: mongoose.Types.ObjectId; // For replies/threading
+  is_forwarded: boolean;
+  is_announcement: boolean;
+  is_encrypted: boolean;
+  client_id?: string; // For idempotency
+  
+  // Interaction & History
+  reactions: {
+    user: mongoose.Types.ObjectId;
+    emoji: string;
+    timestamp: Date;
+  }[];
+  edit_history: {
+    content: string;
+    editedAt: Date;
+  }[];
+  mentions: mongoose.Types.ObjectId[];
+
+  // Media & Assets
   mediaUrl?: string;
-  mediaType?: 'image' | 'video' | 'voice' | 'file';
+  mediaType?: 'image' | 'video' | 'voice' | 'file'; // Legacy/helper
   fileSize?: number;
+  media_metadata?: {
+    width?: number;
+    height?: number;
+    duration?: number; // for audio/video
+    mime_type?: string;
+  };
+  
+  // Location specific
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+    name?: string;
+  };
 
   // Privacy
   isBurnAfterReading: boolean;
   expiresAt?: Date;
 
   createdAt: Date;
-
   updatedAt: Date;
 }
 
@@ -43,6 +76,43 @@ const MessageSchema: Schema<IMessage> = new Schema(
         ref: 'User',
       },
     ],
+    
+    // Type & Threading
+    message_type: {
+      type: String,
+      enum: ['text', 'image', 'video', 'voice', 'file', 'location', 'contact', 'system'],
+      default: 'text',
+    },
+    parent_message: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Message',
+    },
+    is_forwarded: { type: Boolean, default: false },
+    is_announcement: { type: Boolean, default: false },
+    is_encrypted: { type: Boolean, default: false },
+    client_id: { type: String },
+
+    // Interactions
+    reactions: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        emoji: { type: String },
+        timestamp: { type: Date, default: Date.now },
+      },
+    ],
+    edit_history: [
+      {
+        content: { type: String },
+        editedAt: { type: Date, default: Date.now },
+      },
+    ],
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+
     // High-Quality Asset storage link
     mediaUrl: {
       type: String,
@@ -52,17 +122,31 @@ const MessageSchema: Schema<IMessage> = new Schema(
       enum: ['image', 'video', 'voice', 'file'],
     },
     fileSize: {
-      type: Number, // Stored in bytes for quick frontend restrictions rendering 
+      type: Number,
+    },
+    media_metadata: {
+      width: { type: Number },
+      height: { type: Number },
+      duration: { type: Number },
+      mime_type: { type: String },
     },
     
-    // Privacy Logic Additions
+    // Location
+    location: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+      address: { type: String },
+      name: { type: String },
+    },
+    
+    // Privacy Logic
     isBurnAfterReading: {
       type: Boolean,
       default: false,
     },
     expiresAt: {
       type: Date,
-      index: { expires: 0 }, // MongoDB TTL Index: Document deletes when Date hits expiresAt
+      index: { expires: 0 },
     }
   },
 

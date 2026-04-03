@@ -25,9 +25,10 @@ const SignupPage: React.FC = () => {
       const { publicKey, secretKey } = generateKeyPair();
       localStorage.setItem('bubble_sk', secretKey); // store private key locally only
 
-      await register({ email, password, confirm_password, full_name, phone_number, publicKey });
+      const response = await register({ email, password, confirm_password, full_name, phone_number, publicKey });
+      
       toast.success('Registration successful! Check your email for your verification code.');
-      navigate('/verify-otp', { state: { email } });
+      navigate('/verify-otp', { state: { email: response.data.email || email } });
     } catch (error: any) {
       toast.error(error.message || 'Registration failed');
     } finally {

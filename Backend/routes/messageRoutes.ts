@@ -10,13 +10,32 @@ router.use(passport.authenticate('jwt', { session: false }));
 
 /**
  * @swagger
- * /api/message:
+ * /api/v1/message:
  *   post:
  *     tags: [Messages]
- *     summary: Send a text message
-
+ *     summary: Send a text or media message
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               chatId: { type: string }
+ *               content: { type: string }
+ *               file: { type: string, format: binary }
+ *               message_type: { type: string, enum: [text, image, video, voice, file, location, contact] }
+ *     responses:
+ *       201:
+ *         description: Message sent successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 data: { $ref: '#/components/schemas/Message' }
  */
 router.route('/').post(
   handleUpload.single('file'), 
@@ -26,11 +45,10 @@ router.route('/').post(
 
 /**
  * @swagger
- * /api/message/{chatId}:
+ * /api/v1/message/{chatId}:
  *   get:
  *     tags: [Messages]
  *     summary: Get all messages for a specific chat ID
-
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -41,12 +59,23 @@ router.route('/').post(
  *           type: string
  *     responses:
  *       200:
- *         description: List of messages
- * /api/message/{messageId}:
+ *         description: List of detailed messages.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 chat_id: { type: string }
+ *                 total: { type: integer }
+ *                 messages:
+ *                   type: array
+ *                   items: { $ref: '#/components/schemas/Message' }
+ *
+ * /api/v1/message/{messageId}:
  *   put:
  *     tags: [Messages]
- *     summary: Edit a message (CRUD - Update)
-
+ *     summary: Edit a message
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -62,12 +91,20 @@ router.route('/').post(
  *           schema:
  *             type: object
  *             properties:
- *               content:
- *                 type: string
+ *               content: { type: string }
+ *     responses:
+ *       200:
+ *         description: Message updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 data: { $ref: '#/components/schemas/Message' }
  *   delete:
  *     tags: [Messages]
- *     summary: Delete a message (CRUD - Delete)
-
+ *     summary: Delete a message
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -76,6 +113,9 @@ router.route('/').post(
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Message deleted successfully.
  */
 router.route('/:chatId').get(allMessages);
 router.route('/:messageId').put(updateMessage).delete(deleteMessage);

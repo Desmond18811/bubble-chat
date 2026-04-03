@@ -13,6 +13,7 @@ import {
 const router = express.Router();
 const jwtAuth = passport.authenticate('jwt', { session: false });
 
+
 /**
  * @swagger
  * /api/v1/user/search:
@@ -27,6 +28,17 @@ const jwtAuth = passport.authenticate('jwt', { session: false });
  *         schema:
  *           type: string
  *         description: Search keyword (name, email, phone, BubbleID)
+ *     responses:
+ *       200:
+ *         description: Success. List of user profiles matching criteria.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 total: { type: integer }
+ *                 users: { type: array, items: { $ref: '#/components/schemas/User' } }
  */
 router.get('/search', jwtAuth, getContacts);
 
@@ -48,6 +60,9 @@ router.get('/search', jwtAuth, getContacts);
  *               identifier:
  *                 type: string
  *                 description: Email address or BubbleID (e.g. bubble-A3F9X7K2)
+ *     responses:
+ *       200:
+ *         description: Contact added successfully.
  */
 router.post('/contacts/add', jwtAuth, addContact);
 
@@ -59,6 +74,16 @@ router.post('/contacts/add', jwtAuth, addContact);
  *     summary: Get the logged-in user's contact list
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: My contacts list retrieved.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 contacts: { type: array, items: { $ref: '#/components/schemas/User' } }
  */
 router.get('/contacts/my', jwtAuth, getMyContacts);
 
@@ -76,6 +101,9 @@ router.get('/contacts/my', jwtAuth, getMyContacts);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Contact removed successfully.
  */
 router.delete('/contacts/:userId', jwtAuth, removeContact);
 
@@ -93,6 +121,15 @@ router.delete('/contacts/:userId', jwtAuth, removeContact);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: Public key retrieved.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 publicKey: { type: string }
  */
 router.get('/public-key/:userId', jwtAuth, getUserPublicKey);
 
@@ -104,6 +141,9 @@ router.get('/public-key/:userId', jwtAuth, getUserPublicKey);
  *     summary: Scan database for all actively online users
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Scanned online users.
  */
 router.get('/online-scanner', jwtAuth, scanOnlineUsers);
 
@@ -119,7 +159,19 @@ router.get('/online-scanner', jwtAuth, scanOnlineUsers);
  *         required: true
  *         schema:
  *           type: string
+ *     responses:
+ *       200:
+ *         description: User status retrieved.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isOnline: { type: boolean }
+ *                 lastSeen: { type: string, format: date-time }
  */
 router.get('/status/:userId', getUserStatus);
+
+
 
 export default router;

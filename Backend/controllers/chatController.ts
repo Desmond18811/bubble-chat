@@ -11,16 +11,28 @@ export interface AuthRequest extends Request {
 const formatUser = (u: any) => ({
   id: u._id,
   full_name: u.full_name || null,
+  username: u.username || null,
   email: u.email || null,
   phone_number: u.phone_number || null,
   avatar: u.avatar || null,
-  uniqueTag: u.uniqueTag || null,
-  bio: u.bio || null,
+  
+  // Status & Identity
+  status_message: u.status_message || null,
+  mood_emoji: u.mood_emoji || null,
   isOnline: u.isOnline ?? false,
   lastSeen: u.lastSeen || null,
+  last_active_at: u.last_active_at || null,
+  
+  // Metadata
+  uniqueTag: u.uniqueTag || null,
+  bio: u.bio || null,
   isVerified: u.isVerified ?? false,
   isPremium: u.isPremium ?? false,
+  verified_badge: u.verified_badge ?? false,
+  
+  // Encryption
   publicKey: u.publicKey || null,
+  
   createdAt: u.createdAt || null,
   updatedAt: u.updatedAt || null,
 });
@@ -31,17 +43,36 @@ const formatConversation = (c: any) => ({
   isGroupChat: c.isGroupChat ?? false,
   users: Array.isArray(c.users) ? c.users.map(formatUser) : [],
   groupAdmin: c.groupAdmin ? formatUser(c.groupAdmin) : null,
+  
+  // Group Metadata
+  groupIcon: c.groupIcon || null,
+  groupDescription: c.groupDescription || null,
+  pinnedMessages: c.pinnedMessages || [],
+  
+  // Features
+  ephemeralSettings: {
+    isEnabled: c.ephemeralSettings?.isEnabled ?? false,
+    duration: c.ephemeralSettings?.duration ?? 0,
+  },
+  theme: c.theme || 'default',
+  is_broadcast: c.is_broadcast ?? false,
+  
+  // User context (usually checked against current user in frontend, but here for completeness)
+  mutedBy: c.mutedBy || [],
+  archivedBy: c.archivedBy || [],
+  
   latestMessage: c.latestMessage
     ? {
         id: c.latestMessage._id,
         content: c.latestMessage.content || null,
         mediaUrl: c.latestMessage.mediaUrl || null,
         mediaType: c.latestMessage.mediaType || null,
+        message_type: c.latestMessage.message_type || 'text',
         sender: c.latestMessage.sender
           ? {
               id: c.latestMessage.sender._id,
               full_name: c.latestMessage.sender.full_name || null,
-              email: c.latestMessage.sender.email || null,
+              username: c.latestMessage.sender.username || null,
               avatar: c.latestMessage.sender.avatar || null,
               uniqueTag: c.latestMessage.sender.uniqueTag || null,
             }
@@ -80,11 +111,11 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
         { users: { $elemMatch: { $eq: userId } } },
       ],
     })
-      .populate('users', '-password -refreshToken -privateKey')
-      .populate('groupAdmin', '-password -refreshToken -privateKey')
+      .populate('users', '-password -refreshToken -privateKey -zegoToken')
+      .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
       .populate({
         path: 'latestMessage',
-        populate: { path: 'sender', select: 'full_name avatar email uniqueTag' },
+        populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline' },
       });
 
     if (existing.length > 0) {

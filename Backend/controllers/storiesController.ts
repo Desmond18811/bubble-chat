@@ -8,18 +8,30 @@ import { AuthRequest } from './userController';
 const formatAuthor = (u: any) => ({
   id: u._id,
   full_name: u.full_name || null,
+  username: u.username || null,
   avatar: u.avatar || null,
   uniqueTag: u.uniqueTag || null,
   isOnline: u.isOnline ?? false,
+  verified_badge: u.verified_badge ?? false,
 });
 
 const formatStory = (s: any) => ({
   id: s._id,
-  mediaType: s.mediaType,               // 'image' | 'video' | 'audio' | 'text'
+  mediaType: s.mediaType,
   mediaUrl: s.mediaUrl || null,
   textContent: s.textContent || null,
   author: s.author ? formatAuthor(s.author) : null,
-  expiresAt: s.expiresAt || null,        // TTL — MongoDB auto-deletes after this
+  
+  // Engagement
+  views: Array.isArray(s.views) ? s.views.map(formatAuthor) : [],
+  viewCount: Array.isArray(s.views) ? s.views.length : 0,
+  reactions: s.reactions || [],
+  mentions: Array.isArray(s.mentions) ? s.mentions.map(formatAuthor) : [],
+  
+  // Privacy
+  is_close_friends_only: s.is_close_friends_only ?? false,
+  
+  expiresAt: s.expiresAt || null,
   remainingSeconds: s.expiresAt
     ? Math.max(0, Math.floor((new Date(s.expiresAt).getTime() - Date.now()) / 1000))
     : null,
@@ -66,9 +78,14 @@ export const uploadStory = async (req: AuthRequest, res: Response): Promise<void
       mediaType,
       mediaUrl: mediaUrl || '',
       textContent,
+      is_close_friends_only: req.body.is_close_friends_only === 'true' || req.body.is_close_friends_only === true,
+      mentions: req.body.mentions,
     });
 
-    const populated = await newStory.populate('author', 'full_name avatar uniqueTag isOnline');
+    const populated = await newStory.populate([
+      { path: 'author', select: 'full_name username avatar uniqueTag isOnline verified_badge' },
+      { path: 'mentions', select: 'full_name username avatar uniqueTag' }
+    ]);
 
     res.status(201).json({
       message: 'Signal broadcast successfully. It will expire in 24 hours.',
@@ -88,7 +105,9 @@ export const fetchStories = async (req: Request, res: Response): Promise<void> =
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const stories = await Story.find({ createdAt: { $gte: cutoff } })
-      .populate('author', 'full_name avatar uniqueTag isOnline')
+      .populate('author', 'full_name username avatar uniqueTag isOnline verified_badge')
+      .populate('views', 'full_name avatar uniqueTag')
+      .populate('mentions', 'full_name avatar uniqueTag')
       .sort({ createdAt: -1 });
 
     res.status(200).json({

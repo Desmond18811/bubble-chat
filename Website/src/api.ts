@@ -48,6 +48,19 @@ export const verifyOTP = async (email: string, otp: string) => {
   return res.json();
 };
 
+export const resendOTP = async (email: string) => {
+  const res = await fetch(`${BASE_URL}/auth/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || 'Failed to resend OTP');
+  }
+  return res.json();
+};
+
 export const login = async (data: any) => {
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
