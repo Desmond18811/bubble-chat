@@ -3,6 +3,8 @@ import { Upload } from '@aws-sdk/lib-storage';
 import dotenv from 'dotenv';
 dotenv.config();
 
+const BUCKET = process.env.FILEBASE_BUCKET as string;
+
 const s3Client = new S3Client({
   endpoint: 'https://s3.filebase.com',
   region: 'us-east-1',
@@ -13,27 +15,39 @@ const s3Client = new S3Client({
   forcePathStyle: true, // Required for Filebase/S3-compatible
 });
 
+/**
+ * Build the high-quality CDN public URL for a Filebase file key
+ */
+export const getFilebasePublicUrl = (key: string): string => {
+  return `https://${BUCKET}.s3.filebase.com/${key}`;
+};
+
+/**
+ * Upload a file buffer to Filebase with public-read access.
+ * Returns { url, key } — always use `url` for storage/retrieval.
+ */
 export const uploadToFilebase = async (
   fileBuffer: Buffer,
   fileName: string,
   contentType: string
-): Promise<any> => {
+): Promise<{ url: string; key: string }> => {
   try {
     const upload = new Upload({
       client: s3Client,
       params: {
-        Bucket: process.env.FILEBASE_BUCKET as string,
+        Bucket: BUCKET,
         Key: fileName,
         Body: fileBuffer,
         ContentType: contentType,
+        ACL: 'public-read', // Ensure files are publicly accessible
       },
     });
 
-    const result = await upload.done();
-    
-    // Filebase usually returns location as https://{bucket}.s3.filebase.com/{key}
-    // Result.Location should contain this.
-    return result;
+    await upload.done();
+
+    // Always build the CDN URL ourselves — result.Location may use path-style URL
+    const url = getFilebasePublicUrl(fileName);
+    return { url, key: fileName };
   } catch (error) {
     console.error('Filebase Upload Error:', error);
     throw error;

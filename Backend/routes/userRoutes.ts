@@ -1,20 +1,24 @@
 import express from 'express';
 import passport from 'passport';
-import { getContacts, getUserStatus, scanOnlineUsers } from '../controllers/userController';
-
+import {
+  getContacts,
+  getUserStatus,
+  scanOnlineUsers,
+  addContact,
+  getMyContacts,
+  removeContact,
+  getUserPublicKey,
+} from '../controllers/userController';
 
 const router = express.Router();
-
-// The getContacts acts as a search, so it should be protected to only allow logged in users to browse
-router.route('/contacts').get(passport.authenticate('jwt', { session: false }), getContacts);
+const jwtAuth = passport.authenticate('jwt', { session: false });
 
 /**
  * @swagger
- * /api/user/contacts:
+ * /api/v1/user/search:
  *   get:
  *     tags: [Users]
- *     summary: Search contacts or fetch all users
-
+ *     summary: Search users by name, email, phone or BubbleID
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -22,29 +26,48 @@ router.route('/contacts').get(passport.authenticate('jwt', { session: false }), 
  *         name: search
  *         schema:
  *           type: string
- *         description: Name or email search string
+ *         description: Search keyword (name, email, phone, BubbleID)
  */
-router.route('/contacts').get(passport.authenticate('jwt', { session: false }), getContacts);
+router.get('/search', jwtAuth, getContacts);
 
 /**
  * @swagger
- * /api/user/online-scanner:
+ * /api/v1/user/contacts/add:
+ *   post:
+ *     tags: [Users]
+ *     summary: Add a contact by email or BubbleID
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               identifier:
+ *                 type: string
+ *                 description: Email address or BubbleID (e.g. bubble-A3F9X7K2)
+ */
+router.post('/contacts/add', jwtAuth, addContact);
+
+/**
+ * @swagger
+ * /api/v1/user/contacts/my:
  *   get:
  *     tags: [Users]
- *     summary: Scan database for all actively online users
-
+ *     summary: Get the logged-in user's contact list
  *     security:
  *       - bearerAuth: []
  */
-router.route('/online-scanner').get(passport.authenticate('jwt', { session: false }), scanOnlineUsers);
+router.get('/contacts/my', jwtAuth, getMyContacts);
 
 /**
  * @swagger
- * /api/user/status/{userId}:
- *   get:
+ * /api/v1/user/contacts/{userId}:
+ *   delete:
  *     tags: [Users]
- *     summary: Fetch the online status of a given user
-
+ *     summary: Remove a contact by userId
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -54,7 +77,49 @@ router.route('/online-scanner').get(passport.authenticate('jwt', { session: fals
  *         schema:
  *           type: string
  */
-router.route('/status/:userId').get(getUserStatus);
+router.delete('/contacts/:userId', jwtAuth, removeContact);
 
+/**
+ * @swagger
+ * /api/v1/user/public-key/{userId}:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get a user's RSA public key for E2E encryption
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/public-key/:userId', jwtAuth, getUserPublicKey);
+
+/**
+ * @swagger
+ * /api/v1/user/online-scanner:
+ *   get:
+ *     tags: [Users]
+ *     summary: Scan database for all actively online users
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/online-scanner', jwtAuth, scanOnlineUsers);
+
+/**
+ * @swagger
+ * /api/v1/user/status/{userId}:
+ *   get:
+ *     tags: [Users]
+ *     summary: Fetch the online status of a given user
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/status/:userId', getUserStatus);
 
 export default router;

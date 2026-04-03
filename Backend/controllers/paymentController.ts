@@ -3,31 +3,32 @@ import Stripe from 'stripe';
 import { User } from '../models/users';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2025-02-24.acacia' as any, // Bypass strict typing for simplicity, or use '2025-02-24.acacia'
+  apiVersion: '2025-02-24.acacia' as any,
 });
 
-
 /**
- * Bubble Chat Payment Controller
+ * Create a Stripe Checkout Session
+ * POST /api/v1/payment/checkout
  */
-
-// 1. Create a Checkout Session (Standard or Anonymous)
 export const createCheckoutSession = async (req: Request, res: Response) => {
-  const { userId, isAnonymous, planType } = req.body; // planType: 'premium' or 'crypto' etc.
-  
+  const { userId, isAnonymous, planType } = req.body;
+
   try {
-    let customerEmail = undefined;
-    
-    // Anonymity Core logic: Never expose real identity to Stripe if anonymous
+    let customerEmail: string | undefined;
+    let resolvedUser: any = null;
+
     if (!isAnonymous && userId) {
-      const user = await User.findById(userId);
-      if (user) customerEmail = user.email;
+      resolvedUser = await User.findById(userId).select('full_name email uniqueTag isPremium');
+      if (resolvedUser) customerEmail = resolvedUser.email;
     } else {
-      // 👻 Phantom Alias for complete financial privacy
+      // 👻 Phantom alias for complete financial privacy
       customerEmail = `ghost-${Math.floor(Math.random() * 90000)}@bubble.local`;
     }
 
-    // Creating the Stripe Checkout Session
+    const planLabel = planType === 'premium' ? 'Bubble Premium Access' : 'Frequency Extension';
+    const planDescription = isAnonymous ? 'Phantom Level Transaction' : 'Standard Broadcast Clearance';
+    const amountCents = planType === 'premium' ? 500 : 999; // $5.00 / $9.99
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: customerEmail,
@@ -37,64 +38,95 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: planType === 'premium' ? 'Bubble Premium Access' : 'Frequency Extension',
-              description: isAnonymous ? 'Phantom Level Transaction' : 'Standard Broadcast Clearance',
+              name: planLabel,
+              description: planDescription,
             },
-            unit_amount: 500, // $5.00
+            unit_amount: amountCents,
           },
           quantity: 1,
         },
       ],
-      // Store userId here so Webhook can upgrade account without Stripe logging personal data
       metadata: {
         userId: userId || 'anonymous',
-        planType
+        planType: planType || 'standard',
+        isAnonymous: isAnonymous ? 'true' : 'false',
       },
-      success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/payments?success=true`,
-      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/payments?canceled=true`,
+      success_url: `${process.env.CLIENT_URL || 'http://localhost:8080'}/payments?status=success&plan=${planType}`,
+      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:8080'}/payments?status=canceled`,
     });
 
-    res.status(200).json({ sessionId: session.id, url: session.url });
+    res.status(200).json({
+      message: 'Checkout session created successfully.',
+      session: {
+        id: session.id,
+        url: session.url,
+        status: session.status,
+        payment_status: session.payment_status,
+        customer_email: customerEmail,
+        amount_total: amountCents / 100,
+        currency: 'usd',
+        plan: {
+          type: planType || 'standard',
+          label: planLabel,
+          description: planDescription,
+          is_anonymous: isAnonymous ?? false,
+        },
+        expires_at: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+      },
+      user: resolvedUser
+        ? {
+            id: resolvedUser._id,
+            full_name: resolvedUser.full_name || null,
+            email: resolvedUser.email || null,
+            uniqueTag: resolvedUser.uniqueTag || null,
+            current_premium_status: resolvedUser.isPremium,
+          }
+        : { mode: 'anonymous' },
+    });
   } catch (error: any) {
-    console.error('Stripe Checkout Error:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: 'Payment session creation failed: ' + error.message });
   }
 };
 
-// 2. Stripe Webhook (To confirm payment and upgrade user securely)
+/**
+ * Stripe Webhook — confirms payment and upgrades user
+ * POST /api/v1/payment/webhook
+ */
 export const stripeWebhook = async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'] as string;
   let event: Stripe.Event;
 
   try {
-    // Requires raw body (express.raw) in the routes file
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET as string
     );
   } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).json({ message: `Webhook verification failed: ${err.message}` });
   }
 
-  // Handle successful checkout
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.userId;
     const planType = session.metadata?.planType;
+    const amount = (session.amount_total || 0) / 100;
 
-    console.log(`✅ Payment received anonymously: $${(session.amount_total || 0) / 100}`);
+    console.log(`✅ Payment confirmed: $${amount} — plan: ${planType} — user: ${userId}`);
 
     if (userId && userId !== 'anonymous') {
       try {
         await User.findByIdAndUpdate(userId, { isPremium: true });
-        console.log(`🔐 Level upgraded for secured backend User ID: ${userId}`);
+        console.log(`🔐 Premium upgraded for user: ${userId}`);
       } catch (err) {
-        console.error('Failed to upgrade user after payment:', err);
+        console.error('Premium upgrade failed after payment:', err);
       }
     }
   }
 
-  res.status(200).json({ received: true });
+  res.status(200).json({
+    received: true,
+    event_type: event.type,
+    event_id: event.id,
+  });
 };

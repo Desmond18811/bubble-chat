@@ -1,22 +1,48 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: true, // true for port 465, false for 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS, // App password needed
-  },
-});
+// ──────────────────────────────────────────────────────
+// Transport Factory — Gmail (default) or Postmark
+// Set EMAIL_PROVIDER=postmark in .env to switch
+// ──────────────────────────────────────────────────────
+const createTransport = () => {
+  const provider = process.env.EMAIL_PROVIDER || 'gmail';
+
+  if (provider === 'postmark') {
+    // Postmark via SMTP relay
+    return nodemailer.createTransport({
+      host: 'smtp.postmarkapp.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.POSTMARK_API_KEY,
+        pass: process.env.POSTMARK_API_KEY,
+      },
+    });
+  }
+
+  // Default: Gmail
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465'),
+    secure: true, // true for port 465
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+};
+
+const transporter = createTransport();
+
+const FROM_NAME = process.env.SMTP_FROM_NAME || 'Bubble Chat';
+const FROM_ADDRESS = process.env.SMTP_USER || 'noreply@bubble.chat';
 
 export const sendMail = async (to: string, subject: string, html: string) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Bubble Chat" <${process.env.SMTP_USER}>`,
+      from: `"${FROM_NAME}" <${FROM_ADDRESS}>`,
       to,
       subject,
       html,
@@ -30,21 +56,40 @@ export const sendMail = async (to: string, subject: string, html: string) => {
 };
 
 /**
- * Specifically for OTPs to maintain consistent template.
+ * Send OTP email with the Bubble space theme template
  */
 export const sendOTPMail = async (to: string, otp: string) => {
   const subject = 'Your Bubble Verification Code';
   const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #010f20; color: #d8e6ff;">
-      <h2 style="color: #ffe792; text-align: center;">Security Flash</h2>
-      <p style="font-size: 16px; line-height: 1.5;">Hello,</p>
-      <p style="font-size: 16px; line-height: 1.5;">You've requested a security code for your Bubble Chat account. Please use the following One-Time Password (OTP) to verify your action:</p>
-      <div style="background-color: #071a2f; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0;">
-        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #ffe792;">${otp}</span>
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #000814; border-radius: 16px; overflow: hidden;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #001d3d 0%, #0a0a2e 50%, #1a0533 100%); padding: 40px 32px; text-align: center; border-bottom: 1px solid #7b2d8b33;">
+        <div style="font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #ffd60a; text-transform: uppercase;">BUBBLE</div>
+        <div style="font-size: 11px; color: #7b2d8b; letter-spacing: 4px; text-transform: uppercase; margin-top: 4px;">The Future of Transmission</div>
       </div>
-      <p style="font-size: 14px; color: #9eacc3;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-      <hr style="border: 0; border-top: 1px solid #3b495c; margin: 20px 0;">
-      <p style="font-size: 12px; text-align: center; color: #9eacc3;">Bubble Chat - The Future of Transmission</p>
+      
+      <!-- Body -->
+      <div style="padding: 40px 32px; background-color: #000814;">
+        <h2 style="color: #d8e6ff; font-size: 20px; font-weight: 600; margin: 0 0 12px;">Security Flash 🔐</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 28px;">
+          A verification code has been requested for your Bubble account. Use the code below to complete your action:
+        </p>
+        
+        <!-- OTP Box -->
+        <div style="background: linear-gradient(135deg, #001d3d, #0a0a2e); border: 1px solid #ffd60a44; padding: 28px 20px; border-radius: 12px; text-align: center; margin: 0 0 28px;">
+          <div style="font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #ffd60a; font-variant-numeric: tabular-nums;">${otp}</div>
+          <div style="font-size: 12px; color: #5a7a9a; margin-top: 10px; letter-spacing: 1px;">EXPIRES IN 10 MINUTES</div>
+        </div>
+
+        <p style="font-size: 13px; color: #5a7a9a; line-height: 1.6; margin: 0;">
+          If you did not request this code, please ignore this email. Your account remains secure.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 20px 32px; background-color: #000511; border-top: 1px solid #0a1628; text-align: center;">
+        <p style="font-size: 11px; color: #3a5a7a; margin: 0; letter-spacing: 1px;">BUBBLE CHAT · SECURE TRANSMISSIONS</p>
+      </div>
     </div>
   `;
   return await sendMail(to, subject, html);

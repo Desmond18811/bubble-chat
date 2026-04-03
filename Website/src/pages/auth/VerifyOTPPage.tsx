@@ -25,9 +25,11 @@ const VerifyOTPPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      const { token, user } = await verifyOTP(email, otp);
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      const response = await verifyOTP(email, otp);
+      // Backend returns { message, access_token, refresh_token, user }
+      localStorage.setItem('access_token', response.access_token);
+      localStorage.setItem('refresh_token', response.refresh_token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       toast.success('Verification successful! Welcome to the Bubble.');
       navigate('/messages');
     } catch (error: any) {

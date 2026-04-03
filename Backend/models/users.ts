@@ -20,7 +20,8 @@ export interface IUser extends Document {
   bio?: string;
   blog?: string;
   links?: string[];
-  sharedResources?: string[]; // optionally save important file URLs passed around
+  sharedResources?: string[];
+  contacts?: mongoose.Types.ObjectId[];
   
   // Auth
   password?: string;
@@ -144,7 +145,13 @@ const UserSchema: Schema<IUser> = new Schema(
     ],
     sharedResources: [
       {
-        type: String, // could map to Message objectId or string url. URL is easier.
+        type: String,
+      }
+    ],
+    contacts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
       }
     ]
   },

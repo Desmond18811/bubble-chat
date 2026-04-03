@@ -2,7 +2,8 @@ import express from 'express';
 import passport from 'passport';
 import { 
     register, verifyOTP, login, forgotPassword, resetPassword, 
-    resendOTP, verifyResetOTP, refreshAccessToken, logout, getMe 
+    resendOTP, verifyResetOTP, refreshAccessToken, logout, getMe,
+    googleLogin, googleCallback,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -31,7 +32,7 @@ const phoneOrEmailAdapter = (req: express.Request, res: express.Response, next: 
  *             properties:
  *               email: { type: string, example: "user@example.com" }
  *               full_name: { type: string }
- *               password: { type: string }
+ *               password: { type: string, description: "Min 8 chars, 1 upper, 1 lower, 1 number, 1 special char" }
  *               confirm_password: { type: string }
  *               phone_number: { type: string }
  */
@@ -158,7 +159,7 @@ router.post('/verify-reset-otp', verifyResetOTP);
  *             properties:
  *               email: { type: string }
  *               otp: { type: string }
- *               new_password: { type: string }
+ *               new_password: { type: string, description: "Min 8 chars, 1 upper, 1 lower, 1 number, 1 special char" }
  *               confirm_password: { type: string }
  */
 router.post('/reset-password', resetPassword);
@@ -184,5 +185,25 @@ router.post('/logout', passport.authenticate('jwt', { session: false }), logout)
  *       - bearerAuth: []
  */
 router.get('/me', passport.authenticate('jwt', { session: false }), getMe);
+
+/**
+ * @swagger
+ * /api/v1/auth/google:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Initiate Google OAuth login flow
+ *     description: Redirects user to Google sign-in page. Authorized JavaScript origins must include http://localhost:8080. Redirect URI must be http://localhost:3000/api/v1/auth/google/callback
+ */
+router.get('/google', googleLogin);
+
+/**
+ * @swagger
+ * /api/v1/auth/google/callback:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Google OAuth callback handler
+ *     description: Handles the redirect from Google. Issues access_token and refresh_token, then redirects to http://localhost:8080/auth/google/callback?access_token=...&refresh_token=...
+ */
+router.get('/google/callback', googleCallback);
 
 export default router;

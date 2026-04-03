@@ -1,75 +1,102 @@
 import { Request, Response } from 'express';
 import { Story } from '../models/stories';
 import { uploadToFilebase } from '../utils/filebase';
+import { AuthRequest } from './userController';
 
-import { AuthRequest } from './userController'; 
+// ─── Format helpers ───────────────────────────────────────────────────────────
+
+const formatAuthor = (u: any) => ({
+  id: u._id,
+  full_name: u.full_name || null,
+  avatar: u.avatar || null,
+  uniqueTag: u.uniqueTag || null,
+  isOnline: u.isOnline ?? false,
+});
+
+const formatStory = (s: any) => ({
+  id: s._id,
+  mediaType: s.mediaType,               // 'image' | 'video' | 'audio' | 'text'
+  mediaUrl: s.mediaUrl || null,
+  textContent: s.textContent || null,
+  author: s.author ? formatAuthor(s.author) : null,
+  expiresAt: s.expiresAt || null,        // TTL — MongoDB auto-deletes after this
+  remainingSeconds: s.expiresAt
+    ? Math.max(0, Math.floor((new Date(s.expiresAt).getTime() - Date.now()) / 1000))
+    : null,
+  createdAt: s.createdAt || null,
+});
+
+// ─── Handlers ─────────────────────────────────────────────────────────────────
 
 /**
- * Upload a Story
- * POST /api/story/upload
- * Content-Type: multipart/form-data
+ * Upload a Story / Signal
+ * POST /api/v1/story/upload
+ * Content-Type: multipart/form-data | { textContent } for text-only
  */
 export const uploadStory = async (req: AuthRequest, res: Response): Promise<void> => {
-  if (!req.user || !req.user._id) {
+  if (!req.user?._id) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
 
-  // The file is attached by multer to `req.file`
   const file = req.file;
+  const textContent = req.body.textContent || '';
 
-  if (!file) {
-    res.status(400).json({ message: 'No media file provided for story' });
+  if (!file && !textContent) {
+    res.status(400).json({ message: 'A media file or text content is required to post a Signal.' });
     return;
   }
 
   try {
-    // 1. Upload high-quality file to Filebase
-    const fileKey = `stories/${Date.now()}-${file.originalname}`;
-    const filebaseResponse = await uploadToFilebase(file.buffer, fileKey, file.mimetype);
+    let mediaUrl: string | undefined;
+    let mediaType: 'image' | 'video' | 'audio' | 'text' = 'text';
 
-    // Determine type (just parsing basic mimetype into our enum structure)
-    let type = 'file';
-    if (file.mimetype.startsWith('image/')) type = 'image';
-    if (file.mimetype.startsWith('video/')) type = 'video';
-    if (file.mimetype.startsWith('audio/')) type = 'audio';
+    if (file) {
+      const fileKey = `stories/${req.user._id}/${Date.now()}-${file.originalname}`;
+      const { url } = await uploadToFilebase(file.buffer, fileKey, file.mimetype);
+      mediaUrl = url;
 
+      if (file.mimetype.startsWith('image/')) mediaType = 'image';
+      else if (file.mimetype.startsWith('video/')) mediaType = 'video';
+      else if (file.mimetype.startsWith('audio/')) mediaType = 'audio';
+    }
 
-    // 2. Save Story Document in DB
     const newStory = await Story.create({
       author: req.user._id,
-      mediaType: type,
-      mediaUrl: filebaseResponse.Location,
-      textContent: req.body.textContent || '',
+      mediaType,
+      mediaUrl: mediaUrl || '',
+      textContent,
     });
 
+    const populated = await newStory.populate('author', 'full_name avatar uniqueTag isOnline');
 
-    const populatedStory = await newStory.populate('author', 'name avatar uniqueTag');
-    res.status(201).json(populatedStory);
+    res.status(201).json({
+      message: 'Signal broadcast successfully. It will expire in 24 hours.',
+      story: formatStory(populated),
+    });
   } catch (error: any) {
-    res.status(500).json({ message: error.message || 'Error creating story' });
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Fetch all valid stories
- * GET /api/story
+ * Fetch all active stories (within 24-hour window)
+ * GET /api/v1/story
  */
 export const fetchStories = async (req: Request, res: Response): Promise<void> => {
   try {
-    // MongoDB TTL automatically deletes documents where expiresAt is past.
-    // However, to be extra safe during race conditions, we enforce a manual check 
-    // where creation date must be within 24 hours.
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const activeStories = await Story.find({
-      createdAt: { $gte: cutoff }
-    })
-    .populate('author', 'name avatar uniqueTag')
-    .sort({ createdAt: -1 });
+    const stories = await Story.find({ createdAt: { $gte: cutoff } })
+      .populate('author', 'full_name avatar uniqueTag isOnline')
+      .sort({ createdAt: -1 });
 
-    res.status(200).json(activeStories);
+    res.status(200).json({
+      message: 'Active signals retrieved successfully.',
+      total: stories.length,
+      stories: stories.map(formatStory),
+    });
   } catch (error: any) {
-    res.status(500).json({ message: error.message || 'Error fetching stories' });
+    res.status(500).json({ message: error.message });
   }
 };

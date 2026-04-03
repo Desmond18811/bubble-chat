@@ -2,217 +2,282 @@ import { Request, Response } from 'express';
 import { Conversation } from '../models/conversations';
 import { User } from '../models/users';
 
-// Typically you'd extend Request in a global typing file. We do it locally here for ease.
 export interface AuthRequest extends Request {
-  user?: any; // The initialized user object from Passport or JWT middleware
+  user?: any;
 }
 
+// ─── Shared format helpers ────────────────────────────────────────────────────
+
+const formatUser = (u: any) => ({
+  id: u._id,
+  full_name: u.full_name || null,
+  email: u.email || null,
+  phone_number: u.phone_number || null,
+  avatar: u.avatar || null,
+  uniqueTag: u.uniqueTag || null,
+  bio: u.bio || null,
+  isOnline: u.isOnline ?? false,
+  lastSeen: u.lastSeen || null,
+  isVerified: u.isVerified ?? false,
+  isPremium: u.isPremium ?? false,
+  publicKey: u.publicKey || null,
+  createdAt: u.createdAt || null,
+  updatedAt: u.updatedAt || null,
+});
+
+const formatConversation = (c: any) => ({
+  id: c._id,
+  chatName: c.chatName || null,
+  isGroupChat: c.isGroupChat ?? false,
+  users: Array.isArray(c.users) ? c.users.map(formatUser) : [],
+  groupAdmin: c.groupAdmin ? formatUser(c.groupAdmin) : null,
+  latestMessage: c.latestMessage
+    ? {
+        id: c.latestMessage._id,
+        content: c.latestMessage.content || null,
+        mediaUrl: c.latestMessage.mediaUrl || null,
+        mediaType: c.latestMessage.mediaType || null,
+        sender: c.latestMessage.sender
+          ? {
+              id: c.latestMessage.sender._id,
+              full_name: c.latestMessage.sender.full_name || null,
+              email: c.latestMessage.sender.email || null,
+              avatar: c.latestMessage.sender.avatar || null,
+              uniqueTag: c.latestMessage.sender.uniqueTag || null,
+            }
+          : null,
+        sentAt: c.latestMessage.createdAt || null,
+      }
+    : null,
+  totalMembers: Array.isArray(c.users) ? c.users.length : 0,
+  createdAt: c.createdAt || null,
+  updatedAt: c.updatedAt || null,
+});
+
+// ─── Handlers ─────────────────────────────────────────────────────────────────
+
 /**
- * Create or Fetch a 1-on-1 Chat
- * POST /api/chat
- * Body: { userId }
+ * Create or access a 1-on-1 Chat
+ * POST /api/v1/chat
  */
 export const accessChat = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { userId } = req.body; // the ID of the person we want to chat with
+  const { userId } = req.body;
 
   if (!userId) {
-    res.status(400).json({ message: 'userId param not sent with request' });
+    res.status(400).json({ message: 'userId is required to initiate a chat' });
     return;
   }
-
-  // Ensure user is authenticated
-  if (!req.user || !req.user._id) {
-    res.status(401).json({ message: 'Unauthorized, no logged in user provided' });
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized' });
     return;
   }
 
   try {
-    // Look for an existing conversation
-    let isChat = await Conversation.find({
+    let existing = await Conversation.find({
       isGroupChat: false,
       $and: [
         { users: { $elemMatch: { $eq: req.user._id } } },
         { users: { $elemMatch: { $eq: userId } } },
       ],
     })
-      .populate('users', '-password')
-      .populate('latestMessage');
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey')
+      .populate({
+        path: 'latestMessage',
+        populate: { path: 'sender', select: 'full_name avatar email uniqueTag' },
+      });
 
-    isChat = await User.populate(isChat, {
-      path: 'latestMessage.sender',
-      select: 'name avatar email phone',
-    }) as any;
-
-    if (isChat.length > 0) {
-      res.json(isChat[0]);
+    if (existing.length > 0) {
+      res.status(200).json({
+        message: 'Existing chat retrieved.',
+        conversation: formatConversation(existing[0]),
+      });
     } else {
-      // Create a brand new chat
-      const chatData = {
-        chatName: 'sender',
+      const created = await Conversation.create({
+        chatName: 'direct',
         isGroupChat: false,
         users: [req.user._id, userId],
-      };
+      });
 
-      const createdChat = await Conversation.create(chatData);
-      const fullChat = await Conversation.findOne({ _id: createdChat._id }).populate(
-        'users',
-        '-password'
-      );
-      res.status(200).json(fullChat);
+      const full = await Conversation.findById(created._id)
+        .populate('users', '-password -refreshToken -privateKey')
+        .populate('groupAdmin', '-password -refreshToken -privateKey');
+
+      res.status(201).json({
+        message: 'New direct conversation started.',
+        conversation: formatConversation(full),
+      });
     }
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Fetch all chats for a user
- * GET /api/chat
+ * Fetch all chats for logged-in user
+ * GET /api/v1/chat
  */
 export const fetchChats = async (req: AuthRequest, res: Response): Promise<void> => {
-  if (!req.user || !req.user._id) {
-      res.status(401).json({ message: 'Unauthorized' });
-      return;
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
   }
 
   try {
     const results = await Conversation.find({ users: { $elemMatch: { $eq: req.user._id } } })
-      .populate('users', '-password')
-      .populate('groupAdmin', '-password')
-      .populate('latestMessage')
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey')
+      .populate({
+        path: 'latestMessage',
+        populate: { path: 'sender', select: 'full_name avatar email uniqueTag' },
+      })
       .sort({ updatedAt: -1 });
 
-    const populatedResults = await User.populate(results, {
-      path: 'latestMessage.sender',
-      select: 'name avatar email phone',
+    res.status(200).json({
+      message: 'Conversations retrieved successfully.',
+      total: results.length,
+      conversations: results.map(formatConversation),
     });
-
-    res.status(200).json(populatedResults);
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
  * Create a new Group Chat
- * POST /api/chat/group
- * Body: { users: "[\"id1\", \"id2\"]", name: "Group Name" }
+ * POST /api/v1/chat/group
  */
 export const createGroupChat = async (req: AuthRequest, res: Response): Promise<void> => {
   if (!req.body.users || !req.body.name) {
-    res.status(400).json({ message: 'Please provide users and name' });
+    res.status(400).json({ message: 'Please provide both users array and a group name' });
     return;
   }
 
-  let users = [];
+  let users: string[] = [];
   try {
-    users = JSON.parse(req.body.users);
-  } catch (e) {
-    users = req.body.users; // fallback if it's already an array
+    users = typeof req.body.users === 'string' ? JSON.parse(req.body.users) : req.body.users;
+  } catch {
+    users = req.body.users;
   }
 
   if (users.length < 2) {
-    res.status(400).json({ message: 'More than 2 users are required to form a group chat.' });
+    res.status(400).json({ message: 'A group chat requires at least 2 other members.' });
     return;
   }
 
   users.push(req.user._id);
 
   try {
-    const groupChat = await Conversation.create({
+    const group = await Conversation.create({
       chatName: req.body.name,
-      users: users,
+      users,
       isGroupChat: true,
       groupAdmin: req.user._id,
     });
 
-    const fullGroupChat = await Conversation.findOne({ _id: groupChat._id })
-      .populate('users', '-password')
-      .populate('groupAdmin', '-password');
+    const full = await Conversation.findById(group._id)
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-    res.status(200).json(fullGroupChat);
+    res.status(201).json({
+      message: `Group "${req.body.name}" created successfully.`,
+      conversation: formatConversation(full),
+    });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Rename a Group
- * PUT /api/chat/rename
- * Body: { chatId, chatName }
+ * Rename a group chat
+ * PUT /api/v1/chat/rename
  */
 export const renameGroup = async (req: AuthRequest, res: Response): Promise<void> => {
   const { chatId, chatName } = req.body;
 
   try {
-    const updatedChat = await Conversation.findByIdAndUpdate(
+    const updated = await Conversation.findByIdAndUpdate(
       chatId,
-      { chatName: chatName },
+      { chatName },
       { new: true }
     )
-      .populate('users', '-password')
-      .populate('groupAdmin', '-password');
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-    if (!updatedChat) {
-      res.status(404).json({ message: 'Chat Not Found' });
-    } else {
-      res.json(updatedChat);
+    if (!updated) {
+      res.status(404).json({ message: 'Conversation not found' });
+      return;
     }
+
+    res.status(200).json({
+      message: `Group renamed to "${chatName}" successfully.`,
+      conversation: formatConversation(updated),
+    });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Add a user to a group
- * PUT /api/chat/groupadd
- * Body: { chatId, userId }
+ * Add user to group
+ * PUT /api/v1/chat/groupadd
  */
 export const addToGroup = async (req: AuthRequest, res: Response): Promise<void> => {
   const { chatId, userId } = req.body;
 
   try {
-    const added = await Conversation.findByIdAndUpdate(
+    const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { $push: { users: userId } },
       { new: true }
     )
-      .populate('users', '-password')
-      .populate('groupAdmin', '-password');
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-    if (!added) {
-      res.status(404).json({ message: 'Chat Not Found' });
-    } else {
-      res.json(added);
+    if (!updated) {
+      res.status(404).json({ message: 'Conversation not found' });
+      return;
     }
+
+    const addedUser = await User.findById(userId).select('full_name email avatar uniqueTag');
+
+    res.status(200).json({
+      message: 'Member added to group successfully.',
+      added_member: addedUser ? formatUser(addedUser) : { id: userId },
+      conversation: formatConversation(updated),
+    });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Remove a user from a group
- * PUT /api/chat/groupremove
- * Body: { chatId, userId }
+ * Remove user from group
+ * PUT /api/v1/chat/groupremove
  */
 export const removeFromGroup = async (req: AuthRequest, res: Response): Promise<void> => {
   const { chatId, userId } = req.body;
 
   try {
-    const removed = await Conversation.findByIdAndUpdate(
+    const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { $pull: { users: userId } },
       { new: true }
     )
-      .populate('users', '-password')
-      .populate('groupAdmin', '-password');
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-    if (!removed) {
-      res.status(404).json({ message: 'Chat Not Found' });
-    } else {
-      res.json(removed);
+    if (!updated) {
+      res.status(404).json({ message: 'Conversation not found' });
+      return;
     }
+
+    res.status(200).json({
+      message: 'Member removed from group successfully.',
+      removed_user_id: userId,
+      conversation: formatConversation(updated),
+    });
   } catch (error: any) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };

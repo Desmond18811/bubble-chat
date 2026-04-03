@@ -7,7 +7,9 @@ import { toast } from 'sonner';
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [confirm_password, setConfirmPassword] = useState('');
+  const [phone_number, setPhoneNumber] = useState('');
+  const [full_name, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -15,11 +17,15 @@ const SignupPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (password !== confirm_password) {
+        throw new Error('Passwords do not match');
+      }
+
       // Generate fresh E2EE keypair — private key stored locally, public key goes to server
       const { publicKey, secretKey } = generateKeyPair();
       localStorage.setItem('bubble_sk', secretKey); // store private key locally only
 
-      await register({ email, password, name, publicKey });
+      await register({ email, password, confirm_password, full_name, phone_number, publicKey });
       toast.success('Registration successful! Check your email for your verification code.');
       navigate('/verify-otp', { state: { email } });
     } catch (error: any) {
@@ -28,6 +34,9 @@ const SignupPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const inputStyle = { width: '100%', background: '#071a2f', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: '#d8e6ff', outline: 'none', boxSizing: 'border-box' as const, fontFamily: "'Manrope', sans-serif" };
+  const labelStyle = { display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase' as const, letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#010f20', position: 'relative', overflow: 'hidden', fontFamily: "'Manrope', sans-serif" }}>
@@ -38,10 +47,10 @@ const SignupPage: React.FC = () => {
       <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '40%', height: '40%', background: 'rgba(255,231,146,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
       <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '40%', height: '40%', background: 'rgba(162,194,253,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
 
-      <div style={{ width: '100%', maxWidth: 440, padding: 40, background: 'rgba(3,20,39,0.7)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 28, boxShadow: '0 32px 80px rgba(0,0,0,0.5)', position: 'relative', zIndex: 10 }}>
+      <div style={{ width: '100%', maxWidth: 440, padding: 40, background: 'rgba(3,20,39,0.7)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 28, boxShadow: '0 32px 80px rgba(0,0,0,0.5)', position: 'relative', zIndex: 10, margin: '40px 0' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ textAlign: 'center', marginBottom: 30 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
             <div style={{ position: 'relative', width: 32, height: 32 }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, border: '2px solid #ffe792' }} />
@@ -53,55 +62,39 @@ const SignupPage: React.FC = () => {
           <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9eacc3', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Request Transmission Access</p>
         </div>
 
-        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Name */}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 }}>Explorer Name</label>
-            <input
-              type="text"
-              required
-              style={{ width: '100%', background: '#071a2f', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: '#d8e6ff', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
-              placeholder="e.g. Captain Lyra"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'}
-            />
+            <label style={labelStyle}>Explorer Name</label>
+            <input type="text" required style={inputStyle} placeholder="e.g. Captain Lyra" value={full_name} onChange={(e) => setFullName(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
           </div>
 
           {/* Email */}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 }}>Frequency Address</label>
-            <input
-              type="email"
-              required
-              style={{ width: '100%', background: '#071a2f', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: '#d8e6ff', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
-              placeholder="e.g. explorer@nebula.io"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'}
-            />
+            <label style={labelStyle}>Frequency Address (Email)</label>
+            <input type="email" required style={inputStyle} placeholder="e.g. explorer@nebula.io" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label style={labelStyle}>Network Digits (Phone)</label>
+            <input type="text" required style={inputStyle} placeholder="e.g. +123456789" value={phone_number} onChange={(e) => setPhoneNumber(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
           </div>
 
           {/* Password */}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 }}>Secure Key</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              style={{ width: '100%', background: '#071a2f', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: '#d8e6ff', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'}
-            />
+            <label style={labelStyle}>Secure Key (Password)</label>
+            <input type="password" required minLength={8} style={inputStyle} placeholder="Min. 8 characters + 1 Upper + 1 lower + 1 num + 1 special" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label style={labelStyle}>Confirm Secure Key</label>
+            <input type="password" required minLength={8} style={inputStyle} placeholder="Verify Password" value={confirm_password} onChange={(e) => setConfirmPassword(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
           </div>
 
           {/* E2EE notice */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: 'rgba(255,231,146,0.05)', border: '1px solid rgba(255,231,146,0.12)', borderRadius: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', background: 'rgba(255,231,146,0.05)', border: '1px solid rgba(255,231,146,0.12)', borderRadius: 10, marginTop: 4 }}>
             <span style={{ fontSize: 14, marginTop: 1 }}>🔐</span>
             <p style={{ margin: 0, fontSize: 11, color: '#9eacc3', lineHeight: 1.5, fontFamily: "'Manrope', sans-serif" }}>
               An <strong style={{ color: '#ffe792' }}>E2EE keypair</strong> is auto‑generated on signup. Your private key never leaves this device.
@@ -109,13 +102,7 @@ const SignupPage: React.FC = () => {
           </div>
 
           {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: '100%', background: '#ffe792', color: '#655400', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', padding: '18px 0', borderRadius: 14, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, boxShadow: '0 0 24px rgba(255,231,146,0.2)', transition: 'all 0.15s ease' }}
-            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#ffd709'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#ffe792'; }}
-          >
+          <button type="submit" disabled={loading} style={{ width: '100%', background: '#ffe792', color: '#655400', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', padding: '18px 0', borderRadius: 14, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, boxShadow: '0 0 24px rgba(255,231,146,0.2)', transition: 'all 0.15s ease', marginTop: 10 }} onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#ffd709'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#ffe792'; }}>
             {loading ? 'Generating Keys & Registering...' : 'Request Access'}
           </button>
         </form>

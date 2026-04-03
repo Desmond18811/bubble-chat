@@ -4,12 +4,12 @@
  */
 
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 
 // Helper to grab token if you're using localStorage
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token'); // Adjust based on how you store your JWT
+  const token = localStorage.getItem('access_token'); // Adjust based on how you store your JWT
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -181,7 +181,7 @@ export const sendTextMessage = async (chatId: string, content: string) => {
  * Note: Body must be FormData!
  */
 export const sendMediaMessage = async (chatId: string, file: File, content?: string) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   const formData = new FormData();
   formData.append('chatId', chatId);
   if (content) formData.append('content', content);
@@ -213,7 +213,7 @@ export const fetchStories = async () => {
 };
 
 export const uploadStory = async (file: File, textContent?: string) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   const formData = new FormData();
   if (textContent) formData.append('textContent', textContent);
   formData.append('file', file);
