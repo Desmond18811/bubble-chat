@@ -1,4 +1,7 @@
 // @ts-nocheck
+import dotenv from 'dotenv';
+dotenv.config();
+
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as LocalStrategy } from 'passport-local';

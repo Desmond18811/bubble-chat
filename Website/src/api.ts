@@ -115,6 +115,24 @@ export const getContacts = async (searchQuery: string = '') => {
   return res.json();
 };
 
+export const searchUsers = async (query: string) => {
+  const res = await fetch(`${BASE_URL}/user/search?search=${encodeURIComponent(query)}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to search users');
+  return res.json();
+};
+
+export const addContact = async (identifier: string) => {
+  const res = await fetch(`${BASE_URL}/user/contacts/add`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ identifier }),
+  });
+  if (!res.ok) throw new Error('Failed to add contact');
+  return res.json();
+};
+
 export const getUserStatus = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/user/status/${userId}`, {
     headers: getAuthHeaders(),

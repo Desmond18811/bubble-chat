@@ -32,7 +32,7 @@ const VerifyOTPPage: React.FC = () => {
       localStorage.setItem('refresh_token', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
       toast.success('Verification successful! Welcome to the Bubble.');
-      navigate('/messages');
+      navigate('/login');
     } catch (error: any) {
       toast.error(error.message || 'Verification failed');
     } finally {
@@ -47,6 +47,10 @@ const VerifyOTPPage: React.FC = () => {
 
       <div className="w-full max-w-md p-8 bg-[#031427]/60 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl z-10">
         <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <img src="/icon.png" alt="Bubble" className="w-9 h-9 object-contain" />
+            <span className="text-2xl font-bold font-['Space_Grotesk'] text-[#ffe792] tracking-tight">BUBBLE</span>
+          </div>
           <h1 className="text-4xl font-bold font-['Space_Grotesk'] text-[#ffe792] mb-2 tracking-tight">Security Check</h1>
           <p className="text-[#9eacc3] text-sm tracking-wide uppercase font-['Space_Grotesk']">Enter 5-digit pulse code sent to your email</p>
           <p className="text-[#ffe792] text-xs font-bold mt-2">{email}</p>
@@ -76,7 +80,7 @@ const VerifyOTPPage: React.FC = () => {
 
         <p className="text-center mt-8 text-sm text-[#9eacc3] font-['Space_Grotesk']">
           Didn't receive code?{' '}
-          <button 
+          <button
             type="button"
             onClick={async () => {
               try {

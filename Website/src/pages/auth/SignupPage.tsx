@@ -52,11 +52,8 @@ const SignupPage: React.FC = () => {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ position: 'relative', width: 32, height: 32 }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, border: '2px solid #ffe792' }} />
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, border: '2px solid #ffe792' }} />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+            <img src="/icon.png" alt="Bubble" style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <span style={{ fontSize: 24, fontWeight: 700, color: '#ffe792', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE</span>
           </div>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#d8e6ff', margin: '0 0 8px', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>New Explorer</h1>

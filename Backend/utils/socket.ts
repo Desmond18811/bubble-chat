@@ -3,7 +3,6 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/users';
 
-const JWT_SECRET = process.env.JWT_KEY || 'bubble_default_key';
 
 let io: Server;
 
@@ -21,7 +20,8 @@ export const initSocket = (server: HttpServer) => {
     if (!token) {
       return next(new Error('Authentication error: Token missing'));
     }
-    jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
+    const secret = process.env.JWT_KEY || 'bubble_default_key';
+    jwt.verify(token, secret, (err: any, decoded: any) => {
       if (err) return next(new Error('Authentication error: Invalid token'));
       (socket as any).userId = decoded.id;
       next();

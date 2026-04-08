@@ -7,6 +7,7 @@ import http from 'http';
 import cors from 'cors';
 import { initSocket, getIO } from './utils/socket';
 import { initSecurityScheduler } from './utils/scheduler';
+import './middleware/passport'; // Initialize passport strategies
 
 import chatRoutes from './routes/chatRoutes';
 import messageRoutes from './routes/messageRoutes';

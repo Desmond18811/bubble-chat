@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+// Strip /api/v1 (or /api) to get the bare server root
+const raw = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const SOCKET_URL = raw.replace(/\/api(\/v\d+)?$/, '').replace(/\/$/, '') || 'http://localhost:3000';
 
 let socket: Socket | null = null;
 
@@ -46,6 +48,7 @@ export const emitSendMessage = (payload: {
   toUserId: string;
   message: string;  // will be ciphertext if E2EE is active
   fromUserId: string;
+  chatId?: string;
   isBurn?: boolean;
 }) => {
   socket?.emit('send_message', payload);
