@@ -11,6 +11,7 @@ import {
   offEvent,
 } from "@/lib/socket-client";
 import { toast } from "sonner";
+import ReactEmojiPicker, { Theme } from "emoji-picker-react";
 
 /* ─── Module-level secure media URL proxy helper ──────────────────────────── */
 const _BASE_API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
@@ -39,11 +40,13 @@ const Icon = ({ name, fill = false, size = 24, style = {} }: any) => (
 );
 
 /* ─── Avatar fallback ─────────────────────────────────────────────────────── */
-const Avatar = ({ src, name, size = 40, online }: any) => (
-  <div style={{ position: "relative", flexShrink: 0 }}>
-    {src ? (
-      <img
-        src={src}
+const Avatar = ({ src, name, size = 40, online }: any) => {
+  const safeSrc = getSecureMediaUrl(src) || src;
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      {safeSrc ? (
+        <img
+          src={safeSrc}
         alt={name}
         style={{
           width: size,
@@ -88,7 +91,8 @@ const Avatar = ({ src, name, size = 40, online }: any) => (
       />
     )}
   </div>
-);
+  );
+};
 
 /* ─── Media Components ──────────────────────────────────────────────────────── */
 const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: number; isMine?: boolean }) => {
@@ -143,10 +147,11 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
           const p = (e.clientX - rect.left) / rect.width;
           if (audioRef.current) audioRef.current.currentTime = p * (audioRef.current.duration || duration || 1);
         }}>
-          {Array.from({ length: 24 }).map((_, i) => {
-            const isActive = (i / 24) * 100 <= progress;
+          {Array.from({ length: 30 }).map((_, i) => {
+            const isActive = (i / 30) * 100 <= progress;
+            const h = Math.max(6, Math.abs(Math.sin(i * 0.65)) * 18 + 4);
             return (
-              <div key={i} style={{ flex:1, height: Math.max(4, Math.random() * 24), background: isActive ? (isMine ? "#ffe792" : "#a2c2fd") : "rgba(158,172,195,0.3)", borderRadius:2, transition:"background 0.1s" }} />
+              <div key={i} style={{ flex:1, height: h, background: isActive ? (isMine ? "#ffe792" : "#a2c2fd") : "rgba(158,172,195,0.3)", borderRadius:2, transition:"background 0.1s" }} />
             );
           })}
         </div>
@@ -166,29 +171,18 @@ const ImageLightbox = ({ src, onClose }: { src: string; onClose: () => void }) =
   </div>
 );
 
-const EMOJI_CATEGORIES = {
-  "Smileys": ["😀","😂","🤣","😊","🥰","😍","😎","🤔","🙄","😴","🤮","🤯","🥳"],
-  "Gestures": ["👍","👎","👌","✌️","🤞","🤙","🙌","👏","🤝","🙏","💪","🖕"],
-  "Hearts": ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","💕","💖"],
-  "Nature": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷"],
-  "Food": ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🍈","🍒","🍑","🥭"],
-  "Activity": ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🪀","🏓","🏸"],
-};
-
 const EmojiPicker = ({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) => {
-  const [cat, setCat] = useState<keyof typeof EMOJI_CATEGORIES>("Smileys");
   return (
-    <div style={{ position:"absolute", bottom:"100%", left:0, marginBottom:16, width:320, background:"#031427", border:"1px solid rgba(59,73,92,0.3)", borderRadius:16, boxShadow:"0 20px 40px rgba(0,0,0,0.6)", display:"flex", flexDirection:"column", overflow:"hidden", zIndex:99 }}>
-      <div style={{ display:"flex", overflowX:"auto", padding:8, gap:4, borderBottom:"1px solid rgba(59,73,92,0.2)" }}>
-        {Object.keys(EMOJI_CATEGORIES).map((c) => (
-          <button key={c} onClick={(e) => { e.preventDefault(); setCat(c as any); }} style={{ background: cat===c ? "rgba(255,231,146,0.1)" : "transparent", border:"none", padding:"6px 10px", borderRadius:20, color: cat===c ? "#ffe792" : "#9eacc3", fontSize:11, fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, cursor:"pointer", flexShrink:0 }}>{c}</button>
-        ))}
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:8, padding:16, maxHeight:200, overflowY:"auto" }}>
-        {EMOJI_CATEGORIES[cat].map((e) => (
-          <button key={e} onClick={(ev) => { ev.preventDefault(); onSelect(e); onClose(); }} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:4, borderRadius:8, transition:"background 0.2s" }} onMouseEnter={(ev) => ev.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={(ev) => ev.currentTarget.style.background="transparent"}>{e}</button>
-        ))}
-      </div>
+    <div style={{ position:"absolute", bottom:"100%", left:0, marginBottom:16, zIndex:99, boxShadow: "0 20px 40px rgba(0,0,0,0.6)", borderRadius: 8, overflow: "hidden" }}>
+      <ReactEmojiPicker 
+        theme={Theme.DARK} 
+        searchDisabled
+        skinTonesDisabled
+        onEmojiClick={(emojiData) => {
+          onSelect(emojiData.emoji);
+          onClose();
+        }}
+      />
     </div>
   );
 };
@@ -1342,9 +1336,12 @@ export default function BubbleMessages() {
                         borderRadius: "50%",
                         padding: 2,
                         background: "linear-gradient(135deg, #ffe792, #a2c2fd)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      <Avatar src={s.author?.avatar} name={s.author?.full_name} size={44} />
+                      <Avatar src={s.author?.avatar} name={s.author?.full_name} size={48} />
                     </div>
                     <span style={{ fontSize: 10, color: "#9eacc3", maxWidth: 52, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {s.author?.full_name?.split(" ")[0] || "User"}
@@ -1590,9 +1587,9 @@ export default function BubbleMessages() {
                       msg.type ||
                       "text";
 
-                    const isImage = resolvedUrl && (resolvedType === "image" || msg.mimeType?.startsWith("image/"));
-                    const isVideo = resolvedUrl && (resolvedType === "video" || msg.mimeType?.startsWith("video/"));
-                    const isVoice = resolvedUrl && (resolvedType === "voice" || resolvedType === "audio" || msg.mimeType?.startsWith("audio/"));
+                    const isVideo = resolvedUrl && (resolvedType === "video" || msg.mimeType?.startsWith("video/") || rawUrl?.match(/\.(mp4|webm|mov|mkv)/i));
+                    const isVoice = resolvedUrl && (resolvedType === "voice" || resolvedType === "audio" || msg.mimeType?.startsWith("audio/") || rawUrl?.match(/\.(mp3|wav|ogg|m4a|weba)/i));
+                    const isImage = resolvedUrl && !isVideo && !isVoice && (resolvedType === "image" || msg.mimeType?.startsWith("image/") || rawUrl?.match(/\.(jpeg|jpg|gif|png|webp|svg)/i));
                     const isFile  = resolvedUrl && !isImage && !isVideo && !isVoice;
 
                     return (
@@ -1625,6 +1622,26 @@ export default function BubbleMessages() {
                             border: isMine ? "none" : "1px solid rgba(59,73,92,0.2)",
                           }}
                         >
+                          {/* Image */}
+                          {isImage && (
+                            <img
+                              src={resolvedUrl!}
+                              style={{
+                                maxWidth: "100%",
+                                borderRadius: 10,
+                                marginBottom: msg.content ? 8 : 0,
+                                display: "block",
+                                cursor: "pointer",
+                              }}
+                              alt="Shared image"
+                              onClick={() => setLightboxImg(resolvedUrl!)}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                                console.warn("[Bubble] Image failed to load:", resolvedUrl);
+                              }}
+                            />
+                          )}
+
                           {/* Text content */}
                           {msg.content && (
                             <p
@@ -1637,26 +1654,6 @@ export default function BubbleMessages() {
                             >
                               {msg.content}
                             </p>
-                          )}
-
-                          {/* Image */}
-                          {isImage && (
-                            <img
-                              src={resolvedUrl!}
-                              style={{
-                                maxWidth: "100%",
-                                borderRadius: 10,
-                                marginTop: msg.content ? 8 : 0,
-                                display: "block",
-                                cursor: "pointer",
-                              }}
-                              alt="Shared image"
-                              onClick={() => setLightboxImg(resolvedUrl!)}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                                console.warn("[Bubble] Image failed to load:", resolvedUrl);
-                              }}
-                            />
                           )}
 
                           {/* Video */}
@@ -1941,7 +1938,7 @@ export default function BubbleMessages() {
 
                 return (
                   <>
-                    <div style={{ textAlign: "center", marginBottom: 28 }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: 28 }}>
                       <Avatar
                         src={other?.avatar}
                         name={getChatDisplayName(activeChat, myId)}
