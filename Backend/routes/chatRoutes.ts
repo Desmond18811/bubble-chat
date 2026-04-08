@@ -9,6 +9,7 @@ import {
   removeFromGroup,
   muteChat,
   clearChat,
+  toggleChatPin,
 } from '../controllers/chatController';
 
 const router = express.Router();
@@ -207,5 +208,8 @@ router.put('/mute/:chatId', muteChat);
 
 /** PUT /api/v1/chat/clear/:chatId — Clear all messages for me */
 router.put('/clear/:chatId', clearChat);
+
+/** PUT /api/v1/chat/pin/:chatId — Toggle pin status */
+router.put('/pin/:chatId', toggleChatPin);
 
 export default router;

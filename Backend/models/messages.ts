@@ -12,6 +12,7 @@ export interface IMessage extends Document {
   is_forwarded: boolean;
   is_announcement: boolean;
   is_encrypted: boolean;
+  is_pinned: boolean;
   client_id?: string; // For idempotency
   
   // Interaction & History
@@ -35,6 +36,7 @@ export interface IMessage extends Document {
     height?: number;
     duration?: number; // for audio/video
     mime_type?: string;
+    quality?: 'sd' | 'hd';
   };
   
   // Location specific
@@ -83,7 +85,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
     // Type & Threading
     message_type: {
       type: String,
-      enum: ['text', 'image', 'video', 'voice', 'file', 'location', 'contact', 'system'],
+      enum: ['text', 'image', 'video', 'voice', 'file', 'location', 'contact', 'system', 'sticker'],
       default: 'text',
     },
     parent_message: {
@@ -93,6 +95,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
     is_forwarded: { type: Boolean, default: false },
     is_announcement: { type: Boolean, default: false },
     is_encrypted: { type: Boolean, default: false },
+    is_pinned: { type: Boolean, default: false },
     client_id: { type: String },
 
     // Interactions
@@ -132,6 +135,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
       height: { type: Number },
       duration: { type: Number },
       mime_type: { type: String },
+      quality: { type: String, enum: ['sd', 'hd'], default: 'sd' },
     },
     
     // Location

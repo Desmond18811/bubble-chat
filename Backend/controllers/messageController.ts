@@ -736,3 +736,34 @@ export const reactToMessage = async (req: AuthRequest, res: Response): Promise<v
 //     res.status(500).json({ message: error.message });
 //   }
 // };
+
+/**
+ * Toggle Message Pin — Pin or unpin a specific message in a conversation
+ * PUT /api/v1/message/pin/:messageId
+ */
+export const toggleMessagePin = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { messageId } = req.params;
+
+  try {
+    const msg = await Message.findById(messageId);
+    if (!msg) { res.status(404).json({ message: 'Message not found' }); return; }
+
+    msg.is_pinned = !msg.is_pinned;
+    await msg.save();
+
+    const io = (req as any).io;
+    if (io) {
+      io.to(String(msg.chat)).emit('message_pinned', {
+        messageId: msg._id,
+        is_pinned: msg.is_pinned,
+      });
+    }
+
+    res.status(200).json({
+      message: msg.is_pinned ? 'Message pinned' : 'Message unpinned',
+      is_pinned: msg.is_pinned,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

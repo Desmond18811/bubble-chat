@@ -368,3 +368,32 @@ export const clearChat = async (req: AuthRequest, res: Response): Promise<void> 
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * Toggle Chat Pin — Pin or unpin a conversation for the requesting user
+ * PUT /api/v1/chat/pin/:chatId
+ */
+export const toggleChatPin = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  const userId = req.user?._id;
+
+  try {
+    const convo = await Conversation.findById(chatId);
+    if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    const isPinned = convo.pinnedBy.includes(userId as any);
+    if (isPinned) {
+      convo.pinnedBy = convo.pinnedBy.filter((id) => String(id) !== String(userId));
+    } else {
+      convo.pinnedBy.push(userId as any);
+    }
+
+    await convo.save();
+    res.status(200).json({
+      message: isPinned ? 'Chat unpinned' : 'Chat pinned',
+      isPinned: !isPinned,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

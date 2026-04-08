@@ -16,6 +16,7 @@ export interface IConversation extends Document {
   mutedBy: mongoose.Types.ObjectId[];
   archivedBy: mongoose.Types.ObjectId[];
   deletedBy: mongoose.Types.ObjectId[]; // Users who deleted this chat locally
+  pinnedBy: mongoose.Types.ObjectId[]; // Users who pinned this chat locally
   
   // Advanced Features
   ephemeralSettings: {
@@ -72,6 +73,12 @@ const ConversationSchema: Schema<IConversation> = new Schema(
       },
     ],
     deletedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    pinnedBy: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

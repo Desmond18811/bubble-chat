@@ -332,6 +332,24 @@ export const clearChat = async (chatId: string) => {
   return handleResponse(res);
 };
 
+/** Toggle Pin status for a chat */
+export const toggleChatPin = async (chatId: string) => {
+  const res = await fetch(`${BASE_URL}/chat/pin/${chatId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+/** Toggle Pin status for a message */
+export const toggleMessagePin = async (messageId: string) => {
+  const res = await fetch(`${BASE_URL}/message/${messageId}/pin`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
 // ─── Stories ──────────────────────────────────────────────────────────────────
 
 export const fetchStories = async () => {

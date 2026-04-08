@@ -176,22 +176,102 @@ const ImageLightbox = ({ src, onClose }: { src: string; onClose: () => void }) =
   </div>
 );
 
-const EmojiPicker = ({ onSelect, onClose, direction = "up" }: { onSelect: (e: string) => void; onClose: () => void; direction?: "up" | "down" }) => {
-  const positionStyles: React.CSSProperties = direction === "up" 
-    ? { bottom: "100%", marginBottom: 16 } 
-    : { top: "100%", marginTop: 16 };
-    
+/* ── Stickers Data ─────────────────────────────────────────────────── */
+const STICKER_PACKS = [
+  {
+    name: "Classic",
+    stickers: [
+      "https://cdn-icons-png.flaticon.com/512/3241/3241461.png",
+      "https://cdn-icons-png.flaticon.com/512/3241/3241457.png",
+      "https://cdn-icons-png.flaticon.com/512/3241/3241444.png",
+      "https://cdn-icons-png.flaticon.com/512/3241/3241434.png",
+    ]
+  },
+  {
+    name: "Astra",
+    stickers: [
+      "https://cdn-icons-png.flaticon.com/512/3665/3665910.png",
+      "https://cdn-icons-png.flaticon.com/512/3665/3665913.png",
+      "https://cdn-icons-png.flaticon.com/512/3665/3665917.png",
+      "https://cdn-icons-png.flaticon.com/512/3665/3665920.png",
+    ]
+  }
+];
+
+const StickerPicker = ({ onSelect, onClose }: { onSelect: (url: string) => void; onClose: () => void }) => (
+  <div style={{
+    position: "absolute", bottom: "100%", right: 50, marginBottom: 16, zIndex: 999,
+    background: "#031427", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 16,
+    width: 300, height: 350, overflow: "hidden", display: "flex", flexDirection: "column",
+    boxShadow: "0 24px 60px rgba(0,0,0,0.8)", backdropFilter: "blur(20px)"
+  }}>
+    <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "#ffe792", letterSpacing: "0.05em" }}>STICKERS</span>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#68768b", cursor: "pointer" }}><Icon name="close" size={18} /></button>
+    </div>
+    <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+      {STICKER_PACKS.flatMap(p => p.stickers).map((url, idx) => (
+        <img
+          key={idx} src={url}
+          onClick={() => { onSelect(url); onClose(); }}
+          style={{ width: "100%", height: "auto", cursor: "pointer", transition: "transform 0.2s" }}
+          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+/* ─── EmojiPicker with outside-click-only close ──────────────────────────── */
+const EmojiPicker = ({
+  onSelect,
+  onClose,
+  direction = "up",
+}: {
+  onSelect: (e: string) => void;
+  onClose: () => void;
+  direction?: "up" | "down";
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  /* Close only on clicks that land outside this picker */
+  useEffect(() => {
+    const handlePointerDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    // Use capture so we catch it before anything else; slight delay so the
+    // button that opened the picker doesn't immediately close it.
+    const id = setTimeout(() => {
+      document.addEventListener("pointerdown", handlePointerDown, true);
+    }, 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [onClose]);
+
+  const positionStyles: React.CSSProperties =
+    direction === "up"
+      ? { bottom: "100%", marginBottom: 16 }
+      : { top: "100%", marginTop: 16 };
+
   return (
-    <div style={{ 
-      position: "absolute", 
-      left: 0, 
-      zIndex: 999, 
-      boxShadow: "0 20px 60px rgba(0,0,0,0.8)", 
-      borderRadius: 16, 
-      overflow: "hidden",
-      border: "1px solid rgba(255,255,255,0.1)",
-      ...positionStyles 
-    }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: "absolute",
+        left: 0,
+        zIndex: 999,
+        boxShadow: "0 20px 60px rgba(0,0,0,0.8)",
+        borderRadius: 16,
+        overflow: "hidden",
+        border: "1px solid rgba(255,255,255,0.1)",
+        ...positionStyles,
+      }}
+    >
       <ReactEmojiPicker
         theme={Theme.DARK}
         searchDisabled
@@ -456,6 +536,7 @@ const NewChatModal = ({
     </div>
   );
 };
+
 const NewGroupModal = ({ onClose, onStartGroup, currentUserId }: { onClose: () => void; onStartGroup: (conv: any) => void; currentUserId: string; }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -1107,7 +1188,6 @@ export default function BubbleMessages() {
   const [stories, setStories] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
   const [typing, setTyping] = useState(false);
-  // Track typing/recording states per chat for sidebar visibility
   const [transmittingRegistry, setTransmittingRegistry] = useState<Record<string, { typing: boolean, recording: boolean }>>({});
 
   const [showNewChat, setShowNewChat] = useState(false);
@@ -1121,10 +1201,17 @@ export default function BubbleMessages() {
   const [deleteModal, setDeleteModal] = useState<{ msgId: string; isMine: boolean; sentAt: string } | null>(null);
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState<string | null>(null);
 
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [chatSearch, setChatSearch] = useState("");
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [actionMenuMsgId, setActionMenuMsgId] = useState<string | null>(null);
+  const [messageInfoModal, setMessageInfoModal] = useState<any | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [mediaToUpload, setMediaToUpload] = useState<{ file: File; preview: string; type: 'image' | 'video' } | null>(null);
+  const [mediaToUpload, setMediaToUpload] = useState<{ file: File; preview: string; type: 'image' | 'video'; isHD?: boolean } | null>(null);
   const [mediaCaption, setMediaCaption] = useState("");
   const [replyingToMsg, setReplyingToMsg] = useState<any>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1132,37 +1219,62 @@ export default function BubbleMessages() {
 
   const voice = useVoiceRecorder();
 
-  /* ── Keep a ref for socket handler purity ─────────────────────────── */
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
-  /* ── Escape key \u2500 use functional setters to avoid stale closures ────── */
+  /* ── ESC key: close overlays layer-by-layer, only close chat when all clear ── */
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      // Use functional form so we always read latest state
-      setReplyingToMsg((v: any) => { if (v) return null; return v; });
-      setMediaToUpload((v: any) => { if (v) return null; return v; });
-      setLightboxImg((v) => { if (v) return null; return v; });
-      setReactionPickerMsgId((v) => { if (v) return null; return v; });
-      setShowNewChat((v) => { if (v) return false; return v; });
-      setShowNewGroup((v) => { if (v) return false; return v; });
-      setViewingStory((v) => { if (v) return null; return v; });
-      setDeleteModal((v) => { if (v) return null; return v; });
-      // If no modals are open, close the active chat thread (WhatsApp style)
-      // This allows users to escape back to the contact list
-      setActiveChat((v: any) => {
-        // We use a trick: if any of the above were open, they were just set to null/false
-        // but since state updates are async, we can't easily check them here.
-        // However, the user specifically wants the ESC button to close the chat.
-        return null;
-      });
+
+      // Close overlays one at a time, outermost first.
+      // Each setter returns the previous value; if it was truthy we consumed the ESC.
+      let consumed = false;
+
+      setReactionPickerMsgId((v) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setShowEmoji((v) => { if (v) { consumed = true; return false; } return v; });
+      if (consumed) return;
+
+      setLightboxImg((v) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setDeleteModal((v) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setReplyingToMsg((v: any) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setMediaToUpload((v: any) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setViewingStory((v) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setActionMenuMsgId((v) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setMessageInfoModal((v) => { if (v) { consumed = true; return null; } return v; });
+      if (consumed) return;
+
+      setShowNewChat((v) => { if (v) { consumed = true; return false; } return v; });
+      if (consumed) return;
+
+      setShowNewGroup((v) => { if (v) { consumed = true; return false; } return v; });
+      if (consumed) return;
+
+      setShowStory((v) => { if (v) { consumed = true; return false; } return v; });
+      if (consumed) return;
+
+      // Nothing was open — close the active chat thread
+      setActiveChat(null);
     };
+
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
   useEffect(() => {
-    // E2EE Initialization: Generate key pair if we don't have one
     const initE2E = async () => {
       try {
         if (!localStorage.getItem("e2ee_private")) {
@@ -1172,7 +1284,6 @@ export default function BubbleMessages() {
           localStorage.setItem("e2ee_private", priv);
           localStorage.setItem("e2ee_public", pub);
           console.log("[E2EE] Initialized new WebCrypto KeyPair");
-          // Here we would normally send the public key to the backend/socket
         } else {
           console.log("[E2EE] Loaded existing WebCrypto KeyPair");
         }
@@ -1191,7 +1302,6 @@ export default function BubbleMessages() {
 
     const onNewMessage = (msg: any) => {
       const chat = activeChatRef.current;
-      // Accept both chat.id and chat._id since backend may return either
       const msgChatId = msg.chat?.id || msg.chat?._id || msg.chatId;
       const activeChatId = chat?.id || chat?._id;
       if (chat && msgChatId && msgChatId === activeChatId) {
@@ -1200,7 +1310,6 @@ export default function BubbleMessages() {
           return [...prev, msg];
         });
       }
-      // Always update sidebar latest message
       setChats((prev) =>
         prev.map((c) =>
           (c.id || c._id) === msgChatId
@@ -1215,7 +1324,6 @@ export default function BubbleMessages() {
       const msgChatId = payload.chatId || payload.chat?.id || payload.chat?._id;
       if (chat && msgChatId === (chat.id || chat._id)) {
         setMessages((prev) => {
-          // Deduplicate — avoid double-render if new_message already handled it
           if (prev.some((m) => (m.id || m._id) === (payload.id || payload._id))) return prev;
           return [...prev, payload];
         });
@@ -1301,7 +1409,6 @@ export default function BubbleMessages() {
     };
   }, [myId]);
 
-  /* ── Join/leave socket room when active chat changes ─────────────── */
   const prevChatIdRef = useRef<string | null>(null);
   useEffect(() => {
     const chatId = activeChat?.id || activeChat?._id || null;
@@ -1314,7 +1421,6 @@ export default function BubbleMessages() {
     prevChatIdRef.current = chatId;
   }, [activeChat]);
 
-  /* ── Load chats + stories ─────────────────────────────────────────── */
   useEffect(() => {
     (async () => {
       try {
@@ -1330,14 +1436,12 @@ export default function BubbleMessages() {
     })();
   }, []);
 
-  /* ── Load messages when chat changes ─────────────────────────────── */
   useEffect(() => {
     if (!activeChat) return;
     (async () => {
       try {
         const res = await api.fetchMessages(activeChat.id || activeChat._id);
         const msgs = res.messages || [];
-        // Debug: log first media message so we can verify field names
         const mediaMsgs = msgs.filter((m: any) => m.mediaUrl || m.media_url);
         if (mediaMsgs.length > 0) {
           console.log('[Bubble] Media messages sample:', JSON.stringify(mediaMsgs[0], null, 2));
@@ -1349,12 +1453,10 @@ export default function BubbleMessages() {
     })();
   }, [activeChat]);
 
-  /* ── Scroll to bottom ─────────────────────────────────────────────── */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* ── Send text message ────────────────────────────────────────────── */
   const handleSend = async () => {
     if (!inputText.trim() || !activeChat) return;
     const text = inputText;
@@ -1373,12 +1475,10 @@ export default function BubbleMessages() {
     }
   };
 
-  /* ── Typing indicator ─────────────────────────────────────────────── */
   const handleTyping = (text: string) => {
     setInputText(text);
     if (!activeChat) return;
     const chatId = activeChat?.id || activeChat?._id;
-    // getOtherUser returns null for group chats — fall back to first non-self member
     const other = getOtherUser(activeChat, myId)
       || activeChat.users?.find((u: any) => (u.id || u._id) !== myId)
       || null;
@@ -1394,12 +1494,10 @@ export default function BubbleMessages() {
     }, 1500);
   };
 
-  /* ── File/media message ───────────────────────────────────────────── */
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeChat) return;
     e.target.value = "";
-
     const type = file.type.startsWith("video/") ? "video" : "image";
     setMediaToUpload({ file, preview: URL.createObjectURL(file), type });
     setMediaCaption("");
@@ -1427,7 +1525,6 @@ export default function BubbleMessages() {
     }
   };
 
-  /* ── Voice note ───────────────────────────────────────────────────── */
   const handleVoiceSend = async () => {
     if (!activeChat) return;
     const chatId = activeChat.id || activeChat._id;
@@ -1479,10 +1576,8 @@ export default function BubbleMessages() {
     try {
       if (scope === 'for_everyone') {
         await api.deleteMessageForEveryone(msgId);
-        // Real-time removal via socket event from backend
       } else {
         await api.deleteMessageForMe(msgId);
-        // Local removal only
         setMessages((prev) => prev.filter((m) => (m._id || m.id) !== msgId));
       }
       toast.success(scope === 'for_everyone' ? "Deleted for everyone" : "Deleted for you");
@@ -1498,13 +1593,16 @@ export default function BubbleMessages() {
   const handleReactMessage = async (msgId: string, emoji: string) => {
     try {
       await api.reactToMessage(msgId, emoji);
-      toast.success("Reaction sent");
-      // Optimistically update
       setMessages(prev => prev.map(m => {
         if ((m._id || m.id) === msgId) {
-          const existing = [...(m.reactions || [])];
-          existing.push({ user: myId, emoji });
-          return { ...m, reactions: existing };
+          const reactions = [...(m.reactions || [])];
+          const existingIdx = reactions.findIndex(r => (r.user?.id || r.user?._id || r.user) === myId && r.emoji === emoji);
+          if (existingIdx > -1) {
+            reactions.splice(existingIdx, 1);
+          } else {
+            reactions.push({ user: myId, emoji, timestamp: new Date() });
+          }
+          return { ...m, reactions };
         }
         return m;
       }));
@@ -1568,6 +1666,44 @@ export default function BubbleMessages() {
     }
   };
 
+  const handlePinChat = async (chatId: string) => {
+    try {
+      const res = await api.toggleChatPin(chatId);
+      toast.success(res.isPinned ? "Transmission pinned to top" : "Transmission unpinned");
+      setChats(prev => prev.map(c =>
+        (c.id || c._id) === chatId ? { ...c, pinnedBy: res.isPinned ? [...(c.pinnedBy || []), myId] : (c.pinnedBy || []).filter((id: string) => id !== myId) } : c
+      ));
+    } catch {
+      toast.error("Failed to update pin status");
+    }
+  };
+
+  const handlePinMessage = async (msgId: string) => {
+    try {
+      const res = await api.toggleMessagePin(msgId);
+      toast.success(res.is_pinned ? "Transmission pinned" : "Transmission unpinned");
+      setMessages(prev => prev.map(m =>
+        (m._id || m.id) === msgId ? { ...m, is_pinned: res.is_pinned } : m
+      ));
+    } catch {
+      toast.error("Failed to update pin status");
+    }
+  };
+
+  const toggleMessageSelection = (msgId: string) => {
+    setSelectedMessages(prev => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      if (next.size === 0) setIsSelectionMode(false);
+      return next;
+    });
+  };
+
+  const handleMessageInfo = (msg: any) => {
+    setMessageInfoModal(msg);
+  };
+
   /* ── Render ───────────────────────────────────────────────────────── */
   return (
     <>
@@ -1601,9 +1737,58 @@ export default function BubbleMessages() {
           from { transform: scaleY(0.15); }
           to   { transform: scaleY(1); }
         }
+
+        /* ── Hover action bar ── */
+        .msg-action-bar {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          background: rgba(3, 20, 39, 0.98);
+          border: 1px solid rgba(255, 231, 146, 0.25);
+          padding: 6px 8px;
+          border-radius: 16px;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,231,146,0.05);
+          backdrop-filter: blur(16px);
+          z-index: 100;
+          animation: fadeUp 0.12s ease;
+          white-space: nowrap;
+        }
+        .msg-action-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          color: #9eacc3;
+          transition: background 0.15s, color 0.15s, transform 0.1s;
+          flex-shrink: 0;
+        }
+        .msg-action-btn:hover {
+          background: rgba(255,255,255,0.07);
+          color: #d8e6ff;
+          transform: scale(1.1);
+        }
+        .msg-action-btn.danger:hover {
+          background: rgba(239,68,68,0.12);
+          color: #ef4444;
+        }
+        .msg-action-btn.active {
+          color: #ffe792;
+        }
+        .msg-action-divider {
+          width: 1px;
+          height: 20px;
+          background: rgba(255,255,255,0.08);
+          margin: 0 2px;
+          flex-shrink: 0;
+        }
       `}</style>
 
-      {/* Modals */}
+      {/* ── Modals ── */}
       {mediaToUpload && (
         <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 16 }}>
@@ -1619,6 +1804,23 @@ export default function BubbleMessages() {
             )}
           </div>
           <div style={{ width: "100%", maxWidth: 640, padding: "0 20px 40px", position: "relative" }}>
+            {mediaToUpload.type === "image" && (
+              <div style={{ position: "absolute", bottom: "100%", left: 24, marginBottom: 16 }}>
+                <button
+                  onClick={() => setMediaToUpload(prev => prev ? ({ ...prev, isHD: !prev.isHD }) : null)}
+                  style={{
+                    background: mediaToUpload.isHD ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${mediaToUpload.isHD ? "#4ade80" : "rgba(255,255,255,0.1)"}`,
+                    borderRadius: 20, padding: "6px 14px", display: "flex", alignItems: "center", gap: 8,
+                    color: mediaToUpload.isHD ? "#4ade80" : "#9eacc3", fontSize: 11, cursor: "pointer", fontWeight: 600,
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <Icon name={mediaToUpload.isHD ? "high_quality" : "sd"} size={16} />
+                  {mediaToUpload.isHD ? "HD QUALITY ON" : "SEND IN HD?"}
+                </button>
+              </div>
+            )}
             <input
               autoFocus
               placeholder="Add a caption..."
@@ -1667,6 +1869,50 @@ export default function BubbleMessages() {
           onStartChat={handleNewChat}
         />
       )}
+      {/* ── Message Info Modal ── */}
+      {messageInfoModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setMessageInfoModal(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: 380, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>Transmission Info</h2>
+              <button onClick={() => setMessageInfoModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 4 }}><Icon name="close" size={20} /></button>
+            </div>
+            <div style={{ padding: "24px", color: "#d8e6ff", fontSize: 14, fontFamily: "'Manrope', sans-serif" }}>
+              <div style={{ marginBottom: 16 }}>
+                <strong style={{ color: "rgba(255,231,146,0.8)" }}>Status: </strong>
+                <span>{messageInfoModal.readBy?.length > 0 ? "Read 👁️" : "Delivered ✓"}</span>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <strong style={{ color: "rgba(255,231,146,0.8)" }}>Timestamp: </strong>
+                <span>{new Date(messageInfoModal.sentAt || messageInfoModal.createdAt).toLocaleString()}</span>
+              </div>
+              {messageInfoModal.readBy?.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <strong style={{ color: "rgba(255,231,146,0.8)" }}>Seen by:</strong>
+                  <ul style={{ marginTop: 8, paddingLeft: 20, color: "#9eacc3" }}>
+                    {messageInfoModal.readBy.map((r: any, idx: number) => (
+                      <li key={idx}>{r.full_name || r.username}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {messageInfoModal.reactions?.length > 0 && (
+                <div>
+                  <strong style={{ color: "rgba(255,231,146,0.8)" }}>Reactions:</strong>
+                  <ul style={{ marginTop: 8, paddingLeft: 20, color: "#9eacc3" }}>
+                    {messageInfoModal.reactions.map((r: any, idx: number) => (
+                      <li key={idx}>
+                        {r.emoji} by {r.user?.full_name || r.user?.username || "Unknown"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNewGroup && (
         <NewGroupModal
           currentUserId={myId}
@@ -1752,26 +1998,9 @@ export default function BubbleMessages() {
               flexShrink: 0,
             }}
           >
-            {/* Header */}
             <div style={{ padding: "28px 24px 16px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 20,
-                }}
-              >
-                <h1
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: 26,
-                    fontWeight: 700,
-                    color: "#ffe792",
-                    letterSpacing: "-0.02em",
-                    margin: 0,
-                  }}
-                >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: "#ffe792", letterSpacing: "-0.02em", margin: 0 }}>
                   Transmissions
                 </h1>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1787,84 +2016,27 @@ export default function BubbleMessages() {
                 </div>
               </div>
 
-              {/* Search */}
               <div style={{ position: "relative", marginBottom: 20 }}>
-                <Icon
-                  name="search"
-                  size={18}
-                  style={{
-                    position: "absolute",
-                    left: 14,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "#9eacc3",
-                  }}
-                />
+                <Icon name="search" size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9eacc3" }} />
                 <input
                   placeholder="Search transmissions..."
-                  style={{
-                    width: "100%",
-                    background: "#0b2440",
-                    border: "1px solid rgba(255,255,255,0.04)",
-                    borderRadius: 12,
-                    padding: "11px 16px 11px 42px",
-                    fontSize: 13,
-                    color: "#d8e6ff",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                  style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "11px 16px 11px 42px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
               {/* Stories */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 14,
-                  overflowX: "auto",
-                  paddingBottom: 6,
-                }}
-              >
-                {/* My story bubble */}
-                <div
-                  onClick={() => setShowStory(true)}
-                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}
-                >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: "50%",
-                      border: "2px dashed rgba(255,231,146,0.4)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "rgba(255,231,146,0.05)",
-                    }}
-                  >
+              <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6 }}>
+                <div onClick={() => setShowStory(true)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}>
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", border: "2px dashed rgba(255,231,146,0.4)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,231,146,0.05)" }}>
                     <Icon name="add" size={20} style={{ color: "#ffe792" }} />
                   </div>
                   <span style={{ fontSize: 10, color: "#9eacc3", textTransform: "uppercase" }}>Add</span>
                 </div>
-
                 {stories.map((s: any, i) => (
-                  <div
-                    key={s._id || i}
-                    onClick={() => setViewingStory({ stories, index: i })}
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}
-                  >
-                    <div
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: "50%",
-                        padding: 2,
-                        background: "linear-gradient(135deg, #ffe792, #a2c2fd)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
+                  <div key={s._id || i} onClick={() => setViewingStory({ stories, index: i })} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}>
+                    <div style={{ width: 52, height: 52, borderRadius: "50%", padding: 2, background: "linear-gradient(135deg, #ffe792, #a2c2fd)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Avatar src={s.author?.avatar} name={s.author?.full_name} size={48} />
                     </div>
                     <span style={{ fontSize: 10, color: "#9eacc3", maxWidth: 52, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -1881,482 +2053,482 @@ export default function BubbleMessages() {
                 <div style={{ textAlign: "center", padding: "48px 24px", color: "#9eacc3" }}>
                   <Icon name="chat_bubble_outline" size={40} style={{ opacity: 0.3, display: "block", margin: "0 auto 12px" }} />
                   <p style={{ fontSize: 14 }}>No conversations yet.</p>
-                  <p style={{ fontSize: 12, marginTop: 6, opacity: 0.7 }}>
-                    Tap + to start one.
-                  </p>
+                  <p style={{ fontSize: 12, marginTop: 6, opacity: 0.7 }}>Tap + to start one.</p>
                 </div>
               )}
-              {chats.map((c: any) => {
-                const name = getChatDisplayName(c, myId);
-                const avatar = getChatAvatar(c, myId);
-                const other = getOtherUser(c, myId);
-                const isActive = (activeChat?.id || activeChat?._id) === (c.id || c._id);
-                return (
-                  <div
-                    key={c.id || c._id}
-                    onClick={() => setActiveChat(c)}
-                    style={{
-                      display: "flex",
-                      gap: 14,
-                      alignItems: "center",
-                      padding: "14px 12px",
-                      borderRadius: 14,
-                      cursor: "pointer",
-                      marginBottom: 2,
-                      background: isActive
-                        ? "rgba(255,231,146,0.07)"
-                        : "transparent",
-                      borderLeft: isActive
-                        ? "2px solid rgba(255,231,146,0.5)"
-                        : "2px solid transparent",
-                      transition: "all 0.15s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    <Avatar src={avatar} name={name} size={46} online={other?.isOnline} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span
-                          style={{
-                            fontWeight: 600,
-                            color: isActive ? "#ffe792" : "#d8e6ff",
-                            fontSize: 14,
-                            fontFamily: "'Space Grotesk', sans-serif",
-                          }}
-                        >
-                          {name}
-                        </span>
-                        {c.latestMessage?.sentAt && (
-                          <span style={{ fontSize: 11, color: "#68768b" }}>
-                            {new Date(c.latestMessage.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {chats
+                .filter((c: any) => {
+                  if (!sidebarSearch) return true;
+                  const name = getChatDisplayName(c, myId).toLowerCase();
+                  return name.includes(sidebarSearch.toLowerCase());
+                })
+                .sort((a, b) => {
+                  const aPin = a.pinnedBy?.includes(myId) ? 1 : 0;
+                  const bPin = b.pinnedBy?.includes(myId) ? 1 : 0;
+                  return bPin - aPin;
+                })
+                .map((c: any) => {
+                  const name = getChatDisplayName(c, myId);
+                  const avatar = getChatAvatar(c, myId);
+                  const other = getOtherUser(c, myId);
+                  const isActive = (activeChat?.id || activeChat?._id) === (c.id || c._id);
+                  const isPinned = c.pinnedBy?.includes(myId);
+
+                  return (
+                    <div
+                      key={c.id || c._id}
+                      onClick={() => setActiveChat(c)}
+                      onContextMenu={(e) => { e.preventDefault(); handlePinChat(c.id || c._id); }}
+                      style={{
+                        display: "flex", gap: 14, alignItems: "center", padding: "14px 12px",
+                        borderRadius: 14, cursor: "pointer", marginBottom: 2,
+                        background: isActive ? "rgba(255,231,146,0.07)" : "transparent",
+                        borderLeft: isActive ? "2px solid rgba(255,231,146,0.5)" : "2px solid transparent",
+                        transition: "all 0.15s", position: "relative"
+                      }}
+                      onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                      onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <Avatar src={avatar} name={name} size={46} online={other?.isOnline} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                          <span style={{ fontWeight: 600, color: isActive ? "#ffe792" : "#d8e6ff", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>
+                            {name}
                           </span>
-                        )}
+                          {c.latestMessage?.sentAt ? (
+                            <span style={{ fontSize: 11, color: "#68768b" }}>
+                              {new Date(c.latestMessage.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          ) : (isPinned && <Icon name="push_pin" size={12} style={{ color: "#ffe792" }} />)}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <p style={{ fontSize: 12, color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "#ffe792" : "#9eacc3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0, flex: 1 }}>
+                            {transmittingRegistry[c.id || c._id]?.recording ? "🎤 recording audio..." : transmittingRegistry[c.id || c._id]?.typing ? "⚡ transmitting..." : (c.latestMessage?.content || (c.latestMessage?.message_type === "voice" ? "🎤 Voice note" : null) || (c.latestMessage?.mediaUrl ? "📎 Attachment" : "No messages yet"))}
+                          </p>
+                          {isPinned && c.latestMessage?.sentAt && <Icon name="push_pin" size={12} style={{ color: "#ffe792", marginLeft: 4 }} />}
+                        </div>
                       </div>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "#ffe792" : "#9eacc3",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {transmittingRegistry[c.id || c._id]?.recording ? "🎤 recording audio..." : transmittingRegistry[c.id || c._id]?.typing ? "⚡ transmitting..." : (c.latestMessage?.content ||
-                          (c.latestMessage?.message_type === "voice" ? "🎤 Voice note" : null) ||
-                          (c.latestMessage?.mediaUrl ? "📎 Attachment" : "No messages yet"))}
-                      </p>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </section>
 
           {/* ═══ CENTER — Message Thread ══════════════════════════════ */}
-          <section
-            style={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              background: "#010f20",
-              minWidth: 0,
-            }}
-          >
+          <section style={{ flex: 1, display: "flex", flexDirection: "column", background: "#010f20", minWidth: 0 }}>
             {!activeChat ? (
-              /* Empty state */
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 16,
-                  color: "#9eacc3",
-                  padding: 40,
-                }}
-              >
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, color: "#9eacc3", padding: 40 }}>
                 <Icon name="chat_bubble_outline" size={64} style={{ opacity: 0.15 }} />
-                <h2
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: 22,
-                    fontWeight: 600,
-                    color: "#d8e6ff",
-                    opacity: 0.4,
-                  }}
-                >
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 600, color: "#d8e6ff", opacity: 0.4 }}>
                   Select a transmission
                 </h2>
-                <p style={{ fontSize: 14, opacity: 0.5 }}>
-                  Choose from the list or start a new chat
-                </p>
+                <p style={{ fontSize: 14, opacity: 0.5 }}>Choose from the list or start a new chat</p>
                 <button
                   onClick={() => setShowNewChat(true)}
-                  style={{
-                    marginTop: 8,
-                    background: "#ffe792",
-                    color: "#655400",
-                    border: "none",
-                    borderRadius: 40,
-                    padding: "12px 24px",
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                  }}
+                  style={{ marginTop: 8, background: "#ffe792", color: "#655400", border: "none", borderRadius: 40, padding: "12px 24px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}
                 >
                   + New Transmission
                 </button>
               </div>
             ) : (
               <>
-                {/* Header */}
-                <header
-                  style={{
-                    height: 76,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0 28px",
-                    background: "rgba(3,20,39,0.85)",
-                    backdropFilter: "blur(20px)",
-                    borderBottom: "1px solid rgba(59,73,92,0.15)",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <Avatar
-                      src={getChatAvatar(activeChat, myId)}
-                      name={getChatDisplayName(activeChat, myId)}
-                      size={42}
-                      online={getOtherUser(activeChat, myId)?.isOnline}
-                    />
-                    <div>
-                      <h2
-                        style={{
-                          fontSize: 16,
-                          fontWeight: 700,
-                          fontFamily: "'Space Grotesk', sans-serif",
-                          color: "#d8e6ff",
-                          margin: 0,
-                        }}
-                      >
-                        {getChatDisplayName(activeChat, myId)}
-                      </h2>
-                      <span style={{ fontSize: 11, color: "#ffe792", letterSpacing: "0.08em" }}>
-                        {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording
-                          ? "recording audio..."
-                          : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing
-                            ? "transmitting..."
-                            : getOtherUser(activeChat, myId)?.isOnline
-                              ? "Online"
-                              : (getOtherUser(activeChat, myId) as any)?.lastSeen
-                                ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                                : "Offline"}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {[{ name: "call" }, { name: "videocam" }, { name: "info" }].map((btn) => (
-                      <button
-                        key={btn.name}
-                        style={{
-                          background: "rgba(255,255,255,0.04)",
-                          border: "none",
-                          borderRadius: 10,
-                          padding: "8px 10px",
-                          cursor: "pointer",
-                          color: "#9eacc3",
-                        }}
-                      >
-                        <Icon name={btn.name} size={20} />
+                {/* Header conditionally rendered */}
+                {isSelectionMode || selectedMessages.size > 0 ? (
+                  <header style={{ height: 76, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", background: "rgba(255,231,146,0.1)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,231,146,0.2)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <button onClick={() => { setSelectedMessages(new Set()); setIsSelectionMode(false); }} style={{ background: "none", border: "none", color: "#ffe792", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                        <Icon name="close" size={24} />
                       </button>
-                    ))}
-                  </div>
-                </header>
+                      <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "#ffe792", margin: 0 }}>
+                        {selectedMessages.size} selected
+                      </h2>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <button 
+                        onClick={() => {
+                          const allIds = messages.map((m: any) => m._id || m.id).filter(Boolean);
+                          setSelectedMessages(new Set(allIds));
+                        }}
+                        style={{ background: "rgba(255,231,146,0.1)", border: "none", borderRadius: 10, padding: "8px 12px", cursor: "pointer", color: "#ffe792", fontWeight: 600, fontSize: 13, fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Select All
+                      </button>
+                      <button 
+                        title="Forward"
+                        onClick={() => {
+                          if (selectedMessages.size > 0) {
+                            const msg = messages.find((m: any) => selectedMessages.has(m._id || m.id));
+                            if (msg) setForwardingMsg(msg);
+                            if (selectedMessages.size > 1) toast.info("Multi-forward coming soon!");
+                          }
+                        }}
+                        style={{ background: "rgba(255,231,146,0.1)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "#ffe792" }}
+                      >
+                        <Icon name="forward" size={20} />
+                      </button>
+                      <button 
+                        title="Delete"
+                        onClick={async () => {
+                          if (selectedMessages.size === 0) return;
+                          const confirmDelete = window.confirm(`Delete ${selectedMessages.size} selected message(s)?`);
+                          if (!confirmDelete) return;
+                          try {
+                            await Promise.all(
+                                Array.from(selectedMessages).map(id => api.deleteMessageForMe(id))
+                            );
+                            toast.success(`Deleted ${selectedMessages.size} messages`);
+                            setMessages((prev: any[]) => prev.filter((m: any) => !selectedMessages.has(m._id || m.id)));
+                            setSelectedMessages(new Set());
+                            setIsSelectionMode(false);
+                          } catch {
+                            toast.error("Failed to delete some messages");
+                          }
+                        }}
+                        style={{ background: "rgba(239,68,68,0.2)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "#ef4444" }}
+                      >
+                        <Icon name="delete" size={20} />
+                      </button>
+                    </div>
+                  </header>
+                ) : (
+                  <header style={{ height: 76, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", background: "rgba(3,20,39,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(59,73,92,0.15)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <Avatar src={getChatAvatar(activeChat, myId)} name={getChatDisplayName(activeChat, myId)} size={42} online={getOtherUser(activeChat, myId)?.isOnline} />
+                      <div>
+                        <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "#d8e6ff", margin: 0 }}>
+                          {getChatDisplayName(activeChat, myId)}
+                        </h2>
+                        <span style={{ fontSize: 11, color: "#ffe792", letterSpacing: "0.08em" }}>
+                          {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording ? "recording audio..." : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing ? "transmitting..." : getOtherUser(activeChat, myId)?.isOnline ? "Online" : (getOtherUser(activeChat, myId) as any)?.lastSeen ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Offline"}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          placeholder="Search transmissions..."
+                          value={chatSearch}
+                          onChange={(e) => setChatSearch(e.target.value)}
+                          style={{ background: "rgba(11,36,64,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20, padding: "6px 14px 6px 36px", fontSize: 12, color: "#d8e6ff", outline: "none", width: 180, transition: "width 0.3s" }}
+                          onFocus={(e) => e.currentTarget.style.width = "240px"}
+                          onBlur={(e) => e.currentTarget.style.width = "180px"}
+                        />
+                        <Icon name="search" size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#68768b" }} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {[{ name: "call" }, { name: "videocam" }, { name: "info" }].map((btn) => (
+                          <button key={btn.name} style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "#9eacc3" }}>
+                            <Icon name={btn.name} size={20} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </header>
+                )}
 
                 {/* Messages */}
-                <div
-                  style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    padding: "24px 28px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                  }}
-                >
+                <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", display: "flex", flexDirection: "column" }}>
                   {messages.length === 0 && (
                     <div style={{ textAlign: "center", color: "#9eacc3", opacity: 0.5, marginTop: 40, fontSize: 13 }}>
                       No messages yet. Say hello! 👋
                     </div>
                   )}
-                  {messages.map((msg: any, i) => {
-                    const senderId = msg.sender?.id || msg.sender?._id || msg.fromUserId;
-                    const isMine = senderId === myId;
+                  {messages
+                    .filter(msg => {
+                      if (!chatSearch) return true;
+                      const content = (msg.content || "").toLowerCase();
+                      const fileName = (msg.mediaUrl || "").toLowerCase();
+                      const query = chatSearch.toLowerCase();
+                      return content.includes(query) || fileName.includes(query);
+                    })
+                    .map((msg: any, i) => {
+                      const senderId = msg.sender?.id || msg.sender?._id || msg.fromUserId;
+                      const isMine = senderId === myId;
+                      const isPinned = msg.is_pinned;
+                      const isSelected = selectedMessages.has(msg._id || msg.id);
+                      const msgId = msg._id || msg.id;
 
-                    // Normalize media fields — handle every possible shape the backend/socket may send
-                    const rawUrl = msg.mediaUrl || msg.media_url || null;
-                    const resolvedUrl: string | null = getSecureMediaUrl(rawUrl);
+                      const rawUrl = msg.mediaUrl || msg.media_url || null;
+                      const resolvedUrl: string | null = getSecureMediaUrl(rawUrl);
+                      const resolvedType: string = msg.mediaType || msg.message_type || msg.type || "text";
 
-                    const resolvedType: string =
-                      msg.mediaType ||
-                      msg.message_type ||
-                      msg.type ||
-                      "text";
+                      const isVoice = resolvedUrl && (resolvedType === "voice" || resolvedType === "audio" || msg.mimeType?.startsWith("audio/") || rawUrl?.match(/\.(mp3|wav|ogg|m4a|weba)/i));
+                      const isVideo = resolvedUrl && !isVoice && (resolvedType === "video" || msg.mimeType?.startsWith("video/") || rawUrl?.match(/\.(mp4|webm|mov|mkv)/i));
+                      const isImage = resolvedUrl && !isVideo && !isVoice && (resolvedType === "image" || msg.mimeType?.startsWith("image/") || rawUrl?.match(/\.(jpeg|jpg|gif|png|webp|svg)/i));
+                      const isFile = resolvedUrl && !isImage && !isVideo && !isVoice;
 
-                    const isVoice = resolvedUrl && (resolvedType === "voice" || resolvedType === "audio" || msg.mimeType?.startsWith("audio/") || rawUrl?.match(/\.(mp3|wav|ogg|m4a|weba)/i));
-                    const isVideo = resolvedUrl && !isVoice && (resolvedType === "video" || msg.mimeType?.startsWith("video/") || rawUrl?.match(/\.(mp4|webm|mov|mkv)/i));
-                    const isImage = resolvedUrl && !isVideo && !isVoice && (resolvedType === "image" || msg.mimeType?.startsWith("image/") || rawUrl?.match(/\.(jpeg|jpg|gif|png|webp|svg)/i));
-                    const isFile = resolvedUrl && !isImage && !isVideo && !isVoice;
-
-                    return (
-                      <div
-                        key={msg._id || msg.id || i}
-                        onMouseEnter={() => setHoveredMsg(msg._id || msg.id)}
-                        onMouseLeave={() => setHoveredMsg(null)}
-                        style={{
-                          display: "flex",
-                          justifyContent: isMine ? "flex-end" : "flex-start",
-                          marginBottom: 8,
-                          position: "relative",
-                        }}
-                      >
-                        {!isMine && (
-                          <Avatar
-                            src={msg.sender?.avatar}
-                            name={msg.sender?.full_name}
-                            size={32}
-                            style={{ marginRight: 10, alignSelf: "flex-end" }}
-                          />
-                        )}
+                      return (
                         <div
+                          key={msgId || i}
+                          onMouseEnter={() => setHoveredMsg(msgId)}
+                          onMouseLeave={() => setHoveredMsg(null)}
                           style={{
-                            maxWidth: "65%",
-                            background: isMine
-                              ? "linear-gradient(135deg, #ffd709, #ffe792)"
-                              : "rgba(11,36,64,0.8)",
-                            padding: "10px 16px",
-                            borderRadius: isMine
-                              ? "18px 18px 4px 18px"
-                              : "18px 18px 18px 4px",
-                            border: isMine ? "none" : "1px solid rgba(59,73,92,0.2)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: isMine ? "flex-end" : "flex-start",
+                            marginBottom: 8,
                             position: "relative",
+                            background: isSelected ? "rgba(255,231,146,0.05)" : "transparent",
+                            transition: "background 0.2s",
+                            padding: isSelected ? "8px" : "4px 8px",
+                            borderRadius: 12,
                           }}
                         >
-                          {/* Hover Actions */}
-                          {hoveredMsg === (msg._id || msg.id) && (
-                            <div style={{
-                              position: "absolute",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              display: "flex",
-                              gap: 8,
-                              background: "rgba(3,20,39,0.95)",
-                              padding: "8px 12px",
-                              borderRadius: 20,
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              backdropFilter: "blur(4px)",
-                              zIndex: 10,
-                              ...(isMine ? { right: "100%", marginRight: 8 } : { left: "100%", marginLeft: 8 })
-                            }}>
-                              <button title="React" onClick={() => setReactionPickerMsgId(msg._id || msg.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="add_reaction" size={16} /></button>
-                              <button title="Reply" onClick={() => setReplyingToMsg(msg)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="reply" size={16} /></button>
-                              <button title="Forward" onClick={() => { setForwardingMsg(msg); setShowNewChat(true); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="forward" size={16} /></button>
-                              {isMine && <button title="Delete" onClick={() => setDeleteModal({ msgId: msg._id || msg.id, isMine: true, sentAt: msg.sentAt || msg.createdAt || Date.now() })} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", display: "flex" }}><Icon name="delete" size={16} /></button>}
+                          {/* Pin indicator */}
+                          {isPinned && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4, alignSelf: isMine ? "flex-end" : "flex-start", marginRight: isMine ? 12 : 0, marginLeft: !isMine ? 12 : 0 }}>
+                              <Icon name="push_pin" size={10} style={{ color: "#ffe792" }} />
+                              <span style={{ fontSize: 9, color: "rgba(255,231,146,0.6)", fontWeight: 700, letterSpacing: "0.05em" }}>PINNED TRANSMISSION</span>
                             </div>
                           )}
-                          {/* Reaction Picker Popover */}
-                          {reactionPickerMsgId === (msg._id || msg.id) && (
-                            <div style={{ position: "absolute", top: "100%", left: isMine ? "auto" : 0, right: isMine ? 0 : "auto", zIndex: 100 }}>
-                              <EmojiPicker
-                                direction="down"
-                                onSelect={(emoji) => {
-                                  handleReactMessage(msg._id || msg.id, emoji);
-                                  setReactionPickerMsgId(null);
-                                }}
-                                onClose={() => setReactionPickerMsgId(null)}
-                              />
-                            </div>
-                          )}
-                          {/* Replied Message Preview */}
-                          {msg.parent_message && (
+
+                          <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", width: "100%", position: "relative" }}>
+                            {!isMine && (
+                              <Avatar src={msg.sender?.avatar} name={msg.sender?.full_name} size={32} style={{ marginRight: 10, alignSelf: "flex-end" }} />
+                            )}
+
                             <div
                               style={{
-                                background: isMine ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)",
-                                borderLeft: `3px solid ${isMine ? "rgba(255,255,255,0.4)" : "#ffe792"}`,
-                                padding: "6px 10px",
-                                borderRadius: "6px 6px 6px 0",
-                                marginBottom: 6,
-                                fontSize: 12,
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 2,
-                                cursor: "pointer",
-                                opacity: 0.85
+                                maxWidth: "70%",
+                                background: isMine ? "linear-gradient(135deg, #ffd709, #ffe792)" : "rgba(11,36,64,0.8)",
+                                padding: "12px 16px",
+                                borderRadius: isMine ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+                                border: isMine ? "none" : "1px solid rgba(59,73,92,0.2)",
+                                position: "relative",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                               }}
                             >
-                              <span style={{ fontWeight: 700, color: isMine ? "#1a0a00" : "#d8e6ff" }}>{msg.parent_message.sender?.full_name || "Someone"}</span>
-                              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260, color: isMine ? "#4a3c00" : "#9eacc3" }}>
-                                {msg.parent_message.content || (msg.parent_message.mediaUrl ? "Media Attachment" : "Message")}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Image */}
-                          {isImage && (
-                            <img
-                              src={resolvedUrl!}
-                              style={{
-                                maxWidth: 320,
-                                borderRadius: 10,
-                                marginBottom: msg.content ? 8 : 0,
-                                display: "block",
-                                cursor: "pointer",
-                              }}
-                              alt="Shared image"
-                              onClick={() => setLightboxImg(resolvedUrl!)}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                                console.warn("[Bubble] Image failed to load:", resolvedUrl);
-                              }}
-                            />
-                          )}
-
-                          {/* Text content */}
-                          {msg.content && (
-                            <p
-                              style={{
-                                fontSize: 14,
-                                color: isMine ? "#1a0a00" : "#d8e6ff",
-                                lineHeight: 1.5,
-                                margin: 0,
-                              }}
-                            >
-                              {msg.content}
-                            </p>
-                          )}
-
-                          {/* Video */}
-                          {isVideo && (
-                            <video
-                              src={resolvedUrl!}
-                              controls
-                              style={{
-                                maxWidth: 320,
-                                borderRadius: 10,
-                                marginTop: msg.content ? 8 : 0,
-                                display: "block",
-                              }}
-                            />
-                          )}
-
-                          {/* Voice note / Audio */}
-                          {isVoice && (
-                            <div style={{ marginTop: msg.content ? 8 : 0 }}>
-                              <CustomAudioPlayer
-                                src={resolvedUrl!}
-                                duration={msg.media_metadata?.duration}
-                                isMine={isMine}
-                              />
-                            </div>
-                          )}
-
-                          {/* Generic file attachment */}
-                          {isFile && (
-                            <a
-                              href={resolvedUrl!}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                color: isMine ? "#1a0a00" : "#ffe792",
-                                fontSize: 13,
-                                marginTop: msg.content ? 8 : 0,
-                                textDecoration: "none",
-                                background: isMine ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.06)",
-                                borderRadius: 8,
-                                padding: "6px 10px",
-                              }}
-                            >
-                              <Icon name="attach_file" size={16} />
-                              Download attachment
-                            </a>
-                          )}
-
-                          {/* Timestamp + read receipt */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                            {/* Reactions Render */}
-                            {msg.reactions && msg.reactions.length > 0 ? (
-                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginRight: 12 }}>
-                                {Array.from(new Set(msg.reactions.map((r: any) => r.emoji))).map((emoji: any) => {
-                                  const reactorsForEmoji = msg.reactions.filter((r: any) => r.emoji === emoji);
-                                  const count = reactorsForEmoji.length;
-                                  // Show up to 5 names as requested
-                                  const names = reactorsForEmoji.slice(0, 5).map((r: any) => r.user?.full_name || "Someone").join(", ");
-                                  const tooltip = count > 5 ? `${names} and ${count - 5} others` : names;
-                                  
-                                  return (
-                                    <div
-                                      key={emoji as string}
-                                      title={tooltip}
-                                      style={{
-                                        background: isMine ? "rgba(255,255,255,0.25)" : "rgba(255,231,146,0.15)",
-                                        border: `1px solid ${isMine ? "rgba(255,255,255,0.4)" : "rgba(255,231,146,0.3)"}`,
-                                        borderRadius: 14,
-                                        padding: "4px 8px",
-                                        fontSize: 12,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 5,
-                                        cursor: "pointer",
-                                        transition: "transform 0.1s"
-                                      }}
-                                      onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-                                      onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-                                    >
-                                      <span style={{ fontSize: 14 }}>{emoji as string}</span>
-                                      <span style={{ color: isMine ? "#1a0a00" : "#ffe792", fontSize: 11, fontWeight: 700 }}>{count}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : <div />}
-
-                            <span
-                              style={{
-                                fontSize: 10,
-                                color: isMine ? "rgba(26,10,0,0.5)" : "#68768b",
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              {new Date(msg.sentAt || msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              {isMine && (
-                                <Icon
-                                  name="done_all"
-                                  size={16}
-                                  style={{ color: msg.isRead ? "#38bdf8" : "rgba(26,10,0,0.5)", fontWeight: "bold" }}
-                                />
+                              {/* ── 3-dots trigger (FIXED) ── */}
+                              {(hoveredMsg === msgId && !isSelected && actionMenuMsgId !== msgId) && (
+                                <button
+                                  className="msg-action-trigger"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionMenuMsgId(msgId);
+                                  }}
+                                  style={{
+                                    position: "absolute",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    ...(isMine ? { left: -36 } : { right: -36 }),
+                                    background: "rgba(3,20,39,0.85)",
+                                    border: "1px solid rgba(255,231,146,0.3)",
+                                    borderRadius: "50%",
+                                    width: 32,
+                                    height: 32,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#ffe792",
+                                    cursor: "pointer",
+                                    zIndex: 10,
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
+                                  }}
+                                >
+                                  <Icon name="more_vert" size={18} />
+                                </button>
                               )}
-                            </span>
+
+                              {/* ── Hover actions bar (FIXED) ── */}
+                              {(actionMenuMsgId === msgId || isSelected) && (
+                                <>
+                                  {actionMenuMsgId === msgId && !isSelected && (
+                                    <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={(e) => { e.stopPropagation(); setActionMenuMsgId(null); }} />
+                                  )}
+                                  <div
+                                    className="msg-action-bar"
+                                    style={{
+                                      position: "absolute",
+                                      top: "calc(100% + 8px)",
+                                      ...(isMine ? { right: 0 } : { left: 0 }),
+                                      zIndex: 50,
+                                    }}
+                                  >
+                                    {/* React */}
+                                  <button
+                                    className="msg-action-btn"
+                                    title="React"
+                                    onClick={() => setReactionPickerMsgId(msgId)}
+                                  >
+                                    <Icon name="add_reaction" size={18} />
+                                  </button>
+
+                                  {/* Reply */}
+                                  <button
+                                    className="msg-action-btn"
+                                    title="Reply"
+                                    onClick={() => setReplyingToMsg(msg)}
+                                  >
+                                    <Icon name="reply" size={18} />
+                                  </button>
+
+                                  {/* Forward */}
+                                  <button
+                                    className="msg-action-btn"
+                                    title="Forward"
+                                    onClick={() => setForwardingMsg(msg)}
+                                  >
+                                    <Icon name="forward" size={18} />
+                                  </button>
+
+                                  {/* Pin */}
+                                  <button
+                                    className={`msg-action-btn${isPinned ? " active" : ""}`}
+                                    title={isPinned ? "Unpin" : "Pin"}
+                                    onClick={() => handlePinMessage(msgId)}
+                                  >
+                                    <Icon name="push_pin" size={18} />
+                                  </button>
+
+                                  {/* Select */}
+                                  <button
+                                    className={`msg-action-btn${isSelected ? " active" : ""}`}
+                                    title="Select"
+                                    onClick={() => toggleMessageSelection(msgId)}
+                                  >
+                                    <Icon name={isSelected ? "check_circle" : "check_box_outline_blank"} size={18} />
+                                  </button>
+
+                                  {/* Info */}
+                                  <button
+                                    className="msg-action-btn"
+                                    title="Message info"
+                                    onClick={() => handleMessageInfo(msg)}
+                                  >
+                                    <Icon name="info" size={18} />
+                                  </button>
+
+                                  <div className="msg-action-divider" />
+
+                                  {/* Delete */}
+                                  <button
+                                    className="msg-action-btn danger"
+                                    title="Delete"
+                                    onClick={() => setDeleteModal({ msgId, isMine, sentAt: msg.sentAt || msg.createdAt })}
+                                  >
+                                    <Icon name="delete" size={18} />
+                                  </button>
+                                </div>
+                                </>
+                              )}
+
+                              {/* Reaction picker popover */}
+                              {reactionPickerMsgId === msgId && (
+                                <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} onClick={(e) => { e.stopPropagation(); setReactionPickerMsgId(null); }} />
+                                  <div style={{ position: "relative", zIndex: 10000, boxShadow: "0 20px 60px rgba(0,0,0,0.8)", borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
+                                    <EmojiPicker
+                                      direction="up"
+                                      onSelect={(emoji) => {
+                                        handleReactMessage(msgId, emoji);
+                                        setReactionPickerMsgId(null);
+                                      }}
+                                      onClose={() => setReactionPickerMsgId(null)}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Reply preview */}
+                              {msg.parent_message && (
+                                <div style={{ background: isMine ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)", borderLeft: `3px solid ${isMine ? "rgba(0,0,0,0.3)" : "#ffe792"}`, padding: "6px 10px", borderRadius: "8px 8px 8px 2px", marginBottom: 10, fontSize: 12, display: "flex", flexDirection: "column", gap: 2, cursor: "pointer" }}>
+                                  <span style={{ fontWeight: 800, color: isMine ? "rgba(0,0,0,0.7)" : "#ffe792", fontSize: 11 }}>{msg.parent_message.sender?.full_name || "Unknown Transporter"}</span>
+                                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220, color: isMine ? "rgba(0,0,0,0.6)" : "#9eacc3" }}>
+                                    {msg.parent_message.content || (msg.parent_message.mediaUrl ? "📎 Attachment" : "Transmission...")}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Group sender name */}
+                              {activeChat.isGroupChat && !isMine && (
+                                <div style={{ fontSize: 11, fontWeight: 800, color: "#ffe792", marginBottom: 4, letterSpacing: "0.02em" }}>
+                                  {msg.sender?.full_name || "Unknown"}
+                                </div>
+                              )}
+
+                              {/* Image */}
+                              {isImage && (
+                                <div style={{ position: "relative", marginBottom: msg.content ? 8 : 0 }}>
+                                  <img src={resolvedUrl!} onClick={() => setLightboxImg(resolvedUrl!)} style={{ maxWidth: "100%", borderRadius: 12, display: "block", cursor: "pointer" }} alt="Transmission asset" />
+                                  {msg.media_metadata?.quality === 'hd' && (
+                                    <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", padding: "2px 6px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                      <Icon name="high_quality" size={12} style={{ color: "#4ade80" }} />
+                                      <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80" }}>HD</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Video */}
+                              {isVideo && (
+                                <video src={resolvedUrl!} controls style={{ maxWidth: "100%", borderRadius: 12, marginBottom: msg.content ? 8 : 0 }} />
+                              )}
+
+                              {/* Voice */}
+                              {isVoice && (
+                                <CustomAudioPlayer src={resolvedUrl!} duration={msg.media_metadata?.duration} isMine={isMine} />
+                              )}
+
+                              {/* File */}
+                              {isFile && (
+                                <a href={resolvedUrl!} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.05)", borderRadius: 12, textDecoration: "none", marginBottom: msg.content ? 8 : 0, border: "1px solid rgba(255,255,255,0.1)" }}>
+                                  <div style={{ width: 36, height: 36, background: "#ffe792", borderRadius: 10, display: "flex", alignItems: "center", justifyItems: "center", color: "#031427" }}>
+                                    <Icon name="description" size={20} style={{ margin: "auto" }} />
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontSize: 13, color: isMine ? "#1a0a00" : "#d8e6ff", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {msg.mediaUrl?.split('/').pop() || "File Asset"}
+                                    </p>
+                                    <p style={{ margin: 0, fontSize: 10, color: isMine ? "rgba(0,0,0,0.5)" : "#68768b" }}>
+                                      {msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : "Download Artifact"}
+                                    </p>
+                                  </div>
+                                </a>
+                              )}
+
+                              {/* Text */}
+                              {msg.content && (
+                                <p style={{ fontSize: 14, color: isMine ? "#2a1e00" : "#d8e6ff", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                  {msg.content}
+                                </p>
+                              )}
+
+                              {/* Timestamp + receipts */}
+                              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 4, opacity: 0.8 }}>
+                                <span style={{ fontSize: 10, color: isMine ? "rgba(0,0,0,0.5)" : "#68768b", fontWeight: 600 }}>
+                                  {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {isMine && (
+                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#00f0ff" : "rgba(0,0,0,0.2)" }} />
+                                )}
+                              </div>
+                            </div>
                           </div>
+
+                          {/* Reactions display */}
+                          {msg.reactions?.length > 0 && (
+                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6, alignSelf: isMine ? "flex-end" : "flex-start", marginLeft: isMine ? 0 : 42 }}>
+                              {Array.from(new Set(msg.reactions.map((r: any) => r.emoji))).map((emoji: any) => {
+                                const count = msg.reactions.filter((r: any) => r.emoji === emoji).length;
+                                const hasReacted = msg.reactions.some((r: any) => (r.user?.id || r.user?._id || r.user) === myId && r.emoji === emoji);
+                                return (
+                                  <div
+                                    key={emoji}
+                                    onClick={() => handleReactMessage(msgId, emoji)}
+                                    style={{ background: hasReacted ? "rgba(255,231,146,0.15)" : "rgba(11,36,64,0.6)", border: `1px solid ${hasReacted ? "#ffe792" : "rgba(255,255,255,0.05)"}`, borderRadius: 10, padding: "2px 8px", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", transition: "all 0.2s" }}
+                                  >
+                                    <span style={{ fontSize: 13 }}>{emoji}</span>
+                                    {count > 1 && <span style={{ fontSize: 10, fontWeight: 800, color: hasReacted ? "#ffe792" : "#9eacc3" }}>{count}</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+
+                  {/* Typing indicator */}
                   {transmittingRegistry[activeChat?.id || activeChat?._id]?.typing && (
                     <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8, marginTop: 4 }}>
                       <Avatar src={getChatAvatar(activeChat, myId)} size={32} style={{ marginRight: 10, alignSelf: "flex-end" }} />
@@ -2373,17 +2545,7 @@ export default function BubbleMessages() {
                 {/* Input bar */}
                 <footer style={{ padding: "0 20px 20px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
                   {replyingToMsg && (
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      background: "rgba(11,36,64,0.6)",
-                      border: "1px solid rgba(59,73,92,0.3)",
-                      borderRadius: 12,
-                      padding: "8px 12px",
-                      backdropFilter: "blur(4px)",
-                      marginLeft: 16, marginRight: 16,
-                    }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 12, padding: "8px 12px", backdropFilter: "blur(4px)", marginLeft: 16, marginRight: 16 }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
                         <span style={{ fontSize: 11, color: "#ffe792", fontWeight: 700 }}>Replying to {replyingToMsg.sender?.full_name || "Someone"}</span>
                         <span style={{ fontSize: 13, color: "#d8e6ff", opacity: 0.8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 300 }}>
@@ -2395,27 +2557,12 @@ export default function BubbleMessages() {
                       </button>
                     </div>
                   )}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      background: "rgba(11,36,64,0.6)",
-                      border: "1px solid rgba(59,73,92,0.2)",
-                      borderRadius: 20,
-                      padding: "8px 8px 8px 16px",
-                      backdropFilter: "blur(12px)",
-                    }}
-                  >
-                    {/* Emoji Picker */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.2)", borderRadius: 20, padding: "8px 8px 8px 16px", backdropFilter: "blur(12px)" }}>
+                    {/* Emoji */}
                     <div style={{ position: "relative" }}>
                       <button
                         onClick={() => setShowEmoji((v) => !v)}
-                        style={{
-                          background: "none", border: "none", cursor: "pointer",
-                          color: showEmoji ? "#ffe792" : "#9eacc3",
-                          padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s"
-                        }}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: showEmoji ? "#ffe792" : "#9eacc3", padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s" }}
                         title="Emoji"
                       >
                         <Icon name="sentiment_satisfied" size={20} />
@@ -2428,91 +2575,36 @@ export default function BubbleMessages() {
                       )}
                     </div>
 
-                    {/* Attachment */}
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#9eacc3",
-                        padding: 6,
-                        borderRadius: 8,
-                        transition: "color 0.15s",
-                        flexShrink: 0,
-                      }}
-                      title="Attach file or image"
-                    >
+                    {/* Attach */}
+                    <button onClick={() => fileInputRef.current?.click()} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 6, borderRadius: 8, transition: "color 0.15s", flexShrink: 0 }} title="Attach file or image">
                       <Icon name="attach_file" size={20} />
                     </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      hidden
-                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-                      onChange={handleFileUpload}
-                    />
+                    <input ref={fileInputRef} type="file" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleFileUpload} />
 
-                    {/* Text input or voice UI */}
+                    {/* Text input or recording indicator */}
                     {voice.recording ? (
                       <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: "50%",
-                            background: "#ef4444",
-                            animation: "pulse 1s infinite",
-                          }}
-                        />
-                        <span style={{ fontSize: 14, color: "#d8e6ff", fontVariantNumeric: "tabular-nums" }}>
-                          {fmtTime(voice.duration)}
-                        </span>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", animation: "pulse 1s infinite" }} />
+                        <span style={{ fontSize: 14, color: "#d8e6ff", fontVariantNumeric: "tabular-nums" }}>{fmtTime(voice.duration)}</span>
                         <span style={{ fontSize: 12, color: "#9eacc3" }}>Recording...</span>
                       </div>
                     ) : (
                       <input
                         value={inputText}
                         onChange={(e) => handleTyping(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSend();
-                          }
-                        }}
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                         placeholder="Type a transmission..."
-                        style={{
-                          flex: 1,
-                          background: "transparent",
-                          border: "none",
-                          color: "#d8e6ff",
-                          outline: "none",
-                          fontSize: 14,
-                          fontFamily: "'Manrope', sans-serif",
-                        }}
+                        style={{ flex: 1, background: "transparent", border: "none", color: "#d8e6ff", outline: "none", fontSize: 14, fontFamily: "'Manrope', sans-serif" }}
                       />
                     )}
 
-                    {/* Voice note button */}
+                    {/* Voice button */}
                     {!inputText.trim() && (
                       <button
                         onMouseDown={voice.start}
                         onClick={voice.recording ? handleVoiceSend : undefined}
                         title={voice.recording ? "Stop & send" : "Hold for voice note"}
-                        style={{
-                          background: voice.recording
-                            ? "rgba(239,68,68,0.2)"
-                            : "rgba(255,255,255,0.05)",
-                          border: voice.recording
-                            ? "1px solid rgba(239,68,68,0.4)"
-                            : "none",
-                          borderRadius: 12,
-                          padding: "8px 10px",
-                          cursor: "pointer",
-                          color: voice.recording ? "#ef4444" : "#9eacc3",
-                          flexShrink: 0,
-                          transition: "all 0.15s",
-                        }}
+                        style={{ background: voice.recording ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)", border: voice.recording ? "1px solid rgba(239,68,68,0.4)" : "none", borderRadius: 12, padding: "8px 10px", cursor: "pointer", color: voice.recording ? "#ef4444" : "#9eacc3", flexShrink: 0, transition: "all 0.15s" }}
                       >
                         <Icon name={voice.recording ? "stop" : "mic"} size={20} />
                       </button>
@@ -2520,17 +2612,7 @@ export default function BubbleMessages() {
 
                     {/* Cancel voice */}
                     {voice.recording && (
-                      <button
-                        onClick={voice.cancel}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#9eacc3",
-                          padding: 6,
-                          flexShrink: 0,
-                        }}
-                      >
+                      <button onClick={voice.cancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 6, flexShrink: 0 }}>
                         <Icon name="delete" size={20} />
                       </button>
                     )}
@@ -2539,18 +2621,7 @@ export default function BubbleMessages() {
                     {(inputText.trim() || voice.recording) && (
                       <button
                         onClick={voice.recording ? handleVoiceSend : handleSend}
-                        style={{
-                          background: "linear-gradient(135deg, #ffe792, #ffc300)",
-                          border: "none",
-                          borderRadius: 14,
-                          padding: "10px 14px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          boxShadow: "0 0 16px rgba(255,215,9,0.3)",
-                        }}
+                        style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", border: "none", borderRadius: 14, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 16px rgba(255,215,9,0.3)" }}
                       >
                         <Icon name="send" size={18} style={{ color: "#1a0a00" }} />
                       </button>
@@ -2563,147 +2634,55 @@ export default function BubbleMessages() {
 
           {/* ═══ RIGHT PANEL — Profile ════════════════════════════════ */}
           {activeChat && (
-            <section
-              style={{
-                width: 300,
-                background: "#031427",
-                borderLeft: "1px solid rgba(59,73,92,0.15)",
-                display: "flex",
-                flexDirection: "column",
-                padding: "32px 24px",
-                overflowY: "auto",
-                flexShrink: 0,
-              }}
-            >
+            <section style={{ width: 300, background: "#031427", borderLeft: "1px solid rgba(59,73,92,0.15)", display: "flex", flexDirection: "column", padding: "32px 24px", overflowY: "auto", flexShrink: 0 }}>
               {(() => {
                 const other = getOtherUser(activeChat, myId);
                 const artifacts = messages.filter((m) => m.mediaUrl && (m.mediaType === "image" || m.mediaType === "video" || m.message_type === "image" || m.message_type === "video"));
                 const resources = messages.filter((m) => m.mediaUrl && (m.mediaType === "voice" || m.mediaType === "audio" || m.mediaType === "file" || m.message_type === "voice" || m.message_type === "file"));
 
                 const actionBtnStyle = {
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  background: "rgba(255,255,255,0.02)",
-                  border: "none",
-                  padding: "12px 14px",
-                  borderRadius: 12,
-                  color: "#9eacc3",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  textAlign: "left" as const,
-                  transition: "background 0.2s",
+                  display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.02)", border: "none",
+                  padding: "12px 14px", borderRadius: 12, color: "#9eacc3", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", textAlign: "left" as const, transition: "background 0.2s",
                 };
 
                 return (
                   <>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: 28 }}>
-                      <Avatar
-                        src={other?.avatar}
-                        name={getChatDisplayName(activeChat, myId)}
-                        size={84}
-                        online={other?.isOnline}
-                      />
-                      <h2
-                        style={{
-                          fontFamily: "'Space Grotesk', sans-serif",
-                          fontSize: 16,
-                          fontWeight: 700,
-                          color: "#d8e6ff",
-                          marginTop: 16,
-                          marginBottom: 4,
-                        }}
-                      >
+                      <Avatar src={other?.avatar} name={getChatDisplayName(activeChat, myId)} size={84} online={other?.isOnline} />
+                      <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: "#d8e6ff", marginTop: 16, marginBottom: 4 }}>
                         {getChatDisplayName(activeChat, myId)}
                       </h2>
-                      {other?.uniqueTag && (
-                        <span style={{ fontSize: 12, color: "#ffe792", fontFamily: "monospace" }}>
-                          {other.uniqueTag}
-                        </span>
-                      )}
+                      {other?.uniqueTag && <span style={{ fontSize: 12, color: "#ffe792", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
                       {other?.bio && (
                         <div style={{ marginTop: 20, padding: "0 10px" }}>
                           <h3 style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Bio</h3>
-                          <p style={{ fontSize: 13, color: "#9eacc3", lineHeight: 1.6, margin: 0 }}>
-                            {other.bio}
-                          </p>
+                          <p style={{ fontSize: 13, color: "#9eacc3", lineHeight: 1.6, margin: 0 }}>{other.bio}</p>
                         </div>
                       )}
                     </div>
 
-                    {/* Quick actions */}
                     <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 28 }}>
-                      {[
-                        { icon: "call", label: "Call" },
-                        { icon: "videocam", label: "Video" },
-                        { icon: "search", label: "Search" },
-                      ].map((a) => (
-                        <div
-                          key={a.label}
-                          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
-                        >
-                          <button
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: "50%",
-                              background: "rgba(255,255,255,0.04)",
-                              border: "1px solid rgba(255,255,255,0.06)",
-                              cursor: "pointer",
-                              color: "#9eacc3",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
+                      {[{ icon: "call", label: "Call" }, { icon: "videocam", label: "Video" }, { icon: "search", label: "Search" }].map((a) => (
+                        <div key={a.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                          <button style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", color: "#9eacc3", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <Icon name={a.icon} size={18} />
                           </button>
-                          <span style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase" }}>
-                            {a.label}
-                          </span>
+                          <span style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase" }}>{a.label}</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Info rows */}
                     {other?.status_message && (
-                      <div
-                        style={{
-                          background: "rgba(255,255,255,0.03)",
-                          borderRadius: 12,
-                          padding: "12px 14px",
-                          marginBottom: 10,
-                        }}
-                      >
-                        <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-                          Status
-                        </div>
+                      <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
+                        <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Status</div>
                         <div style={{ fontSize: 13, color: "#d8e6ff" }}>{other.status_message}</div>
                       </div>
                     )}
                     {other?.isOnline !== undefined && (
-                      <div
-                        style={{
-                          background: "rgba(255,255,255,0.03)",
-                          borderRadius: 12,
-                          padding: "12px 14px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            background: other.isOnline ? "#4ade80" : "#475569",
-                          }}
-                        />
-                        <span style={{ fontSize: 13, color: "#d8e6ff" }}>
-                          {other.isOnline ? "Active now" : "Offline"}
-                        </span>
+                      <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: other.isOnline ? "#4ade80" : "#475569" }} />
+                        <span style={{ fontSize: 13, color: "#d8e6ff" }}>{other.isOnline ? "Active now" : "Offline"}</span>
                       </div>
                     )}
 
@@ -2715,13 +2694,7 @@ export default function BubbleMessages() {
                       {artifacts.length > 0 ? (
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                           {artifacts.slice(0, 9).map((m, i) => (
-                            <a
-                              key={m.id || m._id || i}
-                              href={getSecureMediaUrl(m.mediaUrl) || ""}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ aspectRatio: "1/1", borderRadius: 8, overflow: "hidden", background: "rgba(255,255,255,0.05)", display: "block" }}
-                            >
+                            <a key={m.id || m._id || i} href={getSecureMediaUrl(m.mediaUrl) || ""} target="_blank" rel="noreferrer" style={{ aspectRatio: "1/1", borderRadius: 8, overflow: "hidden", background: "rgba(255,255,255,0.05)", display: "block" }}>
                               {m.mediaType === "image" || m.message_type === "image" ? (
                                 <img src={getSecureMediaUrl(m.mediaUrl) || ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Shared image artifact" />
                               ) : (
@@ -2731,9 +2704,7 @@ export default function BubbleMessages() {
                           ))}
                         </div>
                       ) : (
-                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>
-                          0 Shared artifacts
-                        </div>
+                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>0 Shared artifacts</div>
                       )}
                     </div>
 
@@ -2745,19 +2716,7 @@ export default function BubbleMessages() {
                       {resources.length > 0 ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                           {resources.map((m, i) => (
-                            <a
-                              key={m.id || m._id || i}
-                              href={getSecureMediaUrl(m.mediaUrl) || ""}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                display: "flex", alignItems: "center", gap: 12,
-                                background: "rgba(255,255,255,0.03)",
-                                padding: "10px 14px",
-                                borderRadius: 12,
-                                textDecoration: "none"
-                              }}
-                            >
+                            <a key={m.id || m._id || i} href={getSecureMediaUrl(m.mediaUrl) || ""} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.03)", padding: "10px 14px", borderRadius: 12, textDecoration: "none" }}>
                               <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,231,146,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffe792", flexShrink: 0 }}>
                                 <Icon name={(m.mediaType === "voice" || m.mediaType === "audio" || m.message_type === "voice") ? "mic" : "insert_drive_file"} size={18} />
                               </div>
@@ -2773,30 +2732,16 @@ export default function BubbleMessages() {
                           ))}
                         </div>
                       ) : (
-                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>
-                          0 Shared resources
-                        </div>
+                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>0 Shared resources</div>
                       )}
                     </div>
 
                     {/* Admin Actions */}
                     <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <button onClick={() => handleMuteChat(activeChat?.id || activeChat?._id)} style={actionBtnStyle}>
-                        <Icon name="notifications_off" size={18} />
-                        Mute Notifications
-                      </button>
-                      <button onClick={() => handleClearChat(activeChat?.id || activeChat?._id)} style={actionBtnStyle}>
-                        <Icon name="delete_sweep" size={18} />
-                        Clear Chat
-                      </button>
-                      <button onClick={() => handleBlockUser(other?.id || other?._id)} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
-                        <Icon name="block" size={18} />
-                        Block Identity
-                      </button>
-                      <button onClick={() => handleReportUser(other?.id || other?._id)} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
-                        <Icon name="report" size={18} />
-                        Report Transmission
-                      </button>
+                      <button onClick={() => handleMuteChat(activeChat?.id || activeChat?._id)} style={actionBtnStyle}><Icon name="notifications_off" size={18} />Mute Notifications</button>
+                      <button onClick={() => handleClearChat(activeChat?.id || activeChat?._id)} style={actionBtnStyle}><Icon name="delete_sweep" size={18} />Clear Chat</button>
+                      <button onClick={() => handleBlockUser(other?.id || other?._id)} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}><Icon name="block" size={18} />Block Identity</button>
+                      <button onClick={() => handleReportUser(other?.id || other?._id)} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}><Icon name="report" size={18} />Report Transmission</button>
                     </div>
                   </>
                 );

@@ -19,7 +19,7 @@ const testUsers = [
     password: 'Password123!',
     uniqueTag: 'ALPHA123',
     isVerified: true,
-    bio: 'Ready for transmission.',
+    bio: 'Short & Impactful\nJust making stuff ✨\nLess noise, more creativity 🧠',
   },
   {
     full_name: 'Test Explorer Beta',
@@ -29,7 +29,7 @@ const testUsers = [
     password: 'Password123!',
     uniqueTag: 'BETA123',
     isVerified: true,
-    bio: 'Receiving signals loud and clear.',
+    bio: 'Capturing fleeting moments & soft aesthetics 🌿\nChasing golden hour vibes 🌻\n',
   },
   {
     full_name: 'Test Explorer Gamma',
