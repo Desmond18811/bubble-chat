@@ -5,6 +5,8 @@ import {
   searchUsers,
   getOnlineScannedUsers,
   getUserStatus,
+  toggleBlockUser,
+  reportUser,
 } from '../controllers/userController';
 
 const router = express.Router();
@@ -107,6 +109,12 @@ router.route('/status/:userId').get(getUserStatus);
  *                     lastSeen: { type: string }
  */
 router.route('/:userId').get(getUserProfile);
+
+/** POST /api/v1/user/block/:userId — Toggle block/unblock */
+router.route('/block/:userId').post(toggleBlockUser);
+
+/** POST /api/v1/user/report/:userId — Report user for investigation */
+router.route('/report/:userId').post(reportUser);
 
 export default router;
 

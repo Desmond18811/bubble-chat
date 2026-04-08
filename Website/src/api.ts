@@ -295,6 +295,43 @@ export const reactToMessage = async (messageId: string, emoji: string) => {
   return handleResponse(res);
 };
 
+/** Block / Unblock a user */
+export const blockUser = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/user/block/${userId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+/** Report a user for investigation */
+export const reportUser = async (userId: string, reason: string) => {
+  const res = await fetch(`${BASE_URL}/user/report/${userId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ reason }),
+  });
+  return handleResponse(res);
+};
+
+/** Mute / Unmute a conversation */
+export const muteChat = async (chatId: string) => {
+  const res = await fetch(`${BASE_URL}/chat/mute/${chatId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+/** Clear chat history for me */
+export const clearChat = async (chatId: string) => {
+  const res = await fetch(`${BASE_URL}/chat/clear/${chatId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
 // ─── Stories ──────────────────────────────────────────────────────────────────
 
 export const fetchStories = async () => {

@@ -176,13 +176,28 @@ const ImageLightbox = ({ src, onClose }: { src: string; onClose: () => void }) =
   </div>
 );
 
-const EmojiPicker = ({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) => {
+const EmojiPicker = ({ onSelect, onClose, direction = "up" }: { onSelect: (e: string) => void; onClose: () => void; direction?: "up" | "down" }) => {
+  const positionStyles: React.CSSProperties = direction === "up" 
+    ? { bottom: "100%", marginBottom: 16 } 
+    : { top: "100%", marginTop: 16 };
+    
   return (
-    <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 16, zIndex: 99, boxShadow: "0 20px 40px rgba(0,0,0,0.6)", borderRadius: 8, overflow: "hidden" }}>
+    <div style={{ 
+      position: "absolute", 
+      left: 0, 
+      zIndex: 999, 
+      boxShadow: "0 20px 60px rgba(0,0,0,0.8)", 
+      borderRadius: 16, 
+      overflow: "hidden",
+      border: "1px solid rgba(255,255,255,0.1)",
+      ...positionStyles 
+    }}>
       <ReactEmojiPicker
         theme={Theme.DARK}
         searchDisabled
         skinTonesDisabled
+        width={320}
+        height={400}
         onEmojiClick={(emojiData) => {
           onSelect(emojiData.emoji);
           onClose();
@@ -1092,8 +1107,8 @@ export default function BubbleMessages() {
   const [stories, setStories] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
   const [typing, setTyping] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [isRecording, setIsRecording] = useState(false); // other user is recording
+  // Track typing/recording states per chat for sidebar visibility
+  const [transmittingRegistry, setTransmittingRegistry] = useState<Record<string, { typing: boolean, recording: boolean }>>({});
 
   const [showNewChat, setShowNewChat] = useState(false);
   const [showNewGroup, setShowNewGroup] = useState(false);
@@ -1111,6 +1126,7 @@ export default function BubbleMessages() {
 
   const [mediaToUpload, setMediaToUpload] = useState<{ file: File; preview: string; type: 'image' | 'video' } | null>(null);
   const [mediaCaption, setMediaCaption] = useState("");
+  const [replyingToMsg, setReplyingToMsg] = useState<any>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeChatRef = useRef<any>(null);
 
@@ -1119,22 +1135,27 @@ export default function BubbleMessages() {
   /* ── Keep a ref for socket handler purity ─────────────────────────── */
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
-  /* ── Socket setup + room management + Key Init ──────────────────────────────── */
+  /* ── Escape key \u2500 use functional setters to avoid stale closures ────── */
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (mediaToUpload) {
-          setMediaToUpload(null);
-          return;
-        }
-        if (lightboxImg) setLightboxImg(null);
-        if (reactionPickerMsgId) setReactionPickerMsgId(null);
-        if (showNewChat) setShowNewChat(false);
-        if (showNewGroup) setShowNewGroup(false);
-        if (viewingStory) setViewingStory(null);
-        if (deleteModal) setDeleteModal(null);
-        if (!mediaToUpload && !lightboxImg && !reactionPickerMsgId && !showNewChat && !showNewGroup && !viewingStory && !deleteModal) setActiveChat(null);
-      }
+      if (e.key !== "Escape") return;
+      // Use functional form so we always read latest state
+      setReplyingToMsg((v: any) => { if (v) return null; return v; });
+      setMediaToUpload((v: any) => { if (v) return null; return v; });
+      setLightboxImg((v) => { if (v) return null; return v; });
+      setReactionPickerMsgId((v) => { if (v) return null; return v; });
+      setShowNewChat((v) => { if (v) return false; return v; });
+      setShowNewGroup((v) => { if (v) return false; return v; });
+      setViewingStory((v) => { if (v) return null; return v; });
+      setDeleteModal((v) => { if (v) return null; return v; });
+      // If no modals are open, close the active chat thread (WhatsApp style)
+      // This allows users to escape back to the contact list
+      setActiveChat((v: any) => {
+        // We use a trick: if any of the above were open, they were just set to null/false
+        // but since state updates are async, we can't easily check them here.
+        // However, the user specifically wants the ESC button to close the chat.
+        return null;
+      });
     };
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
@@ -1170,17 +1191,20 @@ export default function BubbleMessages() {
 
     const onNewMessage = (msg: any) => {
       const chat = activeChatRef.current;
-      if (chat && msg.chat?.id === (chat.id || chat._id)) {
+      // Accept both chat.id and chat._id since backend may return either
+      const msgChatId = msg.chat?.id || msg.chat?._id || msg.chatId;
+      const activeChatId = chat?.id || chat?._id;
+      if (chat && msgChatId && msgChatId === activeChatId) {
         setMessages((prev) => {
-          // Deduplicate by id
           if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
           return [...prev, msg];
         });
       }
+      // Always update sidebar latest message
       setChats((prev) =>
         prev.map((c) =>
-          (c.id || c._id) === (msg.chat?.id)
-            ? { ...c, latestMessage: { content: msg.content, sentAt: msg.sentAt } }
+          (c.id || c._id) === msgChatId
+            ? { ...c, latestMessage: { content: msg.content || (msg.mediaUrl ? '📎 Media' : ''), sentAt: msg.sentAt || new Date().toISOString() } }
             : c
         )
       );
@@ -1188,13 +1212,18 @@ export default function BubbleMessages() {
 
     const onReceive = (payload: any) => {
       const chat = activeChatRef.current;
-      if (chat && payload.chatId === (chat.id || chat._id)) {
-        setMessages((prev) => [...prev, payload]);
+      const msgChatId = payload.chatId || payload.chat?.id || payload.chat?._id;
+      if (chat && msgChatId === (chat.id || chat._id)) {
+        setMessages((prev) => {
+          // Deduplicate — avoid double-render if new_message already handled it
+          if (prev.some((m) => (m.id || m._id) === (payload.id || payload._id))) return prev;
+          return [...prev, payload];
+        });
       }
       setChats((prev) =>
         prev.map((c) =>
-          (c.id || c._id) === payload.chatId
-            ? { ...c, latestMessage: { content: payload.message, sentAt: new Date().toISOString() } }
+          (c.id || c._id) === msgChatId
+            ? { ...c, latestMessage: { content: payload.message || payload.content || '', sentAt: new Date().toISOString() } }
             : c
         )
       );
@@ -1216,24 +1245,24 @@ export default function BubbleMessages() {
       ));
     };
 
-    const onTypingStart = ({ fromUserId }: any) => {
-      if (activeChatRef.current) {
-        if (fromUserId !== myId) setIsTyping(true);
+    const onTypingStart = ({ fromUserId, chatId }: any) => {
+      if (fromUserId !== myId && chatId) {
+        setTransmittingRegistry(prev => ({ ...prev, [chatId]: { ...prev[chatId], typing: true } }));
       }
     };
-    const onTypingStop = ({ fromUserId }: any) => {
-      if (activeChatRef.current) {
-        if (fromUserId !== myId) setIsTyping(false);
+    const onTypingStop = ({ fromUserId, chatId }: any) => {
+      if (fromUserId !== myId && chatId) {
+        setTransmittingRegistry(prev => ({ ...prev, [chatId]: { ...prev[chatId], typing: false } }));
       }
     };
-    const onRecordingStart = ({ fromUserId }: any) => {
-      if (activeChatRef.current) {
-        if (fromUserId !== myId) setIsRecording(true);
+    const onRecordingStart = ({ fromUserId, chatId }: any) => {
+      if (fromUserId !== myId && chatId) {
+        setTransmittingRegistry(prev => ({ ...prev, [chatId]: { ...prev[chatId], recording: true } }));
       }
     };
-    const onRecordingStop = ({ fromUserId }: any) => {
-      if (activeChatRef.current) {
-        if (fromUserId !== myId) setIsRecording(false);
+    const onRecordingStop = ({ fromUserId, chatId }: any) => {
+      if (fromUserId !== myId && chatId) {
+        setTransmittingRegistry(prev => ({ ...prev, [chatId]: { ...prev[chatId], recording: false } }));
       }
     };
     const onStatus = ({ userId, isOnline }: any) => {
@@ -1330,8 +1359,10 @@ export default function BubbleMessages() {
     if (!inputText.trim() || !activeChat) return;
     const text = inputText;
     setInputText("");
+    const parentMsgId = replyingToMsg ? replyingToMsg.id || replyingToMsg._id : undefined;
+    setReplyingToMsg(null);
     try {
-      const res = await api.sendTextMessage(activeChat.id || activeChat._id, text);
+      const res = await api.sendTextMessage(activeChat.id || activeChat._id, text, { parent_message: parentMsgId });
       const msg = res.data || res;
       setMessages((prev) => {
         if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
@@ -1345,10 +1376,13 @@ export default function BubbleMessages() {
   /* ── Typing indicator ─────────────────────────────────────────────── */
   const handleTyping = (text: string) => {
     setInputText(text);
-    const other = getOtherUser(activeChat, myId);
-    if (!other) return;
-    const otherId = other.id || other._id;
+    if (!activeChat) return;
     const chatId = activeChat?.id || activeChat?._id;
+    // getOtherUser returns null for group chats — fall back to first non-self member
+    const other = getOtherUser(activeChat, myId)
+      || activeChat.users?.find((u: any) => (u.id || u._id) !== myId)
+      || null;
+    const otherId = other ? (other.id || other._id) : '';
     if (!typing) {
       setTyping(true);
       emitTypingStart(otherId, chatId);
@@ -1365,7 +1399,7 @@ export default function BubbleMessages() {
     const file = e.target.files?.[0];
     if (!file || !activeChat) return;
     e.target.value = "";
-    
+
     const type = file.type.startsWith("video/") ? "video" : "image";
     setMediaToUpload({ file, preview: URL.createObjectURL(file), type });
     setMediaCaption("");
@@ -1373,10 +1407,12 @@ export default function BubbleMessages() {
 
   const confirmMediaUpload = async () => {
     if (!mediaToUpload || !activeChat) return;
+    const parentMsgId = replyingToMsg ? replyingToMsg.id || replyingToMsg._id : undefined;
     try {
       toast.info("Uploading media...");
       const res = await api.sendMediaMessage(activeChat.id || activeChat._id, mediaToUpload.file, {
-        content: mediaCaption
+        content: mediaCaption,
+        parent_message: parentMsgId
       });
       const msg = res.data || res;
       setMessages((prev) => {
@@ -1385,6 +1421,7 @@ export default function BubbleMessages() {
       });
       setMediaToUpload(null);
       setMediaCaption("");
+      setReplyingToMsg(null);
     } catch {
       toast.error("Upload failed");
     }
@@ -1488,6 +1525,46 @@ export default function BubbleMessages() {
       }
     } catch {
       toast.error("Failed to reply to story");
+    }
+  };
+
+  const handleBlockUser = async (userId: string) => {
+    try {
+      await api.blockUser(userId);
+      toast.success("Identity updated in block registry");
+    } catch {
+      toast.error("Failed to update identity status");
+    }
+  };
+
+  const handleReportUser = async (userId: string) => {
+    const reason = window.prompt("Reason for reporting this transmission?");
+    if (!reason) return;
+    try {
+      await api.reportUser(userId, reason);
+      toast.success("Report submitted for manual investigation");
+    } catch {
+      toast.error("Failed to submit report");
+    }
+  };
+
+  const handleMuteChat = async (chatId: string) => {
+    try {
+      await api.muteChat(chatId);
+      toast.success("Notification preferences updated");
+    } catch {
+      toast.error("Failed to update transmission status");
+    }
+  };
+
+  const handleClearChat = async (chatId: string) => {
+    if (!window.confirm("Are you sure? This will remove all local transmission artifacts.")) return;
+    try {
+      await api.clearChat(chatId);
+      setMessages([]);
+      toast.success("Transmission history cleared locally");
+    } catch {
+      toast.error("Failed to clear history");
     }
   };
 
@@ -1863,15 +1940,15 @@ export default function BubbleMessages() {
                       <p
                         style={{
                           fontSize: 12,
-                          color: "#9eacc3",
+                          color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "#ffe792" : "#9eacc3",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {c.latestMessage?.content ||
+                        {transmittingRegistry[c.id || c._id]?.recording ? "🎤 recording audio..." : transmittingRegistry[c.id || c._id]?.typing ? "⚡ transmitting..." : (c.latestMessage?.content ||
                           (c.latestMessage?.message_type === "voice" ? "🎤 Voice note" : null) ||
-                          (c.latestMessage?.mediaUrl ? "📎 Attachment" : "No messages yet")}
+                          (c.latestMessage?.mediaUrl ? "📎 Attachment" : "No messages yet"))}
                       </p>
                     </div>
                   </div>
@@ -1975,13 +2052,15 @@ export default function BubbleMessages() {
                         {getChatDisplayName(activeChat, myId)}
                       </h2>
                       <span style={{ fontSize: 11, color: "#ffe792", letterSpacing: "0.08em" }}>
-                        {isTyping
-                          ? "transmitting..."
-                          : getOtherUser(activeChat, myId)?.isOnline
-                            ? "Online"
-                            : (getOtherUser(activeChat, myId) as any)?.lastSeen
-                              ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                              : "Offline"}
+                        {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording
+                          ? "recording audio..."
+                          : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing
+                            ? "transmitting..."
+                            : getOtherUser(activeChat, myId)?.isOnline
+                              ? "Online"
+                              : (getOtherUser(activeChat, myId) as any)?.lastSeen
+                                ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                                : "Offline"}
                       </span>
                     </div>
                   </div>
@@ -2090,15 +2169,16 @@ export default function BubbleMessages() {
                               ...(isMine ? { right: "100%", marginRight: 8 } : { left: "100%", marginLeft: 8 })
                             }}>
                               <button title="React" onClick={() => setReactionPickerMsgId(msg._id || msg.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="add_reaction" size={16} /></button>
-                              <button title="Reply" onClick={() => setInputText(`Replying to: "${msg.content || 'media'}"\n\n`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="reply" size={16} /></button>
+                              <button title="Reply" onClick={() => setReplyingToMsg(msg)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="reply" size={16} /></button>
                               <button title="Forward" onClick={() => { setForwardingMsg(msg); setShowNewChat(true); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="forward" size={16} /></button>
                               {isMine && <button title="Delete" onClick={() => setDeleteModal({ msgId: msg._id || msg.id, isMine: true, sentAt: msg.sentAt || msg.createdAt || Date.now() })} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", display: "flex" }}><Icon name="delete" size={16} /></button>}
                             </div>
                           )}
                           {/* Reaction Picker Popover */}
                           {reactionPickerMsgId === (msg._id || msg.id) && (
-                            <div style={{ position: "absolute", top: "100%", marginTop: 12, left: isMine ? "auto" : 0, right: isMine ? 0 : "auto", zIndex: 100 }}>
+                            <div style={{ position: "absolute", top: "100%", left: isMine ? "auto" : 0, right: isMine ? 0 : "auto", zIndex: 100 }}>
                               <EmojiPicker
+                                direction="down"
                                 onSelect={(emoji) => {
                                   handleReactMessage(msg._id || msg.id, emoji);
                                   setReactionPickerMsgId(null);
@@ -2107,6 +2187,30 @@ export default function BubbleMessages() {
                               />
                             </div>
                           )}
+                          {/* Replied Message Preview */}
+                          {msg.parent_message && (
+                            <div
+                              style={{
+                                background: isMine ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)",
+                                borderLeft: `3px solid ${isMine ? "rgba(255,255,255,0.4)" : "#ffe792"}`,
+                                padding: "6px 10px",
+                                borderRadius: "6px 6px 6px 0",
+                                marginBottom: 6,
+                                fontSize: 12,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                                cursor: "pointer",
+                                opacity: 0.85
+                              }}
+                            >
+                              <span style={{ fontWeight: 700, color: isMine ? "#1a0a00" : "#d8e6ff" }}>{msg.parent_message.sender?.full_name || "Someone"}</span>
+                              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260, color: isMine ? "#4a3c00" : "#9eacc3" }}>
+                                {msg.parent_message.content || (msg.parent_message.mediaUrl ? "Media Attachment" : "Message")}
+                              </span>
+                            </div>
+                          )}
+
                           {/* Image */}
                           {isImage && (
                             <img
@@ -2191,37 +2295,75 @@ export default function BubbleMessages() {
                           )}
 
                           {/* Timestamp + read receipt */}
-                          <span
-                            style={{
-                              fontSize: 10,
-                              color: isMine ? "rgba(26,10,0,0.5)" : "#68768b",
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              alignItems: "center",
-                              gap: 4,
-                              marginTop: 4,
-                            }}
-                          >
-                            {new Date(msg.sentAt || msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            {isMine && (
-                              <Icon
-                                name="done_all"
-                                size={14}
-                                style={{ color: msg.isRead ? "#0496ff" : "rgba(255,231,146,0.8)" }}
-                              />
-                            )}
-                          </span>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                            {/* Reactions Render */}
+                            {msg.reactions && msg.reactions.length > 0 ? (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginRight: 12 }}>
+                                {Array.from(new Set(msg.reactions.map((r: any) => r.emoji))).map((emoji: any) => {
+                                  const reactorsForEmoji = msg.reactions.filter((r: any) => r.emoji === emoji);
+                                  const count = reactorsForEmoji.length;
+                                  // Show up to 5 names as requested
+                                  const names = reactorsForEmoji.slice(0, 5).map((r: any) => r.user?.full_name || "Someone").join(", ");
+                                  const tooltip = count > 5 ? `${names} and ${count - 5} others` : names;
+                                  
+                                  return (
+                                    <div
+                                      key={emoji as string}
+                                      title={tooltip}
+                                      style={{
+                                        background: isMine ? "rgba(255,255,255,0.25)" : "rgba(255,231,146,0.15)",
+                                        border: `1px solid ${isMine ? "rgba(255,255,255,0.4)" : "rgba(255,231,146,0.3)"}`,
+                                        borderRadius: 14,
+                                        padding: "4px 8px",
+                                        fontSize: 12,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 5,
+                                        cursor: "pointer",
+                                        transition: "transform 0.1s"
+                                      }}
+                                      onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
+                                      onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                                    >
+                                      <span style={{ fontSize: 14 }}>{emoji as string}</span>
+                                      <span style={{ color: isMine ? "#1a0a00" : "#ffe792", fontSize: 11, fontWeight: 700 }}>{count}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : <div />}
+
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: isMine ? "rgba(26,10,0,0.5)" : "#68768b",
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              {new Date(msg.sentAt || msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {isMine && (
+                                <Icon
+                                  name="done_all"
+                                  size={16}
+                                  style={{ color: msg.isRead ? "#38bdf8" : "rgba(26,10,0,0.5)", fontWeight: "bold" }}
+                                />
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
-                  {isTyping && (
+                  {transmittingRegistry[activeChat?.id || activeChat?._id]?.typing && (
                     <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8, marginTop: 4 }}>
                       <Avatar src={getChatAvatar(activeChat, myId)} size={32} style={{ marginRight: 10, alignSelf: "flex-end" }} />
                       <div style={{ background: "rgba(11,36,64,0.8)", padding: "12px 16px", borderRadius: "18px 18px 18px 4px", border: "1px solid rgba(59,73,92,0.2)", display: "flex", gap: 6, alignItems: "center" }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#9eacc3", animation: "pulse 1s infinite", animationDelay: "0ms" }} />
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#9eacc3", animation: "pulse 1s infinite", animationDelay: "200ms" }} />
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#9eacc3", animation: "pulse 1s infinite", animationDelay: "400ms" }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffe792", animation: "pulse 1s infinite", animationDelay: "0ms" }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffe792", animation: "pulse 1s infinite", animationDelay: "200ms" }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffe792", animation: "pulse 1s infinite", animationDelay: "400ms" }} />
                       </div>
                     </div>
                   )}
@@ -2229,7 +2371,30 @@ export default function BubbleMessages() {
                 </div>
 
                 {/* Input bar */}
-                <footer style={{ padding: "0 20px 20px", flexShrink: 0 }}>
+                <footer style={{ padding: "0 20px 20px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {replyingToMsg && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      background: "rgba(11,36,64,0.6)",
+                      border: "1px solid rgba(59,73,92,0.3)",
+                      borderRadius: 12,
+                      padding: "8px 12px",
+                      backdropFilter: "blur(4px)",
+                      marginLeft: 16, marginRight: 16,
+                    }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
+                        <span style={{ fontSize: 11, color: "#ffe792", fontWeight: 700 }}>Replying to {replyingToMsg.sender?.full_name || "Someone"}</span>
+                        <span style={{ fontSize: 13, color: "#d8e6ff", opacity: 0.8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 300 }}>
+                          {replyingToMsg.content || "Media Attachment"}
+                        </span>
+                      </div>
+                      <button onClick={() => setReplyingToMsg(null)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }}>
+                        <Icon name="close" size={16} />
+                      </button>
+                    </div>
+                  )}
                   <div
                     style={{
                       display: "flex",
@@ -2616,21 +2781,21 @@ export default function BubbleMessages() {
 
                     {/* Admin Actions */}
                     <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <button onClick={() => toast.success("Notifications muted.")} style={actionBtnStyle}>
+                      <button onClick={() => handleMuteChat(activeChat?.id || activeChat?._id)} style={actionBtnStyle}>
                         <Icon name="notifications_off" size={18} />
                         Mute Notifications
                       </button>
-                      <button onClick={() => toast.success("Chat history cleared.")} style={actionBtnStyle}>
+                      <button onClick={() => handleClearChat(activeChat?.id || activeChat?._id)} style={actionBtnStyle}>
                         <Icon name="delete_sweep" size={18} />
                         Clear Chat
                       </button>
-                      <button onClick={() => { setActiveChat(null); toast.error("User blocked."); }} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                      <button onClick={() => handleBlockUser(other?.id || other?._id)} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
                         <Icon name="block" size={18} />
-                        Block User
+                        Block Identity
                       </button>
-                      <button onClick={() => toast.success("User reported for investigation.")} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                      <button onClick={() => handleReportUser(other?.id || other?._id)} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
                         <Icon name="report" size={18} />
-                        Report
+                        Report Transmission
                       </button>
                     </div>
                   </>

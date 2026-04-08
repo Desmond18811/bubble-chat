@@ -348,3 +348,48 @@ export const getUserStatus = async (req: AuthRequest, res: Response): Promise<vo
     res.status(500).json({ message: error.message });
   }
 };
+
+// ─── Report User ──────────────────────────────────────────────────────────────
+/**
+ * POST /api/v1/user/report/:userId
+ * Body: { reason } — reason for report
+ */
+export const reportUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  const targetId = req.params.userId;
+  const { reason = 'No reason provided' } = req.body;
+
+  if (String(req.user._id) === targetId) {
+    res.status(400).json({ message: 'You cannot report yourself.' });
+    return;
+  }
+
+  try {
+    const targetUser = await User.findById(targetId).select('full_name email uniqueTag');
+    if (!targetUser) {
+      res.status(404).json({ message: 'User not found.' });
+      return;
+    }
+
+    // Log report for admin investigation (extend with a Report model later)
+    console.warn(`[REPORT] User ${req.user._id} reported user ${targetId} (${targetUser.email}) — Reason: ${reason}`);
+
+    // Flag the reported user for review by adding to a conceptual queue
+    // In a full implementation this would write to a Report model / alert admin dashboard
+    await User.findByIdAndUpdate(targetId, {
+      $set: { flagged_for_review: true },
+    });
+
+    res.status(200).json({
+      message: 'Report submitted. Our team will review this account.',
+      reported_user: targetId,
+      reason,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};

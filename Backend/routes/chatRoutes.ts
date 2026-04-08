@@ -7,6 +7,8 @@ import {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  muteChat,
+  clearChat,
 } from '../controllers/chatController';
 
 const router = express.Router();
@@ -200,5 +202,10 @@ router.route('/groupremove').put(removeFromGroup);
  */
 router.route('/groupadd').put(addToGroup);
 
+/** PUT /api/v1/chat/mute/:chatId — Toggle mute status */
+router.put('/mute/:chatId', muteChat);
+
+/** PUT /api/v1/chat/clear/:chatId — Clear all messages for me */
+router.put('/clear/:chatId', clearChat);
 
 export default router;

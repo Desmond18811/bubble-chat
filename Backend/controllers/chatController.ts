@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Conversation } from '../models/conversations';
 import { User } from '../models/users';
+import { Message } from '../models/messages';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -308,6 +309,61 @@ export const removeFromGroup = async (req: AuthRequest, res: Response): Promise<
       removed_user_id: userId,
       conversation: formatConversation(updated),
     });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Mute / Unmute a conversation
+ * PUT /api/v1/chat/mute/:chatId
+ */
+export const muteChat = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  const userId = req.user?._id;
+
+  try {
+    const convo = await Conversation.findById(chatId);
+    if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    const isMuted = convo.mutedBy.includes(userId as any);
+    if (isMuted) {
+      convo.mutedBy = convo.mutedBy.filter((id) => String(id) !== String(userId));
+    } else {
+      convo.mutedBy.push(userId as any);
+    }
+
+    await convo.save();
+    res.status(200).json({
+      message: isMuted ? 'Conversation unmuted' : 'Conversation muted',
+      isMuted: !isMuted,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Clear Chat — Mark all messages in a chat as deleted for the requesting user
+ * PUT /api/v1/chat/clear/:chatId
+ */
+export const clearChat = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  const userId = req.user?._id;
+
+  try {
+    // 1. Mark conversation as deleted for this user (so it might disappear from list)
+    await Conversation.findByIdAndUpdate(chatId, {
+      $addToSet: { deletedBy: userId },
+    });
+
+    // 2. Mark all existing messages as deleted for this user
+    await Message.updateMany(
+      { chat: chatId },
+      { $addToSet: { deletedFor: userId } }
+    );
+
+    res.status(200).json({ message: 'Chat cleared successfully' });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

@@ -34,7 +34,8 @@ export const initSocket = (server: HttpServer) => {
     const userId = (socket as any).userId;
     console.log(`✅ Authenticated socket connection: ${socket.id} (User: ${userId})`);
 
-    // Automatically register user on connection
+    // Automatically register user on connection and join their personal room
+    socket.join(userId); // <-- personal room: guarantees delivery even when no chat is open
     User.findByIdAndUpdate(userId, { 
       socketId: socket.id, 
       isOnline: true 
@@ -72,32 +73,23 @@ export const initSocket = (server: HttpServer) => {
 
     // ─── Typing Indicators ────────────────────────────────────────────────────
     socket.on('typing_start', (data: { toUserId: string; chatId?: string }) => {
-      if (data.chatId) {
-        socket.to(data.chatId).emit('typing_start', { fromUserId: userId });
-        return;
-      }
-      User.findById(data.toUserId).then(recipient => {
-        if (recipient && recipient.socketId) io.to(recipient.socketId).emit('typing_start', { fromUserId: userId });
-      });
+      // Emit to the chat room; also emit to the recipient's personal userId room as fallback
+      if (data.chatId) socket.to(data.chatId).emit('typing_start', { fromUserId: userId, chatId: data.chatId });
+      if (data.toUserId) io.to(data.toUserId).emit('typing_start', { fromUserId: userId, chatId: data.chatId });
     });
 
     socket.on('typing_stop', (data: { toUserId: string; chatId?: string }) => {
-      if (data.chatId) {
-        socket.to(data.chatId).emit('typing_stop', { fromUserId: userId });
-        return;
-      }
-      User.findById(data.toUserId).then(recipient => {
-        if (recipient && recipient.socketId) io.to(recipient.socketId).emit('typing_stop', { fromUserId: userId });
-      });
+      if (data.chatId) socket.to(data.chatId).emit('typing_stop', { fromUserId: userId, chatId: data.chatId });
+      if (data.toUserId) io.to(data.toUserId).emit('typing_stop', { fromUserId: userId, chatId: data.chatId });
     });
 
     // ─── Voice Recording Indicator ────────────────────────────────────────────
     socket.on('recording_start', (data: { chatId: string }) => {
-      socket.to(data.chatId).emit('recording_start', { fromUserId: userId });
+      socket.to(data.chatId).emit('recording_start', { fromUserId: userId, chatId: data.chatId });
     });
 
     socket.on('recording_stop', (data: { chatId: string }) => {
-      socket.to(data.chatId).emit('recording_stop', { fromUserId: userId });
+      socket.to(data.chatId).emit('recording_stop', { fromUserId: userId, chatId: data.chatId });
     });
 
     // ─── Read Receipts & Burn Protocol ───────────────────────────────────────
