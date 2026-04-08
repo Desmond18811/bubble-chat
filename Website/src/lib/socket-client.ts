@@ -42,6 +42,16 @@ export const disconnectSocket = () => {
   }
 };
 
+/** ─── Room Management (critical for real-time delivery) ─────────────────── */
+
+export const emitJoinRoom = (chatId: string) => {
+  socket?.emit('join_room', chatId);
+};
+
+export const emitLeaveRoom = (chatId: string) => {
+  socket?.emit('leave_room', chatId);
+};
+
 /** ─── Messaging ─────────────────────────────────────────────────────────── */
 
 export const emitSendMessage = (payload: {
@@ -56,12 +66,22 @@ export const emitSendMessage = (payload: {
 
 /** ─── Typing Indicators ─────────────────────────────────────────────────── */
 
-export const emitTypingStart = (toUserId: string) => {
-  socket?.emit('typing_start', { toUserId });
+export const emitTypingStart = (toUserId: string, chatId?: string) => {
+  socket?.emit('typing_start', { toUserId, chatId });
 };
 
-export const emitTypingStop = (toUserId: string) => {
-  socket?.emit('typing_stop', { toUserId });
+export const emitTypingStop = (toUserId: string, chatId?: string) => {
+  socket?.emit('typing_stop', { toUserId, chatId });
+};
+
+/** ─── Voice Recording Indicators ────────────────────────────────────────── */
+
+export const emitRecordingStart = (chatId: string) => {
+  socket?.emit('recording_start', { chatId });
+};
+
+export const emitRecordingStop = (chatId: string) => {
+  socket?.emit('recording_stop', { chatId });
 };
 
 /** ─── Read Receipts & Burn Protocol ─────────────────────────────────────── */

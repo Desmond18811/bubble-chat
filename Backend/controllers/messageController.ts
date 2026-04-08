@@ -151,9 +151,24 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 
     await Conversation.findByIdAndUpdate(chatId, { latestMessage: message._id });
 
+    const formatted = formatMessage(message);
+
+    // Emit to everyone in the chat room for real-time delivery
+    const io = (req as any).io;
+    if (io) {
+      io.to(chatId).emit('new_message', formatted);
+      // Fallback: Emit to all users physically in their personal rooms
+      const chatDoc = await Conversation.findById(chatId);
+      if (chatDoc && chatDoc.users) {
+         chatDoc.users.forEach((u: any) => {
+           io.to(u.toString()).emit('new_message', formatted);
+         });
+      }
+    }
+
     res.status(201).json({
       message: 'Message sent successfully.',
-      data: formatMessage(message),
+      data: formatted,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -198,7 +213,12 @@ export const proxyMedia = async (req: Request, res: Response): Promise<void> => 
  */
 export const allMessages = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const messages = await Message.find({ chat: req.params.chatId })
+    const userId = req.user?._id;
+    // Exclude messages the requesting user has soft-deleted ("delete for me")
+    const messages = await Message.find({
+      chat: req.params.chatId,
+      deletedFor: { $ne: userId },
+    })
       .populate('sender', 'full_name username avatar email uniqueTag status_message isOnline')
       .populate('chat', 'chatName isGroupChat')
       .populate('readBy', 'full_name avatar uniqueTag')
@@ -266,34 +286,74 @@ export const updateMessage = async (req: AuthRequest, res: Response): Promise<vo
 };
 
 /**
- * Delete a message
- * DELETE /api/v1/message/:messageId
+ * Delete for Me — soft-delete only for the requesting user.
+ * The message is hidden from their feed but still visible to others.
+ * DELETE /api/v1/message/:messageId/for-me
  */
-export const deleteMessage = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteForMe = async (req: AuthRequest, res: Response): Promise<void> => {
   const { messageId } = req.params;
-
-  if (!req.user?._id) {
-    res.status(401).json({ message: 'Unauthorized' });
-    return;
-  }
+  if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
   try {
     const msg = await Message.findById(messageId);
     if (!msg) { res.status(404).json({ message: 'Message not found' }); return; }
+
+    // Add this user to deletedFor (idempotent via $addToSet)
+    await Message.findByIdAndUpdate(messageId, {
+      $addToSet: { deletedFor: req.user._id },
+    });
+
+    res.status(200).json({
+      message: 'Message hidden for you.',
+      deleted_message_id: messageId,
+      scope: 'for_me',
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Delete for Everyone — hard-delete within a 2-minute window.
+ * Only the original sender may use this, and only within 120 seconds of sending.
+ * DELETE /api/v1/message/:messageId/for-everyone
+ */
+export const deleteForEveryone = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { messageId } = req.params;
+  if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized' }); return; }
+
+  try {
+    const msg = await Message.findById(messageId);
+    if (!msg) { res.status(404).json({ message: 'Message not found' }); return; }
+
+    // Must be the original sender
     if (String(msg.sender) !== String(req.user._id)) {
-      res.status(403).json({ message: 'Forbidden: You can only delete your own messages' });
+      res.status(403).json({ message: 'Forbidden: Only the sender can delete for everyone' });
+      return;
+    }
+
+    // Enforce 2-minute window
+    const ageMs = Date.now() - new Date(msg.createdAt).getTime();
+    const TWO_MINUTES_MS = 2 * 60 * 1000;
+    if (ageMs > TWO_MINUTES_MS) {
+      res.status(403).json({
+        message: 'Delete for everyone is only allowed within 2 minutes of sending.',
+        expired: true,
+      });
       return;
     }
 
     await Message.findByIdAndDelete(messageId);
 
+    // Notify all members of this chat in real-time
     const io = (req as any).io;
-    if (io) io.to(String(msg.chat)).emit('message_deleted', { messageId });
+    if (io) io.to(String(msg.chat)).emit('message_deleted', { messageId, scope: 'for_everyone' });
 
     res.status(200).json({
-      message: 'Message deleted successfully.',
+      message: 'Message deleted for everyone.',
       deleted_message_id: messageId,
       chat_id: String(msg.chat),
+      scope: 'for_everyone',
       deleted_at: new Date().toISOString(),
     });
   } catch (error: any) {

@@ -255,9 +255,18 @@ export const updateMessage = async (messageId: string, content: string) => {
   return handleResponse(res);
 };
 
-/** Delete an existing message (own messages only) */
-export const deleteMessage = async (messageId: string) => {
-  const res = await fetch(`${BASE_URL}/message/${messageId}`, {
+/** Delete a message for yourself only (soft-delete, always available) */
+export const deleteMessageForMe = async (messageId: string) => {
+  const res = await fetch(`${BASE_URL}/message/${messageId}/for-me`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+/** Delete a message for everyone — sender only, within 2 minutes of sending */
+export const deleteMessageForEveryone = async (messageId: string) => {
+  const res = await fetch(`${BASE_URL}/message/${messageId}/for-everyone`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
   });
@@ -318,6 +327,26 @@ export const uploadStory = async (
 export const deleteStory = async (storyId: string) => {
   const res = await fetch(`${BASE_URL}/story/${storyId}`, {
     method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── E2EE ─────────────────────────────────────────────────────────────────────
+
+/** Upload the user's ECDH public key for E2E encrypted messaging */
+export const uploadPublicKey = async (publicKey: string) => {
+  const res = await fetch(`${BASE_URL}/user/public-key`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ publicKey }),
+  });
+  return handleResponse(res);
+};
+
+/** Fetch another user's public key for encryption */
+export const getPublicKey = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/user/${userId}/public-key`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(res);

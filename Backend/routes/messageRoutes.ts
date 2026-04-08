@@ -4,7 +4,8 @@ import {
   sendMessage,
   allMessages,
   updateMessage,
-  deleteMessage,
+  deleteForMe,
+  deleteForEveryone,
   markMessagesRead,
   reactToMessage,
   proxyMedia,
@@ -119,9 +120,15 @@ router.route('/:chatId').get(allMessages);
  *     responses:
  *       200:
  *         description: Message updated. Emits message_updated socket event.
+ */
+router.route('/:messageId').put(updateMessage);
+
+/**
+ * @swagger
+ * /api/v1/message/{messageId}/for-me:
  *   delete:
  *     tags: [Messages]
- *     summary: Delete a message (own messages only)
+ *     summary: Delete a message for yourself only (soft-delete)
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -132,9 +139,31 @@ router.route('/:chatId').get(allMessages);
  *           type: string
  *     responses:
  *       200:
- *         description: Message deleted. Emits message_deleted socket event.
+ *         description: Message hidden from your feed.
  */
-router.route('/:messageId').put(updateMessage).delete(deleteMessage);
+router.route('/:messageId/for-me').delete(deleteForMe);
+
+/**
+ * @swagger
+ * /api/v1/message/{messageId}/for-everyone:
+ *   delete:
+ *     tags: [Messages]
+ *     summary: Delete a message for all participants (sender only, within 2 minutes)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: messageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Message hard-deleted. Emits message_deleted socket event.
+ *       403:
+ *         description: Not sender or 2-minute window expired.
+ */
+router.route('/:messageId/for-everyone').delete(deleteForEveryone);
 
 /**
  * @swagger

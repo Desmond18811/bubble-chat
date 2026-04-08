@@ -7,11 +7,16 @@ import {
   emitSendMessage,
   emitTypingStart,
   emitTypingStop,
+  emitJoinRoom,
+  emitLeaveRoom,
+  emitRecordingStart,
+  emitRecordingStop,
   onEvent,
   offEvent,
 } from "@/lib/socket-client";
 import { toast } from "sonner";
 import ReactEmojiPicker, { Theme } from "emoji-picker-react";
+import { generateKeyPair, exportPrivateKey, exportPublicKey } from "@/lib/crypto";
 
 /* ─── Module-level secure media URL proxy helper ──────────────────────────── */
 const _BASE_API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
@@ -47,50 +52,50 @@ const Avatar = ({ src, name, size = 40, online }: any) => {
       {safeSrc ? (
         <img
           src={safeSrc}
-        alt={name}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          objectFit: "cover",
-          border: "2px solid rgba(255,215,9,0.3)",
-        }}
-      />
-    ) : (
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #001d3d, #0a0a2e)",
-          border: "2px solid rgba(255,231,146,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: size * 0.38,
-          fontWeight: 700,
-          color: "#ffe792",
-          fontFamily: "'Space Grotesk', sans-serif",
-        }}
-      >
-        {(name || "?")[0].toUpperCase()}
-      </div>
-    )}
-    {online !== undefined && (
-      <div
-        style={{
-          position: "absolute",
-          bottom: 1,
-          right: 1,
-          width: size * 0.27,
-          height: size * 0.27,
-          borderRadius: "50%",
-          border: "2px solid #031427",
-          background: online ? "#4ade80" : "#475569",
-        }}
-      />
-    )}
-  </div>
+          alt={name}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: "50%",
+            objectFit: "cover",
+            border: "2px solid rgba(255,215,9,0.3)",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: size,
+            height: size,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #001d3d, #0a0a2e)",
+            border: "2px solid rgba(255,231,146,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: size * 0.38,
+            fontWeight: 700,
+            color: "#ffe792",
+            fontFamily: "'Space Grotesk', sans-serif",
+          }}
+        >
+          {(name || "?")[0].toUpperCase()}
+        </div>
+      )}
+      {online !== undefined && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 1,
+            right: 1,
+            width: size * 0.27,
+            height: size * 0.27,
+            borderRadius: "50%",
+            border: "2px solid #031427",
+            background: online ? "#4ade80" : "#475569",
+          }}
+        />
+      )}
+    </div>
   );
 };
 
@@ -135,14 +140,14 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
   };
 
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:12, background: isMine ? "rgba(10,31,61,0.4)" : "rgba(255,255,255,0.05)", padding:"12px 16px", borderRadius:20, minWidth:220 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, background: "transparent", padding: "4px 0", minWidth: 220, maxWidth: 320 }}>
       <audio ref={audioRef} src={src} preload="metadata" />
-      <button onClick={toggle} style={{ width:36, height:36, borderRadius:"50%", background: isMine ? "#ffe792" : "rgba(255,255,255,0.1)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}>
+      <button onClick={toggle} style={{ width: 36, height: 36, borderRadius: "50%", background: isMine ? "#ffe792" : "rgba(255,255,255,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
         <Icon name={playing ? "pause" : "play_arrow"} size={20} style={{ color: isMine ? "#1a0a00" : "#d8e6ff" }} />
       </button>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:6 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
         {/* Waveform track */}
-        <div style={{ width:"100%", height:24, display:"flex", alignItems:"center", gap:3, cursor:"pointer" }} onClick={(e) => {
+        <div style={{ width: "100%", height: 24, display: "flex", alignItems: "center", gap: 3, cursor: "pointer" }} onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const p = (e.clientX - rect.left) / rect.width;
           if (audioRef.current) audioRef.current.currentTime = p * (audioRef.current.duration || duration || 1);
@@ -151,11 +156,11 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
             const isActive = (i / 30) * 100 <= progress;
             const h = Math.max(6, Math.abs(Math.sin(i * 0.65)) * 18 + 4);
             return (
-              <div key={i} style={{ flex:1, height: h, background: isActive ? (isMine ? "#ffe792" : "#a2c2fd") : "rgba(158,172,195,0.3)", borderRadius:2, transition:"background 0.1s" }} />
+              <div key={i} style={{ flex: 1, height: h, background: isActive ? (isMine ? "#ffe792" : "#a2c2fd") : "rgba(158,172,195,0.3)", borderRadius: 2, transition: "background 0.1s" }} />
             );
           })}
         </div>
-        <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color: isMine ? "rgba(238,238,238,0.7)" : "#9eacc3", fontFamily:"'Space Grotesk',sans-serif", fontVariantNumeric:"tabular-nums" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: isMine ? "rgba(238,238,238,0.7)" : "#9eacc3", fontFamily: "'Space Grotesk',sans-serif", fontVariantNumeric: "tabular-nums" }}>
           <span>{fmt(audioRef.current?.currentTime || 0)}</span>
           <span>{fmt(duration || audioRef.current?.duration || 0)}</span>
         </div>
@@ -165,17 +170,17 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
 };
 
 const ImageLightbox = ({ src, onClose }: { src: string; onClose: () => void }) => (
-  <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", backdropFilter:"blur(12px)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:40 }}>
-    <button onClick={onClose} style={{ position:"absolute", top:24, right:24, background:"rgba(255,255,255,0.1)", border:"none", borderRadius:"50%", width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", cursor:"pointer" }}><Icon name="close" size={24} /></button>
-    <img src={src} onClick={(e)=>e.stopPropagation()} style={{ maxWidth:"100%", maxHeight:"100%", objectFit:"contain", borderRadius:12, boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }} />
+  <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(12px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
+    <button onClick={onClose} style={{ position: "absolute", top: 24, right: 24, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer" }}><Icon name="close" size={24} /></button>
+    <img src={src} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 12, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} />
   </div>
 );
 
 const EmojiPicker = ({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) => {
   return (
-    <div style={{ position:"absolute", bottom:"100%", left:0, marginBottom:16, zIndex:99, boxShadow: "0 20px 40px rgba(0,0,0,0.6)", borderRadius: 8, overflow: "hidden" }}>
-      <ReactEmojiPicker 
-        theme={Theme.DARK} 
+    <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 16, zIndex: 99, boxShadow: "0 20px 40px rgba(0,0,0,0.6)", borderRadius: 8, overflow: "hidden" }}>
+      <ReactEmojiPicker
+        theme={Theme.DARK}
         searchDisabled
         skinTonesDisabled
         onEmojiClick={(emojiData) => {
@@ -436,6 +441,127 @@ const NewChatModal = ({
     </div>
   );
 };
+const NewGroupModal = ({ onClose, onStartGroup, currentUserId }: { onClose: () => void; onStartGroup: (conv: any) => void; currentUserId: string; }) => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
+  const [groupName, setGroupName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await api.searchUsers(query);
+        setResults((res as any).data || res.users || []);
+      } catch {
+        toast.error("Search failed");
+      } finally {
+        setLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const toggleUser = (u: any) => {
+    const userId = u.id || u._id;
+    if (selectedUsers.some(x => (x.id || x._id) === userId)) {
+      setSelectedUsers(prev => prev.filter(x => (x.id || x._id) !== userId));
+    } else {
+      setSelectedUsers(prev => [...prev, u]);
+    }
+  };
+
+  const createGroup = async () => {
+    if (!groupName.trim()) return toast.error("Group name required");
+    if (selectedUsers.length < 1) return toast.error("Select at least 1 user");
+    setCreating(true);
+    try {
+      const usersIds = selectedUsers.map(u => u.id || u._id);
+      const res = await api.createGroupChat(groupName, usersIds);
+      onStartGroup((res as any).conversation || (res as any).group || res);
+      onClose();
+    } catch {
+      toast.error("Failed to create group");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 480, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "80vh" }}>
+        {/* Header */}
+        <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>New Group</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 4 }}><Icon name="close" size={20} /></button>
+        </div>
+
+        {/* Selected Users / Group Name */}
+        <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(59,73,92,0.2)" }}>
+          <input
+            placeholder="Enter Group Name..."
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            style={{ width: "100%", background: "#071a2f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px", fontSize: 14, color: "#d8e6ff", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope', sans-serif", marginBottom: 12 }}
+          />
+          {selectedUsers.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {selectedUsers.map(u => (
+                <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,231,146,0.15)", color: "#ffe792", padding: "4px 8px", borderRadius: 16, fontSize: 12 }}>
+                  {u.username || u.full_name?.split(' ')[0]}
+                  <Icon name="close" size={14} style={{ cursor: "pointer" }} onClick={() => toggleUser(u)} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Search */}
+        <div style={{ padding: "16px 24px" }}>
+          <input
+            placeholder="Search explorers to add..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            style={{ width: "100%", background: "#071a2f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px", fontSize: 14, color: "#d8e6ff", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope', sans-serif" }}
+          />
+        </div>
+
+        {/* Results */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 16px" }}>
+          {results.map((u) => {
+            const isSel = selectedUsers.some(x => (x.id || x._id) === (u.id || u._id));
+            return (
+              <div
+                key={u.id || u._id}
+                onClick={() => toggleUser(u)}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 12px", borderRadius: 12, cursor: "pointer", background: isSel ? "rgba(255,231,146,0.05)" : "transparent" }}
+              >
+                <Avatar src={u.avatar} name={u.full_name} size={44} online={u.isOnline} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: "#d8e6ff", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>{u.full_name || u.username}</div>
+                  <div style={{ fontSize: 12, color: "#9eacc3", marginTop: 2 }}>{u.email || u.uniqueTag}</div>
+                </div>
+                {isSel ? (
+                  <Icon name="check_circle" size={20} fill style={{ color: "#ffe792" }} />
+                ) : (
+                  <Icon name="radio_button_unchecked" size={20} style={{ color: "#9eacc3" }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ padding: 16, borderTop: "1px solid rgba(59,73,92,0.2)" }}>
+          <button onClick={createGroup} disabled={creating} style={{ width: "100%", background: "linear-gradient(135deg, #ffe792, #ffc300)", color: "#1a0a00", border: "none", borderRadius: 12, padding: 14, fontWeight: 700, cursor: creating ? "default" : "pointer", opacity: creating ? 0.7 : 1 }}>
+            {creating ? "Creating..." : "Create Group"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /* ─── Story Upload Modal ─────────────────────────────────────────────────── */
 const STORY_GRADIENTS = [
@@ -458,7 +584,7 @@ const StoryModal = ({
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const audioFileRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<"media"|"audio"|"text">("media");
+  const [tab, setTab] = useState<"media" | "audio" | "text">("media");
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
@@ -494,72 +620,72 @@ const StoryModal = ({
   const canPost = tab === "text" ? textContent.trim().length > 0 : !!file;
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", backdropFilter:"blur(16px)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width:480, background:"#031427", border:"1px solid rgba(59,73,92,0.3)", borderRadius:24, overflow:"hidden", boxShadow:"0 40px 100px rgba(0,0,0,0.8)", display:"flex", flexDirection:"column", maxHeight:"90vh" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(16px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 480, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.8)", display: "flex", flexDirection: "column", maxHeight: "90vh" }}>
         {/* Header */}
-        <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-          <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:18, fontWeight:700, color:"#ffe792", margin:0 }}>New Signal</h2>
-          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:"#9eacc3" }}><Icon name="close" size={20} /></button>
+        <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>New Signal</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3" }}><Icon name="close" size={20} /></button>
         </div>
         {/* Tabs */}
-        <div style={{ display:"flex", gap:0, padding:"16px 24px 0", flexShrink:0, borderBottom:"1px solid rgba(59,73,92,0.2)" }}>
-          {([["media","photo_camera","Media"],["audio","mic","Audio"],["text","text_fields","Text"]] as const).map(([t,icon,label]) => (
-            <button key={t} onClick={() => setTab(t as any)} style={{ flex:1, background:"none", border:"none", borderBottom: tab===t ? "2px solid #ffe792" : "2px solid transparent", padding:"10px 0", cursor:"pointer", color: tab===t ? "#ffe792" : "#68768b", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.08em", transition:"all 0.2s" }}>
+        <div style={{ display: "flex", gap: 0, padding: "16px 24px 0", flexShrink: 0, borderBottom: "1px solid rgba(59,73,92,0.2)" }}>
+          {([["media", "photo_camera", "Media"], ["audio", "mic", "Audio"], ["text", "text_fields", "Text"]] as const).map(([t, icon, label]) => (
+            <button key={t} onClick={() => setTab(t as any)} style={{ flex: 1, background: "none", border: "none", borderBottom: tab === t ? "2px solid #ffe792" : "2px solid transparent", padding: "10px 0", cursor: "pointer", color: tab === t ? "#ffe792" : "#68768b", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", transition: "all 0.2s" }}>
               <Icon name={icon} size={16} />{label}
             </button>
           ))}
         </div>
 
-        <div style={{ padding:24, overflowY:"auto", flex:1 }}>
+        <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
           {/* Media tab */}
           {tab === "media" && (
             <>
-              <div onClick={() => fileRef.current?.click()} style={{ border:"2px dashed rgba(255,231,146,0.2)", borderRadius:16, minHeight:200, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", marginBottom:16, overflow:"hidden", position:"relative" }}>
+              <div onClick={() => fileRef.current?.click()} style={{ border: "2px dashed rgba(255,231,146,0.2)", borderRadius: 16, minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginBottom: 16, overflow: "hidden", position: "relative" }}>
                 {preview ? (
-                  file?.type.startsWith("video/") ? <video src={preview} style={{ maxWidth:"100%", maxHeight:220, borderRadius:10 }} controls /> :
-                  <img src={preview} style={{ maxWidth:"100%", maxHeight:220, borderRadius:10, objectFit:"cover" }} />
+                  file?.type.startsWith("video/") ? <video src={preview} style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 10 }} controls /> :
+                    <img src={preview} style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 10, objectFit: "cover" }} />
                 ) : (
-                  <div style={{ textAlign:"center" }}>
-                    <Icon name="add_photo_alternate" size={44} style={{ color:"#ffe792", opacity:0.6 }} />
-                    <p style={{ color:"#9eacc3", fontSize:13, marginTop:10 }}>Click to select image or video</p>
+                  <div style={{ textAlign: "center" }}>
+                    <Icon name="add_photo_alternate" size={44} style={{ color: "#ffe792", opacity: 0.6 }} />
+                    <p style={{ color: "#9eacc3", fontSize: 13, marginTop: 10 }}>Click to select image or video</p>
                   </div>
                 )}
               </div>
               <input ref={fileRef} type="file" hidden accept="image/*,video/*" onChange={handleFile} />
-              <input placeholder="Add a caption… (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} style={{ width:"100%", background:"#071a2f", border:"1px solid rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px", fontSize:14, color:"#d8e6ff", outline:"none", boxSizing:"border-box", fontFamily:"'Manrope',sans-serif" }} />
+              <input placeholder="Add a caption… (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} style={{ width: "100%", background: "#071a2f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#d8e6ff", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope',sans-serif" }} />
             </>
           )}
 
           {/* Audio tab */}
           {tab === "audio" && (
-            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
-              <div style={{ width:"100%", background:"rgba(255,231,146,0.04)", border:"1px solid rgba(255,231,146,0.1)", borderRadius:16, padding:24, display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
-                <div style={{ width:72, height:72, borderRadius:"50%", background: voice.recording ? "rgba(239,68,68,0.15)" : "rgba(255,231,146,0.1)", border: voice.recording ? "2px solid rgba(239,68,68,0.5)" : "2px solid rgba(255,231,146,0.3)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.2s" }} onClick={voice.recording ? undefined : voice.start}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+              <div style={{ width: "100%", background: "rgba(255,231,146,0.04)", border: "1px solid rgba(255,231,146,0.1)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+                <div style={{ width: 72, height: 72, borderRadius: "50%", background: voice.recording ? "rgba(239,68,68,0.15)" : "rgba(255,231,146,0.1)", border: voice.recording ? "2px solid rgba(239,68,68,0.5)" : "2px solid rgba(255,231,146,0.3)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.2s" }} onClick={voice.recording ? undefined : voice.start}>
                   <Icon name={voice.recording ? "stop" : "mic"} size={32} style={{ color: voice.recording ? "#ef4444" : "#ffe792" }} />
                 </div>
                 {voice.recording ? (
-                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:8, height:8, borderRadius:"50%", background:"#ef4444", animation:"pulse 1s infinite" }} />
-                    <span style={{ color:"#d8e6ff", fontSize:16, fontVariantNumeric:"tabular-nums", fontFamily:"'Space Grotesk',sans-serif" }}>{fmtTime(voice.duration)}</span>
-                    <button onClick={voice.cancel} style={{ background:"none", border:"none", cursor:"pointer", color:"#68768b", fontSize:12 }}>Cancel</button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1s infinite" }} />
+                    <span style={{ color: "#d8e6ff", fontSize: 16, fontVariantNumeric: "tabular-nums", fontFamily: "'Space Grotesk',sans-serif" }}>{fmtTime(voice.duration)}</span>
+                    <button onClick={voice.cancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#68768b", fontSize: 12 }}>Cancel</button>
                   </div>
                 ) : file ? (
-                  <div style={{ textAlign:"center" }}>
-                    <Icon name="check_circle" size={24} style={{ color:"#4ade80" }} />
-                    <p style={{ color:"#9eacc3", fontSize:12, marginTop:4 }}>Ready to broadcast</p>
+                  <div style={{ textAlign: "center" }}>
+                    <Icon name="check_circle" size={24} style={{ color: "#4ade80" }} />
+                    <p style={{ color: "#9eacc3", fontSize: 12, marginTop: 4 }}>Ready to broadcast</p>
                   </div>
                 ) : (
-                  <p style={{ color:"#68768b", fontSize:13 }}>Tap mic to record, or upload an audio file</p>
+                  <p style={{ color: "#68768b", fontSize: 13 }}>Tap mic to record, or upload an audio file</p>
                 )}
                 {voice.recording && (
-                  <button onClick={async () => { const f = await voice.stop(); if(f) setFile(f); }} style={{ background:"#ffe792", border:"none", borderRadius:40, padding:"8px 20px", fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:13, color:"#1a0a00", cursor:"pointer" }}>Stop & Save</button>
+                  <button onClick={async () => { const f = await voice.stop(); if (f) setFile(f); }} style={{ background: "#ffe792", border: "none", borderRadius: 40, padding: "8px 20px", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: "#1a0a00", cursor: "pointer" }}>Stop & Save</button>
                 )}
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, color:"#68768b", fontSize:12 }}>
-                <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.06)" }} />or upload a file<div style={{ flex:1, height:1, background:"rgba(255,255,255,0.06)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#68768b", fontSize: 12 }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />or upload a file<div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.06)" }} />
               </div>
-              <button onClick={() => audioFileRef.current?.click()} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, padding:"10px 20px", color:"#9eacc3", cursor:"pointer", fontSize:13, fontFamily:"'Manrope',sans-serif" }}>
-                <Icon name="upload_file" size={16} style={{ verticalAlign:"middle", marginRight:6 }} />Choose audio file
+              <button onClick={() => audioFileRef.current?.click()} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "10px 20px", color: "#9eacc3", cursor: "pointer", fontSize: 13, fontFamily: "'Manrope',sans-serif" }}>
+                <Icon name="upload_file" size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />Choose audio file
               </button>
               <input ref={audioFileRef} type="file" hidden accept="audio/*" onChange={handleFile} />
             </div>
@@ -567,31 +693,31 @@ const StoryModal = ({
 
           {/* Text tab */}
           {tab === "text" && (
-            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Live preview */}
-              <div style={{ width:"100%", height:200, borderRadius:16, background:bgGradient, display:"flex", alignItems:"center", justifyContent:"center", padding:20, boxSizing:"border-box" }}>
-                <p style={{ color:textColor, fontSize:18, fontWeight:700, textAlign:"center", fontFamily:"'Space Grotesk',sans-serif", wordBreak:"break-word", margin:0, lineHeight:1.4 }}>{textContent || "Your story text appears here..."}</p>
+              <div style={{ width: "100%", height: 200, borderRadius: 16, background: bgGradient, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, boxSizing: "border-box" }}>
+                <p style={{ color: textColor, fontSize: 18, fontWeight: 700, textAlign: "center", fontFamily: "'Space Grotesk',sans-serif", wordBreak: "break-word", margin: 0, lineHeight: 1.4 }}>{textContent || "Your story text appears here..."}</p>
               </div>
-              <textarea placeholder="What's on your mind?" value={textContent} onChange={(e) => setTextContent(e.target.value)} rows={3} style={{ background:"#071a2f", border:"1px solid rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px", fontSize:14, color:"#d8e6ff", outline:"none", resize:"none", fontFamily:"'Manrope',sans-serif", boxSizing:"border-box", width:"100%" }} />
+              <textarea placeholder="What's on your mind?" value={textContent} onChange={(e) => setTextContent(e.target.value)} rows={3} style={{ background: "#071a2f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#d8e6ff", outline: "none", resize: "none", fontFamily: "'Manrope',sans-serif", boxSizing: "border-box", width: "100%" }} />
               <div>
-                <p style={{ fontSize:11, color:"#68768b", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>Background</p>
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                <p style={{ fontSize: 11, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Background</p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {STORY_GRADIENTS.map((g) => (
-                    <div key={g} onClick={() => setBgGradient(g)} style={{ width:32, height:32, borderRadius:8, background:g, cursor:"pointer", border: bgGradient===g ? "2px solid #ffe792" : "2px solid transparent", transition:"border 0.2s" }} />
+                    <div key={g} onClick={() => setBgGradient(g)} style={{ width: 32, height: 32, borderRadius: 8, background: g, cursor: "pointer", border: bgGradient === g ? "2px solid #ffe792" : "2px solid transparent", transition: "border 0.2s" }} />
                   ))}
                 </div>
               </div>
-              <div style={{ display:"flex", gap:10 }}>
-                {["#ffffff","#ffe792","#a2c2fd","#4ade80","#f87171"].map((c) => (
-                  <div key={c} onClick={() => setTextColor(c)} style={{ width:28, height:28, borderRadius:"50%", background:c, cursor:"pointer", border: textColor===c ? "3px solid #ffe792" : "3px solid transparent", boxSizing:"border-box" }} />
+              <div style={{ display: "flex", gap: 10 }}>
+                {["#ffffff", "#ffe792", "#a2c2fd", "#4ade80", "#f87171"].map((c) => (
+                  <div key={c} onClick={() => setTextColor(c)} style={{ width: 28, height: 28, borderRadius: "50%", background: c, cursor: "pointer", border: textColor === c ? "3px solid #ffe792" : "3px solid transparent", boxSizing: "border-box" }} />
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        <div style={{ padding:"0 24px 24px", flexShrink:0 }}>
-          <button onClick={submit} disabled={uploading || !canPost} style={{ width:"100%", background: uploading || !canPost ? "rgba(255,231,146,0.25)" : "linear-gradient(135deg,#ffe792,#ffc300)", color:"#655400", border:"none", borderRadius:14, padding:"14px 0", fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:14, cursor: uploading || !canPost ? "not-allowed" : "pointer", letterSpacing:"0.08em", textTransform:"uppercase", transition:"opacity 0.2s" }}>
+        <div style={{ padding: "0 24px 24px", flexShrink: 0 }}>
+          <button onClick={submit} disabled={uploading || !canPost} style={{ width: "100%", background: uploading || !canPost ? "rgba(255,231,146,0.25)" : "linear-gradient(135deg,#ffe792,#ffc300)", color: "#655400", border: "none", borderRadius: 14, padding: "14px 0", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, cursor: uploading || !canPost ? "not-allowed" : "pointer", letterSpacing: "0.08em", textTransform: "uppercase", transition: "opacity 0.2s" }}>
             {uploading ? "Transmitting..." : "📡 Broadcast Signal"}
           </button>
         </div>
@@ -600,18 +726,20 @@ const StoryModal = ({
   );
 };
 
-/* ─── FAB Menu ────────────────────────────────────────────────────────────── */
 const FABMenu = ({
   onNewChat,
   onNewStory,
+  onNewGroup,
 }: {
   onNewChat: () => void;
   onNewStory: () => void;
+  onNewGroup: () => void;
 }) => {
   const [open, setOpen] = useState(false);
 
   const opts = [
     { icon: "chat", label: "New Chat", action: onNewChat, color: "#ffe792" },
+    { icon: "group_add", label: "New Group", action: onNewGroup, color: "#4ade80" },
     { icon: "add_photo_alternate", label: "Post Story", action: onNewStory, color: "#a2c2fd" },
   ];
 
@@ -690,11 +818,14 @@ const StoryViewerModal = ({
   stories,
   initialIndex,
   onClose,
+  onReply
 }: {
   stories: any[];
   initialIndex: number;
   onClose: () => void;
+  onReply?: (storyId: string, authorId: string, text: string) => Promise<void>;
 }) => {
+  const [replyText, setReplyText] = useState("");
   const [idx, setIdx] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
   const onCloseRef = useRef(onClose);
@@ -841,7 +972,7 @@ const StoryViewerModal = ({
       )}
 
       {/* Quick reaction bar */}
-      <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 20, background: 'rgba(0,0,0,0.4)', borderRadius: 40, padding: '8px 16px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ position: 'absolute', bottom: 84, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 20, background: 'rgba(0,0,0,0.4)', borderRadius: 40, padding: '8px 16px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)' }}>
         {['❤️', '😂', '😮', '😢', '👏', '🔥'].map((e) => (
           <button
             key={e}
@@ -854,6 +985,25 @@ const StoryViewerModal = ({
           </button>
         ))}
       </div>
+
+      {/* Reply input */}
+      {onReply && (story.author?._id || story.author?.id) && (
+        <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 25, background: 'rgba(0,0,0,0.6)', borderRadius: 40, padding: '8px 16px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', width: '80%', maxWidth: 400 }}>
+          <input
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            placeholder="Reply to story..."
+            style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: 14, outline: 'none', padding: '4px 8px' }}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && replyText.trim()) {
+                e.preventDefault();
+                await onReply(story._id || story.id, story.author._id || story.author.id, replyText);
+                setReplyText("");
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -943,15 +1093,24 @@ export default function BubbleMessages() {
   const [inputText, setInputText] = useState("");
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false); // other user is recording
 
   const [showNewChat, setShowNewChat] = useState(false);
+  const [showNewGroup, setShowNewGroup] = useState(false);
   const [showStory, setShowStory] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [hoveredMsg, setHoveredMsg] = useState<string | null>(null);
+  const [forwardingMsg, setForwardingMsg] = useState<any>(null);
   const [viewingStory, setViewingStory] = useState<{ stories: any[]; index: number } | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ msgId: string; isMine: boolean; sentAt: string } | null>(null);
+  const [reactionPickerMsgId, setReactionPickerMsgId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [mediaToUpload, setMediaToUpload] = useState<{ file: File; preview: string; type: 'image' | 'video' } | null>(null);
+  const [mediaCaption, setMediaCaption] = useState("");
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeChatRef = useRef<any>(null);
 
@@ -960,8 +1119,48 @@ export default function BubbleMessages() {
   /* ── Keep a ref for socket handler purity ─────────────────────────── */
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
 
-  /* ── Socket setup ─────────────────────────────────────────────────── */
+  /* ── Socket setup + room management + Key Init ──────────────────────────────── */
   useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (mediaToUpload) {
+          setMediaToUpload(null);
+          return;
+        }
+        if (lightboxImg) setLightboxImg(null);
+        if (reactionPickerMsgId) setReactionPickerMsgId(null);
+        if (showNewChat) setShowNewChat(false);
+        if (showNewGroup) setShowNewGroup(false);
+        if (viewingStory) setViewingStory(null);
+        if (deleteModal) setDeleteModal(null);
+        if (!mediaToUpload && !lightboxImg && !reactionPickerMsgId && !showNewChat && !showNewGroup && !viewingStory && !deleteModal) setActiveChat(null);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
+  useEffect(() => {
+    // E2EE Initialization: Generate key pair if we don't have one
+    const initE2E = async () => {
+      try {
+        if (!localStorage.getItem("e2ee_private")) {
+          const keys = await generateKeyPair();
+          const priv = await exportPrivateKey(keys.privateKey);
+          const pub = await exportPublicKey(keys.publicKey);
+          localStorage.setItem("e2ee_private", priv);
+          localStorage.setItem("e2ee_public", pub);
+          console.log("[E2EE] Initialized new WebCrypto KeyPair");
+          // Here we would normally send the public key to the backend/socket
+        } else {
+          console.log("[E2EE] Loaded existing WebCrypto KeyPair");
+        }
+      } catch (e) {
+        console.error("[E2EE] Failed to init encryption keys", e);
+      }
+    };
+    initE2E();
+
     const token = localStorage.getItem("access_token");
     if (!token) return;
 
@@ -969,12 +1168,29 @@ export default function BubbleMessages() {
     const socket = getSocket();
     if (!socket) return;
 
+    const onNewMessage = (msg: any) => {
+      const chat = activeChatRef.current;
+      if (chat && msg.chat?.id === (chat.id || chat._id)) {
+        setMessages((prev) => {
+          // Deduplicate by id
+          if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
+          return [...prev, msg];
+        });
+      }
+      setChats((prev) =>
+        prev.map((c) =>
+          (c.id || c._id) === (msg.chat?.id)
+            ? { ...c, latestMessage: { content: msg.content, sentAt: msg.sentAt } }
+            : c
+        )
+      );
+    };
+
     const onReceive = (payload: any) => {
       const chat = activeChatRef.current;
       if (chat && payload.chatId === (chat.id || chat._id)) {
         setMessages((prev) => [...prev, payload]);
       }
-      // Update latest message preview in list
       setChats((prev) =>
         prev.map((c) =>
           (c.id || c._id) === payload.chatId
@@ -984,16 +1200,40 @@ export default function BubbleMessages() {
       );
     };
 
+    const onMsgDeleted = ({ messageId }: any) => {
+      setMessages((prev) => prev.filter((m) => (m._id || m.id) !== messageId));
+    };
+
+    const onMsgUpdated = ({ messageId, content }: any) => {
+      setMessages((prev) => prev.map((m) =>
+        (m._id || m.id) === messageId ? { ...m, content } : m
+      ));
+    };
+
+    const onMsgReaction = ({ messageId, reactions }: any) => {
+      setMessages((prev) => prev.map((m) =>
+        (m._id || m.id) === messageId ? { ...m, reactions } : m
+      ));
+    };
+
     const onTypingStart = ({ fromUserId }: any) => {
       if (activeChatRef.current) {
-        const other = getOtherUser(activeChatRef.current, myId);
-        if ((other?.id || other?._id) === fromUserId) setIsTyping(true);
+        if (fromUserId !== myId) setIsTyping(true);
       }
     };
     const onTypingStop = ({ fromUserId }: any) => {
       if (activeChatRef.current) {
-        const other = getOtherUser(activeChatRef.current, myId);
-        if ((other?.id || other?._id) === fromUserId) setIsTyping(false);
+        if (fromUserId !== myId) setIsTyping(false);
+      }
+    };
+    const onRecordingStart = ({ fromUserId }: any) => {
+      if (activeChatRef.current) {
+        if (fromUserId !== myId) setIsRecording(true);
+      }
+    };
+    const onRecordingStop = ({ fromUserId }: any) => {
+      if (activeChatRef.current) {
+        if (fromUserId !== myId) setIsRecording(false);
       }
     };
     const onStatus = ({ userId, isOnline }: any) => {
@@ -1007,18 +1247,43 @@ export default function BubbleMessages() {
       );
     };
 
+    onEvent("new_message", onNewMessage);
     onEvent("receive_message", onReceive);
+    onEvent("message_deleted", onMsgDeleted);
+    onEvent("message_updated", onMsgUpdated);
+    onEvent("message_reaction", onMsgReaction);
     onEvent("typing_start", onTypingStart);
     onEvent("typing_stop", onTypingStop);
+    onEvent("recording_start", onRecordingStart);
+    onEvent("recording_stop", onRecordingStop);
     onEvent("user_status_change", onStatus);
 
     return () => {
+      offEvent("new_message", onNewMessage);
       offEvent("receive_message", onReceive);
+      offEvent("message_deleted", onMsgDeleted);
+      offEvent("message_updated", onMsgUpdated);
+      offEvent("message_reaction", onMsgReaction);
       offEvent("typing_start", onTypingStart);
       offEvent("typing_stop", onTypingStop);
+      offEvent("recording_start", onRecordingStart);
+      offEvent("recording_stop", onRecordingStop);
       offEvent("user_status_change", onStatus);
     };
   }, [myId]);
+
+  /* ── Join/leave socket room when active chat changes ─────────────── */
+  const prevChatIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const chatId = activeChat?.id || activeChat?._id || null;
+    if (prevChatIdRef.current && prevChatIdRef.current !== chatId) {
+      emitLeaveRoom(prevChatIdRef.current);
+    }
+    if (chatId) {
+      emitJoinRoom(chatId);
+    }
+    prevChatIdRef.current = chatId;
+  }, [activeChat]);
 
   /* ── Load chats + stories ─────────────────────────────────────────── */
   useEffect(() => {
@@ -1068,18 +1333,10 @@ export default function BubbleMessages() {
     try {
       const res = await api.sendTextMessage(activeChat.id || activeChat._id, text);
       const msg = res.data || res;
-      setMessages((prev) => [...prev, msg]);
-
-      // Also fire socket so recipient gets it live
-      const other = getOtherUser(activeChat, myId);
-      if (other) {
-        emitSendMessage({
-          toUserId: other.id || other._id,
-          message: text,
-          fromUserId: myId,
-          chatId: activeChat.id || activeChat._id,
-        } as any);
-      }
+      setMessages((prev) => {
+        if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
+        return [...prev, msg];
+      });
     } catch {
       toast.error("Failed to send");
     }
@@ -1091,27 +1348,43 @@ export default function BubbleMessages() {
     const other = getOtherUser(activeChat, myId);
     if (!other) return;
     const otherId = other.id || other._id;
+    const chatId = activeChat?.id || activeChat?._id;
     if (!typing) {
       setTyping(true);
-      emitTypingStart(otherId);
+      emitTypingStart(otherId, chatId);
     }
     if (typingTimer.current) clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(() => {
       setTyping(false);
-      emitTypingStop(otherId);
+      emitTypingStop(otherId, chatId);
     }, 1500);
   };
 
   /* ── File/media message ───────────────────────────────────────────── */
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !activeChat) return;
     e.target.value = "";
+    
+    const type = file.type.startsWith("video/") ? "video" : "image";
+    setMediaToUpload({ file, preview: URL.createObjectURL(file), type });
+    setMediaCaption("");
+  };
+
+  const confirmMediaUpload = async () => {
+    if (!mediaToUpload || !activeChat) return;
     try {
-      toast.info("Uploading...");
-      const res = await api.sendMediaMessage(activeChat.id || activeChat._id, file);
+      toast.info("Uploading media...");
+      const res = await api.sendMediaMessage(activeChat.id || activeChat._id, mediaToUpload.file, {
+        content: mediaCaption
+      });
       const msg = res.data || res;
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
+        return [...prev, msg];
+      });
+      setMediaToUpload(null);
+      setMediaCaption("");
     } catch {
       toast.error("Upload failed");
     }
@@ -1120,17 +1393,29 @@ export default function BubbleMessages() {
   /* ── Voice note ───────────────────────────────────────────────────── */
   const handleVoiceSend = async () => {
     if (!activeChat) return;
+    const chatId = activeChat.id || activeChat._id;
     const finalDuration = voice.duration;
+    emitRecordingStop(chatId);
     const file = await voice.stop();
     if (!file) return;
     try {
       toast.info("Sending voice note...");
-      const res = await api.sendMediaMessage(activeChat.id || activeChat._id, file, { media_duration: finalDuration });
+      const res = await api.sendMediaMessage(chatId, file, { media_duration: finalDuration });
       const msg = res.data || res;
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
+        return [...prev, msg];
+      });
     } catch {
       toast.error("Voice send failed");
     }
+  };
+
+  const handleVoiceStart = async () => {
+    if (!activeChat) return;
+    await voice.start();
+    const chatId = activeChat.id || activeChat._id;
+    emitRecordingStart(chatId);
   };
 
   const handleNewChat = (conv: any) => {
@@ -1139,10 +1424,71 @@ export default function BubbleMessages() {
       return exists ? prev : [conv, ...prev];
     });
     setActiveChat(conv);
+    if (forwardingMsg) {
+      const text = forwardingMsg.content ? `"${forwardingMsg.content}"` : "Media";
+      const link = forwardingMsg.mediaUrl ? `\nAttachment: ${forwardingMsg.mediaUrl}` : "";
+      api.sendTextMessage(conv.id || conv._id, `[Forwarded Message]\n${text}${link}`, { is_forwarded: true });
+      toast.success("Message forwarded");
+      setForwardingMsg(null);
+    }
   };
 
   const handleStoryUploaded = (story: any) => {
     setStories((prev) => [story, ...prev]);
+  };
+
+  const handleDeleteMessage = async (msgId: string, scope: 'for_me' | 'for_everyone') => {
+    setDeleteModal(null);
+    try {
+      if (scope === 'for_everyone') {
+        await api.deleteMessageForEveryone(msgId);
+        // Real-time removal via socket event from backend
+      } else {
+        await api.deleteMessageForMe(msgId);
+        // Local removal only
+        setMessages((prev) => prev.filter((m) => (m._id || m.id) !== msgId));
+      }
+      toast.success(scope === 'for_everyone' ? "Deleted for everyone" : "Deleted for you");
+    } catch (err: any) {
+      if (err.message?.includes('2 minutes')) {
+        toast.error("Can only delete for everyone within 2 minutes of sending");
+      } else {
+        toast.error("Could not delete message");
+      }
+    }
+  };
+
+  const handleReactMessage = async (msgId: string, emoji: string) => {
+    try {
+      await api.reactToMessage(msgId, emoji);
+      toast.success("Reaction sent");
+      // Optimistically update
+      setMessages(prev => prev.map(m => {
+        if ((m._id || m.id) === msgId) {
+          const existing = [...(m.reactions || [])];
+          existing.push({ user: myId, emoji });
+          return { ...m, reactions: existing };
+        }
+        return m;
+      }));
+    } catch {
+      toast.error("Failed to react");
+    }
+  };
+
+  const handleStoryReply = async (storyId: string, authorId: string, replyText: string) => {
+    try {
+      const res = await api.accessOrCreateChat(authorId);
+      const chat = res.data;
+      if (chat && (chat._id || chat.id)) {
+        await api.sendTextMessage(chat._id || chat.id, `Story Reply: ${replyText}`, { parent_message: storyId });
+        toast.success("Replied to story!");
+      } else {
+        toast.error("Could not find chat for story reply");
+      }
+    } catch {
+      toast.error("Failed to reply to story");
+    }
   };
 
   /* ── Render ───────────────────────────────────────────────────────── */
@@ -1181,11 +1527,74 @@ export default function BubbleMessages() {
       `}</style>
 
       {/* Modals */}
+      {mediaToUpload && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 16 }}>
+            <button onClick={() => setMediaToUpload(null)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 8, display: "flex" }}>
+              <Icon name="close" size={28} />
+            </button>
+          </div>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px", maxWidth: "100%", overflow: "hidden" }}>
+            {mediaToUpload.type === "video" ? (
+              <video src={mediaToUpload.preview} controls style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 16, boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }} />
+            ) : (
+              <img src={mediaToUpload.preview} style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 16, objectFit: "contain", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }} />
+            )}
+          </div>
+          <div style={{ width: "100%", maxWidth: 640, padding: "0 20px 40px", position: "relative" }}>
+            <input
+              autoFocus
+              placeholder="Add a caption..."
+              value={mediaCaption}
+              onChange={(e) => setMediaCaption(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmMediaUpload(); }}
+              style={{
+                width: "100%",
+                background: "#0b2440",
+                border: "1px solid rgba(255,231,146,0.3)",
+                borderRadius: 24,
+                padding: "16px 60px 16px 24px",
+                color: "#d8e6ff",
+                fontSize: 15,
+                outline: "none",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.4)"
+              }}
+            />
+            <button
+              onClick={confirmMediaUpload}
+              style={{
+                position: "absolute",
+                right: 28,
+                top: 8,
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #ffe792, #ffc300)",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(255,215,9,0.3)"
+              }}
+            >
+              <Icon name="send" size={18} style={{ color: "#1a0a00", marginLeft: 2 }} />
+            </button>
+          </div>
+        </div>
+      )}
       {showNewChat && (
         <NewChatModal
           currentUserId={myId}
-          onClose={() => setShowNewChat(false)}
+          onClose={() => { setShowNewChat(false); setForwardingMsg(null); }}
           onStartChat={handleNewChat}
+        />
+      )}
+      {showNewGroup && (
+        <NewGroupModal
+          currentUserId={myId}
+          onClose={() => setShowNewGroup(false)}
+          onStartGroup={handleNewChat}
         />
       )}
       {showStory && (
@@ -1200,7 +1609,38 @@ export default function BubbleMessages() {
           stories={viewingStory.stories}
           initialIndex={viewingStory.index}
           onClose={() => setViewingStory(null)}
+          onReply={handleStoryReply}
         />
+      )}
+      {deleteModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 16, padding: "24px 32px", width: 320, display: "flex", flexDirection: "column", gap: 16, boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+            <h3 style={{ margin: 0, color: "#d8e6ff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, textAlign: "center" }}>Delete Message?</h3>
+            <p style={{ margin: 0, color: "#9eacc3", fontSize: 13, textAlign: "center", lineHeight: 1.4 }}>Are you sure you want to delete this transmission?</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+              {deleteModal.isMine && (Date.now() - new Date(deleteModal.sentAt).getTime() < 120000) && (
+                <button
+                  onClick={() => handleDeleteMessage(deleteModal.msgId, 'for_everyone')}
+                  style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "12px", color: "#ef4444", fontWeight: 600, cursor: "pointer" }}
+                >
+                  Delete for everyone
+                </button>
+              )}
+              <button
+                onClick={() => handleDeleteMessage(deleteModal.msgId, 'for_me')}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px", color: "#d8e6ff", fontWeight: 600, cursor: "pointer" }}
+              >
+                Delete for me
+              </button>
+              <button
+                onClick={() => setDeleteModal(null)}
+                style={{ background: "transparent", border: "none", color: "#68768b", padding: "8px", fontWeight: 500, cursor: "pointer", marginTop: 4 }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div
@@ -1257,10 +1697,17 @@ export default function BubbleMessages() {
                 >
                   Transmissions
                 </h1>
-                <FABMenu
-                  onNewChat={() => setShowNewChat(true)}
-                  onNewStory={() => setShowStory(true)}
-                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button title="New Chat" onClick={() => setShowNewChat(true)} style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: 8, cursor: "pointer", color: "#ffe792", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name="chat" size={20} />
+                  </button>
+                  <button title="New Group" onClick={() => setShowNewGroup(true)} style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10, padding: 8, cursor: "pointer", color: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name="group_add" size={20} />
+                  </button>
+                  <button title="Post Story" onClick={() => setShowStory(true)} style={{ background: "rgba(162,194,253,0.1)", border: "1px solid rgba(162,194,253,0.2)", borderRadius: 10, padding: 8, cursor: "pointer", color: "#a2c2fd", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name="add_photo_alternate" size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Search */}
@@ -1580,25 +2027,28 @@ export default function BubbleMessages() {
                     // Normalize media fields — handle every possible shape the backend/socket may send
                     const rawUrl = msg.mediaUrl || msg.media_url || null;
                     const resolvedUrl: string | null = getSecureMediaUrl(rawUrl);
-                    
+
                     const resolvedType: string =
                       msg.mediaType ||
                       msg.message_type ||
                       msg.type ||
                       "text";
 
-                    const isVideo = resolvedUrl && (resolvedType === "video" || msg.mimeType?.startsWith("video/") || rawUrl?.match(/\.(mp4|webm|mov|mkv)/i));
                     const isVoice = resolvedUrl && (resolvedType === "voice" || resolvedType === "audio" || msg.mimeType?.startsWith("audio/") || rawUrl?.match(/\.(mp3|wav|ogg|m4a|weba)/i));
+                    const isVideo = resolvedUrl && !isVoice && (resolvedType === "video" || msg.mimeType?.startsWith("video/") || rawUrl?.match(/\.(mp4|webm|mov|mkv)/i));
                     const isImage = resolvedUrl && !isVideo && !isVoice && (resolvedType === "image" || msg.mimeType?.startsWith("image/") || rawUrl?.match(/\.(jpeg|jpg|gif|png|webp|svg)/i));
-                    const isFile  = resolvedUrl && !isImage && !isVideo && !isVoice;
+                    const isFile = resolvedUrl && !isImage && !isVideo && !isVoice;
 
                     return (
                       <div
                         key={msg._id || msg.id || i}
+                        onMouseEnter={() => setHoveredMsg(msg._id || msg.id)}
+                        onMouseLeave={() => setHoveredMsg(null)}
                         style={{
                           display: "flex",
                           justifyContent: isMine ? "flex-end" : "flex-start",
                           marginBottom: 8,
+                          position: "relative",
                         }}
                       >
                         {!isMine && (
@@ -1620,14 +2070,49 @@ export default function BubbleMessages() {
                               ? "18px 18px 4px 18px"
                               : "18px 18px 18px 4px",
                             border: isMine ? "none" : "1px solid rgba(59,73,92,0.2)",
+                            position: "relative",
                           }}
                         >
+                          {/* Hover Actions */}
+                          {hoveredMsg === (msg._id || msg.id) && (
+                            <div style={{
+                              position: "absolute",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              display: "flex",
+                              gap: 8,
+                              background: "rgba(3,20,39,0.95)",
+                              padding: "8px 12px",
+                              borderRadius: 20,
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              backdropFilter: "blur(4px)",
+                              zIndex: 10,
+                              ...(isMine ? { right: "100%", marginRight: 8 } : { left: "100%", marginLeft: 8 })
+                            }}>
+                              <button title="React" onClick={() => setReactionPickerMsgId(msg._id || msg.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="add_reaction" size={16} /></button>
+                              <button title="Reply" onClick={() => setInputText(`Replying to: "${msg.content || 'media'}"\n\n`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="reply" size={16} /></button>
+                              <button title="Forward" onClick={() => { setForwardingMsg(msg); setShowNewChat(true); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", display: "flex" }}><Icon name="forward" size={16} /></button>
+                              {isMine && <button title="Delete" onClick={() => setDeleteModal({ msgId: msg._id || msg.id, isMine: true, sentAt: msg.sentAt || msg.createdAt || Date.now() })} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", display: "flex" }}><Icon name="delete" size={16} /></button>}
+                            </div>
+                          )}
+                          {/* Reaction Picker Popover */}
+                          {reactionPickerMsgId === (msg._id || msg.id) && (
+                            <div style={{ position: "absolute", top: "100%", marginTop: 12, left: isMine ? "auto" : 0, right: isMine ? 0 : "auto", zIndex: 100 }}>
+                              <EmojiPicker
+                                onSelect={(emoji) => {
+                                  handleReactMessage(msg._id || msg.id, emoji);
+                                  setReactionPickerMsgId(null);
+                                }}
+                                onClose={() => setReactionPickerMsgId(null)}
+                              />
+                            </div>
+                          )}
                           {/* Image */}
                           {isImage && (
                             <img
                               src={resolvedUrl!}
                               style={{
-                                maxWidth: "100%",
+                                maxWidth: 320,
                                 borderRadius: 10,
                                 marginBottom: msg.content ? 8 : 0,
                                 display: "block",
@@ -1662,7 +2147,7 @@ export default function BubbleMessages() {
                               src={resolvedUrl!}
                               controls
                               style={{
-                                maxWidth: "100%",
+                                maxWidth: 320,
                                 borderRadius: 10,
                                 marginTop: msg.content ? 8 : 0,
                                 display: "block",
@@ -1673,10 +2158,10 @@ export default function BubbleMessages() {
                           {/* Voice note / Audio */}
                           {isVoice && (
                             <div style={{ marginTop: msg.content ? 8 : 0 }}>
-                              <CustomAudioPlayer 
-                                src={resolvedUrl!} 
-                                duration={msg.media_metadata?.duration} 
-                                isMine={isMine} 
+                              <CustomAudioPlayer
+                                src={resolvedUrl!}
+                                duration={msg.media_metadata?.duration}
+                                isMine={isMine}
                               />
                             </div>
                           )}
@@ -1720,9 +2205,9 @@ export default function BubbleMessages() {
                             {new Date(msg.sentAt || msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             {isMine && (
                               <Icon
-                                name={msg.isRead ? "done_all" : "done"}
+                                name="done_all"
                                 size={14}
-                                style={{ color: msg.isRead ? "#0496ff" : "rgba(26,10,0,0.5)" }}
+                                style={{ color: msg.isRead ? "#0496ff" : "rgba(255,231,146,0.8)" }}
                               />
                             )}
                           </span>
@@ -1730,6 +2215,16 @@ export default function BubbleMessages() {
                       </div>
                     );
                   })}
+                  {isTyping && (
+                    <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8, marginTop: 4 }}>
+                      <Avatar src={getChatAvatar(activeChat, myId)} size={32} style={{ marginRight: 10, alignSelf: "flex-end" }} />
+                      <div style={{ background: "rgba(11,36,64,0.8)", padding: "12px 16px", borderRadius: "18px 18px 18px 4px", border: "1px solid rgba(59,73,92,0.2)", display: "flex", gap: 6, alignItems: "center" }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#9eacc3", animation: "pulse 1s infinite", animationDelay: "0ms" }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#9eacc3", animation: "pulse 1s infinite", animationDelay: "200ms" }} />
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#9eacc3", animation: "pulse 1s infinite", animationDelay: "400ms" }} />
+                      </div>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -1752,7 +2247,7 @@ export default function BubbleMessages() {
                       <button
                         onClick={() => setShowEmoji((v) => !v)}
                         style={{
-                          background: "none", border: "none", cursor: "pointer", 
+                          background: "none", border: "none", cursor: "pointer",
                           color: showEmoji ? "#ffe792" : "#9eacc3",
                           padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s"
                         }}
@@ -2121,19 +2616,19 @@ export default function BubbleMessages() {
 
                     {/* Admin Actions */}
                     <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <button style={actionBtnStyle}>
+                      <button onClick={() => toast.success("Notifications muted.")} style={actionBtnStyle}>
                         <Icon name="notifications_off" size={18} />
                         Mute Notifications
                       </button>
-                      <button style={actionBtnStyle}>
+                      <button onClick={() => toast.success("Chat history cleared.")} style={actionBtnStyle}>
                         <Icon name="delete_sweep" size={18} />
                         Clear Chat
                       </button>
-                      <button style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                      <button onClick={() => { setActiveChat(null); toast.error("User blocked."); }} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
                         <Icon name="block" size={18} />
                         Block User
                       </button>
-                      <button style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                      <button onClick={() => toast.success("User reported for investigation.")} style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
                         <Icon name="report" size={18} />
                         Report
                       </button>

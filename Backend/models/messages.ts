@@ -49,6 +49,9 @@ export interface IMessage extends Document {
   isBurnAfterReading: boolean;
   expiresAt?: Date;
 
+  // Soft-delete per user ("delete for me" hides from that user only)
+  deletedFor?: mongoose.Types.ObjectId[];
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -147,7 +150,15 @@ const MessageSchema: Schema<IMessage> = new Schema(
     expiresAt: {
       type: Date,
       index: { expires: 0 },
-    }
+    },
+
+    // Soft-delete: users who chose "delete for me"
+    deletedFor: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
 
   {

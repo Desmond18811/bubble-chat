@@ -8,6 +8,8 @@ let io: Server;
 
 export const initSocket = (server: HttpServer) => {
   io = new Server(server, {
+    pingTimeout: 60000,
+    pingInterval: 25000,
     cors: {
       origin: '*', // For development, allow all origins
       methods: ['GET', 'POST'],
@@ -40,11 +42,27 @@ export const initSocket = (server: HttpServer) => {
       socket.broadcast.emit('user_status_change', { userId, isOnline: true });
     });
 
-    // Handle messages
-    socket.on('send_message', (data: { toUserId: string; message: string; fromUserId: string, isBurn?: boolean }) => {
-      // In a real app, you would save the message to DB first here.
-      
-      // Emit to the recipient's socket if they are online
+    // ─── Chat Room Management ─────────────────────────────────────────────────
+    // Clients must join a room to receive real-time events scoped to that chat.
+
+    socket.on('join_room', (chatId: string) => {
+      socket.join(chatId);
+      console.log(`[Room] User ${userId} joined room: ${chatId}`);
+    });
+
+    socket.on('leave_room', (chatId: string) => {
+      socket.leave(chatId);
+      console.log(`[Room] User ${userId} left room: ${chatId}`);
+    });
+
+    // ─── Direct Messages (legacy peer-to-peer fallback) ───────────────────────
+    socket.on('send_message', (data: { toUserId: string; message: string; fromUserId: string; chatId?: string; isBurn?: boolean }) => {
+      // If chatId is known, relay via room (preferred)
+      if (data.chatId) {
+        socket.to(data.chatId).emit('receive_message', data);
+        return;
+      }
+      // Fallback: look up recipient socketId
       User.findById(data.toUserId).then(recipient => {
         if (recipient && recipient.socketId) {
           io.to(recipient.socketId).emit('receive_message', data);
@@ -52,33 +70,46 @@ export const initSocket = (server: HttpServer) => {
       });
     });
 
-    // 1. Typing Indicators
-    socket.on('typing_start', (data: { toUserId: string }) => {
+    // ─── Typing Indicators ────────────────────────────────────────────────────
+    socket.on('typing_start', (data: { toUserId: string; chatId?: string }) => {
+      if (data.chatId) {
+        socket.to(data.chatId).emit('typing_start', { fromUserId: userId });
+        return;
+      }
       User.findById(data.toUserId).then(recipient => {
         if (recipient && recipient.socketId) io.to(recipient.socketId).emit('typing_start', { fromUserId: userId });
       });
     });
 
-    socket.on('typing_stop', (data: { toUserId: string }) => {
+    socket.on('typing_stop', (data: { toUserId: string; chatId?: string }) => {
+      if (data.chatId) {
+        socket.to(data.chatId).emit('typing_stop', { fromUserId: userId });
+        return;
+      }
       User.findById(data.toUserId).then(recipient => {
         if (recipient && recipient.socketId) io.to(recipient.socketId).emit('typing_stop', { fromUserId: userId });
       });
     });
 
-    // 2. Read Receipts & Burn Protocol
+    // ─── Voice Recording Indicator ────────────────────────────────────────────
+    socket.on('recording_start', (data: { chatId: string }) => {
+      socket.to(data.chatId).emit('recording_start', { fromUserId: userId });
+    });
+
+    socket.on('recording_stop', (data: { chatId: string }) => {
+      socket.to(data.chatId).emit('recording_stop', { fromUserId: userId });
+    });
+
+    // ─── Read Receipts & Burn Protocol ───────────────────────────────────────
     socket.on('message_read', async (data: { messageId: string, toUserId: string, isBurnAfterReading: boolean }) => {
-      // Forward the read receipt to the sender
       User.findById(data.toUserId).then(sender => {
         if (sender && sender.socketId) {
           io.to(sender.socketId).emit('message_read_receipt', { messageId: data.messageId, readBy: userId });
         }
       });
 
-      // Handle Burn Protocol
       if (data.isBurnAfterReading) {
-        // Schedule deletion in exactly 60 seconds (60000ms) MongoDB TTL also kicks in
         setTimeout(() => {
-           // Notify both that the message burned
            socket.emit('message_burned', { messageId: data.messageId });
            User.findById(data.toUserId).then(sender => {
              if (sender && sender.socketId) io.to(sender.socketId).emit('message_burned', { messageId: data.messageId });
@@ -87,7 +118,7 @@ export const initSocket = (server: HttpServer) => {
       }
     });
 
-    // 3. E2EE Key Request Exchange
+    // ─── E2EE Public Key Exchange ─────────────────────────────────────────────
     socket.on('request_public_key', async (data: { targetUserId: string }) => {
        const target = await User.findById(data.targetUserId);
        if (target && target.publicKey) {
@@ -95,7 +126,7 @@ export const initSocket = (server: HttpServer) => {
        }
     });
 
-    // 4. Call Signaling (pre-ZegoCloud room entry)
+    // ─── Call Signaling ───────────────────────────────────────────────────────
     socket.on('call_offer', async (data: { toUserId: string; roomId: string }) => {
       const recipient = await User.findById(data.toUserId);
       if (recipient && recipient.socketId) {
