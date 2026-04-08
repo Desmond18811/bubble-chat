@@ -12,6 +12,17 @@ import {
 } from "@/lib/socket-client";
 import { toast } from "sonner";
 
+/* ─── Module-level secure media URL proxy helper ──────────────────────────── */
+const _BASE_API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const getSecureMediaUrl = (url?: string | null, proxyType: 'message' | 'story' = 'message'): string | null => {
+  if (!url) return null;
+  if (url.includes('filebase.com')) {
+    const route = proxyType === 'story' ? 'story' : 'message';
+    return `${_BASE_API}/${route}/media/proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
 /* ─── Icon helper ─────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, size = 24, style = {} }: any) => (
   <span
@@ -79,6 +90,109 @@ const Avatar = ({ src, name, size = 40, online }: any) => (
   </div>
 );
 
+/* ─── Media Components ──────────────────────────────────────────────────────── */
+const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: number; isMine?: boolean }) => {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTimeUpdate = () => {
+      setProgress((audio.currentTime / (audio.duration || duration || 1)) * 100);
+    };
+    const onEnded = () => { setPlaying(false); setProgress(0); };
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+    return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, [duration]);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play();
+      setPlaying(true);
+    }
+  };
+
+  const fmt = (secs: number) => {
+    if (!secs || isNaN(secs)) return "0:00";
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:12, background: isMine ? "rgba(10,31,61,0.4)" : "rgba(255,255,255,0.05)", padding:"12px 16px", borderRadius:20, minWidth:220 }}>
+      <audio ref={audioRef} src={src} preload="metadata" />
+      <button onClick={toggle} style={{ width:36, height:36, borderRadius:"50%", background: isMine ? "#ffe792" : "rgba(255,255,255,0.1)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}>
+        <Icon name={playing ? "pause" : "play_arrow"} size={20} style={{ color: isMine ? "#1a0a00" : "#d8e6ff" }} />
+      </button>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:6 }}>
+        {/* Waveform track */}
+        <div style={{ width:"100%", height:24, display:"flex", alignItems:"center", gap:3, cursor:"pointer" }} onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const p = (e.clientX - rect.left) / rect.width;
+          if (audioRef.current) audioRef.current.currentTime = p * (audioRef.current.duration || duration || 1);
+        }}>
+          {Array.from({ length: 24 }).map((_, i) => {
+            const isActive = (i / 24) * 100 <= progress;
+            return (
+              <div key={i} style={{ flex:1, height: Math.max(4, Math.random() * 24), background: isActive ? (isMine ? "#ffe792" : "#a2c2fd") : "rgba(158,172,195,0.3)", borderRadius:2, transition:"background 0.1s" }} />
+            );
+          })}
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, color: isMine ? "rgba(238,238,238,0.7)" : "#9eacc3", fontFamily:"'Space Grotesk',sans-serif", fontVariantNumeric:"tabular-nums" }}>
+          <span>{fmt(audioRef.current?.currentTime || 0)}</span>
+          <span>{fmt(duration || audioRef.current?.duration || 0)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ImageLightbox = ({ src, onClose }: { src: string; onClose: () => void }) => (
+  <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.9)", backdropFilter:"blur(12px)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:40 }}>
+    <button onClick={onClose} style={{ position:"absolute", top:24, right:24, background:"rgba(255,255,255,0.1)", border:"none", borderRadius:"50%", width:44, height:44, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", cursor:"pointer" }}><Icon name="close" size={24} /></button>
+    <img src={src} onClick={(e)=>e.stopPropagation()} style={{ maxWidth:"100%", maxHeight:"100%", objectFit:"contain", borderRadius:12, boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }} />
+  </div>
+);
+
+const EMOJI_CATEGORIES = {
+  "Smileys": ["😀","😂","🤣","😊","🥰","😍","😎","🤔","🙄","😴","🤮","🤯","🥳"],
+  "Gestures": ["👍","👎","👌","✌️","🤞","🤙","🙌","👏","🤝","🙏","💪","🖕"],
+  "Hearts": ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","💕","💖"],
+  "Nature": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷"],
+  "Food": ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🍈","🍒","🍑","🥭"],
+  "Activity": ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🪀","🏓","🏸"],
+};
+
+const EmojiPicker = ({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) => {
+  const [cat, setCat] = useState<keyof typeof EMOJI_CATEGORIES>("Smileys");
+  return (
+    <div style={{ position:"absolute", bottom:"100%", left:0, marginBottom:16, width:320, background:"#031427", border:"1px solid rgba(59,73,92,0.3)", borderRadius:16, boxShadow:"0 20px 40px rgba(0,0,0,0.6)", display:"flex", flexDirection:"column", overflow:"hidden", zIndex:99 }}>
+      <div style={{ display:"flex", overflowX:"auto", padding:8, gap:4, borderBottom:"1px solid rgba(59,73,92,0.2)" }}>
+        {Object.keys(EMOJI_CATEGORIES).map((c) => (
+          <button key={c} onClick={(e) => { e.preventDefault(); setCat(c as any); }} style={{ background: cat===c ? "rgba(255,231,146,0.1)" : "transparent", border:"none", padding:"6px 10px", borderRadius:20, color: cat===c ? "#ffe792" : "#9eacc3", fontSize:11, fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, cursor:"pointer", flexShrink:0 }}>{c}</button>
+        ))}
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gap:8, padding:16, maxHeight:200, overflowY:"auto" }}>
+        {EMOJI_CATEGORIES[cat].map((e) => (
+          <button key={e} onClick={(ev) => { ev.preventDefault(); onSelect(e); onClose(); }} style={{ background:"none", border:"none", fontSize:24, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", padding:4, borderRadius:8, transition:"background 0.2s" }} onMouseEnter={(ev) => ev.currentTarget.style.background="rgba(255,255,255,0.05)"} onMouseLeave={(ev) => ev.currentTarget.style.background="transparent"}>{e}</button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ─── User Search Modal ───────────────────────────────────────────────────── */
 const NewChatModal = ({
   onClose,
@@ -99,7 +213,7 @@ const NewChatModal = ({
       setLoading(true);
       try {
         const res = await api.searchUsers(query);
-        setResults(res.data || res.users || []);
+        setResults((res as any).data || res.users || []);
       } catch {
         toast.error("Search failed");
       } finally {
@@ -330,6 +444,17 @@ const NewChatModal = ({
 };
 
 /* ─── Story Upload Modal ─────────────────────────────────────────────────── */
+const STORY_GRADIENTS = [
+  "linear-gradient(135deg,#0f0c29,#302b63,#24243e)",
+  "linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)",
+  "linear-gradient(135deg,#093028,#237a57)",
+  "linear-gradient(135deg,#c94b4b,#4b134f)",
+  "linear-gradient(135deg,#f7971e,#ffd200)",
+  "linear-gradient(135deg,#4facfe,#00f2fe)",
+  "linear-gradient(135deg,#43e97b,#38f9d7)",
+  "linear-gradient(135deg,#a18cd1,#fbc2eb)",
+];
+
 const StoryModal = ({
   onClose,
   onStoryUploaded,
@@ -338,167 +463,142 @@ const StoryModal = ({
   onStoryUploaded: (story: any) => void;
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
+  const audioFileRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<"media"|"audio"|"text">("media");
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
+  const [textContent, setTextContent] = useState("");
+  const [bgGradient, setBgGradient] = useState(STORY_GRADIENTS[0]);
+  const [textColor, setTextColor] = useState("#ffffff");
   const [uploading, setUploading] = useState(false);
+  const voice = useVoiceRecorder();
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    const f = e.target.files?.[0]; if (!f) return;
+    setFile(f); setPreview(URL.createObjectURL(f));
   };
 
   const submit = async () => {
-    if (!file) { toast.error("Select a file first"); return; }
     setUploading(true);
     try {
-      const res = await api.uploadStory(file, caption || undefined);
+      let res: any;
+      if (tab === "text") {
+        if (!textContent.trim()) { toast.error("Add some text first"); setUploading(false); return; }
+        res = await api.uploadStory(undefined, textContent, { bg_gradient: bgGradient, text_color: textColor });
+      } else {
+        if (!file) { toast.error("Select a file first"); setUploading(false); return; }
+        res = await api.uploadStory(file, caption || undefined);
+      }
       onStoryUploaded(res.story || res);
-      toast.success("Story posted!");
+      toast.success("Signal broadcast! 🚀");
       onClose();
-    } catch {
-      toast.error("Story upload failed");
-    } finally {
-      setUploading(false);
-    }
+    } catch { toast.error("Story upload failed"); }
+    finally { setUploading(false); }
   };
 
+  const canPost = tab === "text" ? textContent.trim().length > 0 : !!file;
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.8)",
-        backdropFilter: "blur(12px)",
-        zIndex: 999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 420,
-          background: "#031427",
-          border: "1px solid rgba(59,73,92,0.3)",
-          borderRadius: 20,
-          overflow: "hidden",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
-        }}
-      >
-        <div
-          style={{
-            padding: "24px 24px 16px",
-            borderBottom: "1px solid rgba(59,73,92,0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 18,
-              fontWeight: 700,
-              color: "#ffe792",
-              margin: 0,
-            }}
-          >
-            New Signal
-          </h2>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3" }}
-          >
-            <Icon name="close" size={20} />
-          </button>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", backdropFilter:"blur(16px)", zIndex:999, display:"flex", alignItems:"center", justifyContent:"center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width:480, background:"#031427", border:"1px solid rgba(59,73,92,0.3)", borderRadius:24, overflow:"hidden", boxShadow:"0 40px 100px rgba(0,0,0,0.8)", display:"flex", flexDirection:"column", maxHeight:"90vh" }}>
+        {/* Header */}
+        <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <h2 style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:18, fontWeight:700, color:"#ffe792", margin:0 }}>New Signal</h2>
+          <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", color:"#9eacc3" }}><Icon name="close" size={20} /></button>
+        </div>
+        {/* Tabs */}
+        <div style={{ display:"flex", gap:0, padding:"16px 24px 0", flexShrink:0, borderBottom:"1px solid rgba(59,73,92,0.2)" }}>
+          {([["media","photo_camera","Media"],["audio","mic","Audio"],["text","text_fields","Text"]] as const).map(([t,icon,label]) => (
+            <button key={t} onClick={() => setTab(t as any)} style={{ flex:1, background:"none", border:"none", borderBottom: tab===t ? "2px solid #ffe792" : "2px solid transparent", padding:"10px 0", cursor:"pointer", color: tab===t ? "#ffe792" : "#68768b", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontSize:12, fontFamily:"'Space Grotesk',sans-serif", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.08em", transition:"all 0.2s" }}>
+              <Icon name={icon} size={16} />{label}
+            </button>
+          ))}
         </div>
 
-        <div style={{ padding: 24 }}>
-          {/* Drop zone */}
-          <div
-            onClick={() => fileRef.current?.click()}
-            style={{
-              border: "2px dashed rgba(255,231,146,0.2)",
-              borderRadius: 16,
-              padding: 32,
-              textAlign: "center",
-              cursor: "pointer",
-              marginBottom: 20,
-              position: "relative",
-              overflow: "hidden",
-              minHeight: 180,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {preview ? (
-              file?.type.startsWith("video/") ? (
-                <video
-                  src={preview}
-                  style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10 }}
-                  controls
-                />
-              ) : (
-                <img
-                  src={preview}
-                  style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, objectFit: "cover" }}
-                />
-              )
-            ) : (
-              <div>
-                <Icon name="add_photo_alternate" size={40} style={{ color: "#ffe792", opacity: 0.6 }} />
-                <p style={{ color: "#9eacc3", fontSize: 13, marginTop: 12 }}>
-                  Click to select image or video
-                </p>
+        <div style={{ padding:24, overflowY:"auto", flex:1 }}>
+          {/* Media tab */}
+          {tab === "media" && (
+            <>
+              <div onClick={() => fileRef.current?.click()} style={{ border:"2px dashed rgba(255,231,146,0.2)", borderRadius:16, minHeight:200, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", marginBottom:16, overflow:"hidden", position:"relative" }}>
+                {preview ? (
+                  file?.type.startsWith("video/") ? <video src={preview} style={{ maxWidth:"100%", maxHeight:220, borderRadius:10 }} controls /> :
+                  <img src={preview} style={{ maxWidth:"100%", maxHeight:220, borderRadius:10, objectFit:"cover" }} />
+                ) : (
+                  <div style={{ textAlign:"center" }}>
+                    <Icon name="add_photo_alternate" size={44} style={{ color:"#ffe792", opacity:0.6 }} />
+                    <p style={{ color:"#9eacc3", fontSize:13, marginTop:10 }}>Click to select image or video</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <input ref={fileRef} type="file" hidden accept="image/*,video/*,audio/*" onChange={handleFile} />
+              <input ref={fileRef} type="file" hidden accept="image/*,video/*" onChange={handleFile} />
+              <input placeholder="Add a caption… (optional)" value={caption} onChange={(e) => setCaption(e.target.value)} style={{ width:"100%", background:"#071a2f", border:"1px solid rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px", fontSize:14, color:"#d8e6ff", outline:"none", boxSizing:"border-box", fontFamily:"'Manrope',sans-serif" }} />
+            </>
+          )}
 
-          <input
-            placeholder="Add a caption... (optional)"
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            style={{
-              width: "100%",
-              background: "#071a2f",
-              border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 12,
-              padding: "12px 16px",
-              fontSize: 14,
-              color: "#d8e6ff",
-              outline: "none",
-              boxSizing: "border-box",
-              fontFamily: "'Manrope', sans-serif",
-              marginBottom: 16,
-            }}
-          />
+          {/* Audio tab */}
+          {tab === "audio" && (
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
+              <div style={{ width:"100%", background:"rgba(255,231,146,0.04)", border:"1px solid rgba(255,231,146,0.1)", borderRadius:16, padding:24, display:"flex", flexDirection:"column", alignItems:"center", gap:16 }}>
+                <div style={{ width:72, height:72, borderRadius:"50%", background: voice.recording ? "rgba(239,68,68,0.15)" : "rgba(255,231,146,0.1)", border: voice.recording ? "2px solid rgba(239,68,68,0.5)" : "2px solid rgba(255,231,146,0.3)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.2s" }} onClick={voice.recording ? undefined : voice.start}>
+                  <Icon name={voice.recording ? "stop" : "mic"} size={32} style={{ color: voice.recording ? "#ef4444" : "#ffe792" }} />
+                </div>
+                {voice.recording ? (
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background:"#ef4444", animation:"pulse 1s infinite" }} />
+                    <span style={{ color:"#d8e6ff", fontSize:16, fontVariantNumeric:"tabular-nums", fontFamily:"'Space Grotesk',sans-serif" }}>{fmtTime(voice.duration)}</span>
+                    <button onClick={voice.cancel} style={{ background:"none", border:"none", cursor:"pointer", color:"#68768b", fontSize:12 }}>Cancel</button>
+                  </div>
+                ) : file ? (
+                  <div style={{ textAlign:"center" }}>
+                    <Icon name="check_circle" size={24} style={{ color:"#4ade80" }} />
+                    <p style={{ color:"#9eacc3", fontSize:12, marginTop:4 }}>Ready to broadcast</p>
+                  </div>
+                ) : (
+                  <p style={{ color:"#68768b", fontSize:13 }}>Tap mic to record, or upload an audio file</p>
+                )}
+                {voice.recording && (
+                  <button onClick={async () => { const f = await voice.stop(); if(f) setFile(f); }} style={{ background:"#ffe792", border:"none", borderRadius:40, padding:"8px 20px", fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:13, color:"#1a0a00", cursor:"pointer" }}>Stop & Save</button>
+                )}
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, color:"#68768b", fontSize:12 }}>
+                <div style={{ flex:1, height:1, background:"rgba(255,255,255,0.06)" }} />or upload a file<div style={{ flex:1, height:1, background:"rgba(255,255,255,0.06)" }} />
+              </div>
+              <button onClick={() => audioFileRef.current?.click()} style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:12, padding:"10px 20px", color:"#9eacc3", cursor:"pointer", fontSize:13, fontFamily:"'Manrope',sans-serif" }}>
+                <Icon name="upload_file" size={16} style={{ verticalAlign:"middle", marginRight:6 }} />Choose audio file
+              </button>
+              <input ref={audioFileRef} type="file" hidden accept="audio/*" onChange={handleFile} />
+            </div>
+          )}
 
-          <button
-            onClick={submit}
-            disabled={uploading || !file}
-            style={{
-              width: "100%",
-              background: uploading || !file ? "rgba(255,231,146,0.3)" : "#ffe792",
-              color: "#655400",
-              border: "none",
-              borderRadius: 12,
-              padding: "14px 0",
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              cursor: uploading || !file ? "not-allowed" : "pointer",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}
-          >
-            {uploading ? "Transmitting..." : "Broadcast Signal"}
+          {/* Text tab */}
+          {tab === "text" && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              {/* Live preview */}
+              <div style={{ width:"100%", height:200, borderRadius:16, background:bgGradient, display:"flex", alignItems:"center", justifyContent:"center", padding:20, boxSizing:"border-box" }}>
+                <p style={{ color:textColor, fontSize:18, fontWeight:700, textAlign:"center", fontFamily:"'Space Grotesk',sans-serif", wordBreak:"break-word", margin:0, lineHeight:1.4 }}>{textContent || "Your story text appears here..."}</p>
+              </div>
+              <textarea placeholder="What's on your mind?" value={textContent} onChange={(e) => setTextContent(e.target.value)} rows={3} style={{ background:"#071a2f", border:"1px solid rgba(255,255,255,0.06)", borderRadius:12, padding:"12px 16px", fontSize:14, color:"#d8e6ff", outline:"none", resize:"none", fontFamily:"'Manrope',sans-serif", boxSizing:"border-box", width:"100%" }} />
+              <div>
+                <p style={{ fontSize:11, color:"#68768b", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>Background</p>
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  {STORY_GRADIENTS.map((g) => (
+                    <div key={g} onClick={() => setBgGradient(g)} style={{ width:32, height:32, borderRadius:8, background:g, cursor:"pointer", border: bgGradient===g ? "2px solid #ffe792" : "2px solid transparent", transition:"border 0.2s" }} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:10 }}>
+                {["#ffffff","#ffe792","#a2c2fd","#4ade80","#f87171"].map((c) => (
+                  <div key={c} onClick={() => setTextColor(c)} style={{ width:28, height:28, borderRadius:"50%", background:c, cursor:"pointer", border: textColor===c ? "3px solid #ffe792" : "3px solid transparent", boxSizing:"border-box" }} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding:"0 24px 24px", flexShrink:0 }}>
+          <button onClick={submit} disabled={uploading || !canPost} style={{ width:"100%", background: uploading || !canPost ? "rgba(255,231,146,0.25)" : "linear-gradient(135deg,#ffe792,#ffc300)", color:"#655400", border:"none", borderRadius:14, padding:"14px 0", fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:14, cursor: uploading || !canPost ? "not-allowed" : "pointer", letterSpacing:"0.08em", textTransform:"uppercase", transition:"opacity 0.2s" }}>
+            {uploading ? "Transmitting..." : "📡 Broadcast Signal"}
           </button>
         </div>
       </div>
@@ -591,6 +691,179 @@ const FABMenu = ({
   );
 };
 
+/* ─── Story Viewer Modal ─────────────────────────────────────────────────── */
+const StoryViewerModal = ({
+  stories,
+  initialIndex,
+  onClose,
+}: {
+  stories: any[];
+  initialIndex: number;
+  onClose: () => void;
+}) => {
+  const [idx, setIdx] = useState(initialIndex);
+  const [progress, setProgress] = useState(0);
+  const onCloseRef = useRef(onClose);
+  const storiesLenRef = useRef(stories.length);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => { storiesLenRef.current = stories.length; }, [stories.length]);
+
+  useEffect(() => {
+    setProgress(0);
+    const DURATION = 5000, TICK = 50;
+    const totalTicks = DURATION / TICK;
+    let tick = 0;
+    const timer = setInterval(() => {
+      tick++;
+      const pct = Math.min((tick / totalTicks) * 100, 100);
+      setProgress(pct);
+      if (tick >= totalTicks) {
+        clearInterval(timer);
+        setIdx((i) => {
+          if (i < storiesLenRef.current - 1) return i + 1;
+          onCloseRef.current();
+          return i;
+        });
+      }
+    }, TICK);
+    return () => clearInterval(timer);
+  }, [idx]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setIdx((i) => Math.min(i + 1, storiesLenRef.current - 1));
+      else if (e.key === 'ArrowLeft') setIdx((i) => Math.max(i - 1, 0));
+      else if (e.key === 'Escape') onCloseRef.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  if (!stories[idx]) return null;
+  const story = stories[idx];
+  const mediaUrl = getSecureMediaUrl(story.mediaUrl, 'story');
+
+  const goNext = () => setIdx((i) => {
+    if (i < storiesLenRef.current - 1) return i + 1;
+    onCloseRef.current();
+    return i;
+  });
+  const goPrev = () => setIdx((i) => Math.max(i - 1, 0));
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
+      {/* Progress bar segments */}
+      <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', gap: 4, zIndex: 20 }}>
+        {stories.map((_, i) => (
+          <div key={i} style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              background: 'rgba(255,255,255,0.9)',
+              width: i < idx ? '100%' : i === idx ? `${progress}%` : '0%',
+              transition: i === idx ? `width ${50}ms linear` : 'none',
+            }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Header */}
+      <div style={{ position: 'absolute', top: 28, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', padding: 2, background: 'linear-gradient(135deg, #ffe792, #a2c2fd)', flexShrink: 0 }}>
+            <Avatar src={story.author?.avatar} name={story.author?.full_name} size={34} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Space Grotesk', sans-serif", textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>
+              {story.author?.full_name || 'User'}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 1 }}>
+              {story.remainingSeconds != null
+                ? `${Math.floor(story.remainingSeconds / 3600)}h left`
+                : story.createdAt ? new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Grotesk',sans-serif" }}>{idx + 1} / {stories.length}</span>
+          <button onClick={onCloseRef.current} style={{ background: 'rgba(0,0,0,0.45)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
+            <Icon name="close" size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Tap zones (left = prev, right = next) */}
+      <div style={{ position: 'absolute', left: 0, top: 0, width: '40%', height: '100%', zIndex: 10, cursor: 'pointer' }} onClick={goPrev} />
+      <div style={{ position: 'absolute', right: 0, top: 0, width: '40%', height: '100%', zIndex: 10, cursor: 'pointer' }} onClick={goNext} />
+
+      {/* Story content */}
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {story.mediaType === 'image' && mediaUrl && (
+          <img
+            src={mediaUrl}
+            style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }}
+            alt="Story"
+            onError={(e) => { (e.target as HTMLImageElement).alt = '⚠ Media unavailable'; }}
+          />
+        )}
+        {story.mediaType === 'video' && mediaUrl && (
+          <video src={mediaUrl} autoPlay loop playsInline style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }} />
+        )}
+        {story.mediaType === 'audio' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28, padding: 40, width: '100%' }}>
+            <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,231,146,0.08)', border: '2px solid rgba(255,231,146,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 2s infinite' }}>
+              <Icon name="mic" size={36} style={{ color: '#ffe792' }} />
+            </div>
+            {/* Animated waveform */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {Array.from({ length: 30 }).map((_, i) => (
+                <div key={i} style={{
+                  width: 3,
+                  height: Math.max(8, Math.abs(Math.sin(i * 0.65)) * 36 + 10),
+                  borderRadius: 2,
+                  background: '#ffe792',
+                  opacity: 0.75,
+                  animation: `audioWave ${0.45 + (i % 6) * 0.1}s ease-in-out infinite alternate`,
+                  animationDelay: `${i * 0.035}s`,
+                }} />
+              ))}
+            </div>
+            {mediaUrl && <CustomAudioPlayer src={mediaUrl} isMine={false} />}
+          </div>
+        )}
+        {story.mediaType === 'text' && (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: story.bg_gradient || 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)', padding: 40, boxSizing: 'border-box' }}>
+            <p style={{ color: story.text_color || '#fff', fontSize: 'clamp(22px,4.5vw,40px)', fontWeight: 700, textAlign: 'center', fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.35, maxWidth: 560, margin: 0, textShadow: '0 2px 16px rgba(0,0,0,0.35)', wordBreak: 'break-word' }}>
+              {story.textContent}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Caption for media stories */}
+      {story.textContent && story.mediaType !== 'text' && (
+        <div style={{ position: 'absolute', bottom: 88, left: 24, right: 24, background: 'rgba(0,0,0,0.65)', borderRadius: 14, padding: '12px 16px', backdropFilter: 'blur(10px)', zIndex: 15 }}>
+          <p style={{ color: '#fff', fontSize: 14, margin: 0, lineHeight: 1.5 }}>{story.textContent}</p>
+        </div>
+      )}
+
+      {/* Quick reaction bar */}
+      <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 20, background: 'rgba(0,0,0,0.4)', borderRadius: 40, padding: '8px 16px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        {['❤️', '😂', '😮', '😢', '👏', '🔥'].map((e) => (
+          <button
+            key={e}
+            onClick={(ev) => { ev.stopPropagation(); toast.success(`You reacted ${e}`); }}
+            style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: '2px 4px', borderRadius: 8, transition: 'transform 0.12s' }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.transform = 'scale(1.3)'; }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            {e}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ─── Voice Recorder Hook ─────────────────────────────────────────────────── */
 const useVoiceRecorder = () => {
   const [recording, setRecording] = useState(false);
@@ -679,6 +952,9 @@ export default function BubbleMessages() {
 
   const [showNewChat, setShowNewChat] = useState(false);
   const [showStory, setShowStory] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [viewingStory, setViewingStory] = useState<{ stories: any[]; index: number } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -772,7 +1048,13 @@ export default function BubbleMessages() {
     (async () => {
       try {
         const res = await api.fetchMessages(activeChat.id || activeChat._id);
-        setMessages(res.messages || []);
+        const msgs = res.messages || [];
+        // Debug: log first media message so we can verify field names
+        const mediaMsgs = msgs.filter((m: any) => m.mediaUrl || m.media_url);
+        if (mediaMsgs.length > 0) {
+          console.log('[Bubble] Media messages sample:', JSON.stringify(mediaMsgs[0], null, 2));
+        }
+        setMessages(msgs);
       } catch {
         toast.error("Could not load messages");
       }
@@ -844,11 +1126,12 @@ export default function BubbleMessages() {
   /* ── Voice note ───────────────────────────────────────────────────── */
   const handleVoiceSend = async () => {
     if (!activeChat) return;
+    const finalDuration = voice.duration;
     const file = await voice.stop();
     if (!file) return;
     try {
       toast.info("Sending voice note...");
-      const res = await api.sendMediaMessage(activeChat.id || activeChat._id, file);
+      const res = await api.sendMediaMessage(activeChat.id || activeChat._id, file, { media_duration: finalDuration });
       const msg = res.data || res;
       setMessages((prev) => [...prev, msg]);
     } catch {
@@ -897,6 +1180,10 @@ export default function BubbleMessages() {
           0%, 100% { opacity: 0.4; }
           50%       { opacity: 1; }
         }
+        @keyframes audioWave {
+          from { transform: scaleY(0.15); }
+          to   { transform: scaleY(1); }
+        }
       `}</style>
 
       {/* Modals */}
@@ -911,6 +1198,14 @@ export default function BubbleMessages() {
         <StoryModal
           onClose={() => setShowStory(false)}
           onStoryUploaded={handleStoryUploaded}
+        />
+      )}
+      {lightboxImg && <ImageLightbox src={lightboxImg} onClose={() => setLightboxImg(null)} />}
+      {viewingStory && (
+        <StoryViewerModal
+          stories={viewingStory.stories}
+          initialIndex={viewingStory.index}
+          onClose={() => setViewingStory(null)}
         />
       )}
 
@@ -1037,7 +1332,8 @@ export default function BubbleMessages() {
                 {stories.map((s: any, i) => (
                   <div
                     key={s._id || i}
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}
+                    onClick={() => setViewingStory({ stories, index: i })}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}
                   >
                     <div
                       style={{
@@ -1238,8 +1534,10 @@ export default function BubbleMessages() {
                         {isTyping
                           ? "transmitting..."
                           : getOtherUser(activeChat, myId)?.isOnline
-                          ? "Online"
-                          : "Offline"}
+                            ? "Online"
+                            : (getOtherUser(activeChat, myId) as any)?.lastSeen
+                              ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                              : "Offline"}
                       </span>
                     </div>
                   </div>
@@ -1281,6 +1579,22 @@ export default function BubbleMessages() {
                   {messages.map((msg: any, i) => {
                     const senderId = msg.sender?.id || msg.sender?._id || msg.fromUserId;
                     const isMine = senderId === myId;
+
+                    // Normalize media fields — handle every possible shape the backend/socket may send
+                    const rawUrl = msg.mediaUrl || msg.media_url || null;
+                    const resolvedUrl: string | null = getSecureMediaUrl(rawUrl);
+                    
+                    const resolvedType: string =
+                      msg.mediaType ||
+                      msg.message_type ||
+                      msg.type ||
+                      "text";
+
+                    const isImage = resolvedUrl && (resolvedType === "image" || msg.mimeType?.startsWith("image/"));
+                    const isVideo = resolvedUrl && (resolvedType === "video" || msg.mimeType?.startsWith("video/"));
+                    const isVoice = resolvedUrl && (resolvedType === "voice" || resolvedType === "audio" || msg.mimeType?.startsWith("audio/"));
+                    const isFile  = resolvedUrl && !isImage && !isVideo && !isVoice;
+
                     return (
                       <div
                         key={msg._id || msg.id || i}
@@ -1311,6 +1625,7 @@ export default function BubbleMessages() {
                             border: isMine ? "none" : "1px solid rgba(59,73,92,0.2)",
                           }}
                         >
+                          {/* Text content */}
                           {msg.content && (
                             <p
                               style={{
@@ -1323,18 +1638,56 @@ export default function BubbleMessages() {
                               {msg.content}
                             </p>
                           )}
-                          {msg.mediaUrl && msg.mediaType === "image" && (
-                            <img src={msg.mediaUrl} style={{ maxWidth: "100%", borderRadius: 10, marginTop: msg.content ? 8 : 0 }} alt="" />
+
+                          {/* Image */}
+                          {isImage && (
+                            <img
+                              src={resolvedUrl!}
+                              style={{
+                                maxWidth: "100%",
+                                borderRadius: 10,
+                                marginTop: msg.content ? 8 : 0,
+                                display: "block",
+                                cursor: "pointer",
+                              }}
+                              alt="Shared image"
+                              onClick={() => setLightboxImg(resolvedUrl!)}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                                console.warn("[Bubble] Image failed to load:", resolvedUrl);
+                              }}
+                            />
                           )}
-                          {msg.mediaUrl && msg.mediaType === "video" && (
-                            <video src={msg.mediaUrl} controls style={{ maxWidth: "100%", borderRadius: 10, marginTop: msg.content ? 8 : 0 }} />
+
+                          {/* Video */}
+                          {isVideo && (
+                            <video
+                              src={resolvedUrl!}
+                              controls
+                              style={{
+                                maxWidth: "100%",
+                                borderRadius: 10,
+                                marginTop: msg.content ? 8 : 0,
+                                display: "block",
+                              }}
+                            />
                           )}
-                          {msg.mediaUrl && (msg.mediaType === "voice" || msg.mediaType === "audio") && (
-                            <audio src={msg.mediaUrl} controls style={{ width: "100%", marginTop: msg.content ? 8 : 0 }} />
+
+                          {/* Voice note / Audio */}
+                          {isVoice && (
+                            <div style={{ marginTop: msg.content ? 8 : 0 }}>
+                              <CustomAudioPlayer 
+                                src={resolvedUrl!} 
+                                duration={msg.media_metadata?.duration} 
+                                isMine={isMine} 
+                              />
+                            </div>
                           )}
-                          {msg.mediaUrl && !["image", "video", "voice", "audio"].includes(msg.mediaType) && (
+
+                          {/* Generic file attachment */}
+                          {isFile && (
                             <a
-                              href={msg.mediaUrl}
+                              href={resolvedUrl!}
                               target="_blank"
                               rel="noreferrer"
                               style={{
@@ -1345,22 +1698,36 @@ export default function BubbleMessages() {
                                 fontSize: 13,
                                 marginTop: msg.content ? 8 : 0,
                                 textDecoration: "none",
+                                background: isMine ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.06)",
+                                borderRadius: 8,
+                                padding: "6px 10px",
                               }}
                             >
                               <Icon name="attach_file" size={16} />
-                              Attachment
+                              Download attachment
                             </a>
                           )}
+
+                          {/* Timestamp + read receipt */}
                           <span
                             style={{
                               fontSize: 10,
                               color: isMine ? "rgba(26,10,0,0.5)" : "#68768b",
-                              display: "block",
-                              textAlign: "right",
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              alignItems: "center",
+                              gap: 4,
                               marginTop: 4,
                             }}
                           >
                             {new Date(msg.sentAt || msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            {isMine && (
+                              <Icon
+                                name={msg.isRead ? "done_all" : "done"}
+                                size={14}
+                                style={{ color: msg.isRead ? "#0496ff" : "rgba(26,10,0,0.5)" }}
+                              />
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1383,6 +1750,27 @@ export default function BubbleMessages() {
                       backdropFilter: "blur(12px)",
                     }}
                   >
+                    {/* Emoji Picker */}
+                    <div style={{ position: "relative" }}>
+                      <button
+                        onClick={() => setShowEmoji((v) => !v)}
+                        style={{
+                          background: "none", border: "none", cursor: "pointer", 
+                          color: showEmoji ? "#ffe792" : "#9eacc3",
+                          padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s"
+                        }}
+                        title="Emoji"
+                      >
+                        <Icon name="sentiment_satisfied" size={20} />
+                      </button>
+                      {showEmoji && (
+                        <EmojiPicker
+                          onSelect={(emoji) => setInputText((prev) => prev + emoji)}
+                          onClose={() => setShowEmoji(false)}
+                        />
+                      )}
+                    </div>
+
                     {/* Attachment */}
                     <button
                       onClick={() => fileInputRef.current?.click()}
@@ -1532,6 +1920,25 @@ export default function BubbleMessages() {
             >
               {(() => {
                 const other = getOtherUser(activeChat, myId);
+                const artifacts = messages.filter((m) => m.mediaUrl && (m.mediaType === "image" || m.mediaType === "video" || m.message_type === "image" || m.message_type === "video"));
+                const resources = messages.filter((m) => m.mediaUrl && (m.mediaType === "voice" || m.mediaType === "audio" || m.mediaType === "file" || m.message_type === "voice" || m.message_type === "file"));
+
+                const actionBtnStyle = {
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  background: "rgba(255,255,255,0.02)",
+                  border: "none",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  color: "#9eacc3",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  textAlign: "left" as const,
+                  transition: "background 0.2s",
+                };
+
                 return (
                   <>
                     <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -1559,9 +1966,12 @@ export default function BubbleMessages() {
                         </span>
                       )}
                       {other?.bio && (
-                        <p style={{ fontSize: 12, color: "#9eacc3", marginTop: 10, lineHeight: 1.6 }}>
-                          {other.bio}
-                        </p>
+                        <div style={{ marginTop: 20, padding: "0 10px" }}>
+                          <h3 style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Bio</h3>
+                          <p style={{ fontSize: 13, color: "#9eacc3", lineHeight: 1.6, margin: 0 }}>
+                            {other.bio}
+                          </p>
+                        </div>
                       )}
                     </div>
 
@@ -1639,6 +2049,98 @@ export default function BubbleMessages() {
                         </span>
                       </div>
                     )}
+
+                    {/* Shared Artifacts */}
+                    <div style={{ marginTop: 28 }}>
+                      <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+                        Shared Artifacts ({artifacts.length})
+                      </div>
+                      {artifacts.length > 0 ? (
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                          {artifacts.slice(0, 9).map((m, i) => (
+                            <a
+                              key={m.id || m._id || i}
+                              href={getSecureMediaUrl(m.mediaUrl) || ""}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ aspectRatio: "1/1", borderRadius: 8, overflow: "hidden", background: "rgba(255,255,255,0.05)", display: "block" }}
+                            >
+                              {m.mediaType === "image" || m.message_type === "image" ? (
+                                <img src={getSecureMediaUrl(m.mediaUrl) || ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Shared image artifact" />
+                              ) : (
+                                <video src={getSecureMediaUrl(m.mediaUrl) || ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              )}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>
+                          0 Shared artifacts
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Shared Resources */}
+                    <div style={{ marginTop: 28 }}>
+                      <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+                        Shared Resources ({resources.length})
+                      </div>
+                      {resources.length > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {resources.map((m, i) => (
+                            <a
+                              key={m.id || m._id || i}
+                              href={getSecureMediaUrl(m.mediaUrl) || ""}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: "flex", alignItems: "center", gap: 12,
+                                background: "rgba(255,255,255,0.03)",
+                                padding: "10px 14px",
+                                borderRadius: 12,
+                                textDecoration: "none"
+                              }}
+                            >
+                              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,231,146,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffe792", flexShrink: 0 }}>
+                                <Icon name={(m.mediaType === "voice" || m.mediaType === "audio" || m.message_type === "voice") ? "mic" : "insert_drive_file"} size={18} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, color: "#d8e6ff", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {(m.mediaType === "voice" || m.mediaType === "audio" || m.message_type === "voice") ? "Voice Note" : "Document File"}
+                                </div>
+                                <div style={{ fontSize: 11, color: "#68768b", marginTop: 2 }}>
+                                  {new Date(m.sentAt || m.createdAt || Date.now()).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>
+                          0 Shared resources
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Admin Actions */}
+                    <div style={{ marginTop: 40, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <button style={actionBtnStyle}>
+                        <Icon name="notifications_off" size={18} />
+                        Mute Notifications
+                      </button>
+                      <button style={actionBtnStyle}>
+                        <Icon name="delete_sweep" size={18} />
+                        Clear Chat
+                      </button>
+                      <button style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                        <Icon name="block" size={18} />
+                        Block User
+                      </button>
+                      <button style={{ ...actionBtnStyle, color: "#ef4444", background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                        <Icon name="report" size={18} />
+                        Report
+                      </button>
+                    </div>
                   </>
                 );
               })()}

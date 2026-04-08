@@ -13,3 +13,32 @@ dist/
 *.iml
 coverage/
 .nyc_output/
+
+# Media files — never commit raw media
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
+*.mp3
+*.wav
+*.ogg
+*.aac
+*.flac
+*.amv
+*.3gp
+*.wmv
+
+# Uploads and temp files
+uploads/
+tmp/
+temp/
+
+# Security-sensitive files
+*.pem
+*.key
+*.p12
+*.pfx
+*.cert
+*.crt
+secrets/

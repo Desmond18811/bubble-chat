@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/Sidebar";
+import { useNavigate } from "react-router-dom";
+import { logoutUser } from "@/api";
+import { toast } from "sonner";
+import { disconnectSocket } from "@/lib/socket-client";
 
 function MaterialIcon({
     name,
@@ -288,6 +292,23 @@ function LogoutModal({
 
 export default function BubbleApp() {
     const [showModal, setShowModal] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        setLoading(true);
+        try {
+            await logoutUser();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            localStorage.clear();
+            disconnectSocket();
+            toast.info("Session terminated securely.");
+            setShowModal(false);
+            navigate("/login");
+        }
+    };
 
     return (
         <div
@@ -308,11 +329,11 @@ export default function BubbleApp() {
 
             {showModal && (
                 <LogoutModal
-                    onConfirm={() => {
-                        alert("Logged out!");
+                    onConfirm={handleLogout}
+                    onCancel={() => {
                         setShowModal(false);
+                        navigate("/messages"); // Navigate back
                     }}
-                    onCancel={() => setShowModal(false)}
                 />
             )}
         </div>

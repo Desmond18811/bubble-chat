@@ -1,9 +1,12 @@
 import express from 'express';
 import passport from 'passport';
-import { uploadStory, fetchStories } from '../controllers/storiesController';
-import { handleUpload, scanForMaliciousContent } from '../middleware/upload';
+import { uploadStory, fetchStories, proxyStoryMedia } from '../controllers/storiesController';
+import { handleUpload } from '../middleware/upload';
 
 const router = express.Router();
+
+// Public proxy for story media (no JWT — browser img/audio/video src tags need this)
+router.get('/media/proxy', proxyStoryMedia);
 
 router.use(passport.authenticate('jwt', { session: false }));
 
@@ -12,7 +15,7 @@ router.use(passport.authenticate('jwt', { session: false }));
  * /api/v1/story:
  *   post:
  *     tags: [Stories]
- *     summary: Upload a new story
+ *     summary: Upload a new story (image, video, audio, or text)
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -27,20 +30,20 @@ router.use(passport.authenticate('jwt', { session: false }));
  *                 format: binary
  *               textContent:
  *                 type: string
+ *               bg_gradient:
+ *                 type: string
+ *               text_color:
+ *                 type: string
+ *               font_size:
+ *                 type: integer
+ *               is_close_friends_only:
+ *                 type: boolean
  *     responses:
  *       201:
  *         description: Story uploaded successfully.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message: { type: string }
- *                 story: { $ref: '#/components/schemas/Story' }
  */
 router.route('/').post(
   handleUpload.single('file'), 
-  scanForMaliciousContent,
   uploadStory
 );
 
@@ -55,14 +58,6 @@ router.route('/').post(
  *     responses:
  *       200:
  *         description: List of active signals/stories.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message: { type: string }
- *                 total: { type: integer }
- *                 stories: { type: array, items: { $ref: '#/components/schemas/Story' } }
  */
 router.route('/').get(fetchStories);
 

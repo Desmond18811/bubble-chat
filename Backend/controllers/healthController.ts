@@ -9,7 +9,7 @@ import redisClient from '../utils/redis';
 export const checkHealth = (req: Request, res: Response) => {
   res.status(200).json({
     status_code: 200,
-    service: "Skill Stats Backend",
+    service: "Bubble Chat API",
     version: "1.0.0",
     status: "healthy",
   });
@@ -42,7 +42,7 @@ export const checkHealthDetailed = async (req: Request, res: Response) => {
 
     res.status(statusCode).json({
       status_code: statusCode,
-      service: "Skill Stats Backend",
+      service: "Bubble Chat API",
       version: "1.0.0",
       status: overallStatus,
       services: {
@@ -58,7 +58,7 @@ export const checkHealthDetailed = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       status_code: 500,
-      service: "Skill Stats Backend",
+      service: "Bubble Chat API",
       version: "1.0.0",
       status: "unhealthy",
       error: "Internal health check failed"

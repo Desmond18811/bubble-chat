@@ -5,6 +5,9 @@ export interface IStory extends Document {
   mediaType: 'image' | 'video' | 'audio' | 'text';
   mediaUrl: string;
   textContent?: string;
+  bg_gradient?: string;
+  text_color?: string;
+  font_size?: number;
   
   // Engagement
   views: mongoose.Types.ObjectId[];
@@ -40,6 +43,15 @@ const StorySchema: Schema<IStory> = new Schema(
     textContent: {
       type: String,
       default: '',
+    },
+    bg_gradient: {
+      type: String,
+    },
+    text_color: {
+      type: String,
+    },
+    font_size: {
+      type: Number,
     },
     
     // Interactions
