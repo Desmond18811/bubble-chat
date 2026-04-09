@@ -24,7 +24,7 @@ function getCurrentUser() {
       const u = JSON.parse(raw);
       return { id: u._id || u.id || `user-${Date.now()}`, name: u.username || u.name || "You" };
     }
-  } catch (_) {}
+  } catch (_) { }
   return { id: `user-${Date.now()}`, name: "You" };
 }
 
@@ -338,7 +338,7 @@ function MeetLobby() {
     try {
       const s = JSON.parse(localStorage.getItem("bubble_scheduled_calls") || "[]");
       setScheduled(s);
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   const handleClearLogs = async () => {
@@ -565,7 +565,7 @@ function MeetLobby() {
             <h2 className="text-[#9eacc3] text-xs font-semibold uppercase tracking-wider">
               Recent Calls
             </h2>
-            <button 
+            <button
               onClick={handleClearLogs}
               className="text-[#9eacc3] hover:text-red-400 text-[10px] font-bold uppercase transition-colors"
             >
@@ -632,6 +632,8 @@ function MeetRoom() {
   const [inviteLink] = useState(() => buildInviteLink(roomId, callType));
   const [copied, setCopied] = useState(false);
   const [callStarted] = useState(Date.now());
+  const [initError, setInitError] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -639,9 +641,9 @@ function MeetRoom() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleLeave = useCallback(() => {
+  const handleLeave = useCallback(async () => {
     if (zpRef.current) {
-      try { zpRef.current.destroy(); } catch (_) {}
+      try { zpRef.current.destroy(); } catch (_) { }
       zpRef.current = null;
     }
     // Save to recent calls
@@ -652,56 +654,77 @@ function MeetRoom() {
         label: `${isVoice ? "Voice" : "Video"} Call`,
         duration: Math.floor((Date.now() - callStarted) / 1000),
       });
-    } catch (_) {}
+    } catch (_) { }
     navigate("/meet");
   }, [navigate, roomId, callType, isVoice, callStarted]);
 
   useEffect(() => {
-    if (!containerRef.current || !roomId || !ZEGO_APP_ID || !ZEGO_SERVER_SECRET) return;
+    if (!containerRef.current || !roomId) return;
 
-    const user = getCurrentUser();
-    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-      ZEGO_APP_ID,
-      ZEGO_SERVER_SECRET,
-      roomId,
-      user.id,
-      user.name
-    );
+    if (!ZEGO_APP_ID || !ZEGO_SERVER_SECRET) {
+      setInitError("Zego Cloud credentials are missing. Please configure VITE_ZEGO_APP_ID and VITE_ZEGO_SERVER_SECRET in your environment.");
+      setIsInitializing(false);
+      return;
+    }
 
-    const zp = ZegoUIKitPrebuilt.create(kitToken);
-    zpRef.current = zp;
+    const initZego = async () => {
+      try {
+        setIsInitializing(true);
+        setInitError(null);
 
-    zp.joinRoom({
-      container: containerRef.current,
-      scenario: {
-        mode: isVoice
-          ? ZegoUIKitPrebuilt.GroupCall
-          : ZegoUIKitPrebuilt.VideoConference,
-      },
-      showPreJoinView: true,
-      turnOnMicrophoneWhenJoining: true,
-      turnOnCameraWhenJoining: !isVoice,
-      showMyCameraToggleButton: true,
-      showMyMicrophoneToggleButton: true,
-      showAudioVideoSettingsButton: true,
-      showScreenSharingButton: !isVoice,
-      showUserList: true,
-      maxUsers: 1000,
-      layout: "Sidebar",
-      showLayoutButton: !isVoice,
-      showNonVideoUser: true,
-      showTextChat: true,
-      onLeaveRoom: handleLeave,
-    });
+        const user = getCurrentUser();
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+          ZEGO_APP_ID,
+          ZEGO_SERVER_SECRET,
+          roomId,
+          user.id,
+          user.name
+        );
+
+        const zp = ZegoUIKitPrebuilt.create(kitToken);
+        zpRef.current = zp;
+
+        zp.joinRoom({
+          container: containerRef.current,
+          scenario: {
+            mode: isVoice
+              ? ZegoUIKitPrebuilt.GroupCall
+              : ZegoUIKitPrebuilt.VideoConference,
+          },
+          showPreJoinView: true,
+          turnOnMicrophoneWhenJoining: true,
+          turnOnCameraWhenJoining: !isVoice,
+          showMyCameraToggleButton: true,
+          showMyMicrophoneToggleButton: true,
+          showAudioVideoSettingsButton: true,
+          showScreenSharingButton: !isVoice,
+          showUserList: true,
+          maxUsers: 1000,
+          layout: "Sidebar",
+          showLayoutButton: !isVoice,
+          showNonVideoUser: true,
+          showTextChat: true,
+          onLeaveRoom: handleLeave,
+        });
+
+        setIsInitializing(false);
+      } catch (err: any) {
+        console.error("Zego Initialization Error:", err);
+        setInitError(err.message || "Failed to initialize the call room. Please try again.");
+        setIsInitializing(false);
+      }
+    };
+
+    initZego();
 
     return () => {
       if (zpRef.current) {
-        try { zpRef.current.destroy(); } catch (_) {}
+        try { zpRef.current.destroy(); } catch (_) { }
         zpRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, isVoice]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 gap-3">
@@ -743,15 +766,44 @@ function MeetRoom() {
         </button>
       </div>
 
-      {/* Zego container */}
-      <div
-        ref={containerRef}
-        className={cn(
-          "flex-1 rounded-2xl overflow-hidden min-h-0",
-          "bg-[#031427] border border-[#1a3650]"
+      {/* Zego container / State Overlay */}
+      <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#031427] border border-[#1a3650]">
+        <div
+          ref={containerRef}
+          className={cn(
+            "w-full h-full",
+            (initError || isInitializing) ? "opacity-0" : "opacity-100"
+          )}
+        />
+
+        {isInitializing && !initError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-12 h-12 border-4 border-[#ffe792]/20 border-t-[#ffe792] rounded-full animate-spin mb-4" />
+            <p className="text-[#d8e6ff] font-medium">Initializing secure connection…</p>
+            <p className="text-[#9eacc3] text-sm mt-1">Preparing your {isVoice ? "voice" : "video"} room</p>
+          </div>
         )}
-        style={{ minHeight: 0 }}
-      />
+
+        {initError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[#071a2f]/80 backdrop-blur-md">
+            <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
+              <MSIcon icon="error_outline" className="text-red-400 text-3xl" />
+            </div>
+            <h3 className="text-xl font-bold text-[#d8e6ff] mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Unable to Join Room
+            </h3>
+            <p className="text-[#9eacc3] text-sm max-w-md mb-6 whitespace-pre-wrap">
+              {initError}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

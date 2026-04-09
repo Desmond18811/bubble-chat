@@ -9,6 +9,7 @@ import WorkspacePage from "./pages/WorkspacePage";
 import SharedWorkspacePage from "./pages/SharedWorkspacePage";
 import MeetPage from "./pages/MeetPage";
 import CommunityPage from "./pages/CommunityPage";
+import CommunityMessagesPage from "./pages/CommunityMessagesPage";
 import SavedPage from "./pages/SavedPage";
 import CalendarPage from "./pages/CalendarPage";
 import PaymentsPage from "./pages/PaymentsPage";
@@ -18,6 +19,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import VerifyOTPPage from "./pages/auth/VerifyOTPPage";
+import AidaPage from "./pages/AidaPage";
 import NotFound from "./pages/NotFound";
 import { Navigate } from "react-router-dom";
 
@@ -48,11 +50,13 @@ const App = () => (
           <Route path="/workspace/shared/:folderId" element={<SharedWorkspacePage />} />
           <Route path="/meet/*" element={<ProtectedRoute><MeetPage /></ProtectedRoute>} />
           <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+          <Route path="/community/:id/messages" element={<ProtectedRoute><CommunityMessagesPage /></ProtectedRoute>} />
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
           <Route path="/saved" element={<ProtectedRoute><SavedPage /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
           <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/ai" element={<ProtectedRoute><AidaPage /></ProtectedRoute>} />
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
         </Routes>
