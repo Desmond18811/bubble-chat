@@ -22,6 +22,7 @@ import securityRoutes from './routes/securityRoutes';
 import healthRoutes from './routes/healthRoutes';
 import profileRoutes from './routes/profileRoutes';
 import workspaceRoutes from './routes/workspaceRoutes';
+import taskRoutes from './routes/taskRoutes';
 
 
 // Load environment variables
@@ -242,6 +243,7 @@ app.use('/api/v1/feed', feedRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/security', securityRoutes);
 app.use('/api/v1/workspace', workspaceRoutes);
+app.use('/api/v1/tasks', taskRoutes);
 
 
 

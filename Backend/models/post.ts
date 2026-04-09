@@ -8,6 +8,7 @@ export interface IPost extends Document {
   tags: string[];
   likes: mongoose.Types.ObjectId[];
   reposts: mongoose.Types.ObjectId[];
+  saves: mongoose.Types.ObjectId[];
   comments: {
     user: mongoose.Types.ObjectId;
     text: string;
@@ -26,6 +27,7 @@ const PostSchema = new Schema<IPost>(
     tags: [{ type: String }],
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     reposts: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    saves: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     comments: [
       {
         user: { type: Schema.Types.ObjectId, ref: 'User', required: true },

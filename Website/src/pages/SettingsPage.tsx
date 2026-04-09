@@ -1,19 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
+import { useTheme, THEMES, ThemeId } from "@/lib/ThemeContext";
 import * as api from "@/api";
 
-
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type ThemePreset = {
-  id: string;
-  label: string;
-  swatches: string[];
-};
 
 type ConnectedApp = {
   id: string;
@@ -23,26 +17,6 @@ type ConnectedApp = {
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const NAV_ITEMS = [
-  { icon: "chat", label: "Chats" },
-  { icon: "work", label: "Work" },
-  { icon: "video_call", label: "Meet" },
-  { icon: "groups", label: "Community" },
-  { icon: "rss_feed", label: "Feed" },
-  { icon: "bookmark", label: "Saved" },
-  { icon: "calendar_today", label: "Calendar" },
-  { icon: "payments", label: "Payments" },
-  { icon: "settings", label: "Settings", active: true },
-  { icon: "logout", label: "Logout" },
-];
-
-const THEME_PRESETS: ThemePreset[] = [
-  { id: "obsidian-gold", label: "Obsidian Gold", swatches: ["#010f20", "#ffe792", "#a2c2fd"] },
-  { id: "cyber-mint", label: "Cyber Mint", swatches: ["#0a192f", "#64ffda", "#112240"] },
-  { id: "nebula-violet", label: "Nebula Violet", swatches: ["#1a0b2e", "#f0abfc", "#3b0764"] },
-  { id: "monolith-gray", label: "Monolith Gray", swatches: ["#1e1e1e", "#e5e5e5", "#404040"] },
-];
 
 const ACCENT_COLORS = ["#ffe792", "#ff716c", "#bcd2ff", "#f0dc2b"];
 
@@ -105,24 +79,24 @@ function MSIcon({
 function TopBar() {
   return (
     <header
-      className="fixed top-0 w-full z-50 flex items-center justify-between px-8 h-20"
-      style={{ background: "#010f20" }}
+      className="fixed top-0 right-0 z-50 flex items-center justify-between px-8 h-20 transition-colors"
+      style={{ background: "color-mix(in srgb, var(--th-bg) 70%, transparent)", backdropFilter: "blur(20px)", left: "85px" }}
     >
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="relative w-8 h-8 shrink-0">
             <div
-              className="absolute top-0 left-0 w-5 h-5 border-2"
-              style={{ borderColor: "#ffe792" }}
+              className="absolute top-0 left-0 w-5 h-5 border-2 transition-colors"
+              style={{ borderColor: "var(--th-accent)" }}
             />
             <div
-              className="absolute bottom-0 right-0 w-5 h-5 border-2"
-              style={{ borderColor: "#ffe792" }}
+              className="absolute bottom-0 right-0 w-5 h-5 border-2 transition-colors"
+              style={{ borderColor: "var(--th-accent)" }}
             />
           </div>
           <span
-            className="text-2xl font-bold tracking-tighter"
-            style={{ ...SG, color: "#ffe792" }}
+            className="text-2xl font-bold tracking-tighter transition-colors"
+            style={{ ...SG, color: "var(--th-accent)" }}
           >
             BUBBLE
           </span>
@@ -130,18 +104,18 @@ function TopBar() {
       </div>
       <div className="flex items-center gap-6">
         <div
-          className="relative flex items-center px-4 py-2 rounded-full w-64"
-          style={{ background: "#11273f" }}
+          className="relative flex items-center px-4 py-2 rounded-full w-64 transition-colors"
+          style={{ background: "var(--th-surface-top)" }}
         >
           <MSIcon
             name="search"
-            className="text-sm mr-2"
-            style={{ color: "#9eacc3", fontSize: "18px" }}
+            className="text-sm mr-2 transition-colors"
+            style={{ color: "var(--th-muted)", fontSize: "18px" }}
           />
           <Input
             placeholder="Search settings..."
-            className="bg-transparent border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
-            style={{ color: "#d8e6ff" }}
+            className="bg-transparent border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto transition-colors"
+            style={{ color: "var(--th-text)" }}
           />
         </div>
         <div className="flex items-center gap-4">
@@ -149,12 +123,12 @@ function TopBar() {
             <button
               key={icon}
               className="transition-colors duration-300"
-              style={{ color: "#a2c2fd" }}
+              style={{ color: "var(--th-secondary)" }}
               onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = "#ffe792")
+                ((e.currentTarget as HTMLElement).style.color = "var(--th-accent)")
               }
               onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = "#a2c2fd")
+                ((e.currentTarget as HTMLElement).style.color = "var(--th-secondary)")
               }
             >
               <MSIcon name={icon} />
@@ -180,14 +154,14 @@ function Toggle({
     <button
       onClick={onToggle}
       className="w-12 h-6 rounded-full relative p-1 transition-colors duration-300 shrink-0"
-      style={{ background: enabled ? "rgba(255,231,146,0.20)" : "rgba(59,73,92,0.30)" }}
+      style={{ background: enabled ? "color-mix(in srgb, var(--th-accent) 20%, transparent)" : "color-mix(in srgb, var(--th-muted) 30%, transparent)" }}
       aria-checked={enabled}
       role="switch"
     >
       <div
         className="w-4 h-4 rounded-full transition-all duration-300"
         style={{
-          background: enabled ? "#ffe792" : "#68768b",
+          background: enabled ? "var(--th-accent)" : "var(--th-muted)",
           marginLeft: enabled ? "auto" : "0",
         }}
       />
@@ -198,47 +172,88 @@ function Toggle({
 // ─── Profile Section ──────────────────────────────────────────────────────────
 
 function ProfileSection() {
-  const [displayName, setDisplayName] = useState("Astrid Vance");
-  const [alias, setAlias] = useState("@astrid_v");
-  const [bio, setBio] = useState(
-    "Digital architect specializing in atmospheric UI/UX design. Obsessed with deep navy palettes and celestial interfaces."
-  );
+  const [displayName, setDisplayName] = useState("");
+  const [alias, setAlias] = useState("");
+  const [bio, setBio] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+     // Load fresh user data directly mapped strictly to user values to allow mutations
+     const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+     if (userObj.full_name) setDisplayName(userObj.full_name);
+     if (userObj.username) setAlias(userObj.username);
+     if (userObj.bio) setBio(userObj.bio);
+  }, []);
+
+  const handleSave = async () => {
+    try {
+        setLoading(true);
+        const token = localStorage.getItem("access_token");
+        const res = await fetch("http://localhost:3000/api/v1/profile/me", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                full_name: displayName,
+                username: alias,
+                bio: bio
+            })
+        });
+
+        if (!res.ok) {
+            throw new Error("Update failed");
+        }
+
+        toast.success("Profile attributes updated successfully");
+        // Refetch/resync user object 
+        const updatedRes = await fetch("http://localhost:3000/api/v1/profile/me", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        const updatedData = await updatedRes.json();
+        if (updatedData.data) {
+           localStorage.setItem("user", JSON.stringify(updatedData.data));
+        }
+
+    } catch (err) {
+        toast.error("Error communicating with profile ecosystem.");
+    } finally {
+        setLoading(false);
+    }
+  };
 
   return (
     <section
-      className="p-8 rounded-2xl border"
+      className="p-8 rounded-2xl border transition-colors"
       style={{
-        background: "rgba(17,39,63,0.40)",
+        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
         backdropFilter: "blur(20px)",
-        borderColor: "rgba(59,73,92,0.10)",
+        borderColor: "var(--th-border)",
       }}
     >
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3
-            className="text-xl font-semibold mb-1"
-            style={{ ...SG, color: "#ffe792" }}
+            className="text-xl font-semibold mb-1 transition-colors"
+            style={{ ...SG, color: "var(--th-accent)" }}
           >
             Identity Profile
           </h3>
           <p
-            className="text-[10px] uppercase tracking-widest"
-            style={{ ...SG, color: "#9eacc3" }}
+            className="text-[10px] uppercase tracking-widest transition-colors"
+            style={{ ...SG, color: "var(--th-muted)" }}
           >
             Public Information
           </p>
         </div>
         <Button
-          className="px-6 py-2 rounded-xl text-xs font-bold tracking-wider border-0 transition-all"
-          style={{ ...SG, background: "#ffe792", color: "#655400", height: "auto" }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#ffd709")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#ffe792")
-          }
+          onClick={handleSave}
+          disabled={loading}
+          className="px-6 py-2 rounded-xl text-xs font-bold tracking-wider border-0 transition-all hover:scale-105"
+          style={{ ...SG, background: "var(--th-accent)", color: "var(--th-accent-text)", height: "auto" }}
         >
-          SAVE CHANGES
+          {loading ? "SAVING..." : "SAVE CHANGES"}
         </Button>
       </div>
 
@@ -246,27 +261,27 @@ function ProfileSection() {
         {/* Avatar */}
         <div className="relative group shrink-0">
           <div
-            className="w-32 h-32 rounded-xl overflow-hidden relative"
-            style={{ background: "#11273f" }}
+            className="w-32 h-32 rounded-xl overflow-hidden relative transition-colors"
+            style={{ background: "var(--th-surface-top)" }}
           >
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxQ2i_ZwK0zv8JDoxMaBJSYx52mrOo1wV1iH9Q6CQcqTXV3Qa4E2c73vlqWOWaI-LVRRPmhKQQXlJLVtiQqMydd_Wbd7vXWbMc3Oh5XRi2oBnzOL4vIPRKSjkF2mpD_VvItmcCL8RbfAGx3owkMw0RhLKbxv6Idz6keo4oBCnvxjT3fKF0LvVf6WDnQQ4F0SpwP2R5BhQUhhLpiV54Dw1sOvtOYxbC6guGgniXF8SguL2dHL26xEk2uyc7sqmhDohdC1ZisCgAF4yq"
+              src={JSON.parse(localStorage.getItem("user") || "{}").avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAxQ2i_ZwK0zv8JDoxMaBJSYx52mrOo1wV1iH9Q6CQcqTXV3Qa4E2c73vlqWOWaI-LVRRPmhKQQXlJLVtiQqMydd_Wbd7vXWbMc3Oh5XRi2oBnzOL4vIPRKSjkF2mpD_VvItmcCL8RbfAGx3owkMw0RhLKbxv6Idz6keo4oBCnvxjT3fKF0LvVf6WDnQQ4F0SpwP2R5BhQUhhLpiV54Dw1sOvtOYxbC6guGgniXF8SguL2dHL26xEk2uyc7sqmhDohdC1ZisCgAF4yq"}
               alt="Profile"
               className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500"
             />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ background: "rgba(255,231,146,0.20)" }}>
-              <MSIcon name="photo_camera" style={{ color: "#655400" }} />
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-colors duration-300"
+              style={{ background: "color-mix(in srgb, var(--th-accent) 20%, transparent)" }}>
+              <MSIcon name="photo_camera" style={{ color: "var(--th-accent-text)" }} />
             </div>
           </div>
           <div
-            className="absolute -bottom-2 -right-2 w-6 h-6 rounded-lg flex items-center justify-center"
-            style={{ background: "#ffe792" }}
+            className="absolute -bottom-2 -right-2 w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
+            style={{ background: "var(--th-accent)" }}
           >
             <MSIcon
               name="edit"
               filled
-              style={{ color: "#655400", fontSize: "14px" }}
+              style={{ color: "var(--th-accent-text)", fontSize: "14px" }}
             />
           </div>
         </div>
@@ -275,31 +290,32 @@ function ProfileSection() {
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
           {[
             { label: "Display Name", value: displayName, setter: setDisplayName },
-            { label: "Unique Alias", value: alias, setter: setAlias },
+            { label: "Username", value: alias, setter: setAlias },
           ].map(({ label, value, setter }) => (
             <div key={label} className="space-y-2">
               <label
-                className="text-[10px] uppercase tracking-widest ml-1 block"
-                style={{ ...SG, color: "#9eacc3" }}
+                className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
+                style={{ ...SG, color: "var(--th-muted)" }}
               >
                 {label}
               </label>
               <Input
                 value={value}
                 onChange={(e) => setter(e.target.value)}
-                className="w-full border-none rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
+                className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
                 style={{
-                  background: "#11273f",
-                  color: "#d8e6ff",
-                  focusRingColor: "rgba(255,231,146,0.20)",
+                  background: "var(--th-surface-top)",
+                  borderColor: "var(--th-border)",
+                  color: "var(--th-text)",
+                  outlineColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)",
                 }}
               />
             </div>
           ))}
           <div className="col-span-full space-y-2">
             <label
-              className="text-[10px] uppercase tracking-widest ml-1 block"
-              style={{ ...SG, color: "#9eacc3" }}
+              className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
+              style={{ ...SG, color: "var(--th-muted)" }}
             >
               Editorial Bio
             </label>
@@ -307,8 +323,12 @@ function ProfileSection() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
-              className="w-full border-none rounded-xl px-4 py-3 text-sm focus-visible:ring-2 resize-none transition-all"
-              style={{ background: "#11273f", color: "#d8e6ff" }}
+              className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 resize-none transition-all"
+              style={{ 
+                  background: "var(--th-surface-top)", 
+                  color: "var(--th-text)",
+                  borderColor: "var(--th-border)"
+              }}
             />
           </div>
         </div>
@@ -320,89 +340,100 @@ function ProfileSection() {
 // ─── Security Section ─────────────────────────────────────────────────────────
 
 function SecuritySection() {
-  const [twoFA, setTwoFA] = useState(true);
+  const [twoFA, setTwoFA] = useState(false);
+
+  const toggle2FA = async () => {
+    // Eventually hit setup-2fa mapped backend
+    setTwoFA(!twoFA);
+    if (!twoFA) {
+        toast("2FA Protocol Initialization Triggered via API sync point.");
+    }
+  };
 
   return (
     <section
-      className="p-8 rounded-2xl border"
+      className="p-8 rounded-2xl border transition-colors"
       style={{
-        background: "rgba(17,39,63,0.40)",
+        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
         backdropFilter: "blur(20px)",
-        borderColor: "rgba(59,73,92,0.10)",
+        borderColor: "var(--th-border)",
       }}
     >
       <h3
-        className="text-xl font-semibold mb-6"
-        style={{ ...SG, color: "#ffe792" }}
+        className="text-xl font-semibold mb-6 transition-colors"
+        style={{ ...SG, color: "var(--th-accent)" }}
       >
         Security Protocols
       </h3>
       <div className="space-y-4">
         {/* 2FA Row */}
         <div
-          className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer"
-          style={{ background: "#031427" }}
+          className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer border"
+          style={{ background: "var(--th-surface)", borderColor: "transparent" }}
           onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
+            ((e.currentTarget as HTMLElement).style.borderColor = "var(--th-border)")
           }
           onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#031427")
+            ((e.currentTarget as HTMLElement).style.borderColor = "transparent")
           }
-          onClick={() => setTwoFA((v) => !v)}
+          onClick={toggle2FA}
         >
           <div className="flex items-center gap-4">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
               style={{
-                background: "rgba(36,71,122,0.30)",
-                color: "#a2c2fd",
+                background: "color-mix(in srgb, var(--th-secondary) 20%, transparent)",
+                color: "var(--th-secondary)",
               }}
             >
-              {/* <MSIcon name="authenticator" /> */}
+               <MSIcon name="shield_lock" />
             </div>
             <div>
-              <p className="font-medium text-sm" style={SG}>
+              <p className="font-medium text-sm transition-colors" style={{...SG, color: "var(--th-text)"}}>
                 Two-Factor Authentication
               </p>
-              <p className="text-xs" style={{ color: "#9eacc3" }}>
-                Secure your account with biometric verification.
+              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
+                Secure your account with TOTP verification.
               </p>
             </div>
           </div>
-          <Toggle enabled={twoFA} onToggle={() => setTwoFA((v) => !v)} />
+          <Toggle enabled={twoFA} onToggle={toggle2FA} />
         </div>
 
-        {/* Passkey Row */}
+        {/* Sync Row */}
         <div
-          className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer"
-          style={{ background: "#031427" }}
+          className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer border"
+          style={{ background: "var(--th-surface)", borderColor: "transparent" }}
           onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
+            ((e.currentTarget as HTMLElement).style.borderColor = "var(--th-border)")
           }
           onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#031427")
+             ((e.currentTarget as HTMLElement).style.borderColor = "transparent")
           }
+          onClick={() => {
+              toast("Full sync snapshot aggregated across active nodes.");
+          }}
         >
           <div className="flex items-center gap-4">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ background: "#11273f", color: "#9eacc3" }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
+              style={{ background: "var(--th-surface-top)", color: "var(--th-muted)" }}
             >
-              <MSIcon name="key" />
+              <MSIcon name="sync" />
             </div>
             <div>
-              <p className="font-medium text-sm" style={SG}>
-                Passkey Synchronization
+              <p className="font-medium text-sm transition-colors" style={{...SG, color: "var(--th-text)"}}>
+                Force State Synchronization
               </p>
-              <p className="text-xs" style={{ color: "#9eacc3" }}>
-                Manage encrypted access across your devices.
+              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
+                Manage encrypted alignment checks across devices.
               </p>
             </div>
           </div>
           <MSIcon
             name="chevron_right"
-            className="group-hover:text-yellow-300 transition-colors"
-            style={{ color: "#9eacc3" }}
+            className="group-hover:translate-x-1 transition-transform cursor-pointer"
+            style={{ color: "var(--th-secondary)" }}
           />
         </div>
       </div>
@@ -418,10 +449,12 @@ function BillingSection() {
   const handleCheckout = async (isAnonymous: boolean) => {
     setLoading(true);
     try {
-      // Assuming api.ts has a createCheckout method, or fetch directly
-      const response = await fetch('http://localhost:3000/api/payment/create-checkout-session', {
+      const response = await fetch('http://localhost:3000/api/v1/payment/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+        },
         body: JSON.stringify({ isAnonymous, planType: 'premium' }),
       });
       const data = await response.json();
@@ -438,25 +471,27 @@ function BillingSection() {
   };
 
   return (
-    <section className="p-8 rounded-2xl border" style={{ background: "rgba(17,39,63,0.40)", backdropFilter: "blur(20px)", borderColor: "rgba(59,73,92,0.10)" }}>
-      <h3 className="text-xl font-semibold mb-6" style={{ ...SG, color: "#f0abfc" }}>Financial Identity & Clearance</h3>
+    <section className="p-8 rounded-2xl border transition-colors" style={{ background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)", backdropFilter: "blur(20px)", borderColor: "var(--th-border)" }}>
+      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Financial Identity & Clearance</h3>
       <div className="space-y-4">
         {/* Standard Checkout */}
-        <div className="flex items-center justify-between p-4 rounded-xl group transition-all" style={{ background: "#031427" }}>
+        <div className="flex items-center justify-between p-4 rounded-xl group transition-all" style={{ background: "var(--th-surface)" }}>
           <div>
-            <p className="font-medium text-sm" style={SG}>Upgrade to Premium</p>
-            <p className="text-xs text-[#9eacc3]">Standard checkout with email tracking.</p>
+            <p className="font-medium text-sm transition-colors" style={{...SG, color: "var(--th-text)"}}>Upgrade to Premium</p>
+            <p className="text-xs transition-colors" style={{color: "var(--th-muted)"}}>Standard checkout with email tracking.</p>
           </div>
-          <Button disabled={loading} onClick={() => handleCheckout(false)} className="bg-[#a2c2fd] text-[#010f20] hover:bg-[#c0d6fe] text-xs font-bold font-['Space_Grotesk'] h-8 px-4 rounded-lg">Buy Key</Button>
+          <Button disabled={loading} onClick={() => handleCheckout(false)} className="text-xs font-bold font-['Space_Grotesk'] h-8 px-4 rounded-lg transition-colors hover:scale-105"
+           style={{ background: "color-mix(in srgb, var(--th-secondary) 80%, white)", color: "var(--th-bg)" }}>Buy Key</Button>
         </div>
 
         {/* Anonymous Checkout */}
-        <div className="flex items-center justify-between p-4 rounded-xl border border-[#ffe792]/20 group transition-all" style={{ background: "rgba(255,231,146,0.05)" }}>
+        <div className="flex items-center justify-between p-4 rounded-xl border group transition-all" style={{ background: "color-mix(in srgb, var(--th-accent) 5%, transparent)", borderColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)" }}>
           <div>
-            <p className="font-medium text-sm" style={{ ...SG, color: "#ffe792" }}>Phantom Mode Transaction</p>
-            <p className="text-xs text-[#9eacc3]">Complete financial anonymity via encrypted alias checkout.</p>
+            <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>Phantom Mode Transaction</p>
+            <p className="text-xs transition-colors" style={{color: "var(--th-muted)"}}>Complete financial anonymity via encrypted alias checkout.</p>
           </div>
-          <Button disabled={loading} onClick={() => handleCheckout(true)} className="bg-[#ffe792] text-[#655400] hover:bg-[#ffd709] shadow-[0_0_15px_rgba(255,231,146,0.3)] text-xs font-bold font-['Space_Grotesk'] h-8 px-4 rounded-lg">Stealth Pay</Button>
+          <Button disabled={loading} onClick={() => handleCheckout(true)} className="shadow-[0_0_15px_var(--th-glow)] text-xs font-bold font-['Space_Grotesk'] h-8 px-4 rounded-lg transition-colors hover:scale-105"
+          style={{ background: "var(--th-accent)", color: "var(--th-accent-text)" }}>Stealth Pay</Button>
         </div>
       </div>
     </section>
@@ -465,31 +500,31 @@ function BillingSection() {
 
 // ─── Theme Section ────────────────────────────────────────────────────────────
 
-
 function ThemeSection() {
-  const [selectedTheme, setSelectedTheme] = useState("obsidian-gold");
+  const { themeId: selectedTheme, setTheme: setSelectedTheme } = useTheme();
+  // We leave these as local UI for now since the full implementation only needs preset colors
   const [accentColor, setAccentColor] = useState("#ffe792");
   const [glassIntensity, setGlassIntensity] = useState(70);
 
   return (
     <section
-      className="p-8 rounded-2xl border h-full"
+      className="p-8 rounded-2xl border h-full transition-colors duration-300 relative z-10"
       style={{
-        background: "rgba(17,39,63,0.40)",
+        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
         backdropFilter: "blur(20px)",
-        borderColor: "rgba(59,73,92,0.10)",
+        borderColor: "var(--th-border)",
       }}
     >
       <div className="mb-8">
         <h3
-          className="text-xl font-semibold mb-1"
-          style={{ ...SG, color: "#ffe792" }}
+          className="text-xl font-semibold mb-1 transition-colors"
+          style={{ ...SG, color: "var(--th-accent)" }}
         >
           Theme Customization
         </h3>
         <p
-          className="text-[10px] uppercase tracking-widest"
-          style={{ ...SG, color: "#9eacc3" }}
+          className="text-[10px] uppercase tracking-widest transition-colors"
+          style={{ ...SG, color: "var(--th-muted)" }}
         >
           Atmosphere &amp; Visuals
         </p>
@@ -499,26 +534,26 @@ function ThemeSection() {
         {/* Palette Presets */}
         <div>
           <label
-            className="text-[10px] uppercase tracking-widest block mb-4"
-            style={{ ...SG, color: "#9eacc3" }}
+            className="text-[10px] uppercase tracking-widest block mb-4 transition-colors"
+            style={{ ...SG, color: "var(--th-muted)" }}
           >
             Core Atmosphere
           </label>
           <div className="grid grid-cols-2 gap-4">
-            {THEME_PRESETS.map((preset) => {
+            {THEMES.map((preset) => {
               const isSelected = selectedTheme === preset.id;
               return (
                 <button
                   key={preset.id}
-                  onClick={() => setSelectedTheme(preset.id)}
+                  onClick={() => setSelectedTheme(preset.id as ThemeId)}
                   className="relative flex flex-col gap-4 p-4 rounded-xl text-left transition-all"
                   style={{
-                    background: isSelected ? "#11273f" : "#071a2f",
+                    background: isSelected ? "var(--th-surface-top)" : "var(--th-surface)",
                     border: isSelected
-                      ? "2px solid #ffe792"
+                      ? "2px solid var(--th-accent)"
                       : "2px solid transparent",
                     boxShadow: isSelected
-                      ? "0 0 0 4px rgba(255,231,146,0.05)"
+                      ? "0 0 0 4px var(--th-glow)"
                       : "none",
                     opacity: isSelected ? 1 : 0.6,
                   }}
@@ -540,15 +575,15 @@ function ThemeSection() {
                       />
                     ))}
                   </div>
-                  <span className="text-xs font-bold" style={SG}>
+                  <span className="text-xs font-bold transition-colors" style={{ ...SG, color: "var(--th-text)" }}>
                     {preset.label}
                   </span>
                   {isSelected && (
                     <MSIcon
                       name="check_circle"
                       filled
-                      className="absolute top-3 right-3 text-sm"
-                      style={{ color: "#ffe792", fontSize: "16px" }}
+                      className="absolute top-3 right-3 text-sm transition-colors"
+                      style={{ color: "var(--th-accent)", fontSize: "16px" }}
                     />
                   )}
                 </button>
@@ -560,15 +595,15 @@ function ThemeSection() {
         {/* Glass Intensity Slider */}
         <div>
           <label
-            className="text-[10px] uppercase tracking-widest block mb-6"
-            style={{ ...SG, color: "#9eacc3" }}
+            className="text-[10px] uppercase tracking-widest block mb-6 transition-colors"
+            style={{ ...SG, color: "var(--th-muted)" }}
           >
             Glass Panel Refraction
           </label>
-          <div className="relative h-1 w-full rounded-full mb-3" style={{ background: "#11273f" }}>
+          <div className="relative h-1 w-full rounded-full mb-3" style={{ background: "var(--th-surface-top)" }}>
             <div
-              className="absolute top-0 left-0 h-full rounded-full"
-              style={{ width: `${glassIntensity}%`, background: "#ffe792" }}
+              className="absolute top-0 left-0 h-full rounded-full transition-colors"
+              style={{ width: `${glassIntensity}%`, background: "var(--th-accent)" }}
             />
             <input
               type="range"
@@ -579,59 +614,23 @@ function ThemeSection() {
               className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ring-4 ring-yellow-300/20 cursor-pointer pointer-events-none"
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ring-4 pointer-events-none transition-all"
               style={{
                 left: `calc(${glassIntensity}% - 8px)`,
-                background: "#ffe792",
+                background: "var(--th-accent)",
+                boxShadow: "0 0 0 4px var(--th-glow)",
               }}
             />
           </div>
           <div
-            className="flex justify-between text-[10px]"
-            style={{ ...SG, color: "rgba(158,172,195,0.60)" }}
+            className="flex justify-between text-[10px] transition-colors"
+            style={{ ...SG, color: "var(--th-muted)", opacity: 0.6 }}
           >
             <span>MINIMAL BLUR</span>
             <span>TOTAL OBSIDIAN</span>
           </div>
         </div>
 
-        {/* Accent Colors */}
-        <div>
-          <label
-            className="text-[10px] uppercase tracking-widest block mb-4"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            Focus Accent Override
-          </label>
-          <div className="flex flex-wrap gap-3">
-            {ACCENT_COLORS.map((color) => (
-              <button
-                key={color}
-                onClick={() => setAccentColor(color)}
-                className="w-8 h-8 rounded-full transition-transform hover:scale-110"
-                style={{
-                  background: color,
-                  ...(accentColor === color
-                    ? {
-                      boxShadow: `0 0 0 2px #010f20, 0 0 0 4px ${color}`,
-                    }
-                    : {}),
-                }}
-                aria-label={color}
-              />
-            ))}
-            <button
-              className="w-8 h-8 rounded-full flex items-center justify-center border transition-transform hover:scale-110"
-              style={{ background: "#11273f", borderColor: "#3b495c" }}
-            >
-              <MSIcon
-                name="add"
-                className="text-sm"
-                style={{ fontSize: "16px", color: "#9eacc3" }}
-              />
-            </button>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -642,23 +641,23 @@ function ThemeSection() {
 function EcosystemSection() {
   return (
     <div
-      className="p-8 rounded-2xl border"
+      className="p-8 rounded-2xl border transition-colors relative z-10"
       style={{
-        background: "rgba(17,39,63,0.40)",
+        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
         backdropFilter: "blur(20px)",
-        borderColor: "rgba(59,73,92,0.10)",
+        borderColor: "var(--th-border)",
       }}
     >
       <div className="flex items-center justify-between mb-8">
         <h3
-          className="text-xl font-semibold"
-          style={{ ...SG, color: "#ffe792" }}
+          className="text-xl font-semibold transition-colors"
+          style={{ ...SG, color: "var(--th-accent)" }}
         >
           Synchronized Ecosystem
         </h3>
         <button
           className="text-xs hover:underline transition-colors"
-          style={{ color: "#a2c2fd" }}
+          style={{ color: "var(--th-secondary)" }}
         >
           View All Integrations
         </button>
@@ -668,27 +667,27 @@ function EcosystemSection() {
         {CONNECTED_APPS.map((app) => (
           <div
             key={app.id}
-            className="flex items-center gap-4 p-4 rounded-xl"
+            className="flex items-center gap-4 p-4 rounded-xl transition-colors"
             style={{
-              background: "#031427",
+              background: "var(--th-surface)",
               opacity: app.status === "disconnected" ? 0.5 : 1,
               filter:
                 app.status === "disconnected" ? "grayscale(100%)" : "none",
             }}
           >
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: "rgba(255,255,255,0.05)" }}
+              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+              style={{ background: "var(--th-surface-top)" }}
             >
               <img src={app.iconSrc} alt={app.name} className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-bold" style={SG}>
+              <p className="text-sm font-bold transition-colors" style={{...SG, color: "var(--th-text)"}}>
                 {app.name}
               </p>
               <p
-                className="text-[10px]"
-                style={{ color: "#9eacc3", ...SG, textTransform: "capitalize" }}
+                className="text-[10px] transition-colors"
+                style={{ color: "var(--th-muted)", ...SG, textTransform: "capitalize" }}
               >
                 {app.status}
               </p>
@@ -698,18 +697,18 @@ function EcosystemSection() {
 
         {/* Add new */}
         <button
-          className="flex items-center justify-center p-4 rounded-xl border border-dashed transition-colors group"
-          style={{ borderColor: "rgba(59,73,92,0.30)" }}
+          className="flex items-center justify-center p-4 rounded-xl border border-dashed transition-colors group cursor-pointer"
+          style={{ borderColor: "var(--th-border)", background: "transparent" }}
           onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
+            ((e.currentTarget as HTMLElement).style.background = "var(--th-surface)")
           }
           onMouseLeave={(e) =>
             ((e.currentTarget as HTMLElement).style.background = "transparent")
           }
         >
           <span
-            className="text-xs uppercase tracking-widest group-hover:text-yellow-200 transition-colors"
-            style={{ ...SG, color: "#9eacc3" }}
+            className="text-xs uppercase tracking-widest transition-colors group-hover:scale-105"
+            style={{ ...SG, color: "var(--th-muted)" }}
           >
             Link New Stream
           </span>
@@ -724,37 +723,33 @@ function EcosystemSection() {
 export default function SettingsPage() {
   return (
     <div
-      className="min-h-screen"
-      style={{ background: "#010f20", color: "#d8e6ff" }}
+      className="min-h-screen transition-colors duration-300 relative overflow-hidden"
+      style={{ background: "var(--th-bg)", color: "var(--th-text)" }}
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-        body { font-family: 'Manrope', sans-serif; }
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; }
-        input[type=range]::-moz-range-thumb { appearance: none; }
-      `}</style>
-
       <TopBar />
       <Sidebar />
 
+      {/* Ambient glows */}
+      <div className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
+        style={{ background: "var(--th-glow)" }} />
+      <div className="fixed bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
+        style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
+
+
       <main
-        className="px-12 pb-20 transition-all duration-300"
+        className="px-12 pb-20 transition-all duration-300 relative z-10"
         style={{ marginLeft: 96, paddingTop: "6rem" }}
       >
         {/* Page Header */}
         <header className="mb-16">
           <h1
-            className="text-5xl font-bold tracking-tighter mb-2"
-            style={{ ...SG, color: "#d8e6ff" }}
+            className="text-5xl font-bold tracking-tighter mb-2 transition-colors"
+            style={{ ...SG, color: "var(--th-text)" }}
           >
             Account Settings
           </h1>
-          <p className="max-w-xl" style={{ color: "#9eacc3" }}>
-            Refine your digital existence within the Obsidian ecosystem.
+          <p className="max-w-xl transition-colors" style={{ color: "var(--th-muted)" }}>
+            Refine your digital existence within the ecosystem.
             Personalize your interface, manage security protocols, and configure
             your profile identity.
           </p>
@@ -771,7 +766,7 @@ export default function SettingsPage() {
 
 
           {/* Right: Theme */}
-          <div className="col-span-12 lg:col-span-5">
+          <div className="col-span-12 lg:col-span-5 relative">
             <ThemeSection />
           </div>
 

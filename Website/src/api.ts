@@ -713,3 +713,21 @@ export const forwardNetworkPost = async (networkId: string, postId: string, targ
   return handleResponse(res);
 };
 
+// ─── Saved Posts ──────────────────────────────────────────────────────────────
+
+/** Toggle save/unsave a feed post */
+export const saveFeedPost = async (postId: string) => {
+  const res = await fetch(`${BASE_URL}/feed/${postId}/save`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+/** Fetch all posts saved by the current user */
+export const fetchSavedPosts = async () => {
+  const res = await fetch(`${BASE_URL}/feed/saved`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};

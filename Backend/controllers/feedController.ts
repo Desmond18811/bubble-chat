@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import Post from '../models/post';
 import mongoose from 'mongoose';
-import multer from 'multer';
-import path from 'path';
 
 // GET /api/v1/feed
 export const getFeedPosts = async (req: Request, res: Response) => {
@@ -38,10 +36,9 @@ export const createPost = async (req: Request, res: Response) => {
     let mediaType: 'image' | 'video' | undefined;
 
     if (file) {
-      // Use existing S3/storage utility if available, otherwise store path
       const mime = file.mimetype || '';
       mediaType = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : undefined;
-      mediaUrl = file.location || file.path || `/uploads/${file.filename}`;
+      mediaUrl = (file as any).location || file.path || `/uploads/${file.filename}`;
     }
 
     const post = await Post.create({
@@ -95,6 +92,42 @@ export const toggleRepost = async (req: Request, res: Response) => {
     res.json({ reposted: !alreadyReposted, repostCount: post.reposts.length });
   } catch (err: any) {
     res.status(400).json({ message: err.message });
+  }
+};
+
+// POST /api/v1/feed/:id/save  — toggle save/unsave
+export const toggleSave = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const alreadySaved = post.saves.some((id) => id.equals(userId));
+    if (alreadySaved) {
+      post.saves = post.saves.filter((id) => !id.equals(userId)) as any;
+    } else {
+      post.saves.push(userId);
+    }
+    await post.save();
+    res.json({ saved: !alreadySaved, saveCount: post.saves.length });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// GET /api/v1/feed/saved — posts saved by current user
+export const getSavedPosts = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const posts = await Post.find({ saves: userId })
+      .populate('author', 'username avatar full_name verified_badge uniqueTag')
+      .populate('comments.user', 'username avatar')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ posts, total: posts.length });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
   }
 };
 

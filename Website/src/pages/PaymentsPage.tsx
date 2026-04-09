@@ -1,118 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import Sidebar from "@/components/Sidebar";
-
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type NavItem = { icon: string; label: string; active?: boolean };
 type FilterTab = "All" | "Income" | "Expenses";
 type Transaction = {
-  id: number;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  subtitle: string;
-  amount: string;
-  amountColor?: string;
-  time?: string;
-  badge?: { label: string; color: string };
-  size: "sm" | "md" | "lg" | "lg-image";
-  imageSrc?: string;
-  error?: boolean;
-  income?: boolean;
-  iconFilled?: boolean;
+  _id: string;
+  type: "deposit" | "withdrawal" | "expense" | "income";
+  amount: number;
+  source?: string;
+  description?: string;
+  createdAt: string;
 };
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const NAV_ITEMS: NavItem[] = [
-  { icon: "chat", label: "Chats" },
-  { icon: "work", label: "Work" },
-  { icon: "video_chat", label: "Meet" },
-  { icon: "groups", label: "Community" },
-  { icon: "rss_feed", label: "Feed" },
-  { icon: "bookmark", label: "Saved" },
-  { icon: "calendar_today", label: "Calendar" },
-  { icon: "payments", label: "Payments", active: true },
-];
-
-const TRANSACTIONS: Transaction[] = [
-  {
-    id: 1,
-    icon: "cloud_queue",
-    iconBg: "rgba(255,231,146,0.10)",
-    iconColor: "#ffe792",
-    title: "Nebula Cloud Services",
-    subtitle: "Automated hosting payment",
-    amount: "-$420.00",
-    time: "2 hours ago",
-    size: "lg",
-  },
-  {
-    id: 2,
-    icon: "shopping_bag",
-    iconBg: "rgba(162,194,253,0.10)",
-    iconColor: "#a2c2fd",
-    title: "Design Assets",
-    subtitle: "Store Purchase",
-    amount: "-$89.50",
-    amountColor: "#ffe792",
-    size: "sm",
-  },
-  {
-    id: 3,
-    icon: "call_received",
-    iconBg: "#ffe792",
-    iconColor: "#655400",
-    title: "Project Dividend",
-    subtitle: "External wire transfer",
-    amount: "+$5,200.00",
-    amountColor: "#ffe792",
-    time: "Yesterday",
-    size: "lg",
-    income: true,
-  },
-  {
-    id: 4,
-    icon: "coffee",
-    iconBg: "#11273f",
-    iconColor: "#9eacc3",
-    title: "Observer Cafe",
-    subtitle: "",
-    amount: "-$4.20",
-    size: "sm",
-  },
-  {
-    id: 5,
-    icon: "home",
-    iconBg: "",
-    iconColor: "",
-    title: "Studio Lease",
-    subtitle: "Monthly property retainer for Sector 7 Headquarters.",
-    amount: "-$2,800.00",
-    size: "lg-image",
-    badge: { label: "Recurring", color: "rgba(255,231,146,0.10)" },
-    imageSrc:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC2UGzzyeYfg8VnyNmvPHeriHzdf4PDh0TObHJUOQ4lyDdzfFVXvG88TGCkqZ62ypWPtU38ejPD9NA-I5RjeUIc8vhX9qeb-txYZig8bFeBxIuTxXukWuWalhMdvrVoed09WCgtRzE-fhZJEEc135hqSmY5bWoqp3Xw-63u9LwxJbuKhcp09a4n-tIfhB2fQ8CRhcE_7mk0v6J_KB0DpmSF8Km5drp_HZ8A_oscOy9rS3JCQ3kFvbGRPhNRfV8teLsibPBgw_VQQkVs",
-  },
-  {
-    id: 6,
-    icon: "warning",
-    iconBg: "rgba(255,113,108,0.10)",
-    iconColor: "#ff716c",
-    title: "Failed Subscription",
-    subtitle: "Lumina Premium - Seat 04",
-    amount: "$12.99",
-    amountColor: "#ff716c",
-    badge: { label: "Action Required", color: "rgba(255,113,108,0.15)" },
-    size: "md",
-    error: true,
-  },
-];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -142,36 +44,34 @@ function MSIcon({
   );
 }
 
-
-
 function TopBar() {
   return (
     <header
-      className="fixed top-0 w-full z-40 h-20 flex items-center justify-between px-8"
+      className="fixed top-0 right-0 z-40 h-20 flex items-center justify-between px-8 transition-colors"
       style={{
-        paddingLeft: "8rem",
-        background: "rgba(1,15,32,0.80)",
+        left: "85px",
+        background: "color-mix(in srgb, var(--th-bg) 80%, transparent)",
         backdropFilter: "blur(20px)",
         boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
       }}
     >
       <div className="flex items-center gap-8">
         <h1
-          className="text-2xl font-bold tracking-tighter"
-          style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#ffe792" }}
+          className="text-2xl font-bold tracking-tighter transition-colors"
+          style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-accent)" }}
         >
           Payments
         </h1>
         <div className="relative">
           <MSIcon
             name="search"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-sm"
-            style={{ color: "#a2c2fd", fontSize: "18px" }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-sm transition-colors"
+            style={{ color: "var(--th-secondary)", fontSize: "18px" }}
           />
           <Input
             placeholder="Search transactions..."
-            className="pl-9 pr-4 py-2 text-sm w-64 rounded-full border-none focus-visible:ring-1 focus-visible:ring-yellow-300/20"
-            style={{ background: "#11273f", color: "#d8e6ff" }}
+            className="pl-9 pr-4 py-2 text-sm w-64 rounded-full border-none transition-colors"
+            style={{ background: "var(--th-surface-top)", color: "var(--th-text)" }}
           />
         </div>
       </div>
@@ -181,20 +81,20 @@ function TopBar() {
           <button
             key={icon}
             className="transition-colors"
-            style={{ color: "#a2c2fd" }}
+            style={{ color: "var(--th-secondary)" }}
             onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.color = "#ffe792")
+              ((e.currentTarget as HTMLElement).style.color = "var(--th-accent)")
             }
             onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.color = "#a2c2fd")
+              ((e.currentTarget as HTMLElement).style.color = "var(--th-secondary)")
             }
           >
             <MSIcon name={icon} />
           </button>
         ))}
         <div
-          className="h-10 w-10 rounded-full overflow-hidden border"
-          style={{ borderColor: "rgba(59,73,92,0.30)" }}
+          className="h-10 w-10 rounded-full overflow-hidden border transition-colors"
+          style={{ borderColor: "var(--th-border)" }}
         >
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtq3NuWOsxhx0SUglzlnR5KpL5aWHJglBRRvHXCib8Qca7sbqtfxP77HY36X5GBJ2b1oKmqIG5H2Ojra-Z6xZbJkXRZjisgZPPf-fIVNu_dvhod22eGfRmVrNAkdccZ1hKtD3ZLN2FxoKf_9Iq4zU_F-kxOrpFb2OmOWTja761RYl9acv-4ZKEf4jUc5ioLXRB1atvDNVhmjXfJDthYzPvOZjnqVVMVDrtd7kVqpQt5F91Te9JNSyNf-4xq0RJi2gjLLff8RMEY5ga"
@@ -207,529 +107,197 @@ function TopBar() {
   );
 }
 
-function BalanceSidebar() {
+function BalanceSidebar({ onRefresh }: { onRefresh: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleDeposit = async () => {
+    try {
+        setLoading(true);
+        const res = await fetch("http://localhost:3000/api/v1/payment/deposit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
+            body: JSON.stringify({ amount: 500, source: "stripe_deposit" })
+        });
+        const data = await res.json();
+        if (data.transaction) {
+            toast.success("Deposit successful");
+            onRefresh();
+        } else {
+            toast.error(data.message || "Failed to execute deposit.");
+        }
+    } catch (e) {
+      toast.error("Deposit failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+        setLoading(true);
+        const res = await fetch("http://localhost:3000/api/v1/payment/withdraw", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
+            body: JSON.stringify({ amount: 250, destination_account: "acct_1Ou" })
+        });
+        const data = await res.json();
+        if (data.transaction) {
+             toast.success("Withdrawal initiated");
+             onRefresh();
+        } else {
+             toast.error(data.message || "Failed to execute withdrawal.");
+        }
+    } catch (e) {
+        toast.error("Withdrawal failed.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
   return (
     <section
-      className="w-1/3 p-8 border-r overflow-y-auto"
+      className="w-1/3 p-8 border-r overflow-y-auto transition-colors z-10 relative"
       style={{
-        borderColor: "rgba(59,73,92,0.10)",
-        background: "rgba(3,20,39,0.30)",
+        borderColor: "var(--th-border)",
+        background: "color-mix(in srgb, var(--th-surface-low) 50%, transparent)",
+        backdropFilter: "blur(20px)"
       }}
     >
       <div className="sticky top-8 space-y-10">
         {/* Balance Card */}
         <div
-          className="p-8 rounded-2xl relative overflow-hidden"
-          style={{ background: "#0c2037" }}
+          className="p-8 rounded-2xl relative overflow-hidden transition-colors"
+          style={{ background: "var(--th-surface-high)" }}
         >
           <div
-            className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
-            style={{ background: "rgba(255,231,146,0.05)" }}
+            className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 transition-colors"
+            style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)" }}
           />
           <div className="relative z-10">
             <span
-              className="text-xs uppercase tracking-widest"
+              className="text-xs uppercase tracking-widest transition-colors"
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                color: "#9eacc3",
+                color: "var(--th-muted)",
               }}
             >
-              Available Balance
+              Ledger Balance
             </span>
             <div className="flex items-baseline gap-2 mt-2">
               <span
-                className="text-4xl font-bold"
+                className="text-4xl font-bold transition-colors"
                 style={{
                   fontFamily: "'Space Grotesk', sans-serif",
-                  color: "#ffe792",
+                  color: "var(--th-accent)",
                 }}
               >
                 $42,890
               </span>
-              <span className="text-lg" style={{ color: "#a2c2fd" }}>
+              <span className="text-lg transition-colors" style={{ color: "var(--th-secondary)" }}>
                 .65
               </span>
             </div>
             <div className="mt-6 flex gap-4">
               <Button
+                onClick={handleDeposit}
+                disabled={loading}
                 className="flex-1 py-3 rounded-full font-bold text-sm border-0 transition-transform hover:scale-105 active:scale-95"
-                style={{ background: "#ffe792", color: "#655400", height: "auto" }}
+                style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", height: "auto" }}
               >
-                Deposit
+                {loading ? "Processing..." : "Deposit Top-up"}
               </Button>
               <Button
+                onClick={handleWithdraw}
+                disabled={loading}
                 variant="outline"
                 className="flex-1 py-3 rounded-full font-bold text-sm transition-colors"
                 style={{
-                  background: "#11273f",
-                  color: "#d8e6ff",
-                  borderColor: "rgba(59,73,92,0.15)",
+                  background: "var(--th-surface-top)",
+                  color: "var(--th-text)",
+                  borderColor: "var(--th-border)",
                   height: "auto",
                 }}
               >
-                Withdraw
+                 {loading ? "Processing..." : "Withdraw Funds"}
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Wallet Insights */}
-        <div className="space-y-6">
-          <h3
-            className="text-lg font-semibold tracking-tight px-2"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Wallet Insights
-          </h3>
-          <div className="grid grid-cols-1 gap-4">
-            {/* Monthly Yield */}
-            <div
-              className="p-6 rounded-xl border"
-              style={{
-                background: "#071a2f",
-                borderColor: "rgba(59,73,92,0.05)",
-              }}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ background: "rgba(255,231,146,0.10)" }}
-                >
-                  <MSIcon
-                    name="trending_up"
-                    style={{ color: "#ffe792" }}
-                  />
-                </div>
-                <span
-                  className="text-[10px] uppercase"
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    color: "#ffe792",
-                  }}
-                >
-                  +12.4%
-                </span>
-              </div>
-              <span
-                className="block text-xs uppercase tracking-widest"
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  color: "#9eacc3",
-                }}
-              >
-                Monthly Yield
-              </span>
-              <span
-                className="text-xl font-semibold mt-1 block"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                $1,240.00
-              </span>
-            </div>
-
-            {/* Connected Accounts */}
-            <div
-              className="p-6 rounded-xl border"
-              style={{
-                background: "#071a2f",
-                borderColor: "rgba(59,73,92,0.05)",
-              }}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ background: "rgba(162,194,253,0.10)" }}
-                >
-                  <MSIcon
-                    name="account_balance_wallet"
-                    style={{ color: "#a2c2fd" }}
-                  />
-                </div>
-                <span
-                  className="text-[10px] uppercase"
-                  style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    color: "#9eacc3",
-                  }}
-                >
-                  Active
-                </span>
-              </div>
-              <span
-                className="block text-xs uppercase tracking-widest"
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  color: "#9eacc3",
-                }}
-              >
-                Connected Accounts
-              </span>
-              <div className="flex -space-x-2 mt-3">
-                {["BN", "CH", "AX"].map((abbr) => (
-                  <div
-                    key={abbr}
-                    className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px]"
-                    style={{
-                      background: "#1a1a1a",
-                      borderColor: "#010f20",
-                    }}
-                  >
-                    {abbr}
-                  </div>
-                ))}
-                <div
-                  className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px]"
-                  style={{
-                    background: "#11273f",
-                    borderColor: "#010f20",
-                    color: "#ffe792",
-                  }}
-                >
-                  +2
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BubbleWise AI */}
-        <div
-          className="p-8 rounded-xl border relative cursor-pointer overflow-hidden group"
-          style={{
-            background: "linear-gradient(to bottom right, #0c2037, #010f20)",
-            borderColor: "rgba(255,231,146,0.20)",
-          }}
-        >
-          <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ background: "rgba(255,231,146,0.05)" }}
-          />
-          <div className="flex items-center gap-3 mb-4 relative z-10">
-            <MSIcon
-              name="auto_awesome"
-              filled
-              style={{ color: "#ffe792" }}
-            />
-            <h4
-              className="font-bold text-sm tracking-tight"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              BubbleWise AI
-            </h4>
-          </div>
-          <p
-            className="text-xs leading-relaxed relative z-10"
-            style={{ color: "#9eacc3" }}
-          >
-            "Your subscription spending increased by 8% this month. Consider
-            consolidating your cloud storage to save $45/mo."
-          </p>
-          <div
-            className="mt-4 flex items-center gap-2 text-[10px] uppercase tracking-widest relative z-10"
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              color: "#ffe792",
-            }}
-          >
-            <span>Optimization View</span>
-            <MSIcon name="arrow_forward" className="text-xs" style={{ fontSize: "14px" }} />
-          </div>
-        </div>
       </div>
     </section>
   );
 }
 
 function TransactionCard({ tx }: { tx: Transaction }) {
-  const cardBase: React.CSSProperties = {
-    background: "#031427",
-    borderColor: "rgba(59,73,92,0.10)",
-  };
+  const isIncome = tx.type === "deposit" || tx.type === "income";
+  const icon = tx.type === "deposit" || tx.type === "income" ? "call_received" : "call_made";
+  const iconColor = isIncome ? "var(--th-accent)" : "var(--th-secondary)";
 
-  if (tx.size === "lg-image") {
-    return (
-      <div
-        className="break-inside-avoid rounded-xl overflow-hidden border transition-all group"
-        style={cardBase}
-        onMouseEnter={(e) =>
-        ((e.currentTarget as HTMLElement).style.borderColor =
-          "rgba(255,231,146,0.20)")
-        }
-        onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLElement).style.borderColor =
-          "rgba(59,73,92,0.10)")
-        }
-      >
-        <div
-          className="h-32 relative overflow-hidden"
-          style={{ background: "#11273f" }}
-        >
-          <img
-            src={tx.imageSrc}
-            alt="Transaction visual"
-            className="w-full h-full object-cover opacity-40"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to top, #031427, transparent)",
-            }}
-          />
-        </div>
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h5
-              className="font-bold text-lg"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {tx.title}
-            </h5>
-            {tx.badge && (
-              <Badge
-                className="text-[10px] px-2 py-1 rounded font-normal border-0"
-                style={{
-                  background: tx.badge.color,
-                  color: "#ffe792",
-                }}
-              >
-                {tx.badge.label}
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs mb-6" style={{ color: "#9eacc3" }}>
-            {tx.subtitle}
-          </p>
-          <div className="flex justify-between items-center">
-            <span
-              className="text-2xl font-bold"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
-              {tx.amount}
-            </span>
-            <button
-              className="text-[10px] uppercase tracking-widest hover:underline"
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                color: "#ffe792",
-              }}
-            >
-              Manage
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (tx.size === "sm") {
-    return (
-      <div
-        className="break-inside-avoid rounded-xl p-6 border transition-all"
-        style={cardBase}
-        onMouseEnter={(e) =>
-        ((e.currentTarget as HTMLElement).style.borderColor =
-          "rgba(255,231,146,0.20)")
-        }
-        onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLElement).style.borderColor =
-          "rgba(59,73,92,0.10)")
-        }
-      >
-        {tx.subtitle ? (
-          <div className="flex items-center gap-4 mb-4">
-            <div
-              className="h-10 w-10 rounded-full flex items-center justify-center"
-              style={{ background: tx.iconBg }}
-            >
-              <MSIcon name={tx.icon} style={{ color: tx.iconColor }} />
-            </div>
-            <div>
-              <h5
-                className="font-bold text-sm"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                {tx.title}
-              </h5>
-              <span
-                className="text-[10px] uppercase"
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  color: "#9eacc3",
-                }}
-              >
-                {tx.subtitle}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="h-8 w-8 rounded flex items-center justify-center"
-                style={{ background: tx.iconBg }}
-              >
-                <MSIcon
-                  name={tx.icon}
-                  className="text-xs"
-                  style={{ color: tx.iconColor, fontSize: "16px" }}
-                />
-              </div>
-              <span
-                className="font-bold text-sm"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
-                {tx.title}
-              </span>
-            </div>
-            <span
-              className="text-sm font-bold"
-              style={tx.amountColor ? { color: tx.amountColor } : {}}
-            >
-              {tx.amount}
-            </span>
-          </div>
-        )}
-        {tx.subtitle && (
-          <span
-            className="text-xl font-bold"
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              ...(tx.amountColor ? { color: tx.amountColor } : {}),
-            }}
-          >
-            {tx.amount}
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  // md / lg
   return (
     <div
-      className="break-inside-avoid rounded-xl p-6 border transition-all group relative overflow-hidden"
-      style={cardBase}
+      className="rounded-2xl p-6 transition-all group border"
+      style={{
+        background: "var(--th-surface)",
+        borderColor: "transparent",
+      }}
       onMouseEnter={(e) =>
-      ((e.currentTarget as HTMLElement).style.borderColor =
-        "rgba(255,231,146,0.20)")
+        (e.currentTarget.style.borderColor = "var(--th-border)")
       }
       onMouseLeave={(e) =>
-      ((e.currentTarget as HTMLElement).style.borderColor =
-        "rgba(59,73,92,0.10)")
+        (e.currentTarget.style.borderColor = "transparent")
       }
     >
-      {tx.income && (
+      <div className="flex justify-between items-start mb-6">
         <div
-          className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"
-          style={{ background: "rgba(255,231,146,0.05)" }}
-        />
-      )}
-      <div className="flex justify-between items-start mb-6 relative z-10">
-        <div
-          className={`flex items-center justify-center ${tx.size === "lg" ? "h-12 w-12 rounded-lg" : "h-10 w-10 rounded-full"}`}
-          style={{
-            background: tx.iconBg,
-            ...(tx.income
-              ? { boxShadow: "0 0 20px rgba(255,231,146,0.3)" }
-              : {}),
-          }}
+          className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
+          style={{ background: "var(--th-surface-top)", color: iconColor }}
         >
-          <MSIcon name={tx.icon} style={{ color: tx.iconColor }} />
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          {tx.time && (
-            <span
-              className="text-xs"
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                color: "#9eacc3",
-              }}
-            >
-              {tx.time}
-            </span>
-          )}
-          {tx.badge && (
-            <span
-              className="text-[10px] uppercase font-semibold"
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                color: tx.error ? "#ff716c" : "#ffe792",
-              }}
-            >
-              {tx.badge.label}
-            </span>
-          )}
+          <MSIcon name={icon} filled />
         </div>
       </div>
-
-      <h5
-        className={`font-bold relative z-10 ${tx.size === "lg" ? "text-lg" : "text-sm"}`}
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-      >
-        {tx.title}
-      </h5>
-      <p className="text-xs mt-1 relative z-10" style={{ color: "#9eacc3" }}>
-        {tx.subtitle}
-      </p>
-
-      <div
-        className={`relative z-10 flex items-center justify-between ${tx.size === "lg" ? "mt-8" : "mt-4"}`}
-      >
-        <span
-          className={`font-bold ${tx.size === "lg" ? "text-2xl" : "text-lg"}`}
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            ...(tx.amountColor ? { color: tx.amountColor } : {}),
-          }}
-        >
-          {tx.amount}
-        </span>
-        {tx.size === "lg" && !tx.error && (
-          <MSIcon
-            name="receipt_long"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ color: "#a2c2fd" }}
-          />
-        )}
-        {tx.error && (
-          <button
-            className="px-3 py-1 rounded-full text-[10px] uppercase"
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              background: "#11273f",
-            }}
-          >
-            Retry
-          </button>
-        )}
+      <div>
+        <h3 className="font-bold text-lg leading-tight mb-1 transition-colors capitalize" style={{ color: "var(--th-text)", fontFamily: "'Space Grotesk', sans-serif" }}>
+          {tx.type}
+        </h3>
+        <p className="text-xs mb-4 line-clamp-1 transition-colors" style={{ color: "var(--th-muted)" }}>
+          {tx.description || tx.source}
+        </p>
+        <div className="flex items-end justify-between">
+          <span className="text-2xl font-bold tracking-tight transition-colors" style={{ color: isIncome ? "var(--th-accent)" : "var(--th-text)" }}>
+             {isIncome ? "+" : "-"}${tx.amount}
+          </span>
+          <span className="text-[10px] uppercase tracking-widest font-bold transition-colors" style={{ color: "var(--th-muted)" }}>
+              {new Date(tx.createdAt).toLocaleDateString()}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
-function TransactionsGrid() {
+function TransactionsGrid({ transactions }: { transactions: Transaction[] }) {
   const [activeFilter, setActiveFilter] = useState<FilterTab>("All");
   const filters: FilterTab[] = ["All", "Income", "Expenses"];
 
   const filtered =
     activeFilter === "All"
-      ? TRANSACTIONS
+      ? transactions
       : activeFilter === "Income"
-        ? TRANSACTIONS.filter((t) => t.income)
-        : TRANSACTIONS.filter((t) => !t.income);
+        ? transactions.filter((t) => t.type === "deposit" || t.type === "income")
+        : transactions.filter((t) => t.type === "withdrawal" || t.type === "expense");
 
   return (
-    <section className="flex-1 p-8 overflow-y-auto">
-      <div className="flex justify-between items-end mb-12">
+    <section className="flex-1 p-8 overflow-y-auto relative z-10 custom-scrollbar">
+      <div className="flex justify-between items-end mb-12 relative z-10">
         <div>
           <h2
-            className="text-3xl font-bold tracking-tight"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            className="text-3xl font-bold tracking-tight transition-colors"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}
           >
             Recent Activity
           </h2>
-          <p className="text-sm mt-1" style={{ color: "#9eacc3" }}>
+          <p className="text-sm mt-1 transition-colors" style={{ color: "var(--th-muted)" }}>
             Real-time ledger of your luminous transactions
           </p>
         </div>
@@ -738,20 +306,20 @@ function TransactionsGrid() {
             <button
               key={f}
               onClick={() => setActiveFilter(f)}
-              className="px-4 py-2 text-xs uppercase tracking-widest rounded-full transition-colors"
+              className="px-4 py-2 text-xs uppercase tracking-widest rounded-full transition-colors font-bold"
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 background:
-                  activeFilter === f ? "#071a2f" : "transparent",
-                color: activeFilter === f ? "#d8e6ff" : "#9eacc3",
+                  activeFilter === f ? "var(--th-surface-high)" : "transparent",
+                color: activeFilter === f ? "var(--th-text)" : "var(--th-muted)",
               }}
               onMouseEnter={(e) => {
                 if (activeFilter !== f)
-                  (e.currentTarget as HTMLElement).style.color = "#ffe792";
+                  (e.currentTarget as HTMLElement).style.color = "var(--th-accent)";
               }}
               onMouseLeave={(e) => {
                 if (activeFilter !== f)
-                  (e.currentTarget as HTMLElement).style.color = "#9eacc3";
+                  (e.currentTarget as HTMLElement).style.color = "var(--th-muted)";
               }}
             >
               {f}
@@ -760,50 +328,115 @@ function TransactionsGrid() {
         </div>
       </div>
 
-      <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-        {filtered.map((tx) => (
-          <TransactionCard key={tx.id} tx={tx} />
+      <div className="columns-1 lg:columns-2 gap-6 space-y-6 relative z-10">
+        {filtered.length === 0 ? (
+            <div className="p-8 text-center" style={{ color: "var(--th-muted)" }}>No transactions available.</div>
+        ) : filtered.map((tx) => (
+          <TransactionCard key={tx._id} tx={tx} />
         ))}
       </div>
     </section>
   );
 }
 
+// ─── Aida Sidebar ─────────────────────────────────────────────────────────────
+
+function AidaFinancialAssistant({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+    if (!isOpen) return null;
+
+    return (
+        <aside className="w-96 border-l h-full absolute right-0 top-0 bottom-0 z-50 flex flex-col transition-all"
+          style={{ background: "color-mix(in srgb, var(--th-bg) 80%, var(--th-surface))", borderColor: "var(--th-border)", backdropFilter: "blur(20px)" }}>
+            <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: "var(--th-border)" }}>
+               <div className="flex items-center gap-3">
+                   <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{background: "var(--th-accent)", color: "var(--th-accent-text)", fontFamily: "'Space Grotesk', sans-serif"}}>A</div>
+                   <div>
+                      <h4 className="font-bold text-sm transition-colors" style={{ color: "var(--th-text)"}}>Aida Financial</h4>
+                      <p className="text-[10px] transition-colors" style={{ color: "var(--th-muted)" }}>Analyzing Your Ledger Data</p>
+                   </div>
+               </div>
+               <button onClick={onClose} className="p-1 rounded-full transition-colors" style={{color: "var(--th-muted)"}}
+                  onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "var(--th-muted)"}>
+                   <MSIcon name="close" />
+               </button>
+            </div>
+            <div className="flex-1 p-6 overflow-y-auto space-y-4">
+               <div className="bg-transparent border rounded-2xl p-4 text-sm" style={{borderColor: "var(--th-border)", color: "var(--th-text)"}}>
+                   Hello! I am Aida. Based on your recent ledger activity, you've withdrawn a significant amount compared to your deposits this week. Would you like me to map out an expense-saving projection?
+               </div>
+            </div>
+            <div className="p-4 border-t" style={{ borderColor: "var(--th-border)" }}>
+               <div className="relative">
+                   <Input placeholder="Ask Aida about your finances..." 
+                     className="w-full rounded-xl pl-4 pr-10 py-3 border transition-colors" 
+                     style={{background: "var(--th-surface)", color: "var(--th-text)", borderColor: "var(--th-border)"}} />
+                   <button className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--th-accent)" }}>
+                       <MSIcon name="send" />
+                   </button>
+               </div>
+            </div>
+        </aside>
+    );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function PaymentsDashboard() {
+  const [data, setData] = useState<Transaction[]>([]);
+  const [showAida, setShowAida] = useState(false);
+
+  const fetchTx = async () => {
+      try {
+          const res = await fetch("http://localhost:3000/api/v1/payment/transactions", {
+              headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+          });
+          const json = await res.json();
+          if (json.transactions) {
+              setData(json.transactions);
+          }
+      } catch (err) {
+          console.error(err);
+      }
+  };
+
+  useEffect(() => {
+      fetchTx();
+  }, []);
+
   return (
     <div
-      className="min-h-screen"
-      style={{ background: "#010f20", color: "#d8e6ff" }}
+      className="min-h-screen transition-colors duration-300 overflow-hidden"
+      style={{ background: "var(--th-bg)", color: "var(--th-text)", fontFamily: "'Manrope', sans-serif" }}
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-        body { font-family: 'Manrope', sans-serif; }
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-      `}</style>
-
       <Sidebar />
       <TopBar />
 
-      <main className="flex" style={{ marginLeft: "6rem", paddingTop: "5rem", minHeight: "100vh" }}>
-        <BalanceSidebar />
-        <TransactionsGrid />
+      <main className="flex relative" style={{ marginLeft: "85px", paddingTop: "5rem", minHeight: "100vh" }}>
+        
+        {/* Glows */}
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors scale-150"
+          style={{ background: "var(--th-glow)" }} />
+        <div className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
+          style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
+
+        <BalanceSidebar onRefresh={fetchTx}/>
+        <TransactionsGrid transactions={data} />
+
+        <AidaFinancialAssistant isOpen={showAida} onClose={() => setShowAida(false)} />
       </main>
 
       {/* FAB */}
       <button
-        className="fixed bottom-8 right-8 w-16 h-16 rounded-full flex items-center justify-center z-50 transition-transform hover:scale-110 active:scale-90 shadow-2xl"
+        onClick={() => setShowAida(!showAida)}
+        className="fixed bottom-8 right-8 w-16 h-16 rounded-full flex items-center justify-center z-50 transition-all hover:scale-110 active:scale-90 shadow-2xl"
         style={{
-          background: "#ffe792",
-          color: "#655400",
-          boxShadow: "0 25px 50px rgba(255,231,146,0.20)",
+          background: "var(--th-accent)",
+          color: "var(--th-accent-text)",
+          boxShadow: showAida ? "0 0 40px var(--th-glow)" : "0 25px 50px color-mix(in srgb, var(--th-accent) 20%, transparent)",
         }}
       >
-        <MSIcon name="add" className="text-3xl" />
+        <MSIcon name={showAida ? "close" : "smart_toy"} className="text-3xl" />
       </button>
     </div>
   );

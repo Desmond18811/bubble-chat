@@ -6,6 +6,8 @@ import {
   createPost,
   toggleLike,
   toggleRepost,
+  toggleSave,
+  getSavedPosts,
   addComment,
   deletePost,
 } from '../controllers/feedController';
@@ -21,133 +23,28 @@ const upload = multer({ storage: multer.memoryStorage() });
  *   description: Public feed / blog posts timeline
  */
 
-/**
- * @swagger
- * /api/v1/feed:
- *   get:
- *     summary: Get all feed posts (paginated)
- *     tags: [Feed]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema: { type: integer, default: 1 }
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 20 }
- *     responses:
- *       200:
- *         description: List of posts with author info
- */
+/** GET /api/v1/feed — paginated feed */
 router.get('/', getFeedPosts);
 
-/**
- * @swagger
- * /api/v1/feed:
- *   post:
- *     summary: Create a new feed post (optionally with media)
- *     tags: [Feed]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               content: { type: string }
- *               file: { type: string, format: binary }
- *     responses:
- *       201:
- *         description: Post created
- */
+/** GET /api/v1/feed/saved — posts saved by the authenticated user */
+router.get('/saved', getSavedPosts);
+
+/** POST /api/v1/feed — create post (with optional media) */
 router.post('/', upload.single('file'), createPost);
 
-/**
- * @swagger
- * /api/v1/feed/{id}/like:
- *   post:
- *     summary: Toggle like on a post
- *     tags: [Feed]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Like toggled
- */
+/** POST /api/v1/feed/:id/like — toggle like */
 router.post('/:id/like', toggleLike);
 
-/**
- * @swagger
- * /api/v1/feed/{id}/repost:
- *   post:
- *     summary: Toggle repost on a post
- *     tags: [Feed]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Repost toggled
- */
+/** POST /api/v1/feed/:id/repost — toggle repost */
 router.post('/:id/repost', toggleRepost);
 
-/**
- * @swagger
- * /api/v1/feed/{id}/comment:
- *   post:
- *     summary: Add a comment to a post
- *     tags: [Feed]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [text]
- *             properties:
- *               text: { type: string }
- *     responses:
- *       201:
- *         description: Comment added
- */
+/** POST /api/v1/feed/:id/save — toggle save/bookmark */
+router.post('/:id/save', toggleSave);
+
+/** POST /api/v1/feed/:id/comment — add comment */
 router.post('/:id/comment', addComment);
 
-/**
- * @swagger
- * /api/v1/feed/{id}:
- *   delete:
- *     summary: Delete a post (author only)
- *     tags: [Feed]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Post deleted
- */
+/** DELETE /api/v1/feed/:id — delete post (author only) */
 router.delete('/:id', deletePost);
 
 export default router;

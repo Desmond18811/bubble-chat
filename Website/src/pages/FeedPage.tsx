@@ -1,82 +1,100 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import {
   fetchFeedPosts,
   createFeedPost,
   likeFeedPost,
   repostFeedPost,
-  addFeedComment
+  saveFeedPost,
+  addFeedComment,
 } from "@/api";
 import { formatDistanceToNow } from "date-fns";
 
-
-/* ─── Icon helper ─────────────────────────────────────────────────────────── */
+/* ─── Icon ────────────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
   <span
     className={`material-symbols-outlined ${className}`}
-    style={{ fontVariationSettings: `'FILL' ${fill ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24`, lineHeight: 1, ...style }}
+    style={{
+      fontVariationSettings: `'FILL' ${fill ? 1 : 0}, 'wght' ${fill ? 500 : 400}, 'GRAD' 0, 'opsz' 24`,
+      lineHeight: 1,
+      ...style,
+    }}
   >
     {name}
   </span>
 );
 
-/* ─── colour tokens ───────────────────────────────────────────────────────── */
+/* ─── Colour tokens (CSS-var aware) ─────────────────────────────────────── */
 const C = {
-  bg: "#010f20",
-  surface: "#071a2f",
-  surfaceLow: "#031427",
-  surfaceHigh: "#0c2037",
-  surfaceTop: "#11273f",
-  border: "rgba(59,73,92,0.15)",
-  borderSoft: "rgba(59,73,92,0.1)",
-  accent: "#ffe792",
-  accentDim: "#efc900",
-  secondary: "#a2c2fd",
-  text: "#d8e6ff",
-  muted: "#9eacc3",
-  error: "#ff716c",
+  bg:         "var(--th-bg)",
+  surface:    "var(--th-surface)",
+  surfaceLow: "var(--th-surface-low)",
+  surfaceHigh:"var(--th-surface-high)",
+  surfaceTop: "var(--th-surface-top)",
+  border:     "var(--th-border)",
+  accent:     "var(--th-accent)",
+  accentText: "var(--th-accent-text)",
+  secondary:  "var(--th-secondary)",
+  text:       "var(--th-text)",
+  muted:      "var(--th-muted)",
+  error:      "#ff716c",
+  repost:     "#4ade80",
 };
 
 /* ─── TopBar ──────────────────────────────────────────────────────────────── */
 function TopBar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   return (
-    <header style={{
-      position: "fixed", top: 0, left: 85, right: 0, height: 80, zIndex: 40,
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "0 32px",
-      background: "rgba(1,15,32,0.85)", backdropFilter: "blur(20px)",
-      boxShadow: "0 4px 32px rgba(0,0,0,0.5)", borderBottom: `1px solid ${C.border}`,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-        <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: C.accent, letterSpacing: "-0.04em", margin: 0 }}>
+    <header
+      style={{
+        position: "fixed", top: 0, left: 85, right: 0, height: 72, zIndex: 40,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 32px",
+        background: `color-mix(in srgb, var(--th-bg) 85%, transparent)`,
+        backdropFilter: "blur(20px)",
+        boxShadow: "0 4px 32px rgba(0,0,0,0.4)",
+        borderBottom: `1px solid var(--th-border)`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <h1
+          style={{
+            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+            fontSize: 22, color: C.accent, letterSpacing: "-0.04em", margin: 0,
+          }}
+        >
           BUBBLE
         </h1>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          background: C.surfaceTop, borderRadius: 999,
-          padding: "8px 16px", border: `1px solid rgba(59,73,92,0.15)`, width: 384,
-        }}>
-          <Icon name="search" style={{ color: C.muted, fontSize: 20 }} />
-          <input placeholder="Explore the Luminous..." style={{
-            background: "transparent", border: "none", outline: "none",
-            fontSize: 14, color: C.text, fontFamily: "'Manrope',sans-serif", width: "100%",
-          }} />
+        <div
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: C.surfaceTop, borderRadius: 999,
+            padding: "8px 16px", border: `1px solid var(--th-border)`, width: 340,
+          }}
+        >
+          <Icon name="search" style={{ color: C.muted, fontSize: 18 }} />
+          <input
+            placeholder="Explore the feed..."
+            style={{
+              background: "transparent", border: "none", outline: "none",
+              fontSize: 14, color: C.text, fontFamily: "'Manrope',sans-serif", width: "100%",
+            }}
+          />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <div style={{ display: "flex", gap: 16, color: C.secondary }}>
-          {["notifications", "help", "settings"].map(name => (
-            <button key={name} style={{ background: "none", border: "none", cursor: "pointer", color: C.secondary, transition: "color 0.2s" }}
-              onMouseEnter={e => e.currentTarget.style.color = C.accent}
-              onMouseLeave={e => e.currentTarget.style.color = C.secondary}
-            >
-              <Icon name={name} style={{ fontSize: 22 }} />
-            </button>
-          ))}
-        </div>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", padding: 2, border: `1px solid rgba(255,231,146,0.2)`, background: C.surfaceHigh, overflow: "hidden" }}>
-          <img src={user.avatar || "/placeholder-user.jpg"} alt="Profile" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        {["notifications", "settings"].map((name) => (
+          <button
+            key={name}
+            style={{ background: "none", border: "none", cursor: "pointer", color: C.secondary, transition: "color 0.2s" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = C.accent)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = C.secondary)}
+          >
+            <Icon name={name} style={{ fontSize: 22 }} />
+          </button>
+        ))}
+        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
+          <img src={user.avatar || "/placeholder-user.jpg"} alt="Me" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         </div>
       </div>
     </header>
@@ -88,6 +106,7 @@ function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
   const [value, setValue] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const handleSubmit = async () => {
     if (!value.trim() && !file) return;
@@ -95,65 +114,77 @@ function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
       setLoading(true);
       const res = await createFeedPost(value, file || undefined);
       onPostCreated(res.post);
-      setValue("");
-      setFile(null);
+      setValue(""); setFile(null);
     } catch (err) {
       console.error("Post creation failed:", err);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div style={{ background: C.surfaceLow, padding: 24, borderRadius: 12, marginBottom: 48, border: `1px solid rgba(59,73,92,0.05)` }}>
-      <div style={{ display: "flex", gap: 16 }}>
+    <div
+      style={{
+        background: C.surfaceLow, padding: "20px 24px",
+        borderRadius: 16, marginBottom: 32,
+        border: `1px solid var(--th-border)`,
+      }}
+    >
+      <div style={{ display: "flex", gap: 14 }}>
         <img
-          src={JSON.parse(localStorage.getItem("user") || "{}").avatar || "/placeholder-user.jpg"}
-          alt="Me"
-          style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+          src={user.avatar || "/placeholder-user.jpg"} alt="Me"
+          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
         />
         <div style={{ flex: 1 }}>
           <textarea
             value={value}
-            onChange={e => setValue(e.target.value)}
+            onChange={(e) => setValue(e.target.value)}
             placeholder="Transmit a thought to the observatory..."
             style={{
               width: "100%", background: "transparent", border: "none", outline: "none",
-              fontSize: 18, color: C.text, fontFamily: "'Manrope',sans-serif",
-              resize: "none", height: 96,
+              fontSize: 17, color: C.text, fontFamily: "'Manrope',sans-serif",
+              resize: "none", minHeight: 80,
             }}
           />
           {file && (
-            <div style={{ position: "relative", marginBottom: 16, width: "fit-content" }}>
-              <img src={URL.createObjectURL(file)} style={{ height: 120, borderRadius: 8, border: `1px solid ${C.border}` }} />
-              <button onClick={() => setFile(null)} style={{ position: "absolute", top: -8, right: -8, background: C.error, color: "#fff", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
-                <Icon name="close" style={{ fontSize: 16 }} />
+            <div style={{ position: "relative", marginBottom: 12, width: "fit-content" }}>
+              <img src={URL.createObjectURL(file)} style={{ height: 110, borderRadius: 10, border: `1px solid var(--th-border)` }} alt="preview" />
+              <button
+                onClick={() => setFile(null)}
+                style={{ position: "absolute", top: -8, right: -8, background: C.error, color: "#fff", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+              >
+                <Icon name="close" style={{ fontSize: 14 }} />
               </button>
             </div>
           )}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, paddingTop: 16, borderTop: `1px solid rgba(59,73,92,0.1)` }}>
-            <div style={{ display: "flex", gap: 16, color: C.secondary }}>
-              <label style={{ cursor: "pointer" }}>
+          <div
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginTop: 12, paddingTop: 12,
+              borderTop: `1px solid color-mix(in srgb, var(--th-border) 60%, transparent)`,
+            }}
+          >
+            <div style={{ display: "flex", gap: 12, color: C.secondary }}>
+              <label style={{ cursor: "pointer", display: "flex" }}>
                 <Icon name="image" style={{ fontSize: 22 }} />
-                <input type="file" hidden accept="image/*,video/*" onChange={e => setFile(e.target.files?.[0] || null)} />
+                <input type="file" hidden accept="image/*,video/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
               </label>
               <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="gif_box" style={{ fontSize: 22 }} /></button>
               <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="poll" style={{ fontSize: 22 }} /></button>
-              <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="sentiment_satisfied" style={{ fontSize: 22 }} /></button>
+              <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="tag" style={{ fontSize: 22 }} /></button>
             </div>
             <button
               onClick={handleSubmit}
               disabled={loading || (!value.trim() && !file)}
               style={{
-                background: C.accent, color: "#655400", padding: "8px 32px", borderRadius: 999,
-                fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14,
-                letterSpacing: "0.05em", border: "none", cursor: "pointer",
-                transition: "filter 0.2s, transform 0.1s", opacity: (loading || (!value.trim() && !file)) ? 0.5 : 1
+                background: C.accent, color: C.accentText, padding: "8px 28px",
+                borderRadius: 999, fontFamily: "'Space Grotesk',sans-serif",
+                fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
+                border: "none", cursor: "pointer", transition: "filter 0.2s",
+                opacity: (loading || (!value.trim() && !file)) ? 0.5 : 1,
               }}
-              onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.1)"}
-              onMouseLeave={e => e.currentTarget.style.filter = "brightness(1)"}
+              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
             >
-              {loading ? "TRANSMITTING..." : "POST"}
+              {loading ? "POSTING..." : "POST"}
             </button>
           </div>
         </div>
@@ -162,124 +193,267 @@ function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
   );
 }
 
+/* ─── Stat Button ─────────────────────────────────────────────────────────── */
+function StatBtn({ icon, count, hoverColor, active = false, activeColor, onClick, filled }: any) {
+  const [hov, setHov] = useState(false);
+  const col = active ? (activeColor || hoverColor) : hov ? hoverColor : C.muted;
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 5,
+        background: "none", border: "none", cursor: onClick ? "pointer" : "default",
+        color: col, transition: "color 0.2s", padding: "4px 0",
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      <Icon name={icon} fill={filled || active} style={{ fontSize: 19 }} />
+      {count !== undefined && (
+        <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13 }}>{count}</span>
+      )}
+    </button>
+  );
+}
+
+/* ─── Comment Panel ───────────────────────────────────────────────────────── */
+function CommentPanel({ postId, comments: initComments }: { postId: string; comments: any[] }) {
+  const [comments, setComments] = useState(initComments);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const submit = async () => {
+    if (!text.trim()) return;
+    try {
+      setLoading(true);
+      const res = await addFeedComment(postId, text);
+      setComments(res.comments);
+      setText("");
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid color-mix(in srgb, var(--th-border) 40%, transparent)` }}>
+      {comments.slice(0, 3).map((c: any, i: number) => (
+        <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+          <img src={c.user?.avatar || "/placeholder-user.jpg"} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+          <div>
+            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 12, color: C.text }}>{c.user?.username || "user"} </span>
+            <span style={{ fontSize: 13, color: C.muted, fontFamily: "'Manrope',sans-serif" }}>{c.text}</span>
+          </div>
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+        <img src={user.avatar || "/placeholder-user.jpg"} alt="me" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+        <input
+          value={text} onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          placeholder="Add a reply..."
+          style={{
+            flex: 1, background: C.surfaceTop, border: "none", outline: "none",
+            borderRadius: 999, padding: "6px 14px", fontSize: 13,
+            color: C.text, fontFamily: "'Manrope',sans-serif",
+          }}
+        />
+        <button
+          onClick={submit} disabled={loading || !text.trim()}
+          style={{ background: C.accent, color: C.accentText, border: "none", borderRadius: 999, padding: "0 16px", fontWeight: 700, fontSize: 12, cursor: "pointer", fontFamily: "'Space Grotesk',sans-serif", opacity: loading || !text.trim() ? 0.4 : 1 }}
+        >
+          REPLY
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Post ────────────────────────────────────────────────────────────────── */
 function PostItem({ post }: { post: any }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const [liked, setLiked] = useState(post.likes.includes(user._id));
-  const [likeCount, setLikeCount] = useState(post.likes.length);
+  const [liked, setLiked] = useState(post.likes?.includes(user._id));
+  const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
   const [reposted, setReposted] = useState(post.reposts?.includes(user._id));
   const [repostCount, setRepostCount] = useState(post.reposts?.length || 0);
+  const [saved, setSaved] = useState(post.saves?.includes(user._id));
+  const [saveCount, setSaveCount] = useState(post.saves?.length || 0);
+  const [showComments, setShowComments] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const handleLike = async () => {
     try {
       const res = await likeFeedPost(post._id);
-      setLiked(res.liked);
-      setLikeCount(res.likeCount);
+      setLiked(res.liked); setLikeCount(res.likeCount);
     } catch (err) { console.error(err); }
   };
 
   const handleRepost = async () => {
     try {
       const res = await repostFeedPost(post._id);
-      setReposted(res.reposted);
-      setRepostCount(res.repostCount);
+      setReposted(res.reposted); setRepostCount(res.repostCount);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleSave = async () => {
+    try {
+      const res = await saveFeedPost(post._id);
+      setSaved(res.saved); setSaveCount(res.saveCount);
     } catch (err) { console.error(err); }
   };
 
   return (
     <article
       style={{
-        background: hovered ? "rgba(7,26,47,0.5)" : "rgba(7,26,47,0.3)",
-        padding: 24, borderRadius: 12, border: `1px solid rgba(59,73,92,0.05)`,
+        background: hovered ? `color-mix(in srgb, var(--th-surface) 70%, transparent)` : `color-mix(in srgb, var(--th-surface) 40%, transparent)`,
+        padding: 24, borderRadius: 16,
+        border: `1px solid color-mix(in srgb, var(--th-border) 60%, transparent)`,
         transition: "background 0.2s",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={{ display: "flex", gap: 16 }}>
-        <img src={post.author.avatar || "/placeholder-user.jpg"} alt={post.author.full_name} style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+      <div style={{ display: "flex", gap: 14 }}>
+        <img
+          src={post.author?.avatar || "/placeholder-user.jpg"}
+          alt={post.author?.full_name}
+          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+        />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
             <div>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, color: C.text, marginRight: 8 }}>{post.author.full_name}</span>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", color: C.muted, fontSize: 13 }}>@{post.author.username} · {formatDistanceToNow(new Date(post.createdAt))} ago</span>
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15, color: C.text }}>{post.author?.full_name}</span>
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", color: C.muted, fontSize: 12, marginLeft: 8 }}>
+                @{post.author?.username} · {formatDistanceToNow(new Date(post.createdAt))} ago
+              </span>
             </div>
             <button style={{ background: "none", border: "none", cursor: "pointer", color: C.muted }}>
               <Icon name="more_horiz" style={{ fontSize: 20 }} />
             </button>
           </div>
 
-          <p style={{ color: C.text, fontFamily: "'Manrope',sans-serif", fontSize: 15, lineHeight: 1.65, marginBottom: 16, whiteSpace: "pre-wrap" }}>
+          {/* Content */}
+          <p style={{ color: C.text, fontFamily: "'Manrope',sans-serif", fontSize: 15, lineHeight: 1.7, marginBottom: 14, whiteSpace: "pre-wrap" }}>
             {post.content}
           </p>
 
+          {/* Media */}
           {post.mediaUrl && (
-            <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid rgba(59,73,92,0.1)`, marginBottom: 16 }}>
-              {post.mediaType === 'video' ? (
+            <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid var(--th-border)`, marginBottom: 16 }}>
+              {post.mediaType === "video" ? (
                 <video src={post.mediaUrl} controls style={{ width: "100%", display: "block" }} />
               ) : (
-                <img src={post.mediaUrl} alt="Post media" style={{ width: "100%", maxHeight: 500, objectFit: "cover", display: "block" }} />
+                <img src={post.mediaUrl} alt="Post media" style={{ width: "100%", maxHeight: 480, objectFit: "cover", display: "block" }} />
               )}
             </div>
           )}
 
-          <div style={{ display: "flex", gap: 32, color: C.muted }}>
-            <StatBtn icon="mode_comment" count={post.comments.length} hoverColor={C.accent} />
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+            <StatBtn
+              icon="mode_comment" count={post.comments?.length}
+              hoverColor={C.accent} onClick={() => setShowComments((v) => !v)}
+              active={showComments} activeColor={C.accent}
+            />
+            <StatBtn
+              icon="cached" count={repostCount}
+              hoverColor={C.repost} onClick={handleRepost}
+              active={reposted} activeColor={C.repost}
+            />
+            <StatBtn
+              icon="favorite" count={likeCount}
+              hoverColor={C.error} onClick={handleLike}
+              active={liked} activeColor={C.error} filled={liked}
+            />
+            <StatBtn
+              icon="share" hoverColor={C.secondary}
+            />
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
             <button
-              onClick={handleRepost}
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: reposted ? "#4ade80" : C.muted, transition: "color 0.2s" }}
+              onClick={handleSave}
+              title={saved ? "Unsave" : "Save"}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                background: "none", border: "none", cursor: "pointer",
+                color: saved ? C.accent : C.muted,
+                transition: "color 0.2s, transform 0.15s",
+                transform: saved ? "scale(1.05)" : "scale(1)",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = C.accent; e.currentTarget.style.transform = "scale(1.1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = saved ? C.accent : C.muted; e.currentTarget.style.transform = "scale(1)"; }}
             >
-              <Icon name="cached" style={{ fontSize: 20 }} />
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14 }}>{repostCount}</span>
+              <Icon name="bookmark" fill={saved} style={{ fontSize: 20 }} />
+              {saveCount > 0 && (
+                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12 }}>{saveCount}</span>
+              )}
             </button>
-            <button
-              style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: liked ? C.error : C.muted, transition: "color 0.2s" }}
-              onClick={handleLike}
-            >
-              <Icon name="favorite" fill={liked} style={{ fontSize: 20, color: liked ? C.error : C.muted }} />
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14 }}>{likeCount}</span>
-            </button>
-            <StatBtn icon="share" count={undefined} hoverColor={C.secondary} />
           </div>
+
+          {/* Comments panel */}
+          {showComments && (
+            <CommentPanel postId={post._id} comments={post.comments || []} />
+          )}
         </div>
       </div>
     </article>
   );
 }
 
-function StatBtn({ icon, count, hoverColor }: any) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button
-      style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: hov ? hoverColor : C.muted, transition: "color 0.2s" }}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-    >
-      <Icon name={icon} style={{ fontSize: 20 }} />
-      {count !== undefined && <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 14 }}>{count}</span>}
-    </button>
-  );
-}
-
 /* ─── Right Sidebar ───────────────────────────────────────────────────────── */
 function RightSidebar() {
-  const [followed, setFollowed] = useState<any>({});
+  const trending = [
+    { tag: "#Crystalline", count: "245 transmissions" },
+    { tag: "#DeepObservatory", count: "182 transmissions" },
+    { tag: "#SpaceGrotesk", count: "131 transmissions" },
+    { tag: "#Web3Collectives", count: "98 transmissions" },
+  ];
+  const suggestions = [
+    { name: "Nova Vance", handle: "@nova_v", avatar: "/placeholder-user.jpg" },
+    { name: "Orion Blake", handle: "@orion_bk", avatar: "/placeholder-user.jpg" },
+  ];
+
   return (
-    <aside style={{ padding: "40px" }}>
-      <div style={{ position: "sticky", top: 112, display: "flex", flexDirection: "column", gap: 32 }}>
-        <div style={{ background: C.surfaceLow, borderRadius: 12, border: `1px solid rgba(59,73,92,0.1)`, overflow: "hidden" }}>
-          <div style={{ padding: "16px 24px", borderBottom: `1px solid rgba(59,73,92,0.1)` }}>
-            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 18, color: C.accent, margin: 0 }}>Trending Constructs</h3>
+    <aside style={{ padding: "32px 28px" }}>
+      <div style={{ position: "sticky", top: 104, display: "flex", flexDirection: "column", gap: 24 }}>
+        {/* Trending */}
+        <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid var(--th-border)`, overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid var(--th-border)` }}>
+            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: C.accent, margin: 0 }}>
+              Trending
+            </h3>
           </div>
-          {[
-            { tag: "#Crystalline", count: 245 },
-            { tag: "#DeepObservatory", count: 182 },
-            { tag: "#SpaceGrotesk", count: 131 }
-          ].map((t, i) => (
-            <div key={i} style={{ padding: "16px 24px", borderBottom: `1px solid rgba(59,73,92,0.1)` }}>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: C.muted }}>{t.tag}</span>
-              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 10, color: C.accent, textTransform: "uppercase", marginTop: 4 }}>{t.count} Transmissions</p>
+          {trending.map((t, i) => (
+            <div key={i} style={{ padding: "12px 20px", borderBottom: i < trending.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none", cursor: "pointer" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = C.surfaceTop)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{t.tag}</p>
+              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: "2px 0 0" }}>{t.count}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Suggested */}
+        <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid var(--th-border)`, overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid var(--th-border)` }}>
+            <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: C.accent, margin: 0 }}>
+              Who to Follow
+            </h3>
+          </div>
+          {suggestions.map((s, i) => (
+            <div key={i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none" }}>
+              <img src={s.avatar} alt={s.name} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
+              <div style={{ flex: 1 }}>
+                <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.name}</p>
+                <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: 0 }}>{s.handle}</p>
+              </div>
+              <button style={{ padding: "5px 14px", border: `1px solid var(--th-accent)`, borderRadius: 999, background: "transparent", color: C.accent, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer", transition: "background 0.2s" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 15%, transparent)`; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
+                FOLLOW
+              </button>
             </div>
           ))}
         </div>
@@ -288,10 +462,14 @@ function RightSidebar() {
   );
 }
 
+/* ─── Feed Tabs ───────────────────────────────────────────────────────────── */
+const TABS = ["For You", "Following", "Latest"];
+
 /* ─── Root ────────────────────────────────────────────────────────────────── */
 export default function BubbleFeed() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("For You");
 
   const loadPosts = async () => {
     try {
@@ -305,49 +483,71 @@ export default function BubbleFeed() {
     }
   };
 
-  useEffect(() => {
-    loadPosts();
-  }, []);
+  useEffect(() => { loadPosts(); }, []);
 
   return (
-    <>
-      {/* Global styles are now handled in index.css */}
+    <div style={{ background: "var(--th-bg)", color: "var(--th-text)", minHeight: "100vh", fontFamily: "'Manrope', sans-serif", position: "relative", overflow: "hidden" }}>
+      <Sidebar />
+      <TopBar />
 
-      <div style={{ background: C.bg, color: C.text, minHeight: "100vh", fontFamily: "'Manrope', sans-serif" }}>
-        <Sidebar />
-        <TopBar />
+      {/* Glows */}
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
+        style={{ background: "var(--th-glow)" }} />
+      <div className="absolute top-[40%] left-[-10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
+        style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
 
-        <main className="feed-layout" style={{ 
-          marginLeft: 85, 
-          paddingTop: 80, 
-          display: "flex", 
-          minHeight: "100vh",
-          background: C.bg 
-        }}>
-          <section style={{ 
-            flex: 1,
-            borderRight: `1px solid rgba(59,73,92,0.1)`, 
-            padding: "40px 32px",
-            minWidth: 0 // allow shrinking
-          }}>
-            <div style={{ maxWidth: 680, margin: "0 auto" }}>
-              <Composer onPostCreated={(p) => setPosts([p, ...posts])} />
-              <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                {loading ? (
-                  <p style={{ textAlign: "center", color: C.muted }}>Loading transmissions...</p>
-                ) : posts.length === 0 ? (
-                  <p style={{ textAlign: "center", color: C.muted }}>No thoughts transmitted yet.</p>
-                ) : (
-                  posts.map(post => <PostItem key={post._id} post={post} />)
-                )}
-              </div>
-            </div>
-          </section>
-          <div className="hidden lg:block w-[380px] shrink-0">
-            <RightSidebar />
+      <main style={{ marginLeft: 85, paddingTop: 72, display: "flex", minHeight: "100vh", background: "transparent", position: "relative", zIndex: 10 }}>
+        {/* Feed column */}
+        <section style={{ flex: 1, borderRight: `1px solid var(--th-border)`, minWidth: 0 }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", borderBottom: `1px solid var(--th-border)`, position: "sticky", top: 72, background: `color-mix(in srgb, var(--th-bg) 90%, transparent)`, backdropFilter: "blur(12px)", zIndex: 30 }}>
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  flex: 1, padding: "14px 0", background: "none", border: "none", cursor: "pointer",
+                  fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13,
+                  color: activeTab === tab ? C.accent : C.muted,
+                  borderBottom: activeTab === tab ? `2px solid var(--th-accent)` : "2px solid transparent",
+                  transition: "color 0.2s, border-color 0.2s",
+                }}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-        </main>
-      </div>
-    </>
+
+          {/* Posts */}
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 24px" }}>
+            <Composer onPostCreated={(p) => setPosts([p, ...posts])} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {loading ? (
+                Array(4).fill(0).map((_, i) => (
+                  <div key={i} style={{ height: 120, borderRadius: 16, background: C.surfaceLow, marginBottom: 8, animation: "pulse 1.5s ease-in-out infinite" }} />
+                ))
+              ) : posts.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "64px 0", color: C.muted }}>
+                  <Icon name="rss_feed" style={{ fontSize: 48, display: "block", margin: "0 auto 16px" }} />
+                  <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600 }}>No transmissions yet</p>
+                  <p style={{ fontSize: 13, marginTop: 4 }}>Be the first to post something.</p>
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <div key={post._id} style={{ paddingBottom: 8 }}>
+                    <PostItem post={post} />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Right panel */}
+        <div className="hidden lg:block" style={{ width: 360, flexShrink: 0 }}>
+          <RightSidebar />
+        </div>
+      </main>
+    </div>
   );
 }

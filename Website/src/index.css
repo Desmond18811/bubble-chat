@@ -86,18 +86,48 @@
   }
 }
 
+/* ─── Runtime Theme Variables (managed by ThemeContext.tsx) ──────────────── */
+:root {
+  --th-bg:           #010f20;
+  --th-surface:      #071a2f;
+  --th-surface-low:  #031427;
+  --th-surface-high: #0c2037;
+  --th-surface-top:  #11273f;
+  --th-accent:       #ffe792;
+  --th-accent-text:  #655400;
+  --th-secondary:    #a2c2fd;
+  --th-text:         #d8e6ff;
+  --th-muted:        #9eacc3;
+  --th-border:       rgba(59,73,92,0.15);
+  --th-glow:         rgba(255,231,146,0.2);
+}
+
 @layer utilities {
   .font-display {
     font-family: 'Space Grotesk', sans-serif;
   }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
+  .font-headline {
+    font-family: 'Space Grotesk', sans-serif;
   }
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: hsl(var(--background));
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+  /* Thin custom scrollbar */
+  .scrollbar-thin::-webkit-scrollbar,
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track,
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb,
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(59,73,92,0.4);
     border-radius: 4px;
   }
+  /* Theme-aware helpers */
+  .bg-th-bg           { background: var(--th-bg); }
+  .bg-th-surface      { background: var(--th-surface); }
+  .bg-th-surface-low  { background: var(--th-surface-low); }
+  .bg-th-surface-high { background: var(--th-surface-high); }
+  .bg-th-surface-top  { background: var(--th-surface-top); }
+  .text-th-accent     { color: var(--th-accent); }
+  .text-th-secondary  { color: var(--th-secondary); }
+  .text-th-text       { color: var(--th-text); }
+  .text-th-muted      { color: var(--th-muted); }
+  .border-th          { border-color: var(--th-border); }
 }
