@@ -1207,6 +1207,7 @@ export default function BubbleMessages() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [actionMenuMsgId, setActionMenuMsgId] = useState<string | null>(null);
   const [messageInfoModal, setMessageInfoModal] = useState<any | null>(null);
+  const [chatContextMenu, setChatContextMenu] = useState<{ x: number; y: number; chat: any } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1348,8 +1349,10 @@ export default function BubbleMessages() {
     };
 
     const onMsgReaction = ({ messageId, reactions }: any) => {
+      // Replace reactions array entirely with server-confirmed data
+      // (reactions contain populated user objects from backend)
       setMessages((prev) => prev.map((m) =>
-        (m._id || m.id) === messageId ? { ...m, reactions } : m
+        (m._id || m.id) === messageId ? { ...m, reactions: reactions || [] } : m
       ));
     };
 
@@ -1592,20 +1595,24 @@ export default function BubbleMessages() {
 
   const handleReactMessage = async (msgId: string, emoji: string) => {
     try {
-      await api.reactToMessage(msgId, emoji);
+      // Optimistic update — toggling locally for instant feedback
       setMessages(prev => prev.map(m => {
-        if ((m._id || m.id) === msgId) {
-          const reactions = [...(m.reactions || [])];
-          const existingIdx = reactions.findIndex(r => (r.user?.id || r.user?._id || r.user) === myId && r.emoji === emoji);
-          if (existingIdx > -1) {
-            reactions.splice(existingIdx, 1);
-          } else {
-            reactions.push({ user: myId, emoji, timestamp: new Date() });
-          }
-          return { ...m, reactions };
+        if ((m._id || m.id) !== msgId) return m;
+        const reactions = [...(m.reactions || [])];
+        const existingIdx = reactions.findIndex(r => {
+          const rUserId = r.user?.id || r.user?._id || (typeof r.user === 'string' ? r.user : null);
+          return rUserId === myId && r.emoji === emoji;
+        });
+        if (existingIdx > -1) {
+          reactions.splice(existingIdx, 1);
+        } else {
+          reactions.push({ user: { id: myId, _id: myId }, emoji, timestamp: new Date() });
         }
-        return m;
+        return { ...m, reactions };
       }));
+      // Persist to backend — server will emit `message_reaction` socket event
+      // which will replace the optimistic data with server-confirmed populated objects
+      await api.reactToMessage(msgId, emoji);
     } catch {
       toast.error("Failed to react");
     }
@@ -1700,6 +1707,18 @@ export default function BubbleMessages() {
     });
   };
 
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      await api.deleteChat(chatId);
+      setChats(prev => prev.filter(c => (c.id || c._id) !== chatId));
+      if ((activeChat?.id || activeChat?._id) === chatId) setActiveChat(null);
+      toast.success('Chat removed from your view');
+    } catch {
+      toast.error('Failed to delete chat');
+    }
+    setChatContextMenu(null);
+  };
+
   const handleMessageInfo = (msg: any) => {
     setMessageInfoModal(msg);
   };
@@ -1741,6 +1760,8 @@ export default function BubbleMessages() {
         /* ── Hover action bar ── */
         .msg-action-bar {
           display: flex;
+          flex-direction: row;
+          flex-wrap: nowrap;
           align-items: center;
           gap: 2px;
           background: rgba(3, 20, 39, 0.98);
@@ -1752,6 +1773,7 @@ export default function BubbleMessages() {
           z-index: 100;
           animation: fadeUp 0.12s ease;
           white-space: nowrap;
+          min-width: max-content;
         }
         .msg-action-btn {
           display: flex;
@@ -1976,6 +1998,64 @@ export default function BubbleMessages() {
           overflow: "hidden",
         }}
       >
+        {/* ─── Right-click Context Menu (Chat List) ─── */}
+        {chatContextMenu && (
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9000 }}
+            onClick={() => setChatContextMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setChatContextMenu(null); }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'fixed',
+                left: chatContextMenu.x,
+                top: chatContextMenu.y,
+                background: '#031427',
+                border: '1px solid rgba(59,73,92,0.4)',
+                borderRadius: 12,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+                overflow: 'hidden',
+                minWidth: 200,
+                zIndex: 9001,
+                animation: 'fadeUp 0.12s ease',
+              }}
+            >
+              {[
+                { label: 'Pin Chat', icon: 'push_pin', action: () => { handlePinChat(chatContextMenu.chat.id || chatContextMenu.chat._id); setChatContextMenu(null); } },
+                { label: 'Clear Messages', icon: 'cleaning_services', action: () => { api.clearChat(chatContextMenu.chat.id || chatContextMenu.chat._id).then(() => { toast.success('Chat cleared'); setChatContextMenu(null); }).catch(() => toast.error('Failed')); } },
+                { label: 'Delete Chat', icon: 'delete', danger: true, action: () => handleDeleteChat(chatContextMenu.chat.id || chatContextMenu.chat._id) },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    cursor: 'pointer',
+                    color: (item as any).danger ? '#ef4444' : '#d8e6ff',
+                    fontSize: 13,
+                    fontFamily: "'Manrope', sans-serif",
+                    textAlign: 'left',
+                    borderBottom: '1px solid rgba(59,73,92,0.1)',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = (item as any).danger ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                >
+                  <Icon name={item.icon} size={16} style={{ color: (item as any).danger ? '#ef4444' : '#9eacc3' }} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Sidebar />
 
         <main
@@ -2078,7 +2158,10 @@ export default function BubbleMessages() {
                     <div
                       key={c.id || c._id}
                       onClick={() => setActiveChat(c)}
-                      onContextMenu={(e) => { e.preventDefault(); handlePinChat(c.id || c._id); }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setChatContextMenu({ x: e.clientX, y: e.clientY, chat: c });
+                      }}
                       style={{
                         display: "flex", gap: 14, alignItems: "center", padding: "14px 12px",
                         borderRadius: 14, cursor: "pointer", marginBottom: 2,
@@ -2325,7 +2408,7 @@ export default function BubbleMessages() {
                                     boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
                                   }}
                                 >
-                                  <Icon name="more_vert" size={18} />
+                                  <Icon name="more_horiz" size={18} />
                                 </button>
                               )}
 
@@ -2371,7 +2454,25 @@ export default function BubbleMessages() {
                                     <Icon name="forward" size={18} />
                                   </button>
 
+                                  {/* Copy */}
+                                  <button
+                                    className="msg-action-btn"
+                                    title="Copy Text"
+                                    onClick={() => {
+                                      if (msg.content) {
+                                        navigator.clipboard.writeText(msg.content);
+                                        toast.success("Text copied");
+                                      } else {
+                                        toast.error("No text to copy");
+                                      }
+                                      setActionMenuMsgId(null);
+                                    }}
+                                  >
+                                    <Icon name="content_copy" size={18} />
+                                  </button>
+
                                   {/* Pin */}
+
                                   <button
                                     className={`msg-action-btn${isPinned ? " active" : ""}`}
                                     title={isPinned ? "Unpin" : "Pin"}

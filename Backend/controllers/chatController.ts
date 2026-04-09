@@ -156,7 +156,10 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
   }
 
   try {
-    const results = await Conversation.find({ users: { $elemMatch: { $eq: req.user._id } } })
+    const results = await Conversation.find({
+      users: { $elemMatch: { $eq: req.user._id } },
+      deletedBy: { $ne: req.user._id },
+    })
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey')
       .populate({
@@ -392,6 +395,42 @@ export const toggleChatPin = async (req: AuthRequest, res: Response): Promise<vo
     res.status(200).json({
       message: isPinned ? 'Chat unpinned' : 'Chat pinned',
       isPinned: !isPinned,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Delete Chat — hide the entire conversation from the current user's view.
+ * All messages are soft-deleted for this user and the conversation is hidden.
+ * The conversation continues to exist for other participants.
+ * DELETE /api/v1/chat/:chatId
+ */
+export const deleteChat = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  const userId = req.user?._id;
+
+  if (!userId) { res.status(401).json({ message: 'Unauthorized' }); return; }
+
+  try {
+    const convo = await Conversation.findById(chatId);
+    if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    // Add user to deletedBy so the chat is hidden for them
+    await Conversation.findByIdAndUpdate(chatId, {
+      $addToSet: { deletedBy: userId },
+    });
+
+    // Soft-delete all messages in this chat for this user
+    await Message.updateMany(
+      { chat: chatId },
+      { $addToSet: { deletedFor: userId } }
+    );
+
+    res.status(200).json({
+      message: 'Chat deleted from your view.',
+      chatId,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

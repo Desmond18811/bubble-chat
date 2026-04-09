@@ -10,7 +10,9 @@ import {
   muteChat,
   clearChat,
   toggleChatPin,
+  deleteChat,
 } from '../controllers/chatController';
+
 
 const router = express.Router();
 
@@ -211,5 +213,25 @@ router.put('/clear/:chatId', clearChat);
 
 /** PUT /api/v1/chat/pin/:chatId — Toggle pin status */
 router.put('/pin/:chatId', toggleChatPin);
+
+/**
+ * @swagger
+ * /api/v1/chat/{chatId}:
+ *   delete:
+ *     tags: [Chat]
+ *     summary: Delete a chat from your view (soft-delete, hides from your list)
+ *     description: Marks all messages as deleted for you and hides the conversation. Other participants are unaffected.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Chat deleted from your view.
+ */
+router.delete('/:chatId', deleteChat);
 
 export default router;

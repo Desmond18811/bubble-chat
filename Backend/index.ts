@@ -18,6 +18,7 @@ import paymentRoutes from './routes/paymentRoutes';
 import securityRoutes from './routes/securityRoutes';
 import healthRoutes from './routes/healthRoutes';
 import profileRoutes from './routes/profileRoutes';
+import workspaceRoutes from './routes/workspaceRoutes';
 
 
 // Load environment variables
@@ -74,6 +75,7 @@ const swaggerOptions = {
       { name: 'Stories', description: 'User story uploads and retrieval' },
       { name: 'Security', description: 'Protocol key rotation and security numbers' },
       { name: 'Payment', description: 'Stripe anonymous and standard checkout flow' },
+      { name: 'Workspace', description: 'Per-user file buckets with access management and sharing' },
     ],
     components: {
       securitySchemes: {
@@ -233,6 +235,7 @@ app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/security', securityRoutes);
+app.use('/api/v1/workspace', workspaceRoutes);
 
 
 

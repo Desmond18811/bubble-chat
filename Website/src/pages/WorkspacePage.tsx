@@ -1,102 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/Sidebar";
+import { toast } from "sonner";
+import * as api from "@/api";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+/* ─── Types ────────────────────────────────────────────────────────────────── */
+type FileType = "image" | "video" | "audio" | "pdf" | "doc" | "spreadsheet" | "other";
+type FileSource = "manual" | "meeting" | "contact";
 
-type Workspace = { id: string; label: string; active?: boolean };
-type QuickFilter = { id: string; icon: string; label: string };
-type FileCard = {
+interface WFile {
   id: string;
-  type: "image" | "pdf" | "video";
-  typeLabel: string;
-  typeIcon: string;
   name: string;
-  size: string;
-  date: string;
-  previewSrc?: string;
+  originalName: string;
+  fileUrl: string;
+  fileKey: string;
+  fileType: FileType | 'folder';
+  mimeType: string;
+  fileSize: number;
+  isFolder: boolean;
+  workspace: string;
+
+  source: FileSource;
+  isPublic: boolean;
+  uploadedBy: any;
+  sharedWith: any[];
+  blockedUsers: any[];
+  tags: string[];
+  description: string | null;
+  createdAt: string;
+}
+
+/* ─── Constants ─────────────────────────────────────────────────────────────── */
+const SG: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" };
+const BASE_API = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+
+const FILE_TYPE_COLORS: Record<string, string> = {
+  image: "#a2c2fd",
+  video: "#c084fc",
+  audio: "#34d399",
+  pdf: "#f87171",
+  doc: "#60a5fa",
+  spreadsheet: "#4ade80",
+  folder: "#ffe792",
+  other: "#9eacc3",
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+const FILE_TYPE_ICONS: Record<string, string> = {
+  image: "image",
+  video: "movie",
+  audio: "audio_file",
+  pdf: "picture_as_pdf",
+  doc: "description",
+  spreadsheet: "table_chart",
+  folder: "folder",
+  other: "attach_file",
+};
 
-const SG: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" };
 
-const NAV_ICONS = [
-  { icon: "chat" },
-  { icon: "work", active: true },
-  { icon: "video_chat" },
-  { icon: "group" },
-  { icon: "rss_feed" },
-  { icon: "bookmark" },
-  { icon: "calendar_today" },
-  { icon: "payments" },
-];
+const SOURCE_ICONS: Record<FileSource, string> = {
+  manual: "cloud_upload",
+  meeting: "video_camera_front",
+  contact: "person",
+};
 
-const WORKSPACES: Workspace[] = [
-  { id: "branding", label: "Branding Core", active: true },
-  { id: "campaign", label: "Campaign Assets" },
-  { id: "client", label: "Client Feedback" },
-];
+const fmtBytes = (b: number) => {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(2)} MB`;
+};
 
-const QUICK_FILTERS: QuickFilter[] = [
-  { id: "visuals", icon: "image", label: "Visuals" },
-  { id: "docs", icon: "description", label: "Documents" },
-  { id: "recent", icon: "history", label: "Recent" },
-];
-
-const FILE_CARDS: FileCard[] = [
-  {
-    id: "hero",
-    type: "image",
-    typeLabel: "Asset",
-    typeIcon: "image",
-    name: "Hero_Header_v2.png",
-    size: "4.2 MB",
-    date: "Oct 12, 2023",
-    previewSrc:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCnoPd9C4g_0rNslf5kzam9N7nEI7VpHMC-Al1_W71UyHszw0r97xWlWlby8IsyHeUvZkFIw1cMhIT-y4eOsOpvMEKxmmAFnxOfz7bB4FJ2wEC9Buq-NSb2MMynSLZ6rCB2sNikdpHoWPdA7QXFuPAtJkLBE9M-WGOxvYghnT5BcMZyRsJUCoxOLeVei1hVzforQds8CLzM9sOQQEzQVFrtPPgb1yVPKaRS6NgQN_IP23xk0WqZBZQw9HSKwDkG6CIY5CchVTjBcQkO",
-  },
-  {
-    id: "guide",
-    type: "pdf",
-    typeLabel: "Document",
-    typeIcon: "description",
-    name: "Style_Guide_Final.pdf",
-    size: "12.8 MB",
-    date: "Oct 10, 2023",
-  },
-  {
-    id: "logo",
-    type: "video",
-    typeLabel: "Motion",
-    typeIcon: "movie",
-    name: "Logo_Reveal_Loop.mp4",
-    size: "85.1 MB",
-    date: "Sep 28, 2023",
-    previewSrc:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBE3YRgpz4HqX0snVsBnHDaTwUkkrp1o-gO_5Vdt982UFybS1j-mPOkQEjih-F6V8m6swqx--z0UDeVQ8oDFLRe7UWui_VPUChPQkulcLwglXF-NU2X03sk3zgTAdi2WG2z4M24it1KIM4GIvb3sTkKpCWr0B7dBje6i62Q5DPU3U356p6pyFI5MavjtzgMipIH8kEhNVNQCjVwFUDgRfBpctm2ZOrc4wMPk1tiYDb2bUksibykzX3t52neASOSFDeEruk66pRFzOBr",
-  },
-];
-
-const COLLABORATOR_AVATARS = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDLb32emSU4fw0oloQQn-ckuLTLZzGHi4IMbiuNNnB235SMwUEJGuucLcZ-aG4rftyugTmZs02KL5UKPeMbIb4d9BEha9eTfwMgaW6GNv7z50HLGl65XH3rB_jg642LLl9FAO-U6_eRze508h9whPxmcfXye9JbFS4cxLdOyKQYDeojFR1_mt6w_Xsczii_f8BEw-WeFotdSwhDB6-i0U6n8yyFkQlQwuFONywjhCsVKxcuv0X_7b8rH8QQP71yMeVAA-URBr0Svhit",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuD0Ua9DZrK81LXRJ7RrRjhf1YVbJG2VSjfgI5sh5WiA10Au1wUU55PFAXcXrgOgkRDbMn_4b7bG9HyaPt5J7zUaIfo3yBsoFPiJtp5Pp52sQ1DcxSYEr5UuzmXsDOpUW3WtcZ3zF8RkwfrN6mtEvkzbndkZEaRBIusvy53UvEZZI43Iu8yU6HaA7SMVDg8rh1kJSy7uN8feioAskViIEivuqThhncZMwcBe2JB9aLkrJmwTXeU54XRsHQbnbw88XQ82ee598qS2GBSD",
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
+/* ─── Icon helper ───────────────────────────────────────────────────────────── */
 function MSIcon({
-  name,
-  filled = false,
-  className = "",
-  style,
-}: {
-  name: string;
-  filled?: boolean;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
+  name, filled = false, className = "", style,
+}: { name: string; filled?: boolean; className?: string; style?: React.CSSProperties }) {
   return (
     <span
       className={`material-symbols-outlined ${className}`}
@@ -112,617 +89,704 @@ function MSIcon({
   );
 }
 
+/* ─── User Search ───────────────────────────────────────────────────────────── */
+function UserSearchInput({ onSelect, placeholder = "Search users..." }: { onSelect: (u: any) => void; placeholder?: string }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
 
-// ─── TopBar ───────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!q.trim()) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      try { const r = await api.searchUsers(q); setResults(r.users || []); } catch {}
+    }, 350);
+    return () => clearTimeout(t);
+  }, [q]);
 
-function TopBar() {
   return (
-    <header
-      className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center"
-      style={{
-        left: "85px",
-        background: "rgba(1,15,32,0.40)",
-        backdropFilter: "blur(12px)",
-      }}
-    >
-      <div className="flex items-center gap-6 flex-1">
-        <div className="relative w-full max-w-md">
-          <MSIcon
-            name="search"
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-sm"
-            style={{ color: "#9eacc3", fontSize: "18px" }}
-          />
-          <Input
-            placeholder="Search files, folders, nodes..."
-            className="w-full border-none rounded-xl py-2.5 pl-12 pr-4 text-sm focus-visible:ring-2 focus-visible:ring-yellow-300/20"
-            style={{ background: "#11273f", color: "#d8e6ff" }}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-6">
-        <button
-          className="transition-colors"
-          style={{ color: "#a2c2fd" }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.color = "#ffe792")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.color = "#a2c2fd")
-          }
-        >
-          <MSIcon name="notifications" />
-        </button>
-        <div
-          className="h-8 w-px"
-          style={{ background: "rgba(59,73,92,0.20)" }}
-        />
-        <div className="flex items-center gap-3">
-          <span
-            className="text-xs uppercase tracking-widest"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            Status
-          </span>
-          <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-            style={{ background: "rgba(255,231,146,0.10)" }}
-          >
-            <div
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ background: "#ffe792" }}
-            />
-            <span
-              className="text-[10px] uppercase font-bold tracking-tighter"
-              style={{ ...SG, color: "#ffe792" }}
+    <div style={{ position: "relative" }}>
+      <input
+        value={q}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+        placeholder={placeholder}
+        style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none" }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+      />
+      {open && results.length > 0 && (
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#031427", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 10, zIndex: 100, overflow: "hidden", maxHeight: 200, overflowY: "auto" }}>
+          {results.map((u) => (
+            <div key={u.id || u._id} onClick={() => { onSelect(u); setQ(""); setOpen(false); }}
+              style={{ padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d8e6ff" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
             >
-              Live Sync
-            </span>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,231,146,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#ffe792" }}>
+                {(u.full_name || u.username || "?")[0].toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontWeight: 600 }}>{u.full_name || u.username}</div>
+                <div style={{ fontSize: 11, color: "#68768b" }}>{u.uniqueTag || u.email}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Access Management Modal ───────────────────────────────────────────────── */
+function AccessModal({ file, onClose, onUpdated }: { file: WFile; onClose: () => void; onUpdated: (f: WFile) => void }) {
+  const [sharing, setSharing] = useState(false);
+  const [blocking, setBlocking] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(file.isPublic);
+
+  const addUser = async (u: any) => {
+    setSharing(true);
+    try {
+      const r = await api.manageWorkspaceFileAccess(file.id, { action: "add", userId: u.id || u._id });
+      onUpdated(r.file);
+      toast.success("Access granted");
+    } catch { toast.error("Failed"); } finally { setSharing(false); }
+  };
+
+  const removeUser = async (userId: string) => {
+    try {
+      const r = await api.manageWorkspaceFileAccess(file.id, { action: "remove", userId });
+      onUpdated(r.file);
+      toast.success("Access revoked");
+    } catch { toast.error("Failed"); }
+  };
+
+  const blockUser = async (userId: string) => {
+    setBlocking(userId);
+    try {
+      const r = await api.blockWorkspaceFileUser(file.id, userId, "block");
+      onUpdated(r.file);
+      toast.success("User blocked from this file");
+    } catch { toast.error("Failed"); } finally { setBlocking(null); }
+  };
+
+  const togglePublic = async (val: boolean) => {
+    try {
+      const r = await api.manageWorkspaceFileAccess(file.id, { isPublic: val });
+      setIsPublic(val);
+      onUpdated(r.file);
+      toast.success(val ? "File is now public" : "File is now private");
+    } catch { toast.error("Failed"); }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 500, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+        {/* Header */}
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ ...SG, fontSize: 16, fontWeight: 700, color: "#ffe792", margin: 0 }}>Manage Access — {file.name}</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
+        </div>
+
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, maxHeight: "70vh", overflowY: "auto" }}>
+          {/* Public Toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "rgba(255,231,146,0.04)", border: "1px solid rgba(255,231,146,0.1)", borderRadius: 12 }}>
+            <div>
+              <div style={{ ...SG, fontWeight: 700, fontSize: 13, color: "#d8e6ff" }}>Public Link Access</div>
+              <div style={{ fontSize: 11, color: "#68768b", marginTop: 4 }}>Anyone with the link can view this file</div>
+            </div>
+            <button
+              onClick={() => togglePublic(!isPublic)}
+              style={{ width: 44, height: 24, borderRadius: 12, background: isPublic ? "#ffe792" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}
+            >
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: isPublic ? "#1a0a00" : "#68768b", position: "absolute", top: 3, left: isPublic ? 23 : 3, transition: "left 0.2s" }} />
+            </button>
           </div>
-        </div>
-      </div>
-    </header>
-  );
-}
 
-// ─── Left Sidebar (File Tree) ─────────────────────────────────────────────────
+          {/* Add collaborator */}
+          <div>
+            <p style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Add Collaborator</p>
+            <UserSearchInput placeholder="Search users to grant access..." onSelect={addUser} />
+            {sharing && <p style={{ fontSize: 12, color: "#ffe792", marginTop: 6 }}>Granting access...</p>}
+          </div>
 
-function FileSidebar() {
-  const [activeWs, setActiveWs] = useState("branding");
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+          {/* Current collaborators */}
+          {file.sharedWith.length > 0 && (
+            <div>
+              <p style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Shared With ({file.sharedWith.length})</p>
+              {file.sharedWith.map((u: any) => (
+                <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "rgba(255,255,255,0.02)" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(162,194,253,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#a2c2fd" }}>
+                    {(u.full_name || "?")[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#d8e6ff" }}>{u.full_name}</div>
+                    <div style={{ fontSize: 11, color: "#68768b" }}>{u.uniqueTag}</div>
+                  </div>
+                  <button onClick={() => removeUser(u.id || u._id)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }} title="Revoke access">
+                    <MSIcon name="person_remove" style={{ fontSize: 16 }} />
+                  </button>
+                  <button onClick={() => blockUser(u.id || u._id)} disabled={blocking === (u.id || u._id)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }} title="Block from file">
+                    <MSIcon name="block" style={{ fontSize: 16 }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-  return (
-    <aside
-      className="w-72 flex flex-col gap-8 overflow-y-auto p-8 shrink-0"
-      style={{ background: "#031427" }}
-    >
-      {/* New Node */}
-      <Button
-        className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 border-0 transition-all hover:scale-[1.02] active:scale-95"
-        style={{
-          ...SG,
-          background: "#ffe792",
-          color: "#655400",
-          height: "auto",
-          boxShadow: "0 10px 30px rgba(255,231,146,0.10)",
-        }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLElement).style.background = "#ffd709")
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLElement).style.background = "#ffe792")
-        }
-      >
-        <MSIcon name="add_circle" className="text-sm" />
-        NEW NODE
-      </Button>
-
-      {/* Navigation */}
-      <nav className="space-y-6">
-        {/* Workspaces */}
-        <div>
-          <h3
-            className="text-[10px] uppercase tracking-[0.2em] mb-4"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            Workspaces
-          </h3>
-          <ul className="space-y-1">
-            {WORKSPACES.map((ws) => (
-              <li key={ws.id}>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveWs(ws.id);
-                  }}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-                  style={
-                    activeWs === ws.id
-                      ? { background: "#11273f", color: "#ffe792", fontWeight: 500 }
-                      : { color: "#9eacc3" }
-                  }
-                  onMouseEnter={(e) => {
-                    if (activeWs !== ws.id) {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "rgba(17,39,63,0.30)";
-                      (e.currentTarget as HTMLElement).style.color = "#d8e6ff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeWs !== ws.id) {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "transparent";
-                      (e.currentTarget as HTMLElement).style.color = "#9eacc3";
-                    }
-                  }}
-                >
-                  <MSIcon
-                    name={activeWs === ws.id ? "folder_open" : "folder"}
-                    className="text-lg"
-                  />
-                  {ws.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Quick Filters */}
-        <div>
-          <h3
-            className="text-[10px] uppercase tracking-[0.2em] mb-4"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            Quick Filters
-          </h3>
-          <ul className="space-y-1">
-            {QUICK_FILTERS.map((f) => (
-              <li key={f.id}>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveFilter(activeFilter === f.id ? null : f.id);
-                  }}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-                  style={
-                    activeFilter === f.id
-                      ? { background: "rgba(17,39,63,0.30)", color: "#ffe792" }
-                      : { color: "#9eacc3" }
-                  }
-                  onMouseEnter={(e) => {
-                    if (activeFilter !== f.id) {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "rgba(17,39,63,0.30)";
-                      (e.currentTarget as HTMLElement).style.color = "#d8e6ff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeFilter !== f.id) {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "transparent";
-                      (e.currentTarget as HTMLElement).style.color = "#9eacc3";
-                    }
-                  }}
-                >
-                  <MSIcon name={f.icon} className="text-lg" />
-                  {f.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
-
-      {/* Storage */}
-      <div
-        className="mt-auto p-4 rounded-xl"
-        style={{
-          background: "rgba(17,39,63,0.40)",
-          backdropFilter: "blur(24px)",
-        }}
-      >
-        <div className="flex justify-between items-center mb-2">
-          <span
-            className="text-[10px] uppercase"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            Storage
-          </span>
-          <span
-            className="text-[10px] uppercase"
-            style={{ ...SG, color: "#ffe792" }}
-          >
-            82%
-          </span>
-        </div>
-        <div
-          className="w-full h-1.5 rounded-full overflow-hidden"
-          style={{ background: "#11273f" }}
-        >
-          <div
-            className="h-full rounded-full"
-            style={{ width: "82%", background: "#ffe792" }}
-          />
-        </div>
-        <p
-          className="text-[10px] mt-2"
-          style={{ color: "rgba(158,172,195,0.60)" }}
-        >
-          16.4 GB of 20 GB used
-        </p>
-      </div>
-    </aside>
-  );
-}
-
-// ─── File Card ────────────────────────────────────────────────────────────────
-
-function FileCard({ file }: { file: FileCard }) {
-  return (
-    <div
-      className="col-span-12 md:col-span-4 rounded-xl overflow-hidden group cursor-pointer border transition-all"
-      style={{ background: "#031427", borderColor: "transparent" }}
-      onMouseEnter={(e) =>
-      ((e.currentTarget as HTMLElement).style.borderColor =
-        "rgba(59,73,92,0.30)")
-      }
-      onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLElement).style.borderColor = "transparent")
-      }
-    >
-      {/* Preview */}
-      <div
-        className="aspect-video relative overflow-hidden flex items-center justify-center"
-        style={{ background: "#11273f" }}
-      >
-        {file.previewSrc ? (
-          <>
-            <img
-              src={file.previewSrc}
-              alt={file.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background: "linear-gradient(to top, rgba(1,15,32,0.80), transparent)",
-              }}
-            />
-          </>
-        ) : (
-          <MSIcon
-            name="picture_as_pdf"
-            className="text-5xl"
-            style={{ color: "rgba(158,172,195,0.30)", fontSize: "48px" }}
-          />
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <MSIcon
-            name={file.typeIcon}
-            className="text-sm"
-            style={{ color: "#ffe792", fontSize: "16px" }}
-          />
-          <span
-            className="text-[10px] uppercase"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            {file.typeLabel}
-          </span>
-        </div>
-        <h3 className="font-bold text-lg" style={{ ...SG, color: "#d8e6ff" }}>
-          {file.name}
-        </h3>
-        <div className="mt-4 flex justify-between items-center">
-          <span
-            className="text-[10px]"
-            style={{ color: "rgba(158,172,195,0.60)", ...SG }}
-          >
-            {file.size}
-          </span>
-          <span
-            className="text-[10px]"
-            style={{ color: "rgba(158,172,195,0.60)", ...SG }}
-          >
-            {file.date}
-          </span>
+          {/* Blocked users */}
+          {file.blockedUsers.length > 0 && (
+            <div>
+              <p style={{ ...SG, fontSize: 11, color: "#ef4444", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Blocked ({file.blockedUsers.length})</p>
+              {file.blockedUsers.map((u: any) => (
+                <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
+                  <div style={{ flex: 1, fontSize: 13, color: "#ef4444" }}>{u.full_name}</div>
+                  <button onClick={() => api.blockWorkspaceFileUser(file.id, u.id || u._id, "unblock").then((r) => { onUpdated(r.file); toast.success("Unblocked"); })} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", fontSize: 12 }}>Unblock</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Main Workspace Grid ──────────────────────────────────────────────────────
+/* ─── Create Folder Modal ───────────────────────────────────────────────────── */
+function FolderModal({ activeWs, onClose, onCreated }: { activeWs: string | null; onClose: () => void; onCreated: (f: WFile) => void }) {
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
 
-function WorkspaceGrid() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const submit = async () => {
+    if (!name.trim()) return toast.error("Folder name required");
+    setLoading(true);
+    try {
+      const r = await api.createWorkspaceFolder(name, activeWs || "Default");
+      onCreated(r.file);
+      toast.success("Folder created!");
+      onClose();
+    } catch (e: any) { toast.error(e.message || " creation failed"); }
+    finally { setLoading(false); }
+  };
 
   return (
-    <section
-      className="flex-1 overflow-y-auto p-10"
-      style={{ background: "#010f20" }}
-    >
-      {/* Page Header */}
-      <header className="flex justify-between items-end mb-12">
-        <div>
-          <nav
-            className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2"
-            style={{ ...SG, color: "#9eacc3" }}
-          >
-            <span>Workspaces</span>
-            <MSIcon
-              name="chevron_right"
-              className="text-xs"
-              style={{ fontSize: "14px" }}
-            />
-            <span style={{ color: "#ffe792" }}>Branding Core</span>
-          </nav>
-          <h1
-            className="text-5xl font-bold tracking-tight"
-            style={{ ...SG, color: "#d8e6ff" }}
-          >
-            Branding Core
-          </h1>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 400, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>Create Folder</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
         </div>
-
-        <div className="flex items-center gap-4">
-          {(["grid_view", "view_list"] as const).map((icon) => (
-            <button
-              key={icon}
-              onClick={() => setViewMode(icon === "grid_view" ? "grid" : "list")}
-              className="p-2 rounded-lg transition-all"
-              style={{
-                color:
-                  (icon === "grid_view" && viewMode === "grid") ||
-                    (icon === "view_list" && viewMode === "list")
-                    ? "#ffe792"
-                    : "#9eacc3",
-                background:
-                  (icon === "grid_view" && viewMode === "grid") ||
-                    (icon === "view_list" && viewMode === "list")
-                    ? "rgba(255,231,146,0.08)"
-                    : "transparent",
-              }}
-            >
-              <MSIcon name={icon} />
-            </button>
-          ))}
-          <div
-            className="h-6 w-px mx-2"
-            style={{ background: "rgba(59,73,92,0.20)" }}
-          />
-          <button
-            className="px-4 py-2 rounded-lg text-xs uppercase font-semibold flex items-center gap-2 border transition-colors"
-            style={{
-              ...SG,
-              background: "#0c2037",
-              color: "#d8e6ff",
-              borderColor: "rgba(59,73,92,0.10)",
-            }}
-          >
-            <MSIcon name="sort" className="text-sm" style={{ fontSize: "16px" }} />
-            Latest First
-          </button>
-        </div>
-      </header>
-
-      {/* Bento Grid */}
-      <div className="grid grid-cols-12 gap-8">
-        {/* Large Featured Folder */}
-        <div
-          className="col-span-12 md:col-span-7 p-8 rounded-2xl group cursor-pointer border transition-all"
-          style={{
-            background: "rgba(17,39,63,0.40)",
-            backdropFilter: "blur(24px)",
-            borderColor: "rgba(59,73,92,0.05)",
-          }}
-          onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLElement).style.borderColor =
-            "rgba(255,231,146,0.20)")
-          }
-          onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLElement).style.borderColor =
-            "rgba(59,73,92,0.05)")
-          }
-        >
-          <div className="flex flex-col h-full justify-between">
-            <div className="flex justify-between items-start">
-              <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(255,231,146,0.10)" }}
-              >
-                <MSIcon
-                  name="folder"
-                  filled
-                  className="text-4xl"
-                  style={{ color: "#ffe792", fontSize: "36px" }}
-                />
-              </div>
-              <span
-                className="text-[10px] uppercase tracking-widest px-3 py-1 rounded-full"
-                style={{
-                  ...SG,
-                  background: "rgba(255,231,146,0.20)",
-                  color: "#ffe792",
-                }}
-              >
-                Primary
-              </span>
-            </div>
-            <div className="mt-12">
-              <h2
-                className="text-3xl font-bold mb-2"
-                style={{ ...SG, color: "#d8e6ff" }}
-              >
-                Visual Identity 2024
-              </h2>
-              <p className="text-sm max-w-sm" style={{ color: "#9eacc3" }}>
-                Contains all vector assets, color palettes, and typography
-                guidelines for the BUBBLE ecosystem.
-              </p>
-            </div>
-            <div
-              className="mt-8 flex items-center gap-4 text-[10px] uppercase"
-              style={{ ...SG, color: "#9eacc3" }}
-            >
-              <span className="flex items-center gap-1">
-                <MSIcon name="article" style={{ fontSize: "14px" }} />
-                142 Files
-              </span>
-              <span className="flex items-center gap-1">
-                <MSIcon name="schedule" style={{ fontSize: "14px" }} />
-                2h ago
-              </span>
-            </div>
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Folder Name</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder="e.g. Assets, Q4 Reports..." style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
           </div>
-        </div>
-
-        {/* Secondary Folder */}
-        <div
-          className="col-span-12 md:col-span-5 p-8 rounded-2xl group cursor-pointer transition-all"
-          style={{ background: "#031427" }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#071a2f")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLElement).style.background = "#031427")
-          }
-        >
-          <div className="flex flex-col h-full justify-between">
-            <div className="flex justify-between items-start">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={{ background: "rgba(162,194,253,0.10)" }}
-              >
-                <MSIcon
-                  name="folder"
-                  filled
-                  className="text-2xl"
-                  style={{ color: "#a2c2fd", fontSize: "24px" }}
-                />
-              </div>
-              <button
-                className="transition-colors"
-                style={{ color: "#9eacc3" }}
-                onMouseEnter={(e) =>
-                  ((e.currentTarget as HTMLElement).style.color = "#ffe792")
-                }
-                onMouseLeave={(e) =>
-                  ((e.currentTarget as HTMLElement).style.color = "#9eacc3")
-                }
-              >
-                <MSIcon name="more_horiz" />
-              </button>
-            </div>
-            <div className="mt-12">
-              <h2
-                className="text-2xl font-bold mb-2"
-                style={{ ...SG, color: "#d8e6ff" }}
-              >
-                Social Media Kit
-              </h2>
-              <p className="text-xs" style={{ color: "#9eacc3" }}>
-                Standardized templates for IG, X, and LinkedIn campaigns.
-              </p>
-            </div>
-            <div
-              className="mt-8 flex items-center gap-4 text-[10px] uppercase"
-              style={{ ...SG, color: "#9eacc3" }}
-            >
-              <span className="flex items-center gap-1">
-                <MSIcon name="article" style={{ fontSize: "14px" }} />
-                28 Files
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* File Cards */}
-        {FILE_CARDS.map((file) => (
-          <FileCard key={file.id} file={file} />
-        ))}
-
-        {/* Collaborators Banner */}
-        <div
-          className="col-span-12 border rounded-2xl p-6 flex items-center justify-between"
-          style={{
-            background: "rgba(17,39,63,0.30)",
-            borderColor: "rgba(255,231,146,0.10)",
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex -space-x-2">
-              {COLLABORATOR_AVATARS.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt={`Collaborator ${i + 1}`}
-                  className="w-8 h-8 rounded-full border-2 object-cover"
-                  style={{ borderColor: "#010f20" }}
-                />
-              ))}
-              <div
-                className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold"
-                style={{
-                  borderColor: "#010f20",
-                  background: "#a2c2fd",
-                  color: "#173c6f",
-                }}
-              >
-                +3
-              </div>
-            </div>
-            <p className="text-sm" style={{ color: "#9eacc3" }}>
-              Project is currently shared with{" "}
-              <span style={{ color: "#ffe792" }}>Global Design Team</span>
-            </p>
-          </div>
-          <button
-            className="text-xs uppercase font-bold tracking-widest hover:underline transition-colors"
-            style={{ ...SG, color: "#ffe792" }}
-          >
-            Manage Access
+          <button onClick={submit} disabled={loading || !name.trim()} style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", color: "#1a0a00", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: loading || !name.trim() ? "default" : "pointer", opacity: loading || !name.trim() ? 0.7 : 1, ...SG, marginTop: 8 }}>
+            {loading ? "Creating..." : "Create Folder"}
           </button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
+/* ─── Upload Modal ──────────────────────────────────────────────────────────── */
+function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]; onClose: () => void; onUploaded: (f: WFile) => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [workspace, setWorkspace] = useState(workspaces[0] || "Default");
+  const [newWs, setNewWs] = useState("");
+  const [source, setSource] = useState<FileSource>("manual");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-export default function WorkspacesPage() {
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    setFile(f); setName(f.name);
+    if (f.type.startsWith("image/") || f.type.startsWith("video/")) setPreview(URL.createObjectURL(f));
+  };
+
+  const submit = async () => {
+    if (!file) return toast.error("Select a file first");
+    setUploading(true);
+    try {
+      const ws = newWs.trim() || workspace;
+      const r = await api.uploadWorkspaceFile(file, { name: name || file.name, workspace: ws, source, description, tags });
+      onUploaded(r.file);
+      toast.success("File uploaded!");
+      onClose();
+    } catch (e: any) { toast.error(e.message || "Upload failed"); }
+    finally { setUploading(false); }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 520, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>Upload File</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
+        </div>
+
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16, maxHeight: "70vh", overflowY: "auto" }}>
+          {/* Drop zone */}
+          <div
+            onClick={() => fileRef.current?.click()}
+            style={{ border: "2px dashed rgba(255,231,146,0.25)", borderRadius: 16, minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", background: "rgba(255,231,146,0.02)", transition: "border-color 0.2s" }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,231,146,0.5)")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,231,146,0.25)")}
+          >
+            {preview ? (
+              file?.type.startsWith("image/") ? <img src={preview} style={{ maxHeight: 140, borderRadius: 10, objectFit: "cover" }} /> :
+              <video src={preview} style={{ maxHeight: 140, borderRadius: 10 }} controls />
+            ) : file ? (
+              <><MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 40, color: "#ffe792", opacity: 0.7 }} /><p style={{ fontSize: 13, color: "#9eacc3" }}>{file.name}</p></>
+            ) : (
+              <><MSIcon name="cloud_upload" style={{ fontSize: 48, color: "#ffe792", opacity: 0.5 }} /><p style={{ fontSize: 14, color: "#9eacc3" }}>Click to select any file type</p><p style={{ fontSize: 11, color: "#68768b" }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p></>
+            )}
+          </div>
+          <input ref={fileRef} type="file" hidden onChange={handleFile} />
+
+          {/* Name */}
+          <div>
+            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>File Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Custom name (optional)" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+          </div>
+
+          {/* Workspace */}
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Workspace</label>
+              <select value={workspace} onChange={(e) => setWorkspace(e.target.value)} style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }}>
+                {workspaces.map(w => <option key={w} value={w}>{w}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Or Create New</label>
+              <input value={newWs} onChange={(e) => setNewWs(e.target.value)} placeholder="New workspace name" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+            </div>
+          </div>
+
+          {/* Source */}
+          <div>
+            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Source</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
+                <button key={s} onClick={() => setSource(s)} style={{ flex: 1, background: source === s ? "rgba(255,231,146,0.15)" : "rgba(255,255,255,0.03)", border: `1px solid ${source === s ? "rgba(255,231,146,0.4)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px", cursor: "pointer", color: source === s ? "#ffe792" : "#9eacc3", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}>
+                  <MSIcon name={SOURCE_ICONS[s]} style={{ fontSize: 16 }} />{s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tags & Description */}
+          <div>
+            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Tags (comma-separated)</label>
+            <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g. design, 2024, brand" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+          </div>
+          <div>
+            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Description (optional)</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What is this file about?" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "Manrope, sans-serif" }} />
+          </div>
+
+          <button onClick={submit} disabled={uploading || !file} style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", color: "#1a0a00", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || !file ? "default" : "pointer", opacity: uploading || !file ? 0.7 : 1, ...SG }}>
+            {uploading ? "Uploading..." : "Upload to Workspace"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── File Card ─────────────────────────────────────────────────────────────── */
+function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFile; onDelete: (id: string) => void; onAccessManage: (f: WFile) => void; onOpenFolder: (name: string) => void; }) {
+  const [hovered, setHovered] = useState(false);
+  const color = FILE_TYPE_COLORS[file.fileType] || FILE_TYPE_COLORS.other;
+  const icon = FILE_TYPE_ICONS[file.fileType] || FILE_TYPE_ICONS.other;
+  const proxyUrl = `${BASE_API}/workspace/file/${file.id}/proxy`;
+  const isPreviewable = file.fileType === "image" || file.fileType === "video";
+
   return (
     <div
-      className="min-h-screen"
-      style={{ background: "#010f20", color: "#d8e6ff" }}
+      onClick={() => { if (file.isFolder) onOpenFolder(file.name); }}
+      className="col-span-12 md:col-span-4 rounded-xl overflow-hidden cursor-pointer border transition-all"
+      style={{ background: "#031427", borderColor: hovered ? "rgba(255,231,146,0.3)" : "transparent", position: "relative" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
+      {/* Preview */}
+      <div className="aspect-video relative overflow-hidden flex items-center justify-center" style={{ background: "#11273f" }}>
+        {file.isFolder ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <MSIcon name="folder_open" style={{ fontSize: 64, color: "#ffe792", opacity: 0.8 }} filled />
+          </div>
+        ) : isPreviewable ? (
+
+          <>
+            {file.fileType === "image" ? (
+              <img src={proxyUrl} alt={file.name} className="w-full h-full object-cover transition-transform duration-500" style={{ transform: hovered ? "scale(1.05)" : "scale(1)" }} />
+            ) : (
+              <video src={proxyUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            )}
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(1,15,32,0.80), transparent)" }} />
+          </>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <MSIcon name={icon} style={{ fontSize: 48, color, opacity: 0.5 }} />
+            <span style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.08em" }}>{file.mimeType?.split("/")[1] || "FILE"}</span>
+          </div>
+        )}
+
+        {/* Source badge */}
+        {!file.isFolder && (
+        <div style={{ position: "absolute", top: 10, left: 10, display: "flex", alignItems: "center", gap: 4, background: "rgba(1,15,32,0.7)", backdropFilter: "blur(4px)", borderRadius: 6, padding: "3px 8px" }}>
+          <MSIcon name={SOURCE_ICONS[file.source]} style={{ fontSize: 12, color }} />
+          <span style={{ fontSize: 9, color, fontWeight: 700, textTransform: "uppercase", ...SG }}>{file.source}</span>
+        </div>
+        )}
+
+        {/* Action buttons on hover */}
+        {hovered && (
+          <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 6 }}>
+            {!file.isFolder && (
+            <a href={proxyUrl} target="_blank" rel="noreferrer" title="Download" onClick={(e) => e.stopPropagation()}
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(162,194,253,0.2)", border: "1px solid rgba(162,194,253,0.3)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+              <MSIcon name="download" style={{ fontSize: 15, color: "#a2c2fd" }} />
+            </a>
+            )}
+            <button onClick={(e) => { e.stopPropagation(); onAccessManage(file); }} title="Manage access"
+
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,231,146,0.2)", border: "1px solid rgba(255,231,146,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MSIcon name="manage_accounts" style={{ fontSize: 15, color: "#ffe792" }} />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(file.id); }} title="Delete"
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MSIcon name="delete" style={{ fontSize: 15, color: "#ef4444" }} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <MSIcon name={icon} style={{ fontSize: 14, color }} />
+          <span className="text-[10px] uppercase" style={{ ...SG, color: "#9eacc3" }}>{file.fileType}</span>
+          {file.isPublic && <span style={{ ...SG, fontSize: 9, color: "#4ade80", background: "rgba(74,222,128,0.1)", borderRadius: 4, padding: "1px 5px", textTransform: "uppercase", fontWeight: 700 }}>PUBLIC</span>}
+        </div>
+        <h3 className="font-bold text-sm truncate" style={{ ...SG, color: "#d8e6ff" }}>{file.name}</h3>
+        {file.description && <p style={{ fontSize: 11, color: "#68768b", marginTop: 4, lineHeight: 1.4 }}>{file.description}</p>}
+        {file.tags.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+            {file.tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: 9, color: "#9eacc3", background: "rgba(255,255,255,0.04)", borderRadius: 4, padding: "2px 6px", ...SG }}>#{t}</span>)}
+          </div>
+        )}
+        <div className="mt-4 flex justify-between items-center">
+          <span className="text-[10px]" style={{ color: "rgba(158,172,195,0.6)", ...SG }}>{file.isFolder ? "--" : fmtBytes(file.fileSize || 0)}</span>
+          <span className="text-[10px]" style={{ color: "rgba(158,172,195,0.6)", ...SG }}>{new Date(file.createdAt).toLocaleDateString()}</span>
+        </div>
+
+        {file.sharedWith.length > 0 && (
+          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+            <MSIcon name="group" style={{ fontSize: 13, color: "#9eacc3" }} />
+            <span style={{ fontSize: 10, color: "#9eacc3" }}>Shared with {file.sharedWith.length} {file.sharedWith.length === 1 ? "person" : "people"}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Storage bar ───────────────────────────────────────────────────────────── */
+function StorageBar({ files }: { files: WFile[] }) {
+  const totalBytes = files.reduce((acc, f) => acc + f.fileSize, 0);
+  const limitBytes = 20 * 1024 * 1024 * 1024; // 20 GB
+  const pct = Math.min(100, (totalBytes / limitBytes) * 100);
+  return (
+    <div className="mt-auto p-4 rounded-xl" style={{ background: "rgba(17,39,63,0.40)", backdropFilter: "blur(24px)" }}>
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-[10px] uppercase" style={{ ...SG, color: "#9eacc3" }}>Storage</span>
+        <span className="text-[10px] uppercase" style={{ ...SG, color: pct > 80 ? "#f87171" : "#ffe792" }}>{pct.toFixed(1)}%</span>
+      </div>
+      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "#11273f" }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct > 80 ? "#f87171" : "#ffe792" }} />
+      </div>
+      <p className="text-[10px] mt-2" style={{ color: "rgba(158,172,195,0.60)" }}>{fmtBytes(totalBytes)} of 20 GB used • {files.length} files</p>
+    </div>
+  );
+}
+
+/* ─── Root ──────────────────────────────────────────────────────────────────── */
+export default function WorkspacesPage() {
+  const [files, setFiles] = useState<WFile[]>([]);
+  const [workspaces, setWorkspaces] = useState<string[]>(["Default"]);
+  const [activeWs, setActiveWs] = useState<string | null>(null);
+  const [activeSource, setActiveSource] = useState<FileSource | null>(null);
+  const [activeType, setActiveType] = useState<FileType | null>(null);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [accessFile, setAccessFile] = useState<WFile | null>(null);
+
+  const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: any = {};
+      if (activeWs) params.workspace = activeWs;
+      if (activeSource) params.source = activeSource;
+      if (activeType) params.type = activeType;
+      if (search) params.search = search;
+      const r = await api.listWorkspaceFiles(params);
+      setFiles(r.files || []);
+      const additionalWorkspaces = (r.files || []).filter((f: any) => f.isFolder).map((f: any) => f.name);
+      if (r.workspaces?.length || additionalWorkspaces.length) {
+        setWorkspaces([...new Set(["Default", ...r.workspaces, ...additionalWorkspaces])]);
+      }
+    } catch (e: any) {
+
+      if (e.message?.includes("401") || e.message?.includes("Unauthorized")) {
+        // Not logged in — show empty state gracefully
+      } else {
+        toast.error("Failed to load workspace files");
+      }
+    } finally { setLoading(false); }
+  }, [activeWs, activeSource, activeType, search]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = async (fileId: string) => {
+    if (!confirm("Delete this file permanently?")) return;
+    try {
+      await api.deleteWorkspaceFile(fileId);
+      setFiles(prev => prev.filter(f => f.id !== fileId));
+      toast.success("File deleted");
+    } catch { toast.error("Failed to delete"); }
+  };
+
+  const handleUploaded = (f: WFile) => {
+    setFiles(prev => [f, ...prev]);
+    if (!workspaces.includes(f.workspace)) setWorkspaces(prev => [...prev, f.workspace]);
+  };
+
+  const handleFileUpdated = (updated: WFile) => {
+    setFiles(prev => prev.map(f => f.id === updated.id ? updated : f));
+    setAccessFile(updated);
+  };
+
+  const sorted = [...files].sort((a, b) => {
+    if (sortMode === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (sortMode === "largest") return b.fileSize - a.fileSize;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  const QUICK_FILTERS: { id: FileType; icon: string; label: string }[] = [
+    { id: "image", icon: "image", label: "Images" },
+    { id: "video", icon: "movie", label: "Videos" },
+    { id: "audio", icon: "audio_file", label: "Audio" },
+    { id: "pdf", icon: "picture_as_pdf", label: "PDFs" },
+    { id: "doc", icon: "description", label: "Docs" },
+  ];
+
+  return (
+    <div className="min-h-screen" style={{ background: "#010f20", color: "#d8e6ff" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
         body { font-family: 'Manrope', sans-serif; }
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #010f20; }
         ::-webkit-scrollbar-thumb { background: #3b495c; border-radius: 10px; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
 
-      <Sidebar />
-      <TopBar />
+      {showUpload && <UploadModal workspaces={workspaces} onClose={() => setShowUpload(false)} onUploaded={handleUploaded} />}
+      {showFolderModal && <FolderModal activeWs={activeWs} onClose={() => setShowFolderModal(false)} onCreated={handleUploaded} />}
+      {accessFile && <AccessModal file={accessFile} onClose={() => setAccessFile(null)} onUpdated={handleFileUpdated} />}
 
-      <main
-        className="flex overflow-hidden"
-        style={{ marginLeft: "85px", paddingTop: "80px", height: "100vh" }}
-      >
-        <FileSidebar />
-        <WorkspaceGrid />
+      <Sidebar />
+
+
+      {/* Top Bar */}
+      <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center"
+        style={{ left: "85px", background: "rgba(1,15,32,0.40)", backdropFilter: "blur(12px)" }}>
+        <div className="flex items-center gap-6 flex-1">
+          <div className="relative w-full max-w-md">
+            <MSIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#9eacc3", fontSize: "18px" }} />
+            <Input
+              placeholder="Search files, folders, tags..."
+              className="w-full border-none rounded-xl py-2.5 pl-12 pr-4 text-sm focus-visible:ring-2 focus-visible:ring-yellow-300/20"
+              style={{ background: "#11273f", color: "#d8e6ff" }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={() => setShowFolderModal(true)}
+            className="flex items-center gap-2 rounded-xl font-bold transition-all hover:scale-[1.02]"
+            style={{ background: "rgba(162,194,253,0.1)", color: "#a2c2fd", border: "1px solid rgba(162,194,253,0.2)", padding: "10px 16px", ...SG }}
+          >
+            <MSIcon name="create_new_folder" className="text-sm" />
+            CREATE FOLDER
+          </Button>
+          <Button
+            onClick={() => setShowUpload(true)}
+            className="flex items-center gap-2 rounded-xl font-bold border-0 transition-all hover:scale-[1.02]"
+            style={{ background: "#ffe792", color: "#655400", padding: "10px 20px", ...SG }}
+          >
+            <MSIcon name="add_circle" className="text-sm" />
+            UPLOAD FILE
+          </Button>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,231,146,0.10)" }}>
+
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#ffe792" }} />
+            <span className="text-[10px] uppercase font-bold tracking-tighter" style={{ ...SG, color: "#ffe792" }}>Live Sync</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex overflow-hidden" style={{ marginLeft: "85px", paddingTop: "80px", height: "100vh" }}>
+        {/* Left Sidebar */}
+        <aside className="w-72 flex flex-col gap-8 overflow-y-auto p-8 shrink-0" style={{ background: "#031427" }}>
+          {/* All Files button */}
+          <button
+            onClick={() => { setActiveWs(null); setActiveSource(null); setActiveType(null); }}
+            className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 border-0 transition-all"
+            style={{ ...SG, background: !activeWs && !activeSource && !activeType ? "#ffe792" : "rgba(17,39,63,0.5)", color: !activeWs && !activeSource && !activeType ? "#655400" : "#9eacc3", cursor: "pointer" }}
+          >
+            <MSIcon name="folder_open" className="text-sm" />ALL FILES
+          </button>
+
+          {/* Workspaces */}
+          <nav className="space-y-6">
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>Workspaces</h3>
+              <ul className="space-y-1">
+                {workspaces.map(ws => (
+                  <li key={ws}>
+                    <a href="#" onClick={(e) => { e.preventDefault(); setActiveWs(ws === activeWs ? null : ws); }}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                      style={activeWs === ws ? { background: "#11273f", color: "#ffe792", fontWeight: 500 } : { color: "#9eacc3" }}>
+                      <MSIcon name={activeWs === ws ? "folder_open" : "folder"} className="text-lg" />
+                      {ws}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Quick Filters - File types */}
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>File Types</h3>
+              <ul className="space-y-1">
+                {QUICK_FILTERS.map(f => (
+                  <li key={f.id}>
+                    <a href="#" onClick={(e) => { e.preventDefault(); setActiveType(activeType === f.id ? null : f.id); }}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                      style={activeType === f.id ? { background: "rgba(17,39,63,0.30)", color: FILE_TYPE_COLORS[f.id] } : { color: "#9eacc3" }}>
+                      <MSIcon name={f.icon} className="text-lg" style={{ color: activeType === f.id ? FILE_TYPE_COLORS[f.id] : undefined }} />
+                      {f.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Source Filters */}
+            <div>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>Source</h3>
+              <ul className="space-y-1">
+                {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
+                  <li key={s}>
+                    <a href="#" onClick={(e) => { e.preventDefault(); setActiveSource(activeSource === s ? null : s); }}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                      style={activeSource === s ? { background: "rgba(17,39,63,0.30)", color: "#ffe792" } : { color: "#9eacc3" }}>
+                      <MSIcon name={SOURCE_ICONS[s]} className="text-lg" />
+                      From {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+
+          <StorageBar files={files} />
+        </aside>
+
+        {/* Main grid */}
+        <section className="flex-1 overflow-y-auto p-10" style={{ background: "#010f20" }}>
+          {/* Page Header */}
+          <header className="flex justify-between items-end mb-10">
+            <div>
+              <nav className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2" style={{ ...SG, color: "#9eacc3" }}>
+                <span>Workspaces</span>
+                <MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} />
+                <span style={{ color: "#ffe792" }}>{activeWs || "All Files"}</span>
+                {activeSource && <><MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} /><span style={{ color: "#a2c2fd" }}>From {activeSource}</span></>}
+              </nav>
+              <h1 className="text-4xl font-bold tracking-tight" style={{ ...SG, color: "#d8e6ff" }}>
+                {activeWs || "All Files"}
+              </h1>
+              <p style={{ ...SG, fontSize: 12, color: "#68768b", marginTop: 4 }}>{sorted.length} {sorted.length === 1 ? "file" : "files"} {loading ? "— loading..." : ""}</p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Sort */}
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
+                style={{ background: "#0c2037", border: "1px solid rgba(59,73,92,0.1)", color: "#d8e6ff", borderRadius: 10, padding: "8px 12px", fontSize: 12, cursor: "pointer", ...SG, outline: "none" }}
+              >
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="largest">Largest First</option>
+              </select>
+              <button onClick={load} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,73,92,0.1)", color: "#9eacc3", borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>
+                <MSIcon name="refresh" style={{ fontSize: 18 }} />
+              </button>
+            </div>
+          </header>
+
+          {/* Empty state */}
+          {!loading && sorted.length === 0 && (
+            <div style={{ textAlign: "center", padding: "80px 20px", color: "#9eacc3" }}>
+              <MSIcon name="folder_open" style={{ fontSize: 64, opacity: 0.2, display: "block", margin: "0 auto 20px" }} />
+              <p style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#d8e6ff", marginBottom: 8 }}>No files here yet</p>
+              <p style={{ fontSize: 13 }}>Upload your first file or create a folder</p>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24 }}>
+                <button onClick={() => setShowFolderModal(true)} style={{ background: "rgba(162,194,253,0.1)", color: "#a2c2fd", border: "1px solid rgba(162,194,253,0.2)", borderRadius: 12, padding: "12px 24px", fontWeight: 700, cursor: "pointer", ...SG }}>
+                  Create Folder
+                </button>
+                <button onClick={() => setShowUpload(true)} style={{ background: "#ffe792", color: "#1a0a00", border: "none", borderRadius: 12, padding: "12px 24px", fontWeight: 700, cursor: "pointer", ...SG }}>
+                  Upload a File
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* File Cards Grid */}
+          {sorted.length > 0 && (
+            <div className="grid grid-cols-12 gap-8" style={{ animation: "fadeUp 0.2s ease" }}>
+              {sorted.map(f => (
+                <FileCard key={f.id} file={f} onDelete={handleDelete} onAccessManage={(file) => setAccessFile(file)} onOpenFolder={(name) => setActiveWs(name)} />
+              ))}
+            </div>
+          )}
+
+          {/* Loading skeleton */}
+          {loading && (
+            <div className="grid grid-cols-12 gap-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="col-span-12 md:col-span-4 rounded-xl overflow-hidden" style={{ background: "#031427", height: 280, animation: "pulse 1.5s infinite" }} />
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
