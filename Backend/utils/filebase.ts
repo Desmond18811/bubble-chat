@@ -76,12 +76,15 @@ export const uploadToFilebase = async (
 /**
  * Generate a short-lived (1 hour) presigned URL for accessing a private Filebase object.
  * Accepts either a raw storage KEY or a full Filebase URL (both styles).
+ * If downloadName is provided, explicitly triggers browser "Save As" mechanics.
  */
-export const getSignedMediaUrl = async (keyOrUrl: string): Promise<string> => {
+export const getSignedMediaUrl = async (keyOrUrl: string, downloadName?: string): Promise<string> => {
   const key = keyOrUrl.startsWith('http') ? extractKeyFromUrl(keyOrUrl) : keyOrUrl;
   const command = new GetObjectCommand({
     Bucket: BUCKET,
     Key: key,
+    ...(downloadName && { ResponseContentDisposition: `attachment; filename="${downloadName}"` })
   });
   return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 };
+

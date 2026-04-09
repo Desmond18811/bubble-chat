@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import FeedPage from "./pages/FeedPage";
 import MessagesPage from "./pages/MessagesPage";
 import WorkspacePage from "./pages/WorkspacePage";
+import SharedWorkspacePage from "./pages/SharedWorkspacePage";
 import MeetPage from "./pages/MeetPage";
 import CommunityPage from "./pages/CommunityPage";
 import SavedPage from "./pages/SavedPage";
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
           <Route path="/workspace" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
+          <Route path="/workspace/shared/:folderId" element={<SharedWorkspacePage />} />
           <Route path="/meet" element={<ProtectedRoute><MeetPage /></ProtectedRoute>} />
           <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
           <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />

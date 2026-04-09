@@ -449,11 +449,12 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFil
         {hovered && (
           <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 6 }}>
             {!file.isFolder && (
-            <a href={proxyUrl} target="_blank" rel="noreferrer" title="Download" onClick={(e) => e.stopPropagation()}
+            <a href={`${proxyUrl}?download=true`} target="_blank" rel="noreferrer" title="Download" onClick={(e) => e.stopPropagation()}
               style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(162,194,253,0.2)", border: "1px solid rgba(162,194,253,0.3)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
               <MSIcon name="download" style={{ fontSize: 15, color: "#a2c2fd" }} />
             </a>
             )}
+
             <button onClick={(e) => { e.stopPropagation(); onAccessManage(file); }} title="Manage access"
 
               style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,231,146,0.2)", border: "1px solid rgba(255,231,146,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -520,6 +521,7 @@ function StorageBar({ files }: { files: WFile[] }) {
 export default function WorkspacesPage() {
   const [files, setFiles] = useState<WFile[]>([]);
   const [workspaces, setWorkspaces] = useState<string[]>(["Default"]);
+  const [folderDocs, setFolderDocs] = useState<any[]>([]); // Added folderDocs state
   const [activeWs, setActiveWs] = useState<string | null>(null);
   const [activeSource, setActiveSource] = useState<FileSource | null>(null);
   const [activeType, setActiveType] = useState<FileType | null>(null);
@@ -528,6 +530,9 @@ export default function WorkspacesPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [accessFile, setAccessFile] = useState<WFile | null>(null);
+
+  // Context Menu Sidebar logic
+  const [sidebarMenu, setSidebarMenu] = useState<{ x: number, y: number, folderId: string } | null>(null);
 
   const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
 
@@ -541,9 +546,11 @@ export default function WorkspacesPage() {
       if (search) params.search = search;
       const r = await api.listWorkspaceFiles(params);
       setFiles(r.files || []);
+      setFolderDocs(r.folderDocs || []);
       const additionalWorkspaces = (r.files || []).filter((f: any) => f.isFolder).map((f: any) => f.name);
-      if (r.workspaces?.length || additionalWorkspaces.length) {
-        setWorkspaces([...new Set(["Default", ...r.workspaces, ...additionalWorkspaces])]);
+      if (r.workspaces?.length || additionalWorkspaces.length || r.folderDocs?.length) {
+        const docNames = (r.folderDocs || []).map((fd: any) => fd.name);
+        setWorkspaces([...new Set(["Default", ...r.workspaces, ...additionalWorkspaces, ...docNames])]);
       }
     } catch (e: any) {
 
@@ -568,6 +575,9 @@ export default function WorkspacesPage() {
 
   const handleUploaded = (f: WFile) => {
     setFiles(prev => [f, ...prev]);
+    if (f.isFolder) {
+      setFolderDocs(prev => [...prev, f]);
+    }
     if (!workspaces.includes(f.workspace)) setWorkspaces(prev => [...prev, f.workspace]);
   };
 
@@ -607,7 +617,39 @@ export default function WorkspacesPage() {
       {showFolderModal && <FolderModal activeWs={activeWs} onClose={() => setShowFolderModal(false)} onCreated={handleUploaded} />}
       {accessFile && <AccessModal file={accessFile} onClose={() => setAccessFile(null)} onUpdated={handleFileUpdated} />}
 
+      {/* Sidebar Folder Context Menu */}
+      {sidebarMenu && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setSidebarMenu(null)} onContextMenu={(e) => { e.preventDefault(); setSidebarMenu(null); }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: sidebarMenu.y, left: sidebarMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 180, display: "flex", flexDirection: "column", gap: 4, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+            <button
+              onClick={() => {
+                const doc = folderDocs.find(f => f.id === sidebarMenu.folderId);
+                if (doc) setAccessFile({ ...doc, isFolder: true, sharedWith: [], blockedUsers: [] } as any); // Partial fill placeholder for fetching true details or passing ID
+                setSidebarMenu(null);
+              }}
+              style={{ background: "transparent", color: "#d8e6ff", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="share" style={{ fontSize: 16 }} /> Share Link
+            </button>
+            <button
+              onClick={() => {
+                handleDelete(sidebarMenu.folderId);
+                setSidebarMenu(null);
+              }}
+              style={{ background: "transparent", color: "#ef4444", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="delete" style={{ fontSize: 16 }} /> Delete Folder
+            </button>
+          </div>
+        </div>
+      )}
+
       <Sidebar />
+
 
 
       {/* Top Bar */}
@@ -667,17 +709,28 @@ export default function WorkspacesPage() {
             <div>
               <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>Workspaces</h3>
               <ul className="space-y-1">
-                {workspaces.map(ws => (
-                  <li key={ws}>
-                    <a href="#" onClick={(e) => { e.preventDefault(); setActiveWs(ws === activeWs ? null : ws); }}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-                      style={activeWs === ws ? { background: "#11273f", color: "#ffe792", fontWeight: 500 } : { color: "#9eacc3" }}>
-                      <MSIcon name={activeWs === ws ? "folder_open" : "folder"} className="text-lg" />
-                      {ws}
-                    </a>
-                  </li>
-                ))}
+                {workspaces.map(ws => {
+                  const doc = folderDocs.find(f => f.name === ws);
+                  return (
+                    <li key={ws}>
+                      <a href="#"
+                        onClick={(e) => { e.preventDefault(); setActiveWs(ws === activeWs ? null : ws); }}
+                        onContextMenu={(e) => {
+                          if (doc) {
+                            e.preventDefault();
+                            setSidebarMenu({ x: e.clientX, y: e.clientY, folderId: doc.id });
+                          }
+                        }}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                        style={activeWs === ws ? { background: "#11273f", color: "#ffe792", fontWeight: 500 } : { color: "#9eacc3" }}>
+                        <MSIcon name={activeWs === ws ? "folder_open" : "folder"} className="text-lg" />
+                        {ws}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
+
             </div>
 
             {/* Quick Filters - File types */}

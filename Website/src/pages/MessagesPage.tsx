@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import ReactEmojiPicker, { Theme } from "emoji-picker-react";
 import { generateKeyPair, exportPrivateKey, exportPublicKey } from "@/lib/crypto";
+import { useNavigate } from "react-router-dom";
 
 /* ─── Module-level secure media URL proxy helper ──────────────────────────── */
 const _BASE_API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
@@ -1181,6 +1182,7 @@ export default function BubbleMessages() {
   const meRaw = localStorage.getItem("user");
   const me = meRaw ? JSON.parse(meRaw) : null;
   const myId = me?.id || me?._id || "";
+  const navigate = useNavigate();
 
   const [chats, setChats] = useState<any[]>([]);
   const [activeChat, setActiveChat] = useState<any>(null);
@@ -1195,6 +1197,7 @@ export default function BubbleMessages() {
   const [showStory, setShowStory] = useState(false);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showSticker, setShowSticker] = useState(false);
   const [hoveredMsg, setHoveredMsg] = useState<string | null>(null);
   const [forwardingMsg, setForwardingMsg] = useState<any>(null);
   const [viewingStory, setViewingStory] = useState<{ stories: any[]; index: number } | null>(null);
@@ -1669,8 +1672,36 @@ export default function BubbleMessages() {
       setMessages([]);
       toast.success("Transmission history cleared locally");
     } catch {
-      toast.error("Failed to clear history");
     }
+  };
+
+  const renderMessageText = (text: string) => {
+    const wsRegex = /http[s]?:\/\/[^\s]+\/workspace\/shared\/([a-zA-Z0-9_\-]+)/g;
+    if (!wsRegex.test(text)) return text;
+
+    wsRegex.lastIndex = 0;
+    const parts = [];
+    let lastIdx = 0;
+    let match;
+    while ((match = wsRegex.exec(text)) !== null) {
+      if (match.index > lastIdx) parts.push(text.slice(lastIdx, match.index));
+      const folderId = match[1];
+
+      parts.push(
+        <div key={match.index} onClick={() => navigate(`/workspace/shared/${folderId}`)} style={{ marginTop: 8, marginBottom: 8, background: "rgba(11,36,64,0.6)", border: "1px solid rgba(162,194,253,0.3)", borderRadius: 12, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "background 0.2s" }} onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.1)"} onMouseLeave={(e) => e.currentTarget.style.background = "rgba(11,36,64,0.6)"}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(162,194,253,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="folder_shared" size={20} style={{ color: "#a2c2fd" }} />
+          </div>
+          <div>
+            <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#d8e6ff" }}>Shared Workspace</h4>
+            <p style={{ margin: 0, fontSize: 11, color: "#9eacc3", marginTop: 2 }}>Click to open public folder</p>
+          </div>
+        </div>
+      );
+      lastIdx = match.index + match[0].length;
+    }
+    if (lastIdx < text.length) parts.push(text.slice(lastIdx));
+    return parts;
   };
 
   const handlePinChat = async (chatId: string) => {
@@ -2227,7 +2258,7 @@ export default function BubbleMessages() {
                       </h2>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <button 
+                      <button
                         onClick={() => {
                           const allIds = messages.map((m: any) => m._id || m.id).filter(Boolean);
                           setSelectedMessages(new Set(allIds));
@@ -2236,7 +2267,7 @@ export default function BubbleMessages() {
                       >
                         Select All
                       </button>
-                      <button 
+                      <button
                         title="Forward"
                         onClick={() => {
                           if (selectedMessages.size > 0) {
@@ -2249,7 +2280,7 @@ export default function BubbleMessages() {
                       >
                         <Icon name="forward" size={20} />
                       </button>
-                      <button 
+                      <button
                         title="Delete"
                         onClick={async () => {
                           if (selectedMessages.size === 0) return;
@@ -2257,7 +2288,7 @@ export default function BubbleMessages() {
                           if (!confirmDelete) return;
                           try {
                             await Promise.all(
-                                Array.from(selectedMessages).map(id => api.deleteMessageForMe(id))
+                              Array.from(selectedMessages).map(id => api.deleteMessageForMe(id))
                             );
                             toast.success(`Deleted ${selectedMessages.size} messages`);
                             setMessages((prev: any[]) => prev.filter((m: any) => !selectedMessages.has(m._id || m.id)));
@@ -2428,88 +2459,88 @@ export default function BubbleMessages() {
                                     }}
                                   >
                                     {/* React */}
-                                  <button
-                                    className="msg-action-btn"
-                                    title="React"
-                                    onClick={() => setReactionPickerMsgId(msgId)}
-                                  >
-                                    <Icon name="add_reaction" size={18} />
-                                  </button>
+                                    <button
+                                      className="msg-action-btn"
+                                      title="React"
+                                      onClick={() => setReactionPickerMsgId(msgId)}
+                                    >
+                                      <Icon name="add_reaction" size={18} />
+                                    </button>
 
-                                  {/* Reply */}
-                                  <button
-                                    className="msg-action-btn"
-                                    title="Reply"
-                                    onClick={() => setReplyingToMsg(msg)}
-                                  >
-                                    <Icon name="reply" size={18} />
-                                  </button>
+                                    {/* Reply */}
+                                    <button
+                                      className="msg-action-btn"
+                                      title="Reply"
+                                      onClick={() => setReplyingToMsg(msg)}
+                                    >
+                                      <Icon name="reply" size={18} />
+                                    </button>
 
-                                  {/* Forward */}
-                                  <button
-                                    className="msg-action-btn"
-                                    title="Forward"
-                                    onClick={() => setForwardingMsg(msg)}
-                                  >
-                                    <Icon name="forward" size={18} />
-                                  </button>
+                                    {/* Forward */}
+                                    <button
+                                      className="msg-action-btn"
+                                      title="Forward"
+                                      onClick={() => setForwardingMsg(msg)}
+                                    >
+                                      <Icon name="forward" size={18} />
+                                    </button>
 
-                                  {/* Copy */}
-                                  <button
-                                    className="msg-action-btn"
-                                    title="Copy Text"
-                                    onClick={() => {
-                                      if (msg.content) {
-                                        navigator.clipboard.writeText(msg.content);
-                                        toast.success("Text copied");
-                                      } else {
-                                        toast.error("No text to copy");
-                                      }
-                                      setActionMenuMsgId(null);
-                                    }}
-                                  >
-                                    <Icon name="content_copy" size={18} />
-                                  </button>
+                                    {/* Copy */}
+                                    <button
+                                      className="msg-action-btn"
+                                      title="Copy Text"
+                                      onClick={() => {
+                                        if (msg.content) {
+                                          navigator.clipboard.writeText(msg.content);
+                                          toast.success("Text copied");
+                                        } else {
+                                          toast.error("No text to copy");
+                                        }
+                                        setActionMenuMsgId(null);
+                                      }}
+                                    >
+                                      <Icon name="content_copy" size={18} />
+                                    </button>
 
-                                  {/* Pin */}
+                                    {/* Pin */}
 
-                                  <button
-                                    className={`msg-action-btn${isPinned ? " active" : ""}`}
-                                    title={isPinned ? "Unpin" : "Pin"}
-                                    onClick={() => handlePinMessage(msgId)}
-                                  >
-                                    <Icon name="push_pin" size={18} />
-                                  </button>
+                                    <button
+                                      className={`msg-action-btn${isPinned ? " active" : ""}`}
+                                      title={isPinned ? "Unpin" : "Pin"}
+                                      onClick={() => handlePinMessage(msgId)}
+                                    >
+                                      <Icon name="push_pin" size={18} />
+                                    </button>
 
-                                  {/* Select */}
-                                  <button
-                                    className={`msg-action-btn${isSelected ? " active" : ""}`}
-                                    title="Select"
-                                    onClick={() => toggleMessageSelection(msgId)}
-                                  >
-                                    <Icon name={isSelected ? "check_circle" : "check_box_outline_blank"} size={18} />
-                                  </button>
+                                    {/* Select */}
+                                    <button
+                                      className={`msg-action-btn${isSelected ? " active" : ""}`}
+                                      title="Select"
+                                      onClick={() => toggleMessageSelection(msgId)}
+                                    >
+                                      <Icon name={isSelected ? "check_circle" : "check_box_outline_blank"} size={18} />
+                                    </button>
 
-                                  {/* Info */}
-                                  <button
-                                    className="msg-action-btn"
-                                    title="Message info"
-                                    onClick={() => handleMessageInfo(msg)}
-                                  >
-                                    <Icon name="info" size={18} />
-                                  </button>
+                                    {/* Info */}
+                                    <button
+                                      className="msg-action-btn"
+                                      title="Message info"
+                                      onClick={() => handleMessageInfo(msg)}
+                                    >
+                                      <Icon name="info" size={18} />
+                                    </button>
 
-                                  <div className="msg-action-divider" />
+                                    <div className="msg-action-divider" />
 
-                                  {/* Delete */}
-                                  <button
-                                    className="msg-action-btn danger"
-                                    title="Delete"
-                                    onClick={() => setDeleteModal({ msgId, isMine, sentAt: msg.sentAt || msg.createdAt })}
-                                  >
-                                    <Icon name="delete" size={18} />
-                                  </button>
-                                </div>
+                                    {/* Delete */}
+                                    <button
+                                      className="msg-action-btn danger"
+                                      title="Delete"
+                                      onClick={() => setDeleteModal({ msgId, isMine, sentAt: msg.sentAt || msg.createdAt })}
+                                    >
+                                      <Icon name="delete" size={18} />
+                                    </button>
+                                  </div>
                                 </>
                               )}
 
@@ -2589,9 +2620,9 @@ export default function BubbleMessages() {
 
                               {/* Text */}
                               {msg.content && (
-                                <p style={{ fontSize: 14, color: isMine ? "#2a1e00" : "#d8e6ff", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                                  {msg.content}
-                                </p>
+                                <div style={{ fontSize: 14, color: isMine ? "#2a1e00" : "#d8e6ff", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                  {renderMessageText(msg.content)}
+                                </div>
                               )}
 
                               {/* Timestamp + receipts */}
@@ -2673,6 +2704,50 @@ export default function BubbleMessages() {
                           onSelect={(emoji) => setInputText((prev) => prev + emoji)}
                           onClose={() => setShowEmoji(false)}
                         />
+                      )}
+                    </div>
+
+                    {/* Sticker */}
+                    <div style={{ position: "relative" }}>
+                      <button
+                        onClick={() => setShowSticker((v) => !v)}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: showSticker ? "#ffe792" : "#9eacc3", padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s" }}
+                        title="Sticker"
+                      >
+                        <Icon name="sticky_note_2" size={20} />
+                      </button>
+                      {showSticker && (
+                        <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12 }}>
+                          <StickerPicker
+                            onSelect={async (url) => {
+                              setShowSticker(false);
+                              setInputText("");
+                              const conv = activeChat;
+                              if (!conv) return;
+                              const tempObj = {
+                                _id: Date.now().toString(),
+                                id: Date.now().toString(),
+                                message_type: 'image',
+                                mediaType: 'image',
+                                mediaUrl: url,
+                                media_url: url,
+                                content: "",
+                                fromUserId: myId,
+                                sender: { id: myId },
+                                createdAt: new Date().toISOString(),
+                                sentAt: new Date().toISOString(),
+                              };
+                              setMessages(prev => [...prev, tempObj]);
+                              try {
+                                await api.sendTextMessage(conv.id || conv._id, "", {
+                                  message_type: "image",
+                                  mediaUrl: url
+                                });
+                              } catch (err) { toast.error("Failed to send sticker"); }
+                            }}
+                            onClose={() => setShowSticker(false)}
+                          />
+                        </div>
                       )}
                     </div>
 

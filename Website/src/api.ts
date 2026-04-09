@@ -470,6 +470,14 @@ export const listWorkspaceFiles = async (params?: {
   return handleResponse(res);
 };
 
+/** Get public shared folder */
+export const getSharedWorkspaceFolder = async (folderId: string) => {
+  const res = await fetch(`${BASE_URL}/workspace/shared/${folderId}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
 /** Delete a workspace file (owner only) */
 export const deleteWorkspaceFile = async (fileId: string) => {
   const res = await fetch(`${BASE_URL}/workspace/file/${fileId}`, {

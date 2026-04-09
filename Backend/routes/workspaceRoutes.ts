@@ -4,6 +4,7 @@ import {
   uploadWorkspaceFile,
   createWorkspaceFolder,
   listWorkspaceFiles,
+  getSharedWorkspaceFolder,
 
   getWorkspaceFile,
   deleteWorkspaceFile,
@@ -101,6 +102,25 @@ router.get('/file', listWorkspaceFiles);
 
 /**
  * @swagger
+ * /api/v1/workspace/shared/{folderId}:
+ *   get:
+ *     tags: [Workspace]
+ *     summary: Retrieve a publicly shared folder and its contents
+ *     parameters:
+ *       - in: path
+ *         name: folderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Folder contents
+ */
+router.get('/shared/:folderId', getSharedWorkspaceFolder);
+
+/**
+ * @swagger
+
  * /api/v1/workspace/file/{fileId}:
  *   get:
  *     tags: [Workspace]
