@@ -9,6 +9,7 @@ const NAV_ICONS = [
   { icon: "video_chat", label: "Meet", path: "/meet" },
   { icon: "group", label: "Community", path: "/community" },
   { icon: "rss_feed", label: "Feed", path: "/feed" },
+  { icon: "smart_toy", label: "Aida AI", path: "/ai" },
   { icon: "bookmark", label: "Saved", path: "/saved" },
   { icon: "calendar_today", label: "Calendar", path: "/calendar" },
   { icon: "payments", label: "Payments", path: "/payments" },

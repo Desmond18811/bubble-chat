@@ -530,3 +530,186 @@ export const updateWorkspaceFileMeta = async (
   });
   return handleResponse(res);
 };
+
+// ─── Meet Logs ────────────────────────────────────────────────────────────────
+
+export const fetchCallLogs = async () => {
+  const res = await fetch(`${BASE_URL}/meet/logs`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const saveCallLog = async (data: {
+  roomId: string;
+  type: 'voice' | 'video';
+  label?: string;
+  duration?: number;
+  missed?: boolean;
+}) => {
+  const res = await fetch(`${BASE_URL}/meet/logs`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const clearCallLogs = async () => {
+  const res = await fetch(`${BASE_URL}/meet/logs`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Feed / Blog ──────────────────────────────────────────────────────────────
+
+export const fetchFeedPosts = async (page = 1, limit = 20) => {
+  const res = await fetch(`${BASE_URL}/feed?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const createFeedPost = async (content: string, file?: File) => {
+  const token = localStorage.getItem('access_token');
+  const formData = new FormData();
+  formData.append('content', content);
+  if (file) formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}/feed`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  return handleResponse(res);
+};
+
+export const likeFeedPost = async (postId: string) => {
+  const res = await fetch(`${BASE_URL}/feed/${postId}/like`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const repostFeedPost = async (postId: string) => {
+  const res = await fetch(`${BASE_URL}/feed/${postId}/repost`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const addFeedComment = async (postId: string, text: string) => {
+  const res = await fetch(`${BASE_URL}/feed/${postId}/comment`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ text }),
+  });
+  return handleResponse(res);
+};
+
+// ─── Community ────────────────────────────────────────────────────────────────
+
+export const fetchCommunityCategories = async () => {
+  const res = await fetch(`${BASE_URL}/community/categories`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchTrendingNetworks = async () => {
+  const res = await fetch(`${BASE_URL}/community/trending`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchNetworkOfTheMonth = async () => {
+  const res = await fetch(`${BASE_URL}/community/month`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchNetworks = async (params?: { search?: string; category?: string; page?: number; limit?: number }) => {
+  const q = new URLSearchParams();
+  if (params?.search) q.set('search', params.search);
+  if (params?.category) q.set('category', params.category);
+  if (params?.page) q.set('page', params.page.toString());
+  if (params?.limit) q.set('limit', params.limit.toString());
+
+  const res = await fetch(`${BASE_URL}/community/networks?${q.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchNetworkById = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const createNetwork = async (data: any) => {
+  const res = await fetch(`${BASE_URL}/community/networks`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const joinNetwork = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${id}/join`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const leaveNetwork = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${id}/leave`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchNetworkPosts = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${id}/posts`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const createNetworkPost = async (id: string, data: any) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${id}/posts`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const reactToNetworkPost = async (networkId: string, postId: string, emoji: string) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${networkId}/posts/${postId}/react`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ emoji }),
+  });
+  return handleResponse(res);
+};
+
+export const forwardNetworkPost = async (networkId: string, postId: string, targetNetworkId?: string) => {
+  const res = await fetch(`${BASE_URL}/community/networks/${networkId}/posts/${postId}/forward`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ targetNetworkId }),
+  });
+  return handleResponse(res);
+};
+
