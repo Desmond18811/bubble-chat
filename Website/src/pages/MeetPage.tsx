@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, Routes, Route } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
-import { fetchCallLogs, saveCallLog, clearCallLogs } from "@/api";
+import { fetchCallLogs, saveCallLog, clearCallLogs, uploadWorkspaceFile } from "@/api";
 import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
@@ -389,8 +389,8 @@ function MeetLobby() {
           <div className="w-9 h-9 rounded-xl bg-[var(--th-accent)]/10 flex items-center justify-center">
             <MSIcon icon="video_chat" filled className="text-[var(--th-accent)] text-xl" />
           </div>
-          <h1 className="text-2xl font-bold text-[var(--th-text)]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Meet
+          <h1 className="text-2xl font-bold tracking-widest text-[var(--th-accent)] uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            MEETS
           </h1>
           <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-[var(--th-accent)]/10 text-[var(--th-accent)] border border-[var(--th-accent)]/20">
             Private &amp; Encrypted
@@ -634,11 +634,33 @@ function MeetRoom() {
   const [callStarted] = useState(Date.now());
   const [initError, setInitError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleFileShare = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploading(true);
+      await uploadWorkspaceFile(file, {
+        source: "meeting",
+        sourceReference: roomId,
+        workspace: "Meetings",
+        description: `Shared during meeting: ${roomId}`
+      });
+      toast.success("File shared to workspace");
+    } catch (err: any) {
+      toast.error("Failed to share file: " + err.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleLeave = useCallback(async () => {
@@ -757,13 +779,28 @@ function MeetRoom() {
           </div>
         </div>
 
-        <button
-          onClick={handleCopyLink}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-[var(--th-muted)] hover:text-[var(--th-accent)] hover:border-[var(--th-accent)]/30 transition-all text-sm glass"
-        >
-          <MSIcon icon={copied ? "check" : "link"} className="text-lg" />
-          {copied ? "Copied!" : "Copy invite link"}
-        </button>
+          <input
+             type="file"
+             ref={fileInputRef}
+             className="hidden"
+             onChange={handleFileShare}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-[var(--th-muted)] hover:text-[var(--th-accent)] hover:border-[var(--th-accent)]/30 transition-all text-sm glass"
+          >
+            <MSIcon icon={isUploading ? "progress_activity" : "upload_file"} className={cn("text-lg", isUploading && "animate-spin")} />
+            {isUploading ? "Uploading..." : "Share File"}
+          </button>
+
+          <button
+            onClick={handleCopyLink}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-[var(--th-muted)] hover:text-[var(--th-accent)] hover:border-[var(--th-accent)]/30 transition-all text-sm glass"
+          >
+            <MSIcon icon={copied ? "check" : "link"} className="text-lg" />
+            {copied ? "Copied!" : "Copy invite link"}
+          </button>
       </div>
 
       {/* Zego container / State Overlay */}

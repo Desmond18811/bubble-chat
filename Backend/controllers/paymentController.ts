@@ -134,6 +134,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 /* --- LEDGER ENDPOINTS --- */
 
 import { Transaction } from '../models/transaction';
+import { Goal } from '../models/goal';
 
 export const getTransactions = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -197,5 +198,69 @@ export const depositFunds = async (req: Request, res: Response): Promise<any> =>
     res.status(200).json({ message: "Deposit successful", transaction: tx });
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to deposit: ' + error.message });
+  }
+};
+
+/* --- GOALS ENDPOINTS --- */
+
+export const createGoal = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    
+    const { title, targetAmount, currency, type, members } = req.body;
+
+    const goal = await Goal.create({
+      user_id: userId,
+      title,
+      targetAmount,
+      currency: currency || 'usd',
+      type: type || 'individual',
+      members: members || [userId],
+    });
+
+    res.status(201).json({ message: "Goal created successfully", goal });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to create goal: ' + error.message });
+  }
+};
+
+export const getGoals = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const goals = await Goal.find({ $or: [{ user_id: userId }, { members: userId }] }).sort({ createdAt: -1 });
+    res.status(200).json({ goals });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to fetch goals: ' + error.message });
+  }
+};
+
+export const contributeToGoal = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { goalId, amount } = req.body;
+    
+    const goal = await Goal.findById(goalId);
+    if (!goal) return res.status(404).json({ message: "Goal not found" });
+
+    goal.currentAmount += amount;
+    await goal.save();
+
+    await Transaction.create({
+      user_id: userId,
+      type: 'expense',
+      amount: amount,
+      status: 'completed',
+      source: 'opay_or_stripe',
+      description: `Contribution to Goal: ${goal.title}`
+    });
+
+    res.status(200).json({ message: "Contribution successful", goal });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Failed to contribute to goal: ' + error.message });
   }
 };

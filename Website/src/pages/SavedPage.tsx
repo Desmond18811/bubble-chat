@@ -20,26 +20,14 @@ function Icon({ name, filled = false, style, className }: any) {
 
 function TopBar() {
   return (
-    <header className="fixed top-0 right-0 left-[85px] z-40 flex justify-between items-center h-20 px-8 transition-colors"
-      style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--th-border)" }}>
-      <div style={{ flex: 1 }} />
+    <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
+      style={{ left: "85px" }}>
+      <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        SAVED
+      </h1>
       <div className="flex items-center gap-6">
-        <button className="transition-colors hover:scale-105" style={{ color: "var(--th-secondary)" }}
-          onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
-          onMouseLeave={e => e.currentTarget.style.color = "var(--th-secondary)"}>
-          <Icon name="search" />
-        </button>
-        <button className="transition-colors hover:scale-105" style={{ color: "var(--th-secondary)" }}
-          onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
-          onMouseLeave={e => e.currentTarget.style.color = "var(--th-secondary)"}>
-          <Icon name="notifications" />
-        </button>
-        <div className="h-10 w-10 rounded-full overflow-hidden border transition-colors" style={{ borderColor: "var(--th-border)" }}>
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuChttp6jw4LsU4XItatDjPf-fNScHqUtTYGlrEd93i56yQ-Rm5a3fg0W710gHSpqqtIJWUkrDl8bNYrx2dEeFrwyLuJurQ9jkP9Ty_UmzGjz17El4GSdYqxw-TsdUB9KUvQ2PffvL8t1DjomGClY_pqx1QQ7yv5j9oi5obURo26eA2tLbAc9G9V4O0Eg6arDKRVEDoX1bSLTwuEQxaLOpvaYQLXSHuKhN2n8-AkJqDEW84gJlsmAYYJZ31tnvxdsL3LmcKjpCY1fq9O"
-            alt="Profile"
-            className="h-full w-full object-cover"
-          />
+        <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
+           <Icon name="person" style={{ color: "var(--th-secondary)" }} />
         </div>
       </div>
     </header>

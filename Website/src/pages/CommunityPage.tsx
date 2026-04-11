@@ -39,8 +39,16 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
   return (
     <header className="fixed top-0 right-0 left-[85px] z-40 flex justify-between items-center h-20 px-10 border-b transition-colors"
     style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderColor: "var(--th-border)" }}>
-      <div className="flex-1 max-w-2xl">
-        <div className="relative group">
+      <div className="flex-1 max-w-2xl flex items-center gap-6">
+        <h1
+          style={{
+            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
+            fontSize: 22, color: "#ffe792", letterSpacing: "0.06em", margin: 0,
+          }}
+        >
+          COMMUNITY HUB
+        </h1>
+        <div className="relative group flex-1">
           <MSIcon icon="search" className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--th-muted)" }} />
           <Input
             type="text"
@@ -54,13 +62,10 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
             }}
           />
         </div>
-      </div>
       <div className="flex items-center gap-6 ml-8">
-        <button className="transition-colors hover:scale-105" style={{ color: "var(--th-secondary)" }}
-          onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
-          onMouseLeave={e => e.currentTarget.style.color = "var(--th-secondary)"}>
-          <MSIcon icon="notifications" />
-        </button>
+        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
+          <img src={JSON.parse(localStorage.getItem("user") || "{}").avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=guest"} alt="profile" className="w-full h-full object-cover" />
+        </div>
       </div>
     </header>
   );
@@ -202,60 +207,7 @@ function NetworkCard({ network, onJoin }: { network: any, onJoin: (id: string) =
   );
 }
 
-function FeaturedSection({ trending }: { trending: any[] }) {
-  return (
-    <section className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-8 mb-20">
-      <div className="lg:col-span-8 backdrop-blur-xl p-10 rounded-2xl relative overflow-hidden flex flex-col justify-center border transition-colors"
-        style={{ background: "color-mix(in srgb, var(--th-surface-top) 50%, transparent)", borderColor: "var(--th-border)" }}>
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-[100px] -mr-40 -mt-40 pointer-events-none transition-colors"
-          style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)" }} />
-        <h2 className="text-3xl font-bold mb-4 relative z-10 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}>
-          Explore the Nebula
-        </h2>
-        <p className="text-lg mb-8 max-w-lg relative z-10 transition-colors" style={{ color: "var(--th-muted)" }}>
-          The most active hubs for generative arts and creative coding are waiting for your arrival. Be part of the evolution.
-        </p>
-        <div className="flex items-center gap-6 relative z-10">
-          <Button className="px-8 py-3 h-auto rounded-xl font-bold uppercase text-[10px] tracking-widest transition-colors"
-            style={{ background: "var(--th-secondary)", color: "var(--th-bg)" }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--th-accent)"}
-            onMouseLeave={e => e.currentTarget.style.background = "var(--th-secondary)"}>
-            Discover Trending
-          </Button>
-        </div>
-      </div>
-
-      <div className="lg:col-span-4 backdrop-blur-xl p-8 rounded-2xl border flex flex-col transition-colors"
-        style={{ background: "color-mix(in srgb, var(--th-surface-low) 50%, transparent)", borderColor: "var(--th-border)" }}>
-        <h3 className="text-xl font-bold mb-6 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}>
-          Trending Networks
-        </h3>
-        <div className="space-y-3 flex-1">
-          {(trending && trending.length > 0 ? trending : []).slice(0, 4).map((net) => (
-            <button
-              key={net._id}
-              className="w-full flex items-center justify-between p-4 rounded-xl group cursor-pointer transition-all border"
-              style={{ background: "var(--th-surface-high)", borderColor: "transparent" }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 30%, transparent)"}
-              onMouseLeave={e => e.currentTarget.style.borderColor = "transparent"}
-            >
-              <div className="flex flex-col items-start text-left">
-                 <span className="font-bold text-sm transition-colors" style={{ color: "var(--th-text)" }}>{net.title}</span>
-                 <span className="text-[10px] uppercase tracking-tighter transition-colors" style={{ color: "var(--th-muted)" }}>
-                   {net.categories?.[0] || 'Uncategorized'}
-                 </span>
-              </div>
-              <MSIcon icon="arrow_forward" className="group-hover:translate-x-1 transition-transform" style={{ color: "var(--th-accent)" }} />
-            </button>
-          ))}
-          {(!trending || trending.length === 0) && (
-            <p className="text-xs italic transition-colors" style={{ color: "var(--th-muted)" }}>No trending transmissions detected.</p>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
+// Featured Section removed as per redesign.
 
 export default function BubbleCommunity() {
   const navigate = useNavigate();
@@ -355,11 +307,11 @@ export default function BubbleCommunity() {
               )}
               style={{ 
                 fontFamily: "'Space Grotesk', sans-serif",
-                background: activeCategory === cat ? "var(--th-accent)" : "var(--th-surface)",
-                color: activeCategory === cat ? "var(--th-accent-text)" : "var(--th-muted)",
+                background: activeCategory === cat ? "#ffe792" : "var(--th-surface)",
+                color: activeCategory === cat ? "#655400" : "var(--th-muted)",
                 borderColor: activeCategory === cat ? "transparent" : "var(--th-border)"
               }}
-              onMouseEnter={e => { if(activeCategory !== cat) e.currentTarget.style.color = "var(--th-accent)"; }}
+              onMouseEnter={e => { if(activeCategory !== cat) e.currentTarget.style.color = "#ffe792"; }}
               onMouseLeave={e => { if(activeCategory !== cat) e.currentTarget.style.color = "var(--th-muted)"; }}
             >
               {cat}
@@ -386,7 +338,7 @@ export default function BubbleCommunity() {
           </div>
         )}
 
-        <FeaturedSection trending={trending} />
+
       </main>
     </div>
   );

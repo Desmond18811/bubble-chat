@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirm_password, setConfirmPassword] = useState('');
   const [phone_number, setPhoneNumber] = useState('');
@@ -25,7 +26,7 @@ const SignupPage: React.FC = () => {
       const { publicKey, secretKey } = generateKeyPair();
       localStorage.setItem('bubble_sk', secretKey); // store private key locally only
 
-      const response = await register({ email, password, confirm_password, full_name, phone_number, publicKey });
+      const response = await register({ email, username, password, confirm_password, full_name, phone_number, publicKey });
       
       toast.success('Registration successful! Check your email for your verification code.');
       navigate('/verify-otp', { state: { email: response.data.email || email } });
@@ -65,6 +66,12 @@ const SignupPage: React.FC = () => {
           <div>
             <label style={labelStyle}>Explorer Name</label>
             <input type="text" required style={inputStyle} placeholder="e.g. Captain Lyra" value={full_name} onChange={(e) => setFullName(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
+          </div>
+
+          {/* Username */}
+          <div>
+            <label style={labelStyle}>Explorer Handle</label>
+            <input type="text" required style={inputStyle} placeholder="e.g. captain_lyra" value={username} onChange={(e) => setUsername(e.target.value)} onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'} />
           </div>
 
           {/* Email */}

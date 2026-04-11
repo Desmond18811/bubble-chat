@@ -483,7 +483,18 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFil
         )}
         <div className="mt-4 flex justify-between items-center">
           <span className="text-[10px]" style={{ color: "rgba(158,172,195,0.6)", ...SG }}>{file.isFolder ? "--" : fmtBytes(file.fileSize || 0)}</span>
-          <span className="text-[10px]" style={{ color: "rgba(158,172,195,0.6)", ...SG }}>{new Date(file.createdAt).toLocaleDateString()}</span>
+          <div className="flex items-center gap-1.5 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
+             {file.uploadedBy && (
+               <>
+                 <div className="w-5 h-5 rounded-full overflow-hidden border border-[var(--th-border)]">
+                    <img src={file.uploadedBy.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${file.uploadedBy.username}`} className="w-full h-full object-cover" alt="avatar" />
+                 </div>
+                 <span className="text-[9px] font-bold uppercase tracking-tight" style={{ color: "var(--th-muted)", ...SG }}>
+                   By {file.uploadedBy.username || "System"}
+                 </span>
+               </>
+             )}
+          </div>
         </div>
 
         {file.sharedWith.length > 0 && (
@@ -652,8 +663,11 @@ export default function WorkspacesPage() {
 
 
       {/* Top Bar */}
-      <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center"
-        style={{ left: "85px", background: "rgba(1,15,32,0.40)", backdropFilter: "blur(12px)" }}>
+      <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
+        style={{ left: "85px" }}>
+        <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase mr-6" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          WORK
+        </h1>
         <div className="flex items-center gap-6 flex-1">
           <div className="relative w-full max-w-md">
             <MSIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--th-muted)", fontSize: "18px" }} />
@@ -683,10 +697,10 @@ export default function WorkspacesPage() {
             <MSIcon name="add_circle" className="text-sm" />
             UPLOAD FILE
           </Button>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "color-mix(in srgb, var(--th-accent) 0.10)" }}>
-
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--th-accent)" }} />
-            <span className="text-[10px] uppercase font-bold tracking-tighter" style={{ ...SG, color: "var(--th-accent)" }}>Live Sync</span>
+          <div className="flex items-center gap-6 ml-2">
+            <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
+               <MSIcon name="person" style={{ color: "var(--th-secondary)" }} />
+            </div>
           </div>
         </div>
       </header>

@@ -2098,8 +2098,8 @@ export default function BubbleMessages() {
           >
             <div style={{ padding: "28px 24px 16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: "var(--th-accent)", letterSpacing: "-0.02em", margin: 0 }}>
-                  Transmissions
+                <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase" style={{ margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+                  MESSAGES
                 </h1>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button title="New Chat" onClick={() => setShowNewChat(true)} style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", border: "1px solid color-mix(in srgb, var(--th-accent) 20%, transparent)", borderRadius: 10, padding: 8, cursor: "pointer", color: "var(--th-accent)", display: "flex", alignItems: "center", justifyContent: "center" }}>

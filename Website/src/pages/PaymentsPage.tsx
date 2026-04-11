@@ -46,22 +46,12 @@ function MSIcon({
 
 function TopBar() {
   return (
-    <header
-      className="fixed top-0 right-0 z-40 h-20 flex items-center justify-between px-8 transition-colors"
-      style={{
-        left: "85px",
-        background: "color-mix(in srgb, var(--th-bg) 80%, transparent)",
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
-      }}
-    >
-      <div className="flex items-center gap-8">
-        <h1
-          className="text-2xl font-bold tracking-tighter transition-colors"
-          style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-accent)" }}
-        >
-          Payments
-        </h1>
+    <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
+      style={{ left: "85px" }}>
+      <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        PAYMENTS
+      </h1>
+      <div className="flex flex-1 justify-end mr-6">
         <div className="relative">
           <MSIcon
             name="search"
@@ -75,32 +65,9 @@ function TopBar() {
           />
         </div>
       </div>
-
       <div className="flex items-center gap-6">
-        {["notifications", "help"].map((icon) => (
-          <button
-            key={icon}
-            className="transition-colors"
-            style={{ color: "var(--th-secondary)" }}
-            onMouseEnter={(e) =>
-              ((e.currentTarget as HTMLElement).style.color = "var(--th-accent)")
-            }
-            onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.color = "var(--th-secondary)")
-            }
-          >
-            <MSIcon name={icon} />
-          </button>
-        ))}
-        <div
-          className="h-10 w-10 rounded-full overflow-hidden border transition-colors"
-          style={{ borderColor: "var(--th-border)" }}
-        >
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtq3NuWOsxhx0SUglzlnR5KpL5aWHJglBRRvHXCib8Qca7sbqtfxP77HY36X5GBJ2b1oKmqIG5H2Ojra-Z6xZbJkXRZjisgZPPf-fIVNu_dvhod22eGfRmVrNAkdccZ1hKtD3ZLN2FxoKf_9Iq4zU_F-kxOrpFb2OmOWTja761RYl9acv-4ZKEf4jUc5ioLXRB1atvDNVhmjXfJDthYzPvOZjnqVVMVDrtd7kVqpQt5F91Te9JNSyNf-4xq0RJi2gjLLff8RMEY5ga"
-            alt="User profile"
-            className="h-full w-full object-cover"
-          />
+        <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
+          <MSIcon name="person" style={{ color: "var(--th-secondary)" }} />
         </div>
       </div>
     </header>

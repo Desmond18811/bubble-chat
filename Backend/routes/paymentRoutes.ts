@@ -1,5 +1,5 @@
 import express from 'express';
-import { createCheckoutSession, stripeWebhook, getTransactions, withdrawFunds, depositFunds } from '../controllers/paymentController';
+import { createCheckoutSession, stripeWebhook, getTransactions, withdrawFunds, depositFunds, createGoal, getGoals, contributeToGoal } from '../controllers/paymentController';
 import passport from 'passport';
 
 const router = express.Router();
@@ -19,5 +19,10 @@ const requireAuth = passport.authenticate('jwt', { session: false });
 router.get('/transactions', requireAuth, getTransactions);
 router.post('/withdraw', requireAuth, withdrawFunds);
 router.post('/deposit', requireAuth, depositFunds);
+
+// Goals endpoints
+router.post('/goals', requireAuth, createGoal);
+router.get('/goals', requireAuth, getGoals);
+router.post('/goals/contribute', requireAuth, contributeToGoal);
 
 export default router;

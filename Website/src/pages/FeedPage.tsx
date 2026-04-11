@@ -25,7 +25,7 @@ const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
   </span>
 );
 
-/* ─── Colour tokens (CSS-var aware) ─────────────────────────────────────── */
+/* ─── Colour tokens ──────────────────────────────────────────────────────── */
 const C = {
   bg:         "var(--th-bg)",
   surface:    "var(--th-surface)",
@@ -61,16 +61,17 @@ function TopBar() {
         <h1
           style={{
             fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
-            fontSize: 22, color: "var(--th-accent)", letterSpacing: "-0.04em", margin: 0,
+            fontSize: 20, color: "var(--th-accent)", letterSpacing: "0.08em",
+            textTransform: "uppercase", margin: 0,
           }}
         >
-          BUBBLE
+          FEED
         </h1>
         <div
           style={{
             display: "flex", alignItems: "center", gap: 8,
             background: C.surfaceTop, borderRadius: 999,
-            padding: "8px 16px", border: `1px solid var(--th-border)`, width: 340,
+            padding: "8px 16px", border: `1px solid var(--th-border)`, width: 320,
           }}
         >
           <Icon name="search" style={{ color: C.muted, fontSize: 18 }} />
@@ -84,16 +85,6 @@ function TopBar() {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        {["notifications", "settings"].map((name) => (
-          <button
-            key={name}
-            style={{ background: "none", border: "none", cursor: "pointer", color: C.secondary, transition: "color 0.2s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = C.accent)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = C.secondary)}
-          >
-            <Icon name={name} style={{ fontSize: 22 }} />
-          </button>
-        ))}
         <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
           <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-sm" />
         </div>
@@ -102,8 +93,8 @@ function TopBar() {
   );
 }
 
-/* ─── Composer ────────────────────────────────────────────────────────────── */
-function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
+/* ─── Composer Modal ─────────────────────────────────────────────────────── */
+function ComposerModal({ onPostCreated, onClose }: { onPostCreated: (post: any) => void; onClose: () => void }) {
   const [value, setValue] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -115,7 +106,7 @@ function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
       setLoading(true);
       const res = await createFeedPost(value, file || undefined);
       onPostCreated(res.post);
-      setValue(""); setFile(null);
+      onClose();
     } catch (err) {
       console.error("Post creation failed:", err);
     } finally { setLoading(false); }
@@ -123,69 +114,86 @@ function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
 
   return (
     <div
+      onClick={onClose}
       style={{
-        background: C.surfaceLow, padding: "20px 24px",
-        borderRadius: 16, marginBottom: 32,
-        border: `1px solid var(--th-border)`,
+        position: "fixed", inset: 0, zIndex: 200,
+        background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
       }}
     >
-      <div style={{ display: "flex", gap: 14 }}>
-        <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
-          <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-lg" />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: C.surfaceLow, borderRadius: 20, padding: "28px",
+          border: `1px solid var(--th-border)`, width: "90%", maxWidth: 560,
+          boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 18, color: C.accent, margin: 0 }}>
+            Create Post
+          </h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted }}>
+            <Icon name="close" style={{ fontSize: 20 }} />
+          </button>
         </div>
-        <div style={{ flex: 1 }}>
-          <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="Transmit a thought to the observatory..."
-            style={{
-              width: "100%", background: "transparent", border: "none", outline: "none",
-              fontSize: 17, color: C.text, fontFamily: "'Manrope',sans-serif",
-              resize: "none", minHeight: 80,
-            }}
-          />
-          {file && (
-            <div style={{ position: "relative", marginBottom: 12, width: "fit-content" }}>
-              <img src={URL.createObjectURL(file)} style={{ height: 110, borderRadius: 10, border: `1px solid var(--th-border)` }} alt="preview" />
+        <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
+            <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-lg" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <textarea
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="What's on your mind?"
+              autoFocus
+              style={{
+                width: "100%", background: "transparent", border: "none", outline: "none",
+                fontSize: 16, color: C.text, fontFamily: "'Manrope',sans-serif",
+                resize: "none", minHeight: 100,
+              }}
+            />
+            {file && (
+              <div style={{ position: "relative", marginBottom: 12, width: "fit-content" }}>
+                <img src={URL.createObjectURL(file)} style={{ height: 110, borderRadius: 10, border: `1px solid var(--th-border)` }} alt="preview" />
+                <button
+                  onClick={() => setFile(null)}
+                  style={{ position: "absolute", top: -8, right: -8, background: C.error, color: "#fff", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+                >
+                  <Icon name="close" style={{ fontSize: 14 }} />
+                </button>
+              </div>
+            )}
+            <div
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                marginTop: 12, paddingTop: 12,
+                borderTop: `1px solid color-mix(in srgb, var(--th-border) 60%, transparent)`,
+              }}
+            >
+              <div style={{ display: "flex", gap: 12, color: C.secondary }}>
+                <label style={{ cursor: "pointer", display: "flex" }}>
+                  <Icon name="image" style={{ fontSize: 22 }} />
+                  <input type="file" hidden accept="image/*,video/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                </label>
+                <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="gif_box" style={{ fontSize: 22 }} /></button>
+                <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="poll" style={{ fontSize: 22 }} /></button>
+                <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="tag" style={{ fontSize: 22 }} /></button>
+              </div>
               <button
-                onClick={() => setFile(null)}
-                style={{ position: "absolute", top: -8, right: -8, background: C.error, color: "#fff", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
+                onClick={handleSubmit}
+                disabled={loading || (!value.trim() && !file)}
+                style={{
+                  background: C.accent, color: C.accentText, padding: "8px 28px",
+                  borderRadius: 999, fontFamily: "'Space Grotesk',sans-serif",
+                  fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
+                  border: "none", cursor: "pointer",
+                  opacity: (loading || (!value.trim() && !file)) ? 0.5 : 1,
+                }}
               >
-                <Icon name="close" style={{ fontSize: 14 }} />
+                {loading ? "POSTING..." : "POST"}
               </button>
             </div>
-          )}
-          <div
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginTop: 12, paddingTop: 12,
-              borderTop: `1px solid color-mix(in srgb, var(--th-border) 60%, transparent)`,
-            }}
-          >
-            <div style={{ display: "flex", gap: 12, color: C.secondary }}>
-              <label style={{ cursor: "pointer", display: "flex" }}>
-                <Icon name="image" style={{ fontSize: 22 }} />
-                <input type="file" hidden accept="image/*,video/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-              </label>
-              <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="gif_box" style={{ fontSize: 22 }} /></button>
-              <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="poll" style={{ fontSize: 22 }} /></button>
-              <button disabled style={{ background: "none", border: "none", color: "rgba(162,194,253,0.3)" }}><Icon name="tag" style={{ fontSize: 22 }} /></button>
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={loading || (!value.trim() && !file)}
-              style={{
-                background: C.accent, color: C.accentText, padding: "8px 28px",
-                borderRadius: 999, fontFamily: "'Space Grotesk',sans-serif",
-                fontWeight: 700, fontSize: 13, letterSpacing: "0.06em",
-                border: "none", cursor: "pointer", transition: "filter 0.2s",
-                opacity: (loading || (!value.trim() && !file)) ? 0.5 : 1,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
-              onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
-            >
-              {loading ? "POSTING..." : "POST"}
-            </button>
           </div>
         </div>
       </div>
@@ -272,6 +280,59 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
   );
 }
 
+/* ─── Post Menu ───────────────────────────────────────────────────────────── */
+function PostMenu({ post, onClose }: { post: any; onClose: () => void }) {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isFollowing = false; // TODO: wire real follow state
+  const handleSave = async () => { try { await saveFeedPost(post._id); } catch(e) {} onClose(); };
+  const handleCopy = () => { navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`); onClose(); };
+
+  const items = [
+    { label: "Not Interested", icon: "sentiment_dissatisfied", action: onClose },
+    { label: "Restrict", icon: "do_not_disturb_on", action: onClose },
+    { label: "Block", icon: "block", action: onClose, danger: true },
+    ...(post.author?._id !== user._id
+      ? [{ label: isFollowing ? "Unfollow" : "Follow", icon: isFollowing ? "person_remove" : "person_add", action: onClose }]
+      : []),
+    { label: "Report", icon: "flag", action: onClose, danger: true },
+    { label: "Copy Link", icon: "link", action: handleCopy },
+    { label: "Save Post", icon: "bookmark", action: handleSave },
+  ];
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 99 }} />
+      {/* Menu */}
+      <div style={{
+        position: "absolute", top: 28, right: 0,
+        background: C.surfaceHigh, borderRadius: 14,
+        border: `1px solid var(--th-border)`, padding: "6px 0",
+        width: 190, zIndex: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+      }}>
+        {items.map((item) => (
+          <button
+            key={item.label}
+            onClick={item.action}
+            style={{
+              width: "100%", textAlign: "left", padding: "9px 16px",
+              background: "none", border: "none",
+              color: (item as any).danger ? C.error : C.text,
+              cursor: "pointer", fontFamily: "'Manrope',sans-serif", fontSize: 13,
+              display: "flex", alignItems: "center", gap: 10,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 7%, transparent)`}
+            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          >
+            <Icon name={item.icon} style={{ fontSize: 16, color: (item as any).danger ? C.error : C.muted }} />
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* ─── Post ────────────────────────────────────────────────────────────────── */
 function PostItem({ post }: { post: any }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -279,10 +340,9 @@ function PostItem({ post }: { post: any }) {
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
   const [reposted, setReposted] = useState(post.reposts?.includes(user._id));
   const [repostCount, setRepostCount] = useState(post.reposts?.length || 0);
-  const [saved, setSaved] = useState(post.saves?.includes(user._id));
-  const [saveCount, setSaveCount] = useState(post.saves?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handleLike = async () => {
     try {
@@ -295,13 +355,6 @@ function PostItem({ post }: { post: any }) {
     try {
       const res = await repostFeedPost(post._id);
       setReposted(res.reposted); setRepostCount(res.repostCount);
-    } catch (err) { console.error(err); }
-  };
-
-  const handleSave = async () => {
-    try {
-      const res = await saveFeedPost(post._id);
-      setSaved(res.saved); setSaveCount(res.saveCount);
     } catch (err) { console.error(err); }
   };
 
@@ -329,9 +382,17 @@ function PostItem({ post }: { post: any }) {
                 @{post.author?.username} · {formatDistanceToNow(new Date(post.createdAt))} ago
               </span>
             </div>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: C.muted }}>
-              <Icon name="more_horiz" style={{ fontSize: 20 }} />
-            </button>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 4, borderRadius: 6, transition: "background 0.15s" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 10%, transparent)`}
+                onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+              >
+                <Icon name="more_horiz" style={{ fontSize: 20 }} />
+              </button>
+              {showMenu && <PostMenu post={post} onClose={() => setShowMenu(false)} />}
+            </div>
           </div>
 
           {/* Content */}
@@ -350,7 +411,7 @@ function PostItem({ post }: { post: any }) {
             </div>
           )}
 
-          {/* Actions */}
+          {/* Actions — only Comments, Reposts, Like */}
           <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
             <StatBtn
               icon="mode_comment" count={post.comments?.length}
@@ -367,29 +428,6 @@ function PostItem({ post }: { post: any }) {
               hoverColor={C.error} onClick={handleLike}
               active={liked} activeColor={C.error} filled={liked}
             />
-            <StatBtn
-              icon="share" hoverColor={C.secondary}
-            />
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
-            <button
-              onClick={handleSave}
-              title={saved ? "Unsave" : "Save"}
-              style={{
-                display: "flex", alignItems: "center", gap: 4,
-                background: "none", border: "none", cursor: "pointer",
-                color: saved ? C.accent : C.muted,
-                transition: "color 0.2s, transform 0.15s",
-                transform: saved ? "scale(1.05)" : "scale(1)",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = C.accent; e.currentTarget.style.transform = "scale(1.1)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = saved ? C.accent : C.muted; e.currentTarget.style.transform = "scale(1)"; }}
-            >
-              <Icon name="bookmark" fill={saved} style={{ fontSize: 20 }} />
-              {saveCount > 0 && (
-                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12 }}>{saveCount}</span>
-              )}
-            </button>
           </div>
 
           {/* Comments panel */}
@@ -418,6 +456,35 @@ function RightSidebar() {
   return (
     <aside style={{ padding: "32px 28px" }}>
       <div style={{ position: "sticky", top: 104, display: "flex", flexDirection: "column", gap: 24 }}>
+        {/* Aida Luminous CTA — yellow accent */}
+        <div style={{
+          background: "linear-gradient(135deg, rgba(255,231,146,0.12), rgba(255,231,146,0.04))",
+          border: "1px solid rgba(255,231,146,0.25)",
+          borderRadius: 16, padding: "18px 20px",
+          display: "flex", flexDirection: "column", gap: 10
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#ffe792", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, color: "#655400" }}>A</span>
+            </div>
+            <div>
+              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "#ffe792", margin: 0 }}>Aida Luminous</p>
+              <p style={{ fontSize: 11, color: "rgba(255,231,146,0.6)", margin: 0 }}>Your AI companion</p>
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: "rgba(255,231,146,0.7)", fontFamily: "'Manrope',sans-serif", margin: 0, lineHeight: 1.5 }}>
+            Ask me anything about your feed, connections, or community insights.
+          </p>
+          <button style={{
+            background: "#ffe792", color: "#655400", border: "none",
+            borderRadius: 999, padding: "7px 16px", fontFamily: "'Space Grotesk',sans-serif",
+            fontWeight: 700, fontSize: 11, letterSpacing: "0.06em", cursor: "pointer",
+            alignSelf: "flex-start",
+          }}>
+            ASK AIDA
+          </button>
+        </div>
+
         {/* Trending */}
         <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid var(--th-border)`, overflow: "hidden" }}>
           <div style={{ padding: "16px 20px", borderBottom: `1px solid var(--th-border)` }}>
@@ -466,14 +533,76 @@ function RightSidebar() {
   );
 }
 
-/* ─── Feed Tabs ───────────────────────────────────────────────────────────── */
+/* ─── Custom Dropdown ─────────────────────────────────────────────────────── */
 const TABS = ["For You", "Following", "Latest"];
+
+function FeedDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: C.surfaceTop, border: `1px solid var(--th-border)`,
+          borderRadius: 12, padding: "9px 18px", cursor: "pointer",
+          color: C.accent, fontFamily: "'Space Grotesk',sans-serif",
+          fontWeight: 700, fontSize: 14, transition: "border-color 0.2s",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--th-accent) 40%, transparent)`)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = `var(--th-border)`)}
+      >
+        {value}
+        <Icon name={open ? "expand_less" : "expand_more"} style={{ fontSize: 18, color: C.muted }} />
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", left: "50%",
+          transform: "translateX(-50%)",
+          background: C.surfaceHigh, borderRadius: 14,
+          border: `1px solid var(--th-border)`, padding: "6px 0",
+          minWidth: 160, zIndex: 50,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
+        }}>
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => { onChange(tab); setOpen(false); }}
+              style={{
+                width: "100%", textAlign: "left", padding: "10px 18px",
+                background: "none", border: "none",
+                color: tab === value ? C.accent : C.text,
+                fontFamily: "'Manrope',sans-serif", fontSize: 14,
+                cursor: "pointer", fontWeight: tab === value ? 700 : 400,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 8%, transparent)`)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Root ────────────────────────────────────────────────────────────────── */
 export default function BubbleFeed() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("For You");
+  const [showComposer, setShowComposer] = useState(false);
 
   const loadPosts = async () => {
     try {
@@ -503,28 +632,19 @@ export default function BubbleFeed() {
       <main style={{ marginLeft: 85, paddingTop: 72, display: "flex", minHeight: "100vh", background: "transparent", position: "relative", zIndex: 10 }}>
         {/* Feed column */}
         <section style={{ flex: 1, borderRight: `1px solid var(--th-border)`, minWidth: 0 }}>
-          {/* Tabs */}
-          <div style={{ display: "flex", borderBottom: `1px solid var(--th-border)`, position: "sticky", top: 72, background: `color-mix(in srgb, var(--th-bg) 90%, transparent)`, backdropFilter: "blur(12px)", zIndex: 30 }}>
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  flex: 1, padding: "14px 0", background: "none", border: "none", cursor: "pointer",
-                  fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13,
-                  color: activeTab === tab ? C.accent : C.muted,
-                  borderBottom: activeTab === tab ? `2px solid var(--th-accent)` : "2px solid transparent",
-                  transition: "color 0.2s, border-color 0.2s",
-                }}
-              >
-                {tab}
-              </button>
-            ))}
+          {/* Centered Dropdown bar — no title */}
+          <div style={{
+            padding: "16px 24px", borderBottom: `1px solid var(--th-border)`,
+            position: "sticky", top: 72,
+            background: `color-mix(in srgb, var(--th-bg) 90%, transparent)`,
+            backdropFilter: "blur(12px)", zIndex: 30,
+            display: "flex", justifyContent: "center", alignItems: "center",
+          }}>
+            <FeedDropdown value={activeTab} onChange={setActiveTab} />
           </div>
 
           {/* Posts */}
           <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 24px" }}>
-            <Composer onPostCreated={(p) => setPosts([p, ...posts])} />
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {loading ? (
                 Array(4).fill(0).map((_, i) => (
@@ -552,6 +672,33 @@ export default function BubbleFeed() {
           <RightSidebar />
         </div>
       </main>
+
+      {/* Floating + button (bottom right) */}
+      <button
+        onClick={() => setShowComposer(true)}
+        title="Create Post"
+        style={{
+          position: "fixed", bottom: 36, right: 36, zIndex: 90,
+          width: 56, height: 56, borderRadius: "50%",
+          background: C.accent, color: C.accentText,
+          border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: `0 8px 32px color-mix(in srgb, var(--th-accent) 35%, transparent)`,
+          transition: "transform 0.2s, box-shadow 0.2s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = `0 12px 40px color-mix(in srgb, var(--th-accent) 50%, transparent)`; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = `0 8px 32px color-mix(in srgb, var(--th-accent) 35%, transparent)`; }}
+      >
+        <Icon name="add" style={{ fontSize: 28 }} />
+      </button>
+
+      {/* Composer modal */}
+      {showComposer && (
+        <ComposerModal
+          onPostCreated={(p) => { setPosts([p, ...posts]); setShowComposer(false); }}
+          onClose={() => setShowComposer(false)}
+        />
+      )}
     </div>
   );
 }

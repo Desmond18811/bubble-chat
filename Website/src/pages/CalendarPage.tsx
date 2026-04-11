@@ -46,27 +46,26 @@ function MSIcon({
 
 function TopBar() {
   return (
-    <header className="flex justify-between items-center h-20 px-10 fixed top-0 right-0 left-[85px] z-40 transition-colors"
-      style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--th-border)" }}>
-      <div className="flex items-center px-4 py-2 rounded-xl transition-all border border-transparent focus-within:border-[var(--th-accent)]"
-        style={{ background: "var(--th-surface-top)" }}>
-        <MSIcon icon="search" className="text-sm mr-2" style={{ color: "var(--th-muted)" }} />
-        <Input
-          type="text"
-          placeholder="Search scheduled matrices..."
-          className="bg-transparent border-none focus-visible:ring-0 text-sm w-64 h-auto p-0 transition-colors"
-          style={{ color: "var(--th-text)" }}
-        />
+    <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
+      style={{ left: "85px" }}>
+      <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        CALENDAR
+      </h1>
+      <div className="flex flex-1 mx-8 justify-end">
+        <div className="flex items-center px-4 py-2 rounded-xl transition-all border border-transparent focus-within:border-[var(--th-accent)]"
+          style={{ background: "var(--th-surface-top)" }}>
+          <MSIcon icon="search" className="text-sm mr-2" style={{ color: "var(--th-muted)" }} />
+          <Input
+            type="text"
+            placeholder="Search scheduled matrices..."
+            className="bg-transparent border-none focus-visible:ring-0 text-sm w-64 h-auto p-0 transition-colors"
+            style={{ color: "var(--th-text)" }}
+          />
+        </div>
       </div>
-
       <div className="flex items-center gap-6">
-        <button className="p-2 transition-colors hover:scale-105" style={{ color: "var(--th-secondary)" }} onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--th-accent)"} onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--th-secondary)"}>
-          <MSIcon icon="notifications" />
-        </button>
-        <div className="h-10 w-10 rounded-full overflow-hidden border transition-colors" style={{ borderColor: "var(--th-border)", background: "var(--th-surface-low)" }}>
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--th-surface-high)" }}>
-            <MSIcon icon="person" style={{ color: "var(--th-secondary)" }} />
-          </div>
+        <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
+          <MSIcon icon="person" style={{ color: "var(--th-secondary)" }} />
         </div>
       </div>
     </header>
