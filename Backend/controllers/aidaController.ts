@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { HfInference } from '@huggingface/inference';
 import { Task } from '../models/task';
 import { Transaction } from '../models/transaction';
+import { WorkspaceFile } from '../models/workspaceFile';
+import { User } from '../models/users';
 
 const hf = new HfInference(process.env.HF_API_KEY || '');
 const modelId = process.env.GEMMA_MODEL_ID || 'google/gemma-2-9b-it';
@@ -12,26 +14,50 @@ const modelId = process.env.GEMMA_MODEL_ID || 'google/gemma-2-9b-it';
 export const chatWithAida = async (req: Request, res: Response): Promise<void> => {
   try {
     const { message } = req.body;
-    const userId = (req.user as any)?._id; // Assuming JWT user
+    const userId = (req.user as any)?._id;
 
     if (!message) {
       res.status(400).json({ error: 'Message is required' });
       return;
     }
 
-    const prompt = `You are Aida, a helpful AI assistant built on Gemma. \nUser: ${message}\nAida:`;
+    // Fetch user for name
+    const user = await User.findById(userId);
+    const userName = user?.full_name || user?.username || 'Voyager';
+    const userTag = user?.uniqueTag || 'anonymous';
+
+    // Fetch recent files for context
+    const recentFiles = await WorkspaceFile.find({ uploadedBy: userId }).sort({ createdAt: -1 }).limit(5);
+    const fileContext = recentFiles.length > 0
+      ? `User's recent workspace files: ${recentFiles.map(f => f.name).join(', ')}.`
+      : '';
+
+    const prompt = `You are Aida, a luminous AI assistant built on Gemma for the 'Sets' platform.
+User Name: ${userName} (${userTag})
+${fileContext}
+You should be helpful, visionary, and concise.
+User: ${message}
+Aida:`;
+
+    if (!process.env.HF_API_KEY || process.env.HF_API_KEY === 'your_hugging_face_api_key_here') {
+      // Fallback if no real API key
+      res.status(200).json({ 
+        reply: `Greetings ${userName}. My neural links to the Gemma core are still being established in this environment (missing HF_API_KEY). However, I can see you are ${userName} and I'm ready to help you manage your Sets workspace once I'm fully connected.` 
+      });
+      return;
+    }
 
     const response = await hf.textGeneration({
       model: modelId,
       inputs: prompt,
       parameters: {
-        max_new_tokens: 300,
+        max_new_tokens: 400,
         temperature: 0.7,
+        repetition_penalty: 1.1,
       },
     });
 
     const reply = response.generated_text.replace(prompt, '').trim();
-
     res.status(200).json({ reply });
   } catch (error: any) {
     console.error('Aida Chat Error:', error);

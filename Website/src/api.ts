@@ -748,3 +748,30 @@ export const fetchSavedPosts = async () => {
   });
   return handleResponse(res);
 };
+// ─── Aida AI ──────────────────────────────────────────────────────────────────
+
+/** Send a message to Aida and get a response from Gemma */
+export const chatWithAida = async (message: string) => {
+  const res = await fetch(`${BASE_URL}/aida/chat`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ message }),
+  });
+  return handleResponse(res);
+};
+
+/** Get a context-aware daily briefing from Aida */
+export const fetchAidaBriefing = async () => {
+  const res = await fetch(`${BASE_URL}/aida/daily-briefing`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+/** Get financial advice from Aida based on recent transactions */
+export const fetchAidaFinanceAdvice = async () => {
+  const res = await fetch(`${BASE_URL}/aida/financial-advice`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};

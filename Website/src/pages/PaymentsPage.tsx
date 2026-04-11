@@ -195,6 +195,25 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                  {loading ? "Processing..." : "Withdraw Funds"}
               </Button>
             </div>
+
+            <div className="mt-6 pt-6 border-t border-[var(--th-border)]">
+              <button 
+                onClick={() => window.location.href='/aida?trigger=finance'}
+                className="w-full p-4 rounded-2xl border border-[#ffe792]/20 bg-[#ffe792]/5 hover:bg-[#ffe792]/10 flex items-center justify-between group transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 border border-[#ffe792]/20 flex items-center justify-center">
+                     <MSIcon name="auto_awesome" style={{ color: "#ffe792", fontSize: 18 }} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[10px] uppercase font-bold text-[#ffe792] tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Financial Oracle</p>
+                    <p className="text-[var(--th-text)] text-xs font-semibold">Get Aida's insights</p>
+                  </div>
+                </div>
+                <MSIcon name="chevron_right" style={{ color: "rgba(255,231,146,0.4)" }} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+
           </div>
         </div>
 

@@ -63,11 +63,19 @@ function TopBar() {
           />
         </div>
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={() => window.location.href='/aida?trigger=briefing'}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#ffe792]/5 border border-[#ffe792]/20 hover:bg-[#ffe792]/10 transition-all group"
+        >
+          <MSIcon icon="auto_awesome" style={{ color: "#ffe792", fontSize: 18 }} />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffe792]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Get Briefing</span>
+        </button>
         <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
           <MSIcon icon="person" style={{ color: "var(--th-secondary)" }} />
         </div>
       </div>
+
     </header>
   );
 }
