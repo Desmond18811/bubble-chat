@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
-import { 
-  fetchNetworks, 
-  fetchCommunityCategories, 
-  joinNetwork, 
+import {
+  fetchNetworks,
+  fetchCommunityCategories,
+  joinNetwork,
   createNetwork,
   fetchTrendingNetworks
 } from "@/api";
@@ -38,7 +38,7 @@ function MSIcon({
 function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
   return (
     <header className="fixed top-0 right-0 left-[85px] z-40 flex justify-between items-center h-20 px-10 border-b transition-colors"
-    style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderColor: "var(--th-border)" }}>
+      style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderColor: "var(--th-border)" }}>
       <div className="flex-1 max-w-2xl flex items-center gap-6">
         <h1
           style={{
@@ -55,13 +55,14 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
             placeholder="Search for channels or categories..."
             onChange={(e) => onSearch(e.target.value)}
             className="w-full border-none rounded-xl py-3 pl-12 pr-4 focus-visible:ring-2 h-auto transition-colors"
-            style={{ 
-              background: "var(--th-surface-top)", 
-              color: "var(--th-text)", 
-              outlineColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)" 
+            style={{
+              background: "var(--th-surface-top)",
+              color: "var(--th-text)",
+              outlineColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)"
             }}
           />
         </div>
+      </div>
       <div className="flex items-center gap-6 ml-8">
         <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
           <img src={JSON.parse(localStorage.getItem("user") || "{}").avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=guest"} alt="profile" className="w-full h-full object-cover" />
@@ -83,10 +84,10 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
     if (!name || !category) return;
     try {
       setLoading(true);
-      await createNetwork({ 
-        title: name, 
-        description, 
-        categories: [category] 
+      await createNetwork({
+        title: name,
+        description,
+        categories: [category]
       });
       onSuccess();
       onClose();
@@ -111,11 +112,11 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
             <MSIcon icon="close" />
           </button>
         </div>
-        
+
         <div className="space-y-4">
           <div>
             <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Network Name</label>
-            <Input 
+            <Input
               className="rounded-xl transition-colors border"
               style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)", color: "var(--th-text)" }}
               placeholder="e.g. Design Explorers"
@@ -125,7 +126,7 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
           </div>
           <div>
             <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Category</label>
-            <Input 
+            <Input
               className="rounded-xl transition-colors border"
               style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)", color: "var(--th-text)" }}
               placeholder="e.g. AI & ML"
@@ -135,7 +136,7 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
           </div>
           <div>
             <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Description</label>
-            <textarea 
+            <textarea
               className="w-full border rounded-xl p-3 text-sm outline-none h-24 resize-none transition-colors"
               style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)", color: "var(--th-text)" }}
               placeholder="What is this network about?"
@@ -145,7 +146,7 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
           </div>
         </div>
 
-        <Button 
+        <Button
           onClick={handleSubmit}
           disabled={loading || !name || !category}
           className="w-full mt-8 font-bold uppercase py-6 rounded-xl transition-all"
@@ -166,7 +167,7 @@ function NetworkCard({ network, onJoin }: { network: any, onJoin: (id: string) =
       style={{ background: "color-mix(in srgb, var(--th-surface-top) 40%, transparent)", borderColor: "var(--th-border)" }}
       onMouseEnter={e => e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 30%, transparent)"}
       onMouseLeave={e => e.currentTarget.style.borderColor = "var(--th-border)"}>
-      
+
       <div className="h-44 relative overflow-hidden transition-colors" style={{ background: "var(--th-surface-high)" }}>
         <img
           src={network.image || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80"}
@@ -193,7 +194,7 @@ function NetworkCard({ network, onJoin }: { network: any, onJoin: (id: string) =
           </span>
         </div>
         <p className="text-sm mb-6 line-clamp-2 h-10 transition-colors" style={{ color: "var(--th-muted)" }}>{network.description}</p>
-        <Button 
+        <Button
           onClick={() => onJoin(network._id)}
           className="w-full py-3 h-auto rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all"
           style={{ background: "var(--th-accent)", color: "var(--th-accent-text)" }}
@@ -224,9 +225,9 @@ export default function BubbleCommunity() {
       setLoading(true);
       const isTrending = activeCategory === "Trending";
       const [nets, cats, trendRes] = await Promise.all([
-        fetchNetworks({ 
-          category: !isTrending ? activeCategory : undefined, 
-          search: searchQuery 
+        fetchNetworks({
+          category: !isTrending ? activeCategory : undefined,
+          search: searchQuery
         }),
         fetchCommunityCategories(),
         fetchTrendingNetworks()
@@ -280,7 +281,7 @@ export default function BubbleCommunity() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Button 
+              <Button
                 onClick={() => setShowCreateModal(true)}
                 className="px-6 py-2.5 h-auto rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all hover:scale-105"
                 style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", boxShadow: "0 0 20px color-mix(in srgb, var(--th-accent) 20%, transparent)" }}
@@ -291,8 +292,8 @@ export default function BubbleCommunity() {
           </div>
         </section>
 
-        <CreateNetworkModal 
-          isOpen={showCreateModal} 
+        <CreateNetworkModal
+          isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           onSuccess={loadData}
         />
@@ -305,14 +306,14 @@ export default function BubbleCommunity() {
               className={cn(
                 "px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider text-[10px] whitespace-nowrap transition-all border"
               )}
-              style={{ 
+              style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 background: activeCategory === cat ? "#ffe792" : "var(--th-surface)",
                 color: activeCategory === cat ? "#655400" : "var(--th-muted)",
                 borderColor: activeCategory === cat ? "transparent" : "var(--th-border)"
               }}
-              onMouseEnter={e => { if(activeCategory !== cat) e.currentTarget.style.color = "#ffe792"; }}
-              onMouseLeave={e => { if(activeCategory !== cat) e.currentTarget.style.color = "var(--th-muted)"; }}
+              onMouseEnter={e => { if (activeCategory !== cat) e.currentTarget.style.color = "#ffe792"; }}
+              onMouseLeave={e => { if (activeCategory !== cat) e.currentTarget.style.color = "var(--th-muted)"; }}
             >
               {cat}
             </button>
@@ -320,11 +321,11 @@ export default function BubbleCommunity() {
         </section>
 
         {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-80 animate-pulse rounded-xl transition-colors" style={{ background: "var(--th-surface-top)" }} />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-80 animate-pulse rounded-xl transition-colors" style={{ background: "var(--th-surface-top)" }} />
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {networks.map((network) => (
