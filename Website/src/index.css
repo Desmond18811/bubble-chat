@@ -130,4 +130,19 @@
   .text-th-text       { color: var(--th-text); }
   .text-th-muted      { color: var(--th-muted); }
   .border-th          { border-color: var(--th-border); }
+
+  /* Liquid Glass Utilities */
+  .glass {
+    background: color-mix(in srgb, var(--th-surface) calc(var(--th-glass-opacity) * 100%), transparent);
+    backdrop-filter: blur(var(--th-glass-blur));
+    -webkit-backdrop-filter: blur(var(--th-glass-blur));
+    border: 1px solid var(--th-border);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, var(--th-glass-opacity));
+    backdrop-filter: blur(var(--th-glass-blur));
+    -webkit-backdrop-filter: blur(var(--th-glass-blur));
+    border: 1px solid var(--th-border);
+  }
 }

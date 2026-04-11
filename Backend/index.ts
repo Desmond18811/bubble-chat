@@ -23,6 +23,7 @@ import healthRoutes from './routes/healthRoutes';
 import profileRoutes from './routes/profileRoutes';
 import workspaceRoutes from './routes/workspaceRoutes';
 import taskRoutes from './routes/taskRoutes';
+import aidaRoutes from './routes/aidaRoutes';
 
 
 // Load environment variables
@@ -244,6 +245,7 @@ app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/security', securityRoutes);
 app.use('/api/v1/workspace', workspaceRoutes);
 app.use('/api/v1/tasks', taskRoutes);
+app.use('/api/v1/aida', aidaRoutes);
 
 
 

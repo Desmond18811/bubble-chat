@@ -59,7 +59,8 @@ const Avatar = ({ src, name, size = 40, online }: any) => {
             height: size,
             borderRadius: "50%",
             objectFit: "cover",
-            border: "2px solid rgba(255,215,9,0.3)",
+            border: "2px solid var(--th-accent)",
+            opacity: 0.9,
           }}
         />
       ) : (
@@ -68,14 +69,14 @@ const Avatar = ({ src, name, size = 40, online }: any) => {
             width: size,
             height: size,
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #001d3d, #0a0a2e)",
-            border: "2px solid rgba(255,231,146,0.3)",
+            background: "linear-gradient(135deg, var(--th-bg), var(--th-surface))",
+            border: "2px solid var(--th-accent-text)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontSize: size * 0.38,
             fontWeight: 700,
-            color: "#ffe792",
+            color: "var(--th-accent)",
             fontFamily: "'Space Grotesk', sans-serif",
           }}
         >
@@ -91,8 +92,8 @@ const Avatar = ({ src, name, size = 40, online }: any) => {
             width: size * 0.27,
             height: size * 0.27,
             borderRadius: "50%",
-            border: "2px solid #031427",
-            background: online ? "#4ade80" : "#475569",
+            border: "2px solid var(--th-bg)",
+            background: online ? "#4ade80" : "var(--th-muted)",
           }}
         />
       )}
@@ -293,15 +294,23 @@ const NewChatModal = ({
   onClose,
   onStartChat,
   currentUserId,
+  recentChats = []
 }: {
   onClose: () => void;
   onStartChat: (conv: any) => void;
   currentUserId: string;
+  recentChats?: any[];
 }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState<string | null>(null);
+
+  // Extract recent contacts from conversation list
+  const recentContacts = recentChats.map(c => {
+    const other = c.users?.find((u: any) => (u.id || u._id) !== currentUserId);
+    return other ? { ...other, chatId: c.id || c._id } : null;
+  }).filter(Boolean);
 
   useEffect(() => {
     const t = setTimeout(async () => {
@@ -332,49 +341,11 @@ const NewChatModal = ({
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.7)",
-        backdropFilter: "blur(8px)",
-        zIndex: 999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 480,
-          background: "#031427",
-          border: "1px solid rgba(59,73,92,0.3)",
-          borderRadius: 20,
-          overflow: "hidden",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
-        }}
-      >
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 440, background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 40px 100px rgba(0,0,0,0.6)" }} className="glass">
         {/* Header */}
-        <div
-          style={{
-            padding: "24px 24px 16px",
-            borderBottom: "1px solid rgba(59,73,92,0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 18,
-              fontWeight: 700,
-              color: "#ffe792",
-              margin: 0,
-            }}
-          >
+        <div style={{ padding: "24px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 20, fontWeight: 700, color: "var(--th-accent)", margin: 0 }}>
             New Transmission
           </h2>
           <button
@@ -383,7 +354,7 @@ const NewChatModal = ({
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#9eacc3",
+              color: "var(--th-muted)",
               padding: 4,
             }}
           >
@@ -392,7 +363,7 @@ const NewChatModal = ({
         </div>
 
         {/* Search */}
-        <div style={{ padding: "16px 24px" }}>
+        <div style={{ padding: "0 24px 16px" }}>
           <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
             <Icon
               name="search"
@@ -400,91 +371,85 @@ const NewChatModal = ({
               style={{
                 position: "absolute",
                 left: 14,
-                color: "#9eacc3",
+                color: "var(--th-muted)",
               }}
             />
             <input
               autoFocus
-              placeholder="Search by phone number, unique ID, or character code..."
+              placeholder="Search explorers..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
                 width: "100%",
-                background: "#071a2f",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 12,
+                background: "var(--th-surface-top)",
+                border: "1px solid var(--th-border)",
+                borderRadius: 14,
                 padding: "12px 44px 12px 42px",
                 fontSize: 14,
-                color: "#d8e6ff",
+                color: "var(--th-text)",
                 outline: "none",
                 boxSizing: "border-box",
                 fontFamily: "'Manrope', sans-serif",
                 transition: "border-color 0.2s",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "rgba(255,231,146,0.5)")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.06)")}
             />
-            <button
-              title="Scan character code"
-              style={{
-                position: "absolute",
-                right: 8,
-                background: "rgba(255,231,146,0.1)",
-                border: "none",
-                borderRadius: 8,
-                padding: 6,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                color: "#ffe792",
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,231,146,0.2)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,231,146,0.1)")}
-              onClick={() => toast.info("Scanning feature coming soon")}
-            >
-              <Icon name="qr_code_scanner" size={20} />
-            </button>
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            {["All", "Phone Number", "Unique ID"].map((filter) => (
-              <button
-                key={filter}
-                style={{
-                  background: filter === "All" ? "rgba(255,231,146,0.15)" : "transparent",
-                  border: filter === "All" ? "1px solid rgba(255,231,146,0.3)" : "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 20,
-                  padding: "4px 12px",
-                  fontSize: 11,
-                  color: filter === "All" ? "#ffe792" : "#9eacc3",
-                  cursor: "pointer",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {filter}
-              </button>
-            ))}
           </div>
         </div>
 
-        {/* Results */}
-        <div style={{ maxHeight: 340, overflowY: "auto", padding: "0 12px 16px" }}>
+        {/* Results / Recents */}
+        <div style={{ maxHeight: 400, overflowY: "auto", padding: "0 12px 24px" }} className="scrollbar-thin">
+          {!query && recentContacts.length > 0 && (
+            <div style={{ padding: "0 12px 12px" }}>
+              <div style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, fontWeight: 700 }}>
+                Recent Recruits
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {recentContacts.slice(0, 5).map((u: any) => (
+                  <div
+                    key={u.id || u._id}
+                    onClick={() => startChat(u)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: "10px 12px",
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      transition: "background 0.15s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <Avatar src={u.avatar} name={u.full_name} size={36} online={u.isOnline} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, color: "var(--th-text)", fontSize: 13, fontFamily: "'Space Grotesk', sans-serif" }}>
+                        {u.full_name || u.username}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--th-muted)" }}>{u.uniqueTag || "@explorer"}</div>
+                    </div>
+                    <Icon name="history" size={16} style={{ color: "var(--th-muted)", opacity: 0.5 }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ height: 1, background: "var(--th-border)", margin: "16px 12px 16px" }} />
+              <div style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, fontWeight: 700 }}>
+                Network Results
+              </div>
+            </div>
+          )}
+
           {loading && (
-            <div style={{ textAlign: "center", padding: 24, color: "#9eacc3", fontSize: 13 }}>
+            <div style={{ textAlign: "center", padding: 24, color: "var(--th-muted)", fontSize: 13 }}>
               Scanning transmissions...
             </div>
           )}
           {!loading && query && results.length === 0 && (
-            <div style={{ textAlign: "center", padding: 24, color: "#9eacc3", fontSize: 13 }}>
-              No users found for "{query}"
+            <div style={{ textAlign: "center", padding: 24, color: "var(--th-muted)", fontSize: 13 }}>
+              No explorers found for "{query}"
             </div>
           )}
-          {!loading && !query && results.length === 0 && (
-            <div style={{ textAlign: "center", padding: 24, color: "#9eacc3", fontSize: 13 }}>
+          {!loading && !query && recentContacts.length === 0 && results.length === 0 && (
+            <div style={{ textAlign: "center", padding: 24, color: "var(--th-muted)", fontSize: 13 }}>
               No explorers available on the network
             </div>
           )}
@@ -511,24 +476,24 @@ const NewChatModal = ({
                 <div
                   style={{
                     fontWeight: 600,
-                    color: "#d8e6ff",
+                    color: "var(--th-text)",
                     fontSize: 14,
                     fontFamily: "'Space Grotesk', sans-serif",
                   }}
                 >
                   {u.full_name || u.username || "Unknown"}
                   {u.verified_badge && (
-                    <Icon name="verified" size={14} fill style={{ color: "#ffe792", marginLeft: 4, verticalAlign: "middle" }} />
+                    <Icon name="verified" size={14} fill style={{ color: "var(--th-accent)", marginLeft: 4, verticalAlign: "middle" }} />
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: "#9eacc3", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "var(--th-muted)", marginTop: 2 }}>
                   {u.uniqueTag || u.email || u.username}
                 </div>
               </div>
               {starting === (u.id || u._id) ? (
-                <div style={{ fontSize: 12, color: "#ffe792" }}>Opening...</div>
+                <div style={{ fontSize: 12, color: "var(--th-accent)" }}>Opening...</div>
               ) : (
-                <Icon name="chevron_right" size={20} style={{ color: "#9eacc3" }} />
+                <Icon name="chevron_right" size={20} style={{ color: "var(--th-muted)" }} />
               )}
             </div>
           ))}
@@ -588,25 +553,25 @@ const NewGroupModal = ({ onClose, onStartGroup, currentUserId }: { onClose: () =
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 480, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "80vh" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 480, background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 24, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "80vh", boxShadow: "0 40px 100px rgba(0,0,0,0.6)" }} className="glass">
         {/* Header */}
-        <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>New Group</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 4 }}><Icon name="close" size={20} /></button>
+        <div style={{ padding: "24px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "var(--th-accent)", margin: 0 }}>New Group</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--th-muted)", padding: 4 }}><Icon name="close" size={20} /></button>
         </div>
 
         {/* Selected Users / Group Name */}
-        <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(59,73,92,0.2)" }}>
+        <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--th-border)" }}>
           <input
             placeholder="Enter Group Name..."
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
-            style={{ width: "100%", background: "#071a2f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px", fontSize: 14, color: "#d8e6ff", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope', sans-serif", marginBottom: 12 }}
+            style={{ width: "100%", background: "var(--th-surface-top)", border: "1px solid var(--th-border)", borderRadius: 12, padding: "12px", fontSize: 14, color: "var(--th-text)", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope', sans-serif", marginBottom: 12 }}
           />
           {selectedUsers.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {selectedUsers.map(u => (
-                <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,231,146,0.15)", color: "#ffe792", padding: "4px 8px", borderRadius: 16, fontSize: 12 }}>
+                <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 6, background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", color: "var(--th-accent)", padding: "4px 8px", borderRadius: 16, fontSize: 12 }}>
                   {u.username || u.full_name?.split(' ')[0]}
                   <Icon name="close" size={14} style={{ cursor: "pointer" }} onClick={() => toggleUser(u)} />
                 </div>
@@ -621,7 +586,7 @@ const NewGroupModal = ({ onClose, onStartGroup, currentUserId }: { onClose: () =
             placeholder="Search explorers to add..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            style={{ width: "100%", background: "#071a2f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px", fontSize: 14, color: "#d8e6ff", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope', sans-serif" }}
+            style={{ width: "100%", background: "var(--th-surface-top)", border: "1px solid var(--th-border)", borderRadius: 12, padding: "12px", fontSize: 14, color: "var(--th-text)", outline: "none", boxSizing: "border-box", fontFamily: "'Manrope', sans-serif" }}
           />
         </div>
 
@@ -633,26 +598,28 @@ const NewGroupModal = ({ onClose, onStartGroup, currentUserId }: { onClose: () =
               <div
                 key={u.id || u._id}
                 onClick={() => toggleUser(u)}
-                style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 12px", borderRadius: 12, cursor: "pointer", background: isSel ? "rgba(255,231,146,0.05)" : "transparent" }}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 12px", borderRadius: 12, cursor: "pointer", background: isSel ? "color-mix(in srgb, var(--th-accent) 8%, transparent)" : "transparent" }}
+                onMouseEnter={(e) => !isSel && (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+                onMouseLeave={(e) => !isSel && (e.currentTarget.style.background = "transparent")}
               >
                 <Avatar src={u.avatar} name={u.full_name} size={44} online={u.isOnline} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, color: "#d8e6ff", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>{u.full_name || u.username}</div>
-                  <div style={{ fontSize: 12, color: "#9eacc3", marginTop: 2 }}>{u.email || u.uniqueTag}</div>
+                  <div style={{ fontWeight: 600, color: "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>{u.full_name || u.username}</div>
+                  <div style={{ fontSize: 12, color: "var(--th-muted)", marginTop: 2 }}>{u.email || u.uniqueTag}</div>
                 </div>
                 {isSel ? (
-                  <Icon name="check_circle" size={20} fill style={{ color: "#ffe792" }} />
+                  <Icon name="check_circle" size={20} fill style={{ color: "var(--th-accent)" }} />
                 ) : (
-                  <Icon name="radio_button_unchecked" size={20} style={{ color: "#9eacc3" }} />
+                  <Icon name="radio_button_unchecked" size={20} style={{ color: "var(--th-muted)" }} />
                 )}
               </div>
             );
           })}
         </div>
 
-        <div style={{ padding: 16, borderTop: "1px solid rgba(59,73,92,0.2)" }}>
-          <button onClick={createGroup} disabled={creating} style={{ width: "100%", background: "linear-gradient(135deg, #ffe792, #ffc300)", color: "#1a0a00", border: "none", borderRadius: 12, padding: 14, fontWeight: 700, cursor: creating ? "default" : "pointer", opacity: creating ? 0.7 : 1 }}>
-            {creating ? "Creating..." : "Create Group"}
+        <div style={{ padding: 16, borderTop: "1px solid var(--th-border)" }}>
+          <button onClick={createGroup} disabled={creating} style={{ width: "100%", background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: 14, fontWeight: 700, cursor: creating ? "default" : "pointer", opacity: creating ? 0.7 : 1 }}>
+            {creating ? "Transmitting..." : "Initialize Group Signals"}
           </button>
         </div>
       </div>
@@ -1211,6 +1178,8 @@ export default function BubbleMessages() {
   const [actionMenuMsgId, setActionMenuMsgId] = useState<string | null>(null);
   const [messageInfoModal, setMessageInfoModal] = useState<any | null>(null);
   const [chatContextMenu, setChatContextMenu] = useState<{ x: number; y: number; chat: any } | null>(null);
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1596,6 +1565,23 @@ export default function BubbleMessages() {
     }
   };
 
+  const handleUpdateMessage = async (msgId: string, content: string, sentAt: string) => {
+    const diff = Date.now() - new Date(sentAt).getTime();
+    if (diff > 4 * 60 * 1000) {
+      toast.error("Transmissions can only be modified within 4 minutes of emission");
+      setEditingMsgId(null);
+      return;
+    }
+    try {
+      await api.updateMessage(msgId, content);
+      setMessages(prev => prev.map(m => (m._id || m.id) === msgId ? { ...m, content } : m));
+      setEditingMsgId(null);
+      toast.success("Transmission modification complete");
+    } catch {
+      toast.error("Failed to update message");
+    }
+  };
+
   const handleReactMessage = async (msgId: string, emoji: string) => {
     try {
       // Optimistic update — toggling locally for instant feedback
@@ -1920,6 +1906,7 @@ export default function BubbleMessages() {
           currentUserId={myId}
           onClose={() => { setShowNewChat(false); setForwardingMsg(null); }}
           onStartChat={handleNewChat}
+          recentChats={chats}
         />
       )}
       {/* ── Message Info Modal ── */}
@@ -1990,9 +1977,9 @@ export default function BubbleMessages() {
       )}
       {deleteModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 16, padding: "24px 32px", width: 320, display: "flex", flexDirection: "column", gap: 16, boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
-            <h3 style={{ margin: 0, color: "#d8e6ff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, textAlign: "center" }}>Delete Message?</h3>
-            <p style={{ margin: 0, color: "#9eacc3", fontSize: 13, textAlign: "center", lineHeight: 1.4 }}>Are you sure you want to delete this transmission?</p>
+          <div style={{ background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 16, padding: "24px 32px", width: 320, display: "flex", flexDirection: "column", gap: 16, boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }} className="glass">
+            <h3 style={{ margin: 0, color: "var(--th-text)", fontFamily: "'Space Grotesk',sans-serif", fontSize: 18, textAlign: "center" }}>Delete Message?</h3>
+            <p style={{ margin: 0, color: "var(--th-muted)", fontSize: 13, textAlign: "center", lineHeight: 1.4 }}>Are you sure you want to delete this transmission?</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
               {deleteModal.isMine && (Date.now() - new Date(deleteModal.sentAt).getTime() < 120000) && (
                 <button
@@ -2004,13 +1991,13 @@ export default function BubbleMessages() {
               )}
               <button
                 onClick={() => handleDeleteMessage(deleteModal.msgId, 'for_me')}
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "12px", color: "#d8e6ff", fontWeight: 600, cursor: "pointer" }}
+                style={{ background: "color-mix(in srgb, var(--th-accent) 5%, transparent)", border: "1px solid var(--th-border)", borderRadius: 8, padding: "12px", color: "var(--th-text)", fontWeight: 600, cursor: "pointer" }}
               >
                 Delete for me
               </button>
               <button
                 onClick={() => setDeleteModal(null)}
-                style={{ background: "transparent", border: "none", color: "#68768b", padding: "8px", fontWeight: 500, cursor: "pointer", marginTop: 4 }}
+                style={{ background: "transparent", border: "none", color: "var(--th-muted)", padding: "8px", fontWeight: 500, cursor: "pointer", marginTop: 4 }}
               >
                 Cancel
               </button>
@@ -2104,18 +2091,18 @@ export default function BubbleMessages() {
               width: 360,
               display: "flex",
               flexDirection: "column",
-              borderRight: "1px solid rgba(59,73,92,0.15)",
-              background: "#031427",
+              borderRight: "1px solid var(--th-border)",
+              background: "var(--th-surface-low)",
               flexShrink: 0,
             }}
           >
             <div style={{ padding: "28px 24px 16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: "#ffe792", letterSpacing: "-0.02em", margin: 0 }}>
+                <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, fontWeight: 700, color: "var(--th-accent)", letterSpacing: "-0.02em", margin: 0 }}>
                   Transmissions
                 </h1>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button title="New Chat" onClick={() => setShowNewChat(true)} style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: 8, cursor: "pointer", color: "#ffe792", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <button title="New Chat" onClick={() => setShowNewChat(true)} style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", border: "1px solid color-mix(in srgb, var(--th-accent) 20%, transparent)", borderRadius: 10, padding: 8, cursor: "pointer", color: "var(--th-accent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Icon name="chat" size={20} />
                   </button>
                   <button title="New Group" onClick={() => setShowNewGroup(true)} style={{ background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10, padding: 8, cursor: "pointer", color: "#4ade80", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2128,29 +2115,29 @@ export default function BubbleMessages() {
               </div>
 
               <div style={{ position: "relative", marginBottom: 20 }}>
-                <Icon name="search" size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9eacc3" }} />
+                <Icon name="search" size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--th-muted)" }} />
                 <input
                   placeholder="Search transmissions..."
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
-                  style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "11px 16px 11px 42px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", background: "var(--th-surface-top)", border: "1px solid var(--th-border)", borderRadius: 12, padding: "11px 16px 11px 42px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
               {/* Stories */}
               <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6 }}>
                 <div onClick={() => setShowStory(true)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}>
-                  <div style={{ width: 52, height: 52, borderRadius: "50%", border: "2px dashed rgba(255,231,146,0.4)", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,231,146,0.05)" }}>
-                    <Icon name="add" size={20} style={{ color: "#ffe792" }} />
+                  <div style={{ width: 52, height: 52, borderRadius: "50%", border: "2px dashed color-mix(in srgb, var(--th-accent) 40%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--th-accent) 5%, transparent)" }}>
+                    <Icon name="add" size={20} style={{ color: "var(--th-accent)" }} />
                   </div>
-                  <span style={{ fontSize: 10, color: "#9eacc3", textTransform: "uppercase" }}>Add</span>
+                  <span style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase" }}>Add</span>
                 </div>
                 {stories.map((s: any, i) => (
                   <div key={s._id || i} onClick={() => setViewingStory({ stories, index: i })} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}>
-                    <div style={{ width: 52, height: 52, borderRadius: "50%", padding: 2, background: "linear-gradient(135deg, #ffe792, #a2c2fd)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 52, height: 52, borderRadius: "50%", padding: 2, background: "linear-gradient(135deg, var(--th-accent), var(--th-secondary))", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Avatar src={s.author?.avatar} name={s.author?.full_name} size={48} />
                     </div>
-                    <span style={{ fontSize: 10, color: "#9eacc3", maxWidth: 52, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 10, color: "var(--th-muted)", maxWidth: 52, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {s.author?.full_name?.split(" ")[0] || "User"}
                     </span>
                   </div>
@@ -2161,7 +2148,7 @@ export default function BubbleMessages() {
             {/* Conversation list */}
             <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 12px" }}>
               {chats.length === 0 && (
-                <div style={{ textAlign: "center", padding: "48px 24px", color: "#9eacc3" }}>
+                <div style={{ textAlign: "center", padding: "48px 24px", color: "var(--th-muted)" }}>
                   <Icon name="chat_bubble_outline" size={40} style={{ opacity: 0.3, display: "block", margin: "0 auto 12px" }} />
                   <p style={{ fontSize: 14 }}>No conversations yet.</p>
                   <p style={{ fontSize: 12, marginTop: 6, opacity: 0.7 }}>Tap + to start one.</p>
@@ -2176,7 +2163,10 @@ export default function BubbleMessages() {
                 .sort((a, b) => {
                   const aPin = a.pinnedBy?.includes(myId) ? 1 : 0;
                   const bPin = b.pinnedBy?.includes(myId) ? 1 : 0;
-                  return bPin - aPin;
+                  if (aPin !== bPin) return bPin - aPin;
+                  const aTime = new Date(a.latestMessage?.sentAt || 0).getTime();
+                  const bTime = new Date(b.latestMessage?.sentAt || 0).getTime();
+                  return bTime - aTime;
                 })
                 .map((c: any) => {
                   const name = getChatDisplayName(c, myId);
@@ -2196,8 +2186,8 @@ export default function BubbleMessages() {
                       style={{
                         display: "flex", gap: 14, alignItems: "center", padding: "14px 12px",
                         borderRadius: 14, cursor: "pointer", marginBottom: 2,
-                        background: isActive ? "rgba(255,231,146,0.07)" : "transparent",
-                        borderLeft: isActive ? "2px solid rgba(255,231,146,0.5)" : "2px solid transparent",
+                        background: isActive ? "color-mix(in srgb, var(--th-accent) 7%, transparent)" : "transparent",
+                        borderLeft: isActive ? "2px solid color-mix(in srgb, var(--th-accent) 50%, transparent)" : "2px solid transparent",
                         transition: "all 0.15s", position: "relative"
                       }}
                       onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
@@ -2206,7 +2196,7 @@ export default function BubbleMessages() {
                       <Avatar src={avatar} name={name} size={46} online={other?.isOnline} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                          <span style={{ fontWeight: 600, color: isActive ? "#ffe792" : "#d8e6ff", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>
+                          <span style={{ fontWeight: 600, color: isActive ? "var(--th-accent)" : "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>
                             {name}
                           </span>
                           {c.latestMessage?.sentAt ? (
@@ -2216,10 +2206,10 @@ export default function BubbleMessages() {
                           ) : (isPinned && <Icon name="push_pin" size={12} style={{ color: "#ffe792" }} />)}
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <p style={{ fontSize: 12, color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "#ffe792" : "#9eacc3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0, flex: 1 }}>
+                          <p style={{ fontSize: 12, color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "var(--th-accent)" : "var(--th-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0, flex: 1 }}>
                             {transmittingRegistry[c.id || c._id]?.recording ? "🎤 recording audio..." : transmittingRegistry[c.id || c._id]?.typing ? "⚡ transmitting..." : (c.latestMessage?.content || (c.latestMessage?.message_type === "voice" ? "🎤 Voice note" : null) || (c.latestMessage?.mediaUrl ? "📎 Attachment" : "No messages yet"))}
                           </p>
-                          {isPinned && c.latestMessage?.sentAt && <Icon name="push_pin" size={12} style={{ color: "#ffe792", marginLeft: 4 }} />}
+                          {isPinned && c.latestMessage?.sentAt && <Icon name="push_pin" size={12} style={{ color: "var(--th-accent)", marginLeft: 4 }} />}
                         </div>
                       </div>
                     </div>
@@ -2229,17 +2219,17 @@ export default function BubbleMessages() {
           </section>
 
           {/* ═══ CENTER — Message Thread ══════════════════════════════ */}
-          <section style={{ flex: 1, display: "flex", flexDirection: "column", background: "#010f20", minWidth: 0 }}>
+          <section style={{ flex: 1, display: "flex", flexDirection: "column", background: "var(--th-bg)", minWidth: 0 }}>
             {!activeChat ? (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, color: "#9eacc3", padding: 40 }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, color: "var(--th-muted)", padding: 40 }}>
                 <Icon name="chat_bubble_outline" size={64} style={{ opacity: 0.15 }} />
-                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 600, color: "#d8e6ff", opacity: 0.4 }}>
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 600, color: "var(--th-text)", opacity: 0.4 }}>
                   Select a transmission
                 </h2>
                 <p style={{ fontSize: 14, opacity: 0.5 }}>Choose from the list or start a new chat</p>
                 <button
                   onClick={() => setShowNewChat(true)}
-                  style={{ marginTop: 8, background: "#ffe792", color: "#655400", border: "none", borderRadius: 40, padding: "12px 24px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}
+                  style={{ marginTop: 8, background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 40, padding: "12px 24px", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase" }}
                 >
                   + New Transmission
                 </button>
@@ -2250,10 +2240,10 @@ export default function BubbleMessages() {
                 {isSelectionMode || selectedMessages.size > 0 ? (
                   <header style={{ height: 76, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", background: "rgba(255,231,146,0.1)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,231,146,0.2)", flexShrink: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <button onClick={() => { setSelectedMessages(new Set()); setIsSelectionMode(false); }} style={{ background: "none", border: "none", color: "#ffe792", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                      <button onClick={() => { setSelectedMessages(new Set()); setIsSelectionMode(false); }} style={{ background: "none", border: "none", color: "var(--th-accent)", cursor: "pointer", display: "flex", alignItems: "center" }}>
                         <Icon name="close" size={24} />
                       </button>
-                      <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "#ffe792", margin: 0 }}>
+                      <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-accent)", margin: 0 }}>
                         {selectedMessages.size} selected
                       </h2>
                     </div>
@@ -2263,7 +2253,7 @@ export default function BubbleMessages() {
                           const allIds = messages.map((m: any) => m._id || m.id).filter(Boolean);
                           setSelectedMessages(new Set(allIds));
                         }}
-                        style={{ background: "rgba(255,231,146,0.1)", border: "none", borderRadius: 10, padding: "8px 12px", cursor: "pointer", color: "#ffe792", fontWeight: 600, fontSize: 13, fontFamily: "'Manrope', sans-serif" }}
+                        style={{ background: "rgba(255,231,146,0.1)", border: "none", borderRadius: 10, padding: "8px 12px", cursor: "pointer", color: "var(--th-accent)", fontWeight: 600, fontSize: 13, fontFamily: "'Manrope', sans-serif" }}
                       >
                         Select All
                       </button>
@@ -2276,7 +2266,7 @@ export default function BubbleMessages() {
                             if (selectedMessages.size > 1) toast.info("Multi-forward coming soon!");
                           }
                         }}
-                        style={{ background: "rgba(255,231,146,0.1)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "#ffe792" }}
+                        style={{ background: "rgba(255,231,146,0.1)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "var(--th-accent)" }}
                       >
                         <Icon name="forward" size={20} />
                       </button>
@@ -2305,14 +2295,14 @@ export default function BubbleMessages() {
                     </div>
                   </header>
                 ) : (
-                  <header style={{ height: 76, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", background: "rgba(3,20,39,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(59,73,92,0.15)", flexShrink: 0 }}>
+                  <header style={{ height: 76, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", background: "var(--th-surface)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--th-border)", flexShrink: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                       <Avatar src={getChatAvatar(activeChat, myId)} name={getChatDisplayName(activeChat, myId)} size={42} online={getOtherUser(activeChat, myId)?.isOnline} />
                       <div>
-                        <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "#d8e6ff", margin: 0 }}>
+                        <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)", margin: 0 }}>
                           {getChatDisplayName(activeChat, myId)}
                         </h2>
-                        <span style={{ fontSize: 11, color: "#ffe792", letterSpacing: "0.08em" }}>
+                        <span style={{ fontSize: 11, color: "var(--th-accent)", letterSpacing: "0.08em" }}>
                           {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording ? "recording audio..." : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing ? "transmitting..." : getOtherUser(activeChat, myId)?.isOnline ? "Online" : (getOtherUser(activeChat, myId) as any)?.lastSeen ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Offline"}
                         </span>
                       </div>
@@ -2323,15 +2313,15 @@ export default function BubbleMessages() {
                           placeholder="Search transmissions..."
                           value={chatSearch}
                           onChange={(e) => setChatSearch(e.target.value)}
-                          style={{ background: "rgba(11,36,64,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 20, padding: "6px 14px 6px 36px", fontSize: 12, color: "#d8e6ff", outline: "none", width: 180, transition: "width 0.3s" }}
+                          style={{ background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 20, padding: "6px 14px 6px 36px", fontSize: 12, color: "var(--th-text)", outline: "none", width: 180, transition: "width 0.3s" }}
                           onFocus={(e) => e.currentTarget.style.width = "240px"}
                           onBlur={(e) => e.currentTarget.style.width = "180px"}
                         />
-                        <Icon name="search" size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#68768b" }} />
+                        <Icon name="search" size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--th-muted)" }} />
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         {[{ name: "call" }, { name: "videocam" }, { name: "info" }].map((btn) => (
-                          <button key={btn.name} style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "#9eacc3" }}>
+                          <button key={btn.name} style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "var(--th-muted)" }}>
                             <Icon name={btn.name} size={20} />
                           </button>
                         ))}
@@ -2404,10 +2394,10 @@ export default function BubbleMessages() {
                             <div
                               style={{
                                 maxWidth: "70%",
-                                background: isMine ? "linear-gradient(135deg, #ffd709, #ffe792)" : "rgba(11,36,64,0.8)",
+                                background: isMine ? "linear-gradient(135deg, var(--th-accent), var(--th-accent))" : "var(--th-surface-low)",
                                 padding: "12px 16px",
                                 borderRadius: isMine ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
-                                border: isMine ? "none" : "1px solid rgba(59,73,92,0.2)",
+                                border: isMine ? "none" : "1px solid var(--th-border)",
                                 position: "relative",
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                               }}
@@ -2425,15 +2415,15 @@ export default function BubbleMessages() {
                                     top: "50%",
                                     transform: "translateY(-50%)",
                                     ...(isMine ? { left: -36 } : { right: -36 }),
-                                    background: "rgba(3,20,39,0.85)",
-                                    border: "1px solid rgba(255,231,146,0.3)",
+                                    background: "var(--th-surface-high)",
+                                    border: "1px solid var(--th-border)",
                                     borderRadius: "50%",
                                     width: 32,
                                     height: 32,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
-                                    color: "#ffe792",
+                                    color: "var(--th-accent)",
                                     cursor: "pointer",
                                     zIndex: 10,
                                     boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
@@ -2530,6 +2520,21 @@ export default function BubbleMessages() {
                                       <Icon name="info" size={18} />
                                     </button>
 
+                                    {/* Edit */}
+                                    {isMine && !isVideo && !isVoice && !isFile && (
+                                      <button
+                                        className="msg-action-btn"
+                                        title="Edit Transmission"
+                                        onClick={() => {
+                                          setEditingMsgId(msgId);
+                                          setEditContent(msg.content || "");
+                                          setActionMenuMsgId(null);
+                                        }}
+                                      >
+                                        <Icon name="edit" size={18} />
+                                      </button>
+                                    )}
+
                                     <div className="msg-action-divider" />
 
                                     {/* Delete */}
@@ -2619,10 +2624,41 @@ export default function BubbleMessages() {
                               )}
 
                               {/* Text */}
-                              {msg.content && (
-                                <div style={{ fontSize: 14, color: isMine ? "#2a1e00" : "#d8e6ff", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                                  {renderMessageText(msg.content)}
+                              {editingMsgId === msgId ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 200 }}>
+                                  <textarea
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    autoFocus
+                                    style={{
+                                      width: "100%",
+                                      background: "rgba(0,0,0,0.1)",
+                                      border: "1px solid var(--th-border)",
+                                      borderRadius: 8,
+                                      padding: 8,
+                                      color: isMine ? "inherit" : "var(--th-text)",
+                                      fontSize: 14,
+                                      outline: "none",
+                                      minHeight: 60,
+                                      resize: "none"
+                                    }}
+                                  />
+                                  <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                                    <button onClick={() => setEditingMsgId(null)} style={{ background: "none", border: "none", color: isMine ? "rgba(0,0,0,0.5)" : "var(--th-muted)", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>CANCEL</button>
+                                    <button
+                                      onClick={() => handleUpdateMessage(msgId, editContent, msg.sentAt || msg.createdAt)}
+                                      style={{ background: isMine ? "rgba(0,0,0,0.1)" : "var(--th-accent)", border: "none", color: isMine ? "inherit" : "var(--th-accent-text)", borderRadius: 4, padding: "2px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}
+                                    >
+                                      SAVE
+                                    </button>
+                                  </div>
                                 </div>
+                              ) : (
+                                msg.content && (
+                                  <div style={{ fontSize: 14, color: isMine ? "#2a1e00" : "var(--th-text)", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                    {renderMessageText(msg.content)}
+                                  </div>
+                                )
                               )}
 
                               {/* Timestamp + receipts */}
@@ -2810,7 +2846,7 @@ export default function BubbleMessages() {
 
           {/* ═══ RIGHT PANEL — Profile ════════════════════════════════ */}
           {activeChat && (
-            <section style={{ width: 300, background: "#031427", borderLeft: "1px solid rgba(59,73,92,0.15)", display: "flex", flexDirection: "column", padding: "32px 24px", overflowY: "auto", flexShrink: 0 }}>
+            <section style={{ width: 300, background: "var(--th-surface-low)", borderLeft: "1px solid var(--th-border)", display: "flex", flexDirection: "column", padding: "32px 24px", overflowY: "auto", flexShrink: 0 }}>
               {(() => {
                 const other = getOtherUser(activeChat, myId);
                 const artifacts = messages.filter((m) => m.mediaUrl && (m.mediaType === "image" || m.mediaType === "video" || m.message_type === "image" || m.message_type === "video"));
@@ -2818,7 +2854,7 @@ export default function BubbleMessages() {
 
                 const actionBtnStyle = {
                   display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.02)", border: "none",
-                  padding: "12px 14px", borderRadius: 12, color: "#9eacc3", fontSize: 13, fontWeight: 500,
+                  padding: "12px 14px", borderRadius: 12, color: "var(--th-muted)", fontSize: 13, fontWeight: 500,
                   cursor: "pointer", textAlign: "left" as const, transition: "background 0.2s",
                 };
 
@@ -2826,14 +2862,14 @@ export default function BubbleMessages() {
                   <>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: 28 }}>
                       <Avatar src={other?.avatar} name={getChatDisplayName(activeChat, myId)} size={84} online={other?.isOnline} />
-                      <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: "#d8e6ff", marginTop: 16, marginBottom: 4 }}>
+                      <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: "var(--th-text)", marginTop: 16, marginBottom: 4 }}>
                         {getChatDisplayName(activeChat, myId)}
                       </h2>
-                      {other?.uniqueTag && <span style={{ fontSize: 12, color: "#ffe792", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
+                      {other?.uniqueTag && <span style={{ fontSize: 12, color: "var(--th-accent)", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
                       {other?.bio && (
                         <div style={{ marginTop: 20, padding: "0 10px" }}>
-                          <h3 style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Bio</h3>
-                          <p style={{ fontSize: 13, color: "#9eacc3", lineHeight: 1.6, margin: 0 }}>{other.bio}</p>
+                          <h3 style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Bio</h3>
+                          <p style={{ fontSize: 13, color: "var(--th-muted)", lineHeight: 1.6, margin: 0 }}>{other.bio}</p>
                         </div>
                       )}
                     </div>
@@ -2841,30 +2877,30 @@ export default function BubbleMessages() {
                     <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 28 }}>
                       {[{ icon: "call", label: "Call" }, { icon: "videocam", label: "Video" }, { icon: "search", label: "Search" }].map((a) => (
                         <div key={a.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                          <button style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", color: "#9eacc3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <button style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid var(--th-border)", cursor: "pointer", color: "var(--th-muted)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <Icon name={a.icon} size={18} />
                           </button>
-                          <span style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase" }}>{a.label}</span>
+                          <span style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase" }}>{a.label}</span>
                         </div>
                       ))}
                     </div>
 
                     {other?.status_message && (
                       <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
-                        <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Status</div>
-                        <div style={{ fontSize: 13, color: "#d8e6ff" }}>{other.status_message}</div>
+                        <div style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Status</div>
+                        <div style={{ fontSize: 13, color: "var(--th-text)" }}>{other.status_message}</div>
                       </div>
                     )}
                     {other?.isOnline !== undefined && (
                       <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: other.isOnline ? "#4ade80" : "#475569" }} />
-                        <span style={{ fontSize: 13, color: "#d8e6ff" }}>{other.isOnline ? "Active now" : "Offline"}</span>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: other.isOnline ? "#4ade80" : "var(--th-muted)" }} />
+                        <span style={{ fontSize: 13, color: "var(--th-text)" }}>{other.isOnline ? "Active now" : "Offline"}</span>
                       </div>
                     )}
 
                     {/* Shared Artifacts */}
                     <div style={{ marginTop: 28 }}>
-                      <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
                         Shared Artifacts ({artifacts.length})
                       </div>
                       {artifacts.length > 0 ? (
@@ -2880,27 +2916,27 @@ export default function BubbleMessages() {
                           ))}
                         </div>
                       ) : (
-                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>0 Shared artifacts</div>
+                        <div style={{ fontSize: 13, color: "color-mix(in srgb, var(--th-text) 30%, transparent)", fontStyle: "italic", padding: "8px 0" }}>0 Shared artifacts</div>
                       )}
                     </div>
 
                     {/* Shared Resources */}
                     <div style={{ marginTop: 28 }}>
-                      <div style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>
                         Shared Resources ({resources.length})
                       </div>
                       {resources.length > 0 ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                           {resources.map((m, i) => (
                             <a key={m.id || m._id || i} href={getSecureMediaUrl(m.mediaUrl) || ""} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,255,255,0.03)", padding: "10px 14px", borderRadius: 12, textDecoration: "none" }}>
-                              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,231,146,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffe792", flexShrink: 0 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--th-accent)", flexShrink: 0 }}>
                                 <Icon name={(m.mediaType === "voice" || m.mediaType === "audio" || m.message_type === "voice") ? "mic" : "insert_drive_file"} size={18} />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 13, color: "#d8e6ff", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                <div style={{ fontSize: 13, color: "var(--th-text)", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                   {(m.mediaType === "voice" || m.mediaType === "audio" || m.message_type === "voice") ? "Voice Note" : "Document File"}
                                 </div>
-                                <div style={{ fontSize: 11, color: "#68768b", marginTop: 2 }}>
+                                <div style={{ fontSize: 11, color: "var(--th-muted)", marginTop: 2 }}>
                                   {new Date(m.sentAt || m.createdAt || Date.now()).toLocaleDateString()}
                                 </div>
                               </div>
@@ -2908,7 +2944,7 @@ export default function BubbleMessages() {
                           ))}
                         </div>
                       ) : (
-                        <div style={{ fontSize: 13, color: "rgba(216,230,255,0.3)", fontStyle: "italic", padding: "8px 0" }}>0 Shared resources</div>
+                        <div style={{ fontSize: 13, color: "color-mix(in srgb, var(--th-text) 30%, transparent)", fontStyle: "italic", padding: "8px 0" }}>0 Shared resources</div>
                       )}
                     </div>
 

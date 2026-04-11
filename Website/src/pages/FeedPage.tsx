@@ -9,6 +9,7 @@ import {
   addFeedComment,
 } from "@/api";
 import { formatDistanceToNow } from "date-fns";
+import { AvatarInitials } from "@/components/AvatarInitials";
 
 /* ─── Icon ────────────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
@@ -60,7 +61,7 @@ function TopBar() {
         <h1
           style={{
             fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
-            fontSize: 22, color: C.accent, letterSpacing: "-0.04em", margin: 0,
+            fontSize: 22, color: "var(--th-accent)", letterSpacing: "-0.04em", margin: 0,
           }}
         >
           BUBBLE
@@ -94,7 +95,7 @@ function TopBar() {
           </button>
         ))}
         <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
-          <img src={user.avatar || "/placeholder-user.jpg"} alt="Me" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-sm" />
         </div>
       </div>
     </header>
@@ -129,10 +130,9 @@ function Composer({ onPostCreated }: { onPostCreated: (post: any) => void }) {
       }}
     >
       <div style={{ display: "flex", gap: 14 }}>
-        <img
-          src={user.avatar || "/placeholder-user.jpg"} alt="Me"
-          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-        />
+        <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
+          <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-lg" />
+        </div>
         <div style={{ flex: 1 }}>
           <textarea
             value={value}
@@ -238,7 +238,9 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid color-mix(in srgb, var(--th-border) 40%, transparent)` }}>
       {comments.slice(0, 3).map((c: any, i: number) => (
         <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
-          <img src={c.user?.avatar || "/placeholder-user.jpg"} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+          <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
+             <AvatarInitials name={c.user?.full_name || c.user?.username || "G"} url={c.user?.avatar} className="text-xs" />
+          </div>
           <div>
             <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 12, color: C.text }}>{c.user?.username || "user"} </span>
             <span style={{ fontSize: 13, color: C.muted, fontFamily: "'Manrope',sans-serif" }}>{c.text}</span>
@@ -246,7 +248,9 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
         </div>
       ))}
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-        <img src={user.avatar || "/placeholder-user.jpg"} alt="me" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+        <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
+           <AvatarInitials name={user.full_name || user.username || "G"} url={user.avatar} className="text-xs" />
+        </div>
         <input
           value={text} onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -313,11 +317,9 @@ function PostItem({ post }: { post: any }) {
       onMouseLeave={() => setHovered(false)}
     >
       <div style={{ display: "flex", gap: 14 }}>
-        <img
-          src={post.author?.avatar || "/placeholder-user.jpg"}
-          alt={post.author?.full_name}
-          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
-        />
+        <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
+          <AvatarInitials name={post.author?.full_name || post.author?.username || "U"} url={post.author?.avatar} className="text-lg" />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
@@ -443,7 +445,9 @@ function RightSidebar() {
           </div>
           {suggestions.map((s, i) => (
             <div key={i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none" }}>
-              <img src={s.avatar} alt={s.name} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
+              <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden" }}>
+                  <AvatarInitials name={s.name || "U"} url={s.avatar !== "/placeholder-user.jpg" ? s.avatar : undefined} className="text-sm" />
+              </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.name}</p>
                 <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: 0 }}>{s.handle}</p>

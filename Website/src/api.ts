@@ -84,6 +84,23 @@ export const resetPassword = async (data: any) => {
   return handleResponse(res);
 };
 
+export const setup2FA = async () => {
+  const res = await fetch(`${BASE_URL}/auth/setup-2fa`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const verify2FA = async (token: string) => {
+  const res = await fetch(`${BASE_URL}/auth/verify-2fa`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ token }),
+  });
+  return handleResponse(res);
+};
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const searchUsers = async (query: string) => {

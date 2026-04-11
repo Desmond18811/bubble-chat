@@ -8,7 +8,7 @@ const BubbleLayout = ({ children }: { children: ReactNode }) => {
       <BubbleSidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         <header className="h-14 border-b border-border flex items-center px-6 gap-4">
-          <span className="font-display font-bold text-foreground text-lg tracking-wide">BUBBLE</span>
+          <span className="font-headline font-bold text-[var(--th-text)] text-lg tracking-wide">SETS</span>
           <div className="flex-1 max-w-md mx-4">
             <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
               <Search className="w-4 h-4 text-muted-foreground" />

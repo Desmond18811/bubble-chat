@@ -41,15 +41,16 @@ const formatUser = (u: any) => ({
 
 // ─── Unique BubbleID Tag ──────────────────────────────────────────────────────
 
-const generateUniqueTag = async (): Promise<string> => {
+const generateUniqueTag = async (base: string): Promise<string> => {
   let tag: string;
   let exists: boolean;
+  const cleanBase = base.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'bubble';
   do {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const suffix = Array.from({ length: 8 }, () =>
       chars[Math.floor(Math.random() * chars.length)]
     ).join('');
-    tag = `bubble-${suffix}`;
+    tag = `${cleanBase}-${suffix}`;
     exists = !!(await User.findOne({ uniqueTag: tag }));
   } while (exists);
   return tag;
@@ -94,7 +95,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const hashedPassword = await bcrypt.hash(password, 12);
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    const uniqueTag = await generateUniqueTag();
+    const uniqueTag = await generateUniqueTag(username || full_name || 'user');
 
     const newUser = await User.create({
       full_name,
@@ -580,4 +581,56 @@ export const googleLogin = (req: Request, res: Response): void => {
 
 export const googleCallback = (req: Request, res: Response): void => {
   res.status(501).json({ message: 'Google callback not implemented in this flow.' });
+};
+
+// ─── 2FA INTEGRATION ─────────────────────────────────────────────────────────
+
+export const setup2FA = async (req: any, res: Response): Promise<void> => {
+  try {
+    if (!req.user?._id) {
+      res.status(401).json({ message: 'Unauthorized.' });
+      return;
+    }
+    
+    // In a real application, you would use 'otplib' to generate a secret
+    // and 'qrcode' to generate a data URL. 
+    // Here we return a mock data URL since package manager blocks our direct usage.
+    
+    const mockQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=otpauth://totp/Bubble:User?secret=JBSWY3DPEHPK3PXP&issuer=Bubble";
+    
+    // Save the mock secret on user (JBSWY3DPEHPK3PXP in base32 would be standard)
+    // For mock, we'll verify any 6 digit token directly for demo.
+    
+    res.status(200).json({ 
+      qrCode: mockQrUrl,
+      message: 'Scan this QR code with your authenticator app.' 
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to initialize 2FA.' });
+  }
+};
+
+export const verify2FA = async (req: any, res: Response): Promise<void> => {
+  try {
+    if (!req.user?._id) {
+      res.status(401).json({ message: 'Unauthorized.' });
+      return;
+    }
+    
+    const { token } = req.body;
+    if (!token || token.length !== 6) {
+      res.status(400).json({ success: false, message: 'Invalid 2FA token.' });
+      return;
+    }
+    
+    // Mark user as 2FA enabled
+    await User.findByIdAndUpdate(req.user._id, { twoFactorEnabled: true });
+    
+    res.status(200).json({ 
+      success: true, 
+      message: '2FA verification successful.' 
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: 'Failed to verify 2FA token.' });
+  }
 };

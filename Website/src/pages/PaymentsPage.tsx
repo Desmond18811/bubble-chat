@@ -107,8 +107,15 @@ function TopBar() {
   );
 }
 
-function BalanceSidebar({ onRefresh }: { onRefresh: () => void }) {
+function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, transactions: Transaction[] }) {
   const [loading, setLoading] = useState(false);
+  const balance = transactions.reduce((acc, tx) => {
+    return (tx.type === "deposit" || tx.type === "income") ? acc + tx.amount : acc - tx.amount;
+  }, 0);
+  
+  const formattedBalance = balance.toFixed(2);
+  const intPart = formattedBalance.split('.')[0];
+  const decPart = formattedBalance.split('.')[1];
 
   const handleDeposit = async () => {
     try {
@@ -191,10 +198,10 @@ function BalanceSidebar({ onRefresh }: { onRefresh: () => void }) {
                   color: "var(--th-accent)",
                 }}
               >
-                $42,890
+                ₦{intPart}
               </span>
               <span className="text-lg transition-colors" style={{ color: "var(--th-secondary)" }}>
-                .65
+                .{decPart}
               </span>
             </div>
             <div className="mt-6 flex gap-4">
@@ -420,7 +427,7 @@ export default function PaymentsDashboard() {
         <div className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
           style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
 
-        <BalanceSidebar onRefresh={fetchTx}/>
+        <BalanceSidebar onRefresh={fetchTx} transactions={data} />
         <TransactionsGrid transactions={data} />
 
         <AidaFinancialAssistant isOpen={showAida} onClose={() => setShowAida(false)} />

@@ -84,18 +84,8 @@ function TopBar() {
     >
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="relative w-8 h-8 shrink-0">
-            <div
-              className="absolute top-0 left-0 w-5 h-5 border-2 transition-colors"
-              style={{ borderColor: "var(--th-accent)" }}
-            />
-            <div
-              className="absolute bottom-0 right-0 w-5 h-5 border-2 transition-colors"
-              style={{ borderColor: "var(--th-accent)" }}
-            />
-          </div>
           <span
-            className="text-2xl font-bold tracking-tighter transition-colors"
+            className="text-2xl font-bold tracking-tighter transition-colors uppercase"
             style={{ ...SG, color: "var(--th-accent)" }}
           >
             BUBBLE
@@ -178,11 +168,23 @@ function ProfileSection() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-     // Load fresh user data directly mapped strictly to user values to allow mutations
-     const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-     if (userObj.full_name) setDisplayName(userObj.full_name);
-     if (userObj.username) setAlias(userObj.username);
-     if (userObj.bio) setBio(userObj.bio);
+     const fetchProfile = async () => {
+         try {
+             const token = localStorage.getItem("access_token");
+             const res = await fetch("http://localhost:3000/api/v1/profile/me", {
+                 headers: { "Authorization": `Bearer ${token}` }
+             });
+             const data = await res.json();
+             if (data.data) {
+                 setDisplayName(data.data.full_name || "");
+                 setAlias(data.data.username || "");
+                 setBio(data.data.bio || "");
+             }
+         } catch(err) {
+             console.error("Failed to fetch profile settings", err);
+         }
+     }
+     fetchProfile();
   }, []);
 
   const handleSave = async () => {
@@ -244,17 +246,22 @@ function ProfileSection() {
             className="text-[10px] uppercase tracking-widest transition-colors"
             style={{ ...SG, color: "var(--th-muted)" }}
           >
-            Public Information
+            Public Information & Security
           </p>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={loading}
-          className="px-6 py-2 rounded-xl text-xs font-bold tracking-wider border-0 transition-all hover:scale-105"
-          style={{ ...SG, background: "var(--th-accent)", color: "var(--th-accent-text)", height: "auto" }}
-        >
-          {loading ? "SAVING..." : "SAVE CHANGES"}
-        </Button>
+        <div className="flex items-center gap-4">
+           <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-dashed" style={{ borderColor: "var(--th-border)" }}>
+              <span className="text-[10px] uppercase tracking-widest font-bold" style={{ ...SG, color: "var(--th-accent)" }}>Security Status: Active</span>
+           </div>
+           <Button
+             onClick={handleSave}
+             disabled={loading}
+             className="px-6 py-2 rounded-xl text-xs font-bold tracking-wider border-0 transition-all hover:scale-105"
+             style={{ ...SG, background: "var(--th-accent)", color: "var(--th-accent-text)", height: "auto" }}
+           >
+             {loading ? "SAVING..." : "SAVE CHANGES"}
+           </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -288,30 +295,16 @@ function ProfileSection() {
 
         {/* Fields */}
         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-          {[
-            { label: "Display Name", value: displayName, setter: setDisplayName },
-            { label: "Username", value: alias, setter: setAlias },
-          ].map(({ label, value, setter }) => (
-            <div key={label} className="space-y-2">
-              <label
-                className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
-                style={{ ...SG, color: "var(--th-muted)" }}
-              >
-                {label}
-              </label>
-              <Input
-                value={value}
-                onChange={(e) => setter(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
-                style={{
-                  background: "var(--th-surface-top)",
-                  borderColor: "var(--th-border)",
-                  color: "var(--th-text)",
-                  outlineColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)",
-                }}
-              />
-            </div>
-          ))}
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase tracking-widest ml-1 block transition-colors" style={{ ...SG, color: "var(--th-muted)" }}>Display Name</label>
+            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
+                style={{ background: "var(--th-surface-top)", borderColor: "var(--th-border)", color: "var(--th-text)", outlineColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)" }} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] uppercase tracking-widest ml-1 block transition-colors" style={{ ...SG, color: "var(--th-muted)" }}>Username</label>
+            <Input value={alias} readOnly className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
+                style={{ background: "var(--th-surface-top)", borderColor: "var(--th-border)", color: "var(--th-accent)", fontWeight: 700, outlineColor: "color-mix(in srgb, var(--th-accent) 20%, transparent)" }} />
+          </div>
           <div className="col-span-full space-y-2">
             <label
               className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
@@ -343,12 +336,39 @@ function SecuritySection() {
   const [twoFA, setTwoFA] = useState(false);
 
   const toggle2FA = async () => {
-    // Eventually hit setup-2fa mapped backend
-    setTwoFA(!twoFA);
-    if (!twoFA) {
-        toast("2FA Protocol Initialization Triggered via API sync point.");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const currentStatus = user.twoFactorEnabled || false;
+
+    if (!currentStatus) {
+      try {
+        const res = await api.setup2FA();
+        if (res.qrCode) {
+          // Open QR in new tab or show alert
+          window.open(res.qrCode, '_blank');
+          const token = prompt("Scan the QR code and enter the 6-digit verification code:");
+          if (token) {
+            const verifyRes = await api.verify2FA(token);
+            if (verifyRes.success) {
+              toast.success("2FA Security Protocol successfully established.");
+              user.twoFactorEnabled = true;
+              localStorage.setItem("user", JSON.stringify(user));
+              setTwoFA(true);
+            }
+          }
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to initialize 2FA security.");
+      }
+    } else {
+      // Logic for disabling 2FA if needed, or just toast for now
+      toast("To disable 2FA, please contact security administrator.");
     }
   };
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    setTwoFA(user.twoFactorEnabled || false);
+  }, []);
 
   return (
     <section
@@ -598,9 +618,9 @@ function ThemeSection() {
             className="text-[10px] uppercase tracking-widest block mb-6 transition-colors"
             style={{ ...SG, color: "var(--th-muted)" }}
           >
-            Glass Panel Refraction
+            Glass Morphism Intensity
           </label>
-          <div className="relative h-1 w-full rounded-full mb-3" style={{ background: "var(--th-surface-top)" }}>
+          <div className="relative h-1 w-full rounded-full mb-3 shadow-[inset_0_0_5px_rgba(0,0,0,0.5)]" style={{ background: "var(--th-surface-top)" }}>
             <div
               className="absolute top-0 left-0 h-full rounded-full transition-colors"
               style={{ width: `${glassIntensity}%`, background: "var(--th-accent)" }}
@@ -626,8 +646,8 @@ function ThemeSection() {
             className="flex justify-between text-[10px] transition-colors"
             style={{ ...SG, color: "var(--th-muted)", opacity: 0.6 }}
           >
-            <span>MINIMAL BLUR</span>
-            <span>TOTAL OBSIDIAN</span>
+            <span>LIQUID GLASS OFF</span>
+            <span>TOTAL GLOW</span>
           </div>
         </div>
 
@@ -770,10 +790,7 @@ export default function SettingsPage() {
             <ThemeSection />
           </div>
 
-          {/* Full width: Ecosystem */}
-          <div className="col-span-12 pt-4">
-            <EcosystemSection />
-          </div>
+          {/* Full width: Removed Ecosystem per requirements */}
         </div>
       </main>
     </div>

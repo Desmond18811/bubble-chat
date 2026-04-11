@@ -13,10 +13,30 @@ import {
   getMe,
   googleLogin,
   googleCallback,
+  setup2FA,
+  verify2FA,
 } from '../controllers/authController';
 
 const router = express.Router();
 const jwtAuth = passport.authenticate('jwt', { session: false });
+
+/**
+ * @swagger
+ * /api/v1/auth/setup-2fa:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Setup 2FA
+ */
+router.post('/setup-2fa', jwtAuth, setup2FA);
+
+/**
+ * @swagger
+ * /api/v1/auth/verify-2fa:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Verify 2FA
+ */
+router.post('/verify-2fa', jwtAuth, verify2FA);
 
 /**
  * @swagger

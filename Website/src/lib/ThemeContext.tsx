@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type ThemeId = "obsidian-gold" | "cyber-mint" | "nebula-violet" | "monolith-gray" | "crimson-eclipse";
+export type ThemeId = "obsidian-gold" | "cyber-mint" | "nebula-violet" | "monolith-gray" | "crimson-eclipse" | "cyberpunk-edge" | "neon-synth" | "solar-flare" | "liquid-glass";
 
 export interface ThemeDefinition {
   id: ThemeId;
@@ -19,6 +19,8 @@ export interface ThemeDefinition {
     "--th-muted": string;
     "--th-border": string;
     "--th-glow": string;
+    "--th-glass-blur": string;
+    "--th-glass-opacity": string;
   };
 }
 
@@ -40,6 +42,8 @@ export const THEMES: ThemeDefinition[] = [
       "--th-muted": "#9eacc3",
       "--th-border": "rgba(59,73,92,0.15)",
       "--th-glow": "rgba(255,231,146,0.15)",
+      "--th-glass-blur": "12px",
+      "--th-glass-opacity": "0.1",
     },
   },
   {
@@ -59,6 +63,8 @@ export const THEMES: ThemeDefinition[] = [
       "--th-muted": "#8892b0",
       "--th-border": "rgba(100,255,218,0.15)",
       "--th-glow": "rgba(100,255,218,0.15)",
+      "--th-glass-blur": "16px",
+      "--th-glass-opacity": "0.08",
     },
   },
   {
@@ -78,6 +84,8 @@ export const THEMES: ThemeDefinition[] = [
       "--th-muted": "#c0aadd",
       "--th-border": "rgba(240,171,252,0.15)",
       "--th-glow": "rgba(240,171,252,0.15)",
+      "--th-glass-blur": "20px",
+      "--th-glass-opacity": "0.12",
     },
   },
   {
@@ -97,6 +105,8 @@ export const THEMES: ThemeDefinition[] = [
       "--th-muted": "#737373",
       "--th-border": "rgba(229,229,229,0.12)",
       "--th-glow": "rgba(229,229,229,0.1)",
+      "--th-glass-blur": "8px",
+      "--th-glass-opacity": "0.05",
     },
   },
   {
@@ -116,6 +126,71 @@ export const THEMES: ThemeDefinition[] = [
       "--th-muted": "#f87171",
       "--th-border": "rgba(239,68,68,0.15)",
       "--th-glow": "rgba(239,68,68,0.15)",
+      "--th-glass-blur": "14px",
+      "--th-glass-opacity": "0.08",
+    },
+  },
+  {
+    id: "cyberpunk-edge",
+    label: "Cyberpunk Edge",
+    swatches: ["#09090b", "#fde047", "#18181b"],
+    vars: {
+      "--th-bg": "#09090b",
+      "--th-surface": "#18181b",
+      "--th-surface-low": "#0f0f12",
+      "--th-surface-high": "#27272a",
+      "--th-surface-top": "#3f3f46",
+      "--th-accent": "#fde047",
+      "--th-accent-text": "#422006",
+      "--th-secondary": "#e879f9",
+      "--th-text": "#fafafa",
+      "--th-muted": "#a1a1aa",
+      "--th-border": "rgba(253,224,71,0.15)",
+      "--th-glow": "rgba(232,121,249,0.2)",
+      "--th-glass-blur": "12px",
+      "--th-glass-opacity": "0.1",
+    },
+  },
+  {
+    id: "neon-synth",
+    label: "Neon Synth",
+    swatches: ["#020024", "#00d4ff", "#090979"],
+    vars: {
+      "--th-bg": "#020024",
+      "--th-surface": "#090979",
+      "--th-surface-low": "#050549",
+      "--th-surface-high": "#1212a4",
+      "--th-surface-top": "#1a1acb",
+      "--th-accent": "#00d4ff",
+      "--th-accent-text": "#002a33",
+      "--th-secondary": "#f80077",
+      "--th-text": "#ffffff",
+      "--th-muted": "#7cb7d5",
+      "--th-border": "rgba(0,212,255,0.2)",
+      "--th-glow": "rgba(248,0,119,0.2)",
+      "--th-glass-blur": "18px",
+      "--th-glass-opacity": "0.1",
+    },
+  },
+  {
+    id: "liquid-glass",
+    label: "Liquid Glass",
+    swatches: ["#e0f2fe", "#0284c7", "#bae6fd"],
+    vars: {
+      "--th-bg": "#f0f9ff",
+      "--th-surface": "rgba(224, 242, 254, 0.4)",
+      "--th-surface-low": "rgba(240, 249, 255, 0.5)",
+      "--th-surface-high": "rgba(186, 230, 253, 0.5)",
+      "--th-surface-top": "rgba(125, 211, 252, 0.6)",
+      "--th-accent": "#0284c7",
+      "--th-accent-text": "#ffffff",
+      "--th-secondary": "#0ea5e9",
+      "--th-text": "#082f49",
+      "--th-muted": "#0369a1",
+      "--th-border": "rgba(2,132,199,0.15)",
+      "--th-glow": "rgba(2,132,199,0.1)",
+      "--th-glass-blur": "40px",
+      "--th-glass-opacity": "0.4",
     },
   },
 ];
@@ -137,6 +212,21 @@ function applyTheme(theme: ThemeDefinition) {
   Object.entries(theme.vars).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
+  
+  // Dynamically update the global Favicon to an SVG referencing the current theme's accent color
+  const accentColor = theme.vars["--th-accent"].replace('#', '%23');
+  const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <rect width="100" height="100" rx="30" fill="${accentColor}" fill-opacity="0.2" stroke="${accentColor}" stroke-width="6"/>
+    <circle cx="50" cy="50" r="25" fill="${accentColor}"/>
+  </svg>`;
+  
+  let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.getElementsByTagName('head')[0].appendChild(link);
+  }
+  link.href = svgFavicon;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

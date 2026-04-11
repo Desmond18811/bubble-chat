@@ -42,8 +42,8 @@ const FILE_TYPE_COLORS: Record<string, string> = {
   pdf: "#f87171",
   doc: "#60a5fa",
   spreadsheet: "#4ade80",
-  folder: "#ffe792",
-  other: "#9eacc3",
+  folder: "var(--th-accent)",
+  other: "var(--th-muted)",
 };
 
 const FILE_TYPE_ICONS: Record<string, string> = {
@@ -109,24 +109,24 @@ function UserSearchInput({ onSelect, placeholder = "Search users..." }: { onSele
         value={q}
         onChange={(e) => { setQ(e.target.value); setOpen(true); }}
         placeholder={placeholder}
-        style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none" }}
+        style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none" }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 200)}
       />
       {open && results.length > 0 && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#031427", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 10, zIndex: 100, overflow: "hidden", maxHeight: 200, overflowY: "auto" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "var(--th-surface-high)", border: "1px solid var(--th-border)", borderRadius: 10, zIndex: 100, overflow: "hidden", maxHeight: 200, overflowY: "auto" }}>
           {results.map((u) => (
             <div key={u.id || u._id} onClick={() => { onSelect(u); setQ(""); setOpen(false); }}
-              style={{ padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#d8e6ff" }}
+              style={{ padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--th-text)" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
             >
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,231,146,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#ffe792" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--th-surface-low)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "var(--th-accent)" }}>
                 {(u.full_name || u.username || "?")[0].toUpperCase()}
               </div>
               <div>
-                <div style={{ fontWeight: 600 }}>{u.full_name || u.username}</div>
-                <div style={{ fontSize: 11, color: "#68768b" }}>{u.uniqueTag || u.email}</div>
+                <div style={{ fontWeight: 600, color: "var(--th-text)" }}>{u.full_name || u.username}</div>
+                <div style={{ fontSize: 11, color: "var(--th-muted)" }}>{u.uniqueTag || u.email}</div>
               </div>
             </div>
           ))}
@@ -179,52 +179,52 @@ function AccessModal({ file, onClose, onUpdated }: { file: WFile; onClose: () =>
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 500, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 500, background: "var(--th-surface)", border: "1px solid var(--th-border)", borderRadius: 20, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
         {/* Header */}
-        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ ...SG, fontSize: 16, fontWeight: 700, color: "#ffe792", margin: 0 }}>Manage Access — {file.name}</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid var(--th-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ ...SG, fontSize: 16, fontWeight: 700, color: "var(--th-accent)", margin: 0 }}>Manage Access — {file.name}</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
         </div>
 
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20, maxHeight: "70vh", overflowY: "auto" }}>
           {/* Public Toggle */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "rgba(255,231,146,0.04)", border: "1px solid rgba(255,231,146,0.1)", borderRadius: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 12 }}>
             <div>
-              <div style={{ ...SG, fontWeight: 700, fontSize: 13, color: "#d8e6ff" }}>Public Link Access</div>
-              <div style={{ fontSize: 11, color: "#68768b", marginTop: 4 }}>Anyone with the link can view this file</div>
+              <div style={{ ...SG, fontWeight: 700, fontSize: 13, color: "var(--th-text)" }}>Public Link Access</div>
+              <div style={{ fontSize: 11, color: "var(--th-muted)", marginTop: 4 }}>Anyone with the link can view this file</div>
             </div>
             <button
               onClick={() => togglePublic(!isPublic)}
-              style={{ width: 44, height: 24, borderRadius: 12, background: isPublic ? "#ffe792" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}
+              style={{ width: 44, height: 24, borderRadius: 12, background: isPublic ? "var(--th-accent)" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s" }}
             >
-              <div style={{ width: 18, height: 18, borderRadius: "50%", background: isPublic ? "#1a0a00" : "#68768b", position: "absolute", top: 3, left: isPublic ? 23 : 3, transition: "left 0.2s" }} />
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: isPublic ? "var(--th-accent-text)" : "var(--th-muted)", position: "absolute", top: 3, left: isPublic ? 23 : 3, transition: "left 0.2s" }} />
             </button>
           </div>
 
           {/* Add collaborator */}
           <div>
-            <p style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Add Collaborator</p>
+            <p style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Add Collaborator</p>
             <UserSearchInput placeholder="Search users to grant access..." onSelect={addUser} />
-            {sharing && <p style={{ fontSize: 12, color: "#ffe792", marginTop: 6 }}>Granting access...</p>}
+            {sharing && <p style={{ fontSize: 12, color: "var(--th-accent)", marginTop: 6 }}>Granting access...</p>}
           </div>
 
           {/* Current collaborators */}
           {file.sharedWith.length > 0 && (
             <div>
-              <p style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Shared With ({file.sharedWith.length})</p>
+              <p style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Shared With ({file.sharedWith.length})</p>
               {file.sharedWith.map((u: any) => (
                 <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "rgba(255,255,255,0.02)" }}>
                   <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(162,194,253,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#a2c2fd" }}>
                     {(u.full_name || "?")[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#d8e6ff" }}>{u.full_name}</div>
-                    <div style={{ fontSize: 11, color: "#68768b" }}>{u.uniqueTag}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--th-text)" }}>{u.full_name}</div>
+                    <div style={{ fontSize: 11, color: "var(--th-muted)" }}>{u.uniqueTag}</div>
                   </div>
-                  <button onClick={() => removeUser(u.id || u._id)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }} title="Revoke access">
+                  <button onClick={() => removeUser(u.id || u._id)} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer", padding: 4 }} title="Revoke access">
                     <MSIcon name="person_remove" style={{ fontSize: 16 }} />
                   </button>
-                  <button onClick={() => blockUser(u.id || u._id)} disabled={blocking === (u.id || u._id)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }} title="Block from file">
+                  <button onClick={() => blockUser(u.id || u._id)} disabled={blocking === (u.id || u._id)} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer", padding: 4 }} title="Block from file">
                     <MSIcon name="block" style={{ fontSize: 16 }} />
                   </button>
                 </div>
@@ -239,7 +239,7 @@ function AccessModal({ file, onClose, onUpdated }: { file: WFile; onClose: () =>
               {file.blockedUsers.map((u: any) => (
                 <div key={u.id || u._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.1)" }}>
                   <div style={{ flex: 1, fontSize: 13, color: "#ef4444" }}>{u.full_name}</div>
-                  <button onClick={() => api.blockWorkspaceFileUser(file.id, u.id || u._id, "unblock").then((r) => { onUpdated(r.file); toast.success("Unblocked"); })} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", fontSize: 12 }}>Unblock</button>
+                  <button onClick={() => api.blockWorkspaceFileUser(file.id, u.id || u._id, "unblock").then((r) => { onUpdated(r.file); toast.success("Unblocked"); })} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer", fontSize: 12 }}>Unblock</button>
                 </div>
               ))}
             </div>
@@ -269,17 +269,17 @@ function FolderModal({ activeWs, onClose, onCreated }: { activeWs: string | null
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 400, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
-        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>Create Folder</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 400, background: "var(--th-surface-high)", border: "1px solid var(--th-border)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid var(--th-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "var(--th-accent)", margin: 0 }}>Create Folder</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
         </div>
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Folder Name</label>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder="e.g. Assets, Q4 Reports..." style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Folder Name</label>
+            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} placeholder="e.g. Assets, Q4 Reports..." style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
           </div>
-          <button onClick={submit} disabled={loading || !name.trim()} style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", color: "#1a0a00", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: loading || !name.trim() ? "default" : "pointer", opacity: loading || !name.trim() ? 0.7 : 1, ...SG, marginTop: 8 }}>
+          <button onClick={submit} disabled={loading || !name.trim()} style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: loading || !name.trim() ? "default" : "pointer", opacity: loading || !name.trim() ? 0.7 : 1, ...SG, marginTop: 8 }}>
             {loading ? "Creating..." : "Create Folder"}
           </button>
         </div>
@@ -322,75 +322,74 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 520, background: "#031427", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 520, background: "var(--th-surface)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
         <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>Upload File</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
+          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "var(--th-accent)", margin: 0 }}>Upload File</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
         </div>
 
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16, maxHeight: "70vh", overflowY: "auto" }}>
           {/* Drop zone */}
           <div
             onClick={() => fileRef.current?.click()}
-            style={{ border: "2px dashed rgba(255,231,146,0.25)", borderRadius: 16, minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", background: "rgba(255,231,146,0.02)", transition: "border-color 0.2s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(255,231,146,0.5)")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,231,146,0.25)")}
+            style={{ border: "2px dashed color-mix(in srgb, var(--th-accent) 0.25)", borderRadius: 16, minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", background: "color-mix(in srgb, var(--th-accent) 0.02)", transition: "border-color 0.2s" }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.5)")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.25)")}
           >
             {preview ? (
               file?.type.startsWith("image/") ? <img src={preview} style={{ maxHeight: 140, borderRadius: 10, objectFit: "cover" }} /> :
               <video src={preview} style={{ maxHeight: 140, borderRadius: 10 }} controls />
             ) : file ? (
-              <><MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 40, color: "#ffe792", opacity: 0.7 }} /><p style={{ fontSize: 13, color: "#9eacc3" }}>{file.name}</p></>
+              <><MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 40, color: "var(--th-accent)", opacity: 0.7 }} /><p style={{ fontSize: 13, color: "var(--th-muted)" }}>{file.name}</p></>
             ) : (
-              <><MSIcon name="cloud_upload" style={{ fontSize: 48, color: "#ffe792", opacity: 0.5 }} /><p style={{ fontSize: 14, color: "#9eacc3" }}>Click to select any file type</p><p style={{ fontSize: 11, color: "#68768b" }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p></>
+              <><MSIcon name="cloud_upload" style={{ fontSize: 48, color: "var(--th-accent)", opacity: 0.5 }} /><p style={{ fontSize: 14, color: "var(--th-muted)" }}>Click to select any file type</p><p style={{ fontSize: 11, color: "#68768b" }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p></>
             )}
           </div>
           <input ref={fileRef} type="file" hidden onChange={handleFile} />
 
           {/* Name */}
           <div>
-            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>File Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Custom name (optional)" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>File Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Custom name (optional)" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
           </div>
 
           {/* Workspace */}
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Workspace</label>
-              <select value={workspace} onChange={(e) => setWorkspace(e.target.value)} style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }}>
+              <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Workspace</label>
+              <select value={workspace} onChange={(e) => setWorkspace(e.target.value)} style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }}>
                 {workspaces.map(w => <option key={w} value={w}>{w}</option>)}
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Or Create New</label>
-              <input value={newWs} onChange={(e) => setNewWs(e.target.value)} placeholder="New workspace name" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+              <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Or Create New</label>
+              <input value={newWs} onChange={(e) => setNewWs(e.target.value)} placeholder="New workspace name" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
             </div>
           </div>
 
           {/* Source */}
           <div>
-            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Source</label>
+            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Source</label>
             <div style={{ display: "flex", gap: 8 }}>
               {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
-                <button key={s} onClick={() => setSource(s)} style={{ flex: 1, background: source === s ? "rgba(255,231,146,0.15)" : "rgba(255,255,255,0.03)", border: `1px solid ${source === s ? "rgba(255,231,146,0.4)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px", cursor: "pointer", color: source === s ? "#ffe792" : "#9eacc3", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}>
+                <button key={s} onClick={() => setSource(s)} style={{ flex: 1, background: source === s ? "color-mix(in srgb, var(--th-accent) 0.15)" : "rgba(255,255,255,0.03)", border: `1px solid ${source === s ? "color-mix(in srgb, var(--th-accent) 0.4)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px", cursor: "pointer", color: source === s ? "var(--th-accent)" : "var(--th-muted)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}>
                   <MSIcon name={SOURCE_ICONS[s]} style={{ fontSize: 16 }} />{s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Tags & Description */}
           <div>
-            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Tags (comma-separated)</label>
-            <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g. design, 2024, brand" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", boxSizing: "border-box" }} />
+            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Tags (comma-separated)</label>
+            <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="e.g. design, 2024, brand" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
           </div>
           <div>
-            <label style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Description (optional)</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What is this file about?" style={{ width: "100%", background: "#0b2440", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#d8e6ff", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "Manrope, sans-serif" }} />
+            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Description (optional)</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What is this file about?" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "Manrope, sans-serif" }} />
           </div>
 
-          <button onClick={submit} disabled={uploading || !file} style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", color: "#1a0a00", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || !file ? "default" : "pointer", opacity: uploading || !file ? 0.7 : 1, ...SG }}>
-            {uploading ? "Uploading..." : "Upload to Workspace"}
+          <button onClick={submit} disabled={uploading || !file} style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || !file ? "default" : "pointer", opacity: uploading || !file ? 0.7 : 1, ...SG }}>
+            {uploading ? "Transmitting Artifact..." : "Upload to Workspace"}
           </button>
         </div>
       </div>
@@ -410,15 +409,15 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFil
     <div
       onClick={() => { if (file.isFolder) onOpenFolder(file.name); }}
       className="col-span-12 md:col-span-4 rounded-xl overflow-hidden cursor-pointer border transition-all"
-      style={{ background: "#031427", borderColor: hovered ? "rgba(255,231,146,0.3)" : "transparent", position: "relative" }}
+      style={{ background: "var(--th-surface)", borderColor: hovered ? "color-mix(in srgb, var(--th-accent) 0.3)" : "transparent", position: "relative" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Preview */}
-      <div className="aspect-video relative overflow-hidden flex items-center justify-center" style={{ background: "#11273f" }}>
+      <div className="aspect-video relative overflow-hidden flex items-center justify-center" style={{ background: "var(--th-surface-top)" }}>
         {file.isFolder ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <MSIcon name="folder_open" style={{ fontSize: 64, color: "#ffe792", opacity: 0.8 }} filled />
+            <MSIcon name="folder_open" style={{ fontSize: 64, color: "var(--th-accent)", opacity: 0.8 }} filled />
           </div>
         ) : isPreviewable ? (
 
@@ -457,8 +456,8 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFil
 
             <button onClick={(e) => { e.stopPropagation(); onAccessManage(file); }} title="Manage access"
 
-              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,231,146,0.2)", border: "1px solid rgba(255,231,146,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MSIcon name="manage_accounts" style={{ fontSize: 15, color: "#ffe792" }} />
+              style={{ width: 30, height: 30, borderRadius: "50%", background: "color-mix(in srgb, var(--th-accent) 0.2)", border: "1px solid color-mix(in srgb, var(--th-accent) 0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <MSIcon name="manage_accounts" style={{ fontSize: 15, color: "var(--th-accent)" }} />
             </button>
             <button onClick={(e) => { e.stopPropagation(); onDelete(file.id); }} title="Delete"
               style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -472,14 +471,14 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFil
       <div className="p-5">
         <div className="flex items-center gap-2 mb-2">
           <MSIcon name={icon} style={{ fontSize: 14, color }} />
-          <span className="text-[10px] uppercase" style={{ ...SG, color: "#9eacc3" }}>{file.fileType}</span>
+          <span className="text-[10px] uppercase" style={{ ...SG, color: "var(--th-muted)" }}>{file.fileType}</span>
           {file.isPublic && <span style={{ ...SG, fontSize: 9, color: "#4ade80", background: "rgba(74,222,128,0.1)", borderRadius: 4, padding: "1px 5px", textTransform: "uppercase", fontWeight: 700 }}>PUBLIC</span>}
         </div>
-        <h3 className="font-bold text-sm truncate" style={{ ...SG, color: "#d8e6ff" }}>{file.name}</h3>
-        {file.description && <p style={{ fontSize: 11, color: "#68768b", marginTop: 4, lineHeight: 1.4 }}>{file.description}</p>}
+        <h3 className="font-bold text-sm truncate" style={{ ...SG, color: "var(--th-text)" }}>{file.name}</h3>
+        {file.description && <p style={{ fontSize: 11, color: "var(--th-muted)", marginTop: 4, lineHeight: 1.4 }}>{file.description}</p>}
         {file.tags.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
-            {file.tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: 9, color: "#9eacc3", background: "rgba(255,255,255,0.04)", borderRadius: 4, padding: "2px 6px", ...SG }}>#{t}</span>)}
+            {file.tags.slice(0, 3).map(t => <span key={t} style={{ fontSize: 9, color: "var(--th-muted)", background: "rgba(255,255,255,0.04)", borderRadius: 4, padding: "2px 6px", ...SG }}>#{t}</span>)}
           </div>
         )}
         <div className="mt-4 flex justify-between items-center">
@@ -489,8 +488,8 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder }: { file: WFil
 
         {file.sharedWith.length > 0 && (
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
-            <MSIcon name="group" style={{ fontSize: 13, color: "#9eacc3" }} />
-            <span style={{ fontSize: 10, color: "#9eacc3" }}>Shared with {file.sharedWith.length} {file.sharedWith.length === 1 ? "person" : "people"}</span>
+            <MSIcon name="group" style={{ fontSize: 13, color: "var(--th-muted)" }} />
+            <span style={{ fontSize: 10, color: "var(--th-muted)" }}>Shared with {file.sharedWith.length} {file.sharedWith.length === 1 ? "person" : "people"}</span>
           </div>
         )}
       </div>
@@ -506,11 +505,11 @@ function StorageBar({ files }: { files: WFile[] }) {
   return (
     <div className="mt-auto p-4 rounded-xl" style={{ background: "rgba(17,39,63,0.40)", backdropFilter: "blur(24px)" }}>
       <div className="flex justify-between items-center mb-2">
-        <span className="text-[10px] uppercase" style={{ ...SG, color: "#9eacc3" }}>Storage</span>
-        <span className="text-[10px] uppercase" style={{ ...SG, color: pct > 80 ? "#f87171" : "#ffe792" }}>{pct.toFixed(1)}%</span>
+        <span className="text-[10px] uppercase" style={{ ...SG, color: "var(--th-muted)" }}>Storage</span>
+        <span className="text-[10px] uppercase" style={{ ...SG, color: pct > 80 ? "#f87171" : "var(--th-accent)" }}>{pct.toFixed(1)}%</span>
       </div>
-      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "#11273f" }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct > 80 ? "#f87171" : "#ffe792" }} />
+      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--th-surface-top)" }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct > 80 ? "#f87171" : "var(--th-accent)" }} />
       </div>
       <p className="text-[10px] mt-2" style={{ color: "rgba(158,172,195,0.60)" }}>{fmtBytes(totalBytes)} of 20 GB used • {files.length} files</p>
     </div>
@@ -601,14 +600,14 @@ export default function WorkspacesPage() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: "#010f20", color: "#d8e6ff" }}>
+    <div className="min-h-screen" style={{ background: "var(--th-bg)", color: "var(--th-text)" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
         body { font-family: 'Manrope', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #010f20; }
+        ::-webkit-scrollbar-track { background: var(--th-bg); }
         ::-webkit-scrollbar-thumb { background: #3b495c; border-radius: 10px; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
@@ -627,7 +626,7 @@ export default function WorkspacesPage() {
                 if (doc) setAccessFile({ ...doc, isFolder: true, sharedWith: [], blockedUsers: [] } as any); // Partial fill placeholder for fetching true details or passing ID
                 setSidebarMenu(null);
               }}
-              style={{ background: "transparent", color: "#d8e6ff", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
               onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
             >
@@ -657,11 +656,11 @@ export default function WorkspacesPage() {
         style={{ left: "85px", background: "rgba(1,15,32,0.40)", backdropFilter: "blur(12px)" }}>
         <div className="flex items-center gap-6 flex-1">
           <div className="relative w-full max-w-md">
-            <MSIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#9eacc3", fontSize: "18px" }} />
+            <MSIcon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--th-muted)", fontSize: "18px" }} />
             <Input
               placeholder="Search files, folders, tags..."
               className="w-full border-none rounded-xl py-2.5 pl-12 pr-4 text-sm focus-visible:ring-2 focus-visible:ring-yellow-300/20"
-              style={{ background: "#11273f", color: "#d8e6ff" }}
+              style={{ background: "var(--th-surface-top)", color: "var(--th-text)" }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -679,27 +678,27 @@ export default function WorkspacesPage() {
           <Button
             onClick={() => setShowUpload(true)}
             className="flex items-center gap-2 rounded-xl font-bold border-0 transition-all hover:scale-[1.02]"
-            style={{ background: "#ffe792", color: "#655400", padding: "10px 20px", ...SG }}
+            style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", padding: "10px 20px", ...SG }}
           >
             <MSIcon name="add_circle" className="text-sm" />
             UPLOAD FILE
           </Button>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,231,146,0.10)" }}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: "color-mix(in srgb, var(--th-accent) 0.10)" }}>
 
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#ffe792" }} />
-            <span className="text-[10px] uppercase font-bold tracking-tighter" style={{ ...SG, color: "#ffe792" }}>Live Sync</span>
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--th-accent)" }} />
+            <span className="text-[10px] uppercase font-bold tracking-tighter" style={{ ...SG, color: "var(--th-accent)" }}>Live Sync</span>
           </div>
         </div>
       </header>
 
       <main className="flex overflow-hidden" style={{ marginLeft: "85px", paddingTop: "80px", height: "100vh" }}>
         {/* Left Sidebar */}
-        <aside className="w-72 flex flex-col gap-8 overflow-y-auto p-8 shrink-0" style={{ background: "#031427" }}>
+        <aside className="w-72 flex flex-col gap-8 overflow-y-auto p-8 shrink-0" style={{ background: "var(--th-surface)" }}>
           {/* All Files button */}
           <button
             onClick={() => { setActiveWs(null); setActiveSource(null); setActiveType(null); }}
             className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 border-0 transition-all"
-            style={{ ...SG, background: !activeWs && !activeSource && !activeType ? "#ffe792" : "rgba(17,39,63,0.5)", color: !activeWs && !activeSource && !activeType ? "#655400" : "#9eacc3", cursor: "pointer" }}
+            style={{ ...SG, background: !activeWs && !activeSource && !activeType ? "var(--th-accent)" : "rgba(17,39,63,0.5)", color: !activeWs && !activeSource && !activeType ? "var(--th-accent-text)" : "var(--th-muted)", cursor: "pointer" }}
           >
             <MSIcon name="folder_open" className="text-sm" />ALL FILES
           </button>
@@ -707,7 +706,7 @@ export default function WorkspacesPage() {
           {/* Workspaces */}
           <nav className="space-y-6">
             <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>Workspaces</h3>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "var(--th-muted)" }}>Workspaces</h3>
               <ul className="space-y-1">
                 {workspaces.map(ws => {
                   const doc = folderDocs.find(f => f.name === ws);
@@ -722,7 +721,7 @@ export default function WorkspacesPage() {
                           }
                         }}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-                        style={activeWs === ws ? { background: "#11273f", color: "#ffe792", fontWeight: 500 } : { color: "#9eacc3" }}>
+                        style={activeWs === ws ? { background: "var(--th-surface-top)", color: "var(--th-accent)", fontWeight: 500 } : { color: "var(--th-muted)" }}>
                         <MSIcon name={activeWs === ws ? "folder_open" : "folder"} className="text-lg" />
                         {ws}
                       </a>
@@ -735,13 +734,13 @@ export default function WorkspacesPage() {
 
             {/* Quick Filters - File types */}
             <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>File Types</h3>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "var(--th-muted)" }}>File Types</h3>
               <ul className="space-y-1">
                 {QUICK_FILTERS.map(f => (
                   <li key={f.id}>
                     <a href="#" onClick={(e) => { e.preventDefault(); setActiveType(activeType === f.id ? null : f.id); }}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-                      style={activeType === f.id ? { background: "rgba(17,39,63,0.30)", color: FILE_TYPE_COLORS[f.id] } : { color: "#9eacc3" }}>
+                      style={activeType === f.id ? { background: "rgba(17,39,63,0.30)", color: FILE_TYPE_COLORS[f.id] } : { color: "var(--th-muted)" }}>
                       <MSIcon name={f.icon} className="text-lg" style={{ color: activeType === f.id ? FILE_TYPE_COLORS[f.id] : undefined }} />
                       {f.label}
                     </a>
@@ -752,13 +751,13 @@ export default function WorkspacesPage() {
 
             {/* Source Filters */}
             <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "#9eacc3" }}>Source</h3>
+              <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "var(--th-muted)" }}>Source</h3>
               <ul className="space-y-1">
                 {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
                   <li key={s}>
                     <a href="#" onClick={(e) => { e.preventDefault(); setActiveSource(activeSource === s ? null : s); }}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
-                      style={activeSource === s ? { background: "rgba(17,39,63,0.30)", color: "#ffe792" } : { color: "#9eacc3" }}>
+                      style={activeSource === s ? { background: "rgba(17,39,63,0.30)", color: "var(--th-accent)" } : { color: "var(--th-muted)" }}>
                       <MSIcon name={SOURCE_ICONS[s]} className="text-lg" />
                       From {s.charAt(0).toUpperCase() + s.slice(1)}
                     </a>
@@ -772,17 +771,17 @@ export default function WorkspacesPage() {
         </aside>
 
         {/* Main grid */}
-        <section className="flex-1 overflow-y-auto p-10" style={{ background: "#010f20" }}>
+        <section className="flex-1 overflow-y-auto p-10" style={{ background: "var(--th-bg)" }}>
           {/* Page Header */}
           <header className="flex justify-between items-end mb-10">
             <div>
-              <nav className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2" style={{ ...SG, color: "#9eacc3" }}>
+              <nav className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2" style={{ ...SG, color: "var(--th-muted)" }}>
                 <span>Workspaces</span>
                 <MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} />
-                <span style={{ color: "#ffe792" }}>{activeWs || "All Files"}</span>
+                <span style={{ color: "var(--th-accent)" }}>{activeWs || "All Files"}</span>
                 {activeSource && <><MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} /><span style={{ color: "#a2c2fd" }}>From {activeSource}</span></>}
               </nav>
-              <h1 className="text-4xl font-bold tracking-tight" style={{ ...SG, color: "#d8e6ff" }}>
+              <h1 className="text-4xl font-bold tracking-tight" style={{ ...SG, color: "var(--th-text)" }}>
                 {activeWs || "All Files"}
               </h1>
               <p style={{ ...SG, fontSize: 12, color: "#68768b", marginTop: 4 }}>{sorted.length} {sorted.length === 1 ? "file" : "files"} {loading ? "— loading..." : ""}</p>
@@ -793,13 +792,13 @@ export default function WorkspacesPage() {
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
-                style={{ background: "#0c2037", border: "1px solid rgba(59,73,92,0.1)", color: "#d8e6ff", borderRadius: 10, padding: "8px 12px", fontSize: 12, cursor: "pointer", ...SG, outline: "none" }}
+                style={{ background: "#0c2037", border: "1px solid rgba(59,73,92,0.1)", color: "var(--th-text)", borderRadius: 10, padding: "8px 12px", fontSize: 12, cursor: "pointer", ...SG, outline: "none" }}
               >
                 <option value="latest">Latest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="largest">Largest First</option>
               </select>
-              <button onClick={load} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,73,92,0.1)", color: "#9eacc3", borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>
+              <button onClick={load} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,73,92,0.1)", color: "var(--th-muted)", borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>
                 <MSIcon name="refresh" style={{ fontSize: 18 }} />
               </button>
             </div>
@@ -807,15 +806,15 @@ export default function WorkspacesPage() {
 
           {/* Empty state */}
           {!loading && sorted.length === 0 && (
-            <div style={{ textAlign: "center", padding: "80px 20px", color: "#9eacc3" }}>
+            <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--th-muted)" }}>
               <MSIcon name="folder_open" style={{ fontSize: 64, opacity: 0.2, display: "block", margin: "0 auto 20px" }} />
-              <p style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#d8e6ff", marginBottom: 8 }}>No files here yet</p>
+              <p style={{ ...SG, fontSize: 18, fontWeight: 700, color: "var(--th-text)", marginBottom: 8 }}>No files here yet</p>
               <p style={{ fontSize: 13 }}>Upload your first file or create a folder</p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 24 }}>
                 <button onClick={() => setShowFolderModal(true)} style={{ background: "rgba(162,194,253,0.1)", color: "#a2c2fd", border: "1px solid rgba(162,194,253,0.2)", borderRadius: 12, padding: "12px 24px", fontWeight: 700, cursor: "pointer", ...SG }}>
                   Create Folder
                 </button>
-                <button onClick={() => setShowUpload(true)} style={{ background: "#ffe792", color: "#1a0a00", border: "none", borderRadius: 12, padding: "12px 24px", fontWeight: 700, cursor: "pointer", ...SG }}>
+                <button onClick={() => setShowUpload(true)} style={{ background: "var(--th-accent)", color: "#1a0a00", border: "none", borderRadius: 12, padding: "12px 24px", fontWeight: 700, cursor: "pointer", ...SG }}>
                   Upload a File
                 </button>
               </div>
@@ -835,7 +834,7 @@ export default function WorkspacesPage() {
           {loading && (
             <div className="grid grid-cols-12 gap-8">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="col-span-12 md:col-span-4 rounded-xl overflow-hidden" style={{ background: "#031427", height: 280, animation: "pulse 1.5s infinite" }} />
+                <div key={i} className="col-span-12 md:col-span-4 rounded-xl overflow-hidden" style={{ background: "var(--th-surface)", height: 280, animation: "pulse 1.5s infinite" }} />
               ))}
             </div>
           )}

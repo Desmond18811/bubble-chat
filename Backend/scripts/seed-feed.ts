@@ -36,9 +36,17 @@ const seedFeed = async () => {
     await mongoose.connect(MONGODB_URI);
     console.log('MongoDB connected for Feed Data generation.');
 
-    const author = await User.findOne({ username: 'alpha_explorer' });
+    let author = await User.findOne({ username: 'alpha_explorer' });
     if (!author) {
-        throw new Error('Run seed-users.ts first! Expected alpha_explorer user.');
+        console.log('alpha_explorer missing. Creating default creator profile...');
+        author = await User.create({
+          full_name: 'Alpha Explorer',
+          username: 'alpha_explorer',
+          email: 'alpha@test.bubble.io',
+          password: 'Password123!',
+          uniqueTag: 'ALPHA123',
+          isVerified: true
+        });
     }
 
     await Post.deleteMany({});
