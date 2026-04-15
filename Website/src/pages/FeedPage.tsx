@@ -85,6 +85,20 @@ function TopBar() {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <button
+          onClick={() => window.location.href = '/aida?trigger=feed'}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "8px 16px", borderRadius: 12, border: `1px solid color-mix(in srgb, var(--th-accent) 30%, transparent)`,
+            background: "color-mix(in srgb, var(--th-accent) 10%, transparent)", color: "var(--th-accent)",
+            fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", transition: "all 0.2s"
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "color-mix(in srgb, var(--th-accent) 20%, transparent)"}
+          onMouseLeave={e => e.currentTarget.style.background = "color-mix(in srgb, var(--th-accent) 10%, transparent)"}
+        >
+          <Icon name="auto_awesome" style={{ fontSize: 16 }} />
+          Summarize Feed
+        </button>
         <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
           <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-sm" />
         </div>

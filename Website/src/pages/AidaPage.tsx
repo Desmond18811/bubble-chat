@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import { cn } from "@/lib/utils";
-import { chatWithAida, fetchAidaBriefing, fetchAidaFinanceAdvice } from "@/api";
+import { chatWithAida, fetchAidaBriefing, fetchAidaFinanceAdvice, aidaFlagPayments } from "@/api";
 import { toast } from "sonner";
 
 /* ─── UI Components ───────────────────────────────────────────────────────── */
@@ -15,7 +15,7 @@ const Icon = ({ name, className = "", style = {} }: { name: string; className?: 
 const SG = { fontFamily: "'Space Grotesk', sans-serif" };
 
 export default function AidaPage() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<any[]>([
     { role: "assistant", content: "Greetings, voyager. I am Aida, your luminous guide through the Sets universe. How can I assist your journey today?" }
   ]);
   const [input, setInput] = useState("");
@@ -35,6 +35,10 @@ export default function AidaPage() {
       handleBriefing();
     } else if (trigger === "finance") {
       handleFinance();
+    } else if (trigger === "feed") {
+      handleFeedSummarize();
+    } else if (trigger === "flag_payments") {
+      handleAudit();
     }
     // Clean up URL to avoid re-triggering on refresh
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -51,7 +55,7 @@ export default function AidaPage() {
     setLoading(true);
     try {
       const res = await chatWithAida(text);
-      setMessages(prev => [...prev, { role: "assistant", content: res.reply || "I'm having trouble connecting to the model." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: res.reply || "I'm having trouble connecting to the model.", action: res.action }]);
     } catch (err: any) {
       toast.error("Aida connection failed: " + err.message);
       setMessages(prev => [...prev, { role: "assistant", content: "The cosmic threads are tangled. I cannot reach my intelligence core right now." }]);
@@ -79,6 +83,35 @@ export default function AidaPage() {
       setMessages(prev => [...prev, { role: "assistant", content: res.reply }]);
     } catch (err: any) {
       toast.error("Failed to get financial advice: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFeedSummarize = async () => {
+    setLoading(true);
+    setMessages(prev => [...prev, { role: "user", content: "Can you summarize the recent activity in my feed?" }]);
+    try {
+      const res = await chatWithAida("Summarize recent feed activity");
+      setMessages(prev => [...prev, { role: "assistant", content: res.reply, action: res.action }]);
+    } catch (err: any) {
+      toast.error("Feed summarization failed: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAudit = async () => {
+    setLoading(true);
+    setMessages(prev => [...prev, { role: "user", content: "Please run an audit on my recent payments and detect any anomalies." }]);
+    try {
+      const res = await aidaFlagPayments();
+      // Format the structured flag response into a message
+      const flagsText = res.flags.map((f: any) => `- [${f.severity.toUpperCase()}] ${f.message}`).join('\n');
+      const reply = `Audit complete. Here is what I found:\n\n${flagsText}`;
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    } catch (err: any) {
+      toast.error("Audit failed: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -145,6 +178,17 @@ export default function AidaPage() {
                     : { background: "#ffe792", color: "#655400", fontWeight: "600" }
                 }>
                   {msg.content}
+                  
+                  {msg.action && msg.action.type === "FIND_FILE" && msg.action.files?.length > 0 && (
+                     <div className="mt-4 flex flex-col gap-2">
+                       {msg.action.files.map((f: any) => (
+                          <a href={`/workspace`} key={f._id} className="block p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-black/40 transition-colors">
+                             <p className="text-sm font-bold truncate" style={{ color: "#ffe792" }}>{f.name}</p>
+                             <p className="text-[10px] text-white/50 uppercase mt-1 tracking-widest">{f.fileType}</p>
+                          </a>
+                       ))}
+                     </div>
+                  )}
                 </div>
               </div>
             ))}

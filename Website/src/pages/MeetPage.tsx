@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, Routes, Route } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
-import { fetchCallLogs, saveCallLog, clearCallLogs, uploadWorkspaceFile } from "@/api";
+import { fetchCallLogs, saveCallLog, clearCallLogs, uploadWorkspaceFile, fetchMeetings } from "@/api";
 import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
@@ -42,6 +42,9 @@ interface RecentCall {
   ts: number;
   duration?: number;
   missed?: boolean;
+  hasAI?: boolean;
+  summary?: string;
+  actionItems?: any[];
 }
 
 interface ScheduledCall {
@@ -75,6 +78,64 @@ function MSIcon({
     >
       {icon}
     </span>
+  );
+}
+
+// ─── Action Items Drawer ──────────────────────────────────────────────────────
+
+function ActionItemsDrawer({ meeting, onClose }: { meeting: any; onClose: () => void }) {
+  if (!meeting) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm p-0">
+      <div className="bg-[var(--th-surface)] border-l border-[var(--th-border)] w-full max-w-md h-full shadow-2xl flex flex-col slide-in-right">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--th-border)] bg-[var(--th-surface-low)]">
+          <h2 className="text-[var(--th-text)] font-bold text-lg flex items-center gap-2">
+            <MSIcon icon="auto_awesome" className="text-[var(--th-accent)]" /> 
+            AI Summary & Action Items
+          </h2>
+          <button onClick={onClose} className="text-[var(--th-muted)] hover:text-[var(--th-accent)] transition-colors">
+            <MSIcon icon="close" />
+          </button>
+        </div>
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-[var(--th-muted)] uppercase tracking-wider mb-2">Meeting Details</h3>
+            <p className="text-sm text-[var(--th-text)] font-medium">{meeting.title || meeting.label}</p>
+            <p className="text-xs text-[var(--th-muted)] mt-1">{new Date(meeting.startedAt || meeting.timestamp || meeting.ts).toLocaleString()}</p>
+          </div>
+          
+          <div className="mb-6">
+            <h3 className="text-xs font-bold text-[var(--th-accent)] uppercase tracking-wider mb-2 flex items-center gap-2">
+               <MSIcon icon="summarize" className="text-sm" /> Executive Summary
+            </h3>
+            <div className="p-4 bg-[var(--th-surface-low)] border border-[var(--th-border)] rounded-xl text-sm text-[var(--th-text)] leading-relaxed">
+              {meeting.summary ? meeting.summary : "No summary has been generated for this meeting yet. Aida AI parses the transcript to generate summaries after the meeting ends."}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-[var(--th-secondary)] uppercase tracking-wider mb-2 flex items-center gap-2">
+               <MSIcon icon="task_alt" className="text-sm" /> Action Items
+            </h3>
+            {meeting.actionItems && meeting.actionItems.length > 0 ? (
+              <ul className="space-y-3">
+                {meeting.actionItems.map((item: any, i: number) => (
+                  <li key={i} className="flex gap-3 bg-[var(--th-surface-low)] border border-[var(--th-border)] p-3 rounded-xl items-start">
+                    <MSIcon icon="check_circle" className="text-[var(--th-secondary)] mt-0.5" />
+                    <div>
+                      <p className="text-sm text-[var(--th-text)]">{item.task}</p>
+                      {item.assignedTo && <p className="text-xs text-[var(--th-muted)] mt-1 tracking-tight">Assigned to: <span className="text-[var(--th-accent)]">@{item.assignedTo}</span></p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-[var(--th-muted)] italic">No explicit tasks were extracted from the transcript.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -311,12 +372,17 @@ function MeetLobby() {
 
   const [loading, setLoading] = useState(false);
 
+  const [activeMeeting, setActiveMeeting] = useState<RecentCall | null>(null);
+
   const loadLogs = async () => {
     try {
       setLoading(true);
-      const data = await fetchCallLogs();
-      // Map backend log keys to frontend RecentCall interface if needed
-      const logs = (data.logs || []).map((l: any) => ({
+      const [logsData, meetingsData] = await Promise.all([
+         fetchCallLogs().catch(() => ({ logs: [] })),
+         fetchMeetings(1, 40).catch(() => ({ meetings: [] }))
+      ]);
+      
+      const logItems = (logsData.logs || []).map((l: any) => ({
         id: l._id,
         roomId: l.roomId,
         type: l.type,
@@ -325,7 +391,33 @@ function MeetLobby() {
         duration: l.duration,
         missed: l.missed,
       }));
-      setRecentCalls(logs);
+
+      const meetingItems = (meetingsData.meetings || []).map((m: any) => ({
+        id: m._id,
+        roomId: m.roomId,
+        type: m.type,
+        label: m.title || "Meeting",
+        ts: new Date(m.startedAt || m.createdAt).getTime(),
+        duration: m.endedAt ? Math.floor((new Date(m.endedAt).getTime() - new Date(m.startedAt).getTime()) / 1000) : 0,
+        hasAI: true,
+        summary: m.summary,
+        actionItems: m.actionItems,
+      }));
+
+      // Merge and deduplicate by roomId, preferring the AI meeting metadata
+      const map = new Map<string, RecentCall>();
+      logItems.forEach((item: RecentCall) => map.set(item.roomId, item));
+      meetingItems.forEach((item: RecentCall) => {
+         if (map.has(item.roomId)) {
+             const existing: any = map.get(item.roomId);
+             map.set(item.roomId, { ...existing, ...item, id: existing.id });
+         } else {
+             map.set(item.roomId, item);
+         }
+      });
+
+      const merged = Array.from(map.values()).sort((a, b) => b.ts - a.ts);
+      setRecentCalls(merged);
     } catch (err) {
       console.error("Failed to fetch call logs:", err);
     } finally {
@@ -588,11 +680,15 @@ function MeetLobby() {
                     c.missed ? "text-red-400" : c.type === "video" ? "text-[var(--th-secondary)]" : "text-[var(--th-accent)]"
                   )} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[var(--th-text)] text-sm font-medium truncate">{c.label}</p>
-                  <p className="text-[var(--th-muted)] text-xs">{new Date(c.ts).toLocaleString()}</p>
+                <div className="flex-1 min-w-0" onClick={() => c.hasAI ? setActiveMeeting(c) : joinRoom(c.roomId, c.type)}>
+                  <div className="flex items-center gap-2">
+                     <p className="text-[var(--th-text)] text-sm font-medium truncate">{c.label}</p>
+                     {c.hasAI && <MSIcon icon="auto_awesome" className="text-[12px] text-[var(--th-accent)]" />}
+                     {c.hasAI && c.actionItems && c.actionItems.length > 0 && <span className="text-[9px] bg-[var(--th-secondary)]/10 text-[var(--th-secondary)] px-1.5 py-0.5 rounded-full font-bold">{c.actionItems.length} TASKS</span>}
+                  </div>
+                  <p className="text-[var(--th-muted)] text-xs">{new Date(c.ts).toLocaleString()} • {c.hasAI ? "Tap to view AI Summary" : "Tap to rejoin room"}</p>
                 </div>
-                <MSIcon icon="call" className="text-[var(--th-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-lg" />
+                <MSIcon icon="call" className="text-[var(--th-muted)] opacity-0 group-hover:opacity-100 transition-opacity text-lg" onClick={() => joinRoom(c.roomId, c.type)}/>
               </div>
             ))}
           </div>
@@ -611,6 +707,9 @@ function MeetLobby() {
           onClose={() => setShowJoin(false)}
           onJoin={(roomId, type) => { setShowJoin(false); joinRoom(roomId, type); }}
         />
+      )}
+      {activeMeeting && (
+        <ActionItemsDrawer meeting={activeMeeting} onClose={() => setActiveMeeting(null)} />
       )}
     </div>
   );
@@ -636,6 +735,11 @@ function MeetRoom() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Real-time transcript state
+  const [liveTranscript, setLiveTranscript] = useState<{ speaker: string; text: string; id: string }[]>([]);
+  const [showLiveTranscript, setShowLiveTranscript] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -668,7 +772,11 @@ function MeetRoom() {
       try { zpRef.current.destroy(); } catch (_) { }
       zpRef.current = null;
     }
-    // Save to recent calls
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch (_) { }
+    }
+    
+    // Save to recent calls and officially end meeting on backend
     try {
       await saveCallLog({
         roomId,
@@ -676,9 +784,55 @@ function MeetRoom() {
         label: `${isVoice ? "Voice" : "Video"} Call`,
         duration: Math.floor((Date.now() - callStarted) / 1000),
       });
+      await api.endMeeting(roomId);
     } catch (_) { }
     navigate("/meet");
   }, [navigate, roomId, callType, isVoice, callStarted]);
+
+  useEffect(() => {
+    // Setup Speech Recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+       const recognition = new SpeechRecognition();
+       recognition.continuous = true;
+       recognition.interimResults = false;
+       recognition.lang = 'en-US';
+
+       recognition.onresult = (event: any) => {
+         for (let i = event.resultIndex; i < event.results.length; ++i) {
+           if (event.results[i].isFinal) {
+             const text = event.results[i][0].transcript.trim();
+             if (text) {
+               const chunk = { speaker: getCurrentUser().name, text, timestamp: Date.now() };
+               setLiveTranscript(prev => [...prev, { ...chunk, id: Math.random().toString() }]);
+               api.addMeetingTranscriptChunk(roomId, chunk).catch(console.error);
+             }
+           }
+         }
+       };
+       
+       // Handle auto-restart if it stops due to silence
+       recognition.onend = () => {
+         if (zpRef.current) {
+           try { recognition.start(); } catch(e) {}
+         }
+       };
+
+       try {
+         recognition.start();
+         recognitionRef.current = recognition;
+       } catch (e) {
+         console.warn("Speech recognition start failed", e);
+       }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+         try { recognitionRef.current.stop(); } catch(e) {}
+         recognitionRef.current.onend = null;
+      }
+    };
+  }, [roomId]);
 
   useEffect(() => {
     if (!containerRef.current || !roomId) return;
@@ -795,12 +949,25 @@ function MeetRoom() {
           </button>
 
           <button
+            onClick={() => setShowLiveTranscript(!showLiveTranscript)}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all glass border",
+              showLiveTranscript 
+                ? "bg-[var(--th-accent)]/10 text-[var(--th-accent)] border-[var(--th-accent)]/30"
+                : "bg-[var(--th-surface-top)] text-[var(--th-muted)] border-[var(--th-border)] hover:text-[var(--th-accent)] hover:border-[var(--th-accent)]/30"
+            )}
+          >
+            <MSIcon icon="subtitles" className="text-lg" />
+            <span className="hidden sm:inline">{showLiveTranscript ? "Hide Captions" : "Live Captions"}</span>
+          </button>
+
+          <button
             onClick={handleCopyLink}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-[var(--th-muted)] hover:text-[var(--th-accent)] hover:border-[var(--th-accent)]/30 transition-all text-sm glass"
           >
             <MSIcon icon={copied ? "check" : "link"} className="text-lg" />
-            {copied ? "Copied!" : "Copy invite link"}
+            <span className="hidden sm:inline">{copied ? "Copied!" : "Invite Link"}</span>
           </button>
+        </div>
       </div>
 
       {/* Zego container / State Overlay */}
@@ -838,6 +1005,37 @@ function MeetRoom() {
             >
               Retry Connection
             </button>
+          </div>
+        )}
+
+        {showLiveTranscript && (
+          <div className="absolute left-6 bottom-24 w-80 max-h-72 bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10 p-5 overflow-y-auto flex flex-col gap-3 z-50 shadow-2xl">
+            <div className="sticky top-0 bg-black/40 backdrop-blur-md -mx-5 -mt-5 p-4 border-b border-white/10 mb-2 flex items-center justify-between">
+              <h4 className="text-[10px] font-bold text-white/70 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                Live Transcript
+              </h4>
+              <button onClick={() => setShowLiveTranscript(false)} className="text-white/40 hover:text-white transition-colors">
+                <MSIcon icon="close" className="text-sm" />
+              </button>
+            </div>
+            {liveTranscript.length === 0 ? (
+               <div className="flex flex-col items-center justify-center py-6 gap-2 opacity-50">
+                 <MSIcon icon="mic" className="text-white text-2xl animate-pulse" />
+                 <p className="text-xs text-white/70 italic">Listening for speech...</p>
+                 <p className="text-[10px] text-white/40 text-center px-4">Speak clearly into your microphone</p>
+               </div>
+            ) : (
+               liveTranscript.slice(-20).map(t => (
+                 <div key={t.id} className="text-[13px] leading-relaxed">
+                   <span className="font-bold text-[var(--th-accent)] mr-2 flex items-center gap-1 w-max">
+                     <MSIcon icon="person" className="text-[10px]" />
+                     {t.speaker}
+                   </span>
+                   <span className="text-white/90">{t.text}</span>
+                 </div>
+               ))
+            )}
           </div>
         )}
       </div>

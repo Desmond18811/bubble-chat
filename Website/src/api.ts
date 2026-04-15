@@ -775,3 +775,339 @@ export const fetchAidaFinanceAdvice = async () => {
   });
   return handleResponse(res);
 };
+
+// ─── Aida Agentic Actions ─────────────────────────────────────────────────────
+
+export const aidaExtractActionItems = async (transcript: string, attendeeNames?: string[]) => {
+  const res = await fetch(`${BASE_URL}/aida/extract-action-items`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ transcript, attendeeNames }),
+  });
+  return handleResponse(res);
+};
+
+export const aidaSearchWorkspace = async (query: string) => {
+  const res = await fetch(`${BASE_URL}/aida/search-workspace`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ query }),
+  });
+  return handleResponse(res);
+};
+
+export const aidaScheduleSuggestion = async (duration = 30, preferredDay?: string) => {
+  const res = await fetch(`${BASE_URL}/aida/schedule-suggestion`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ duration, preferredDay }),
+  });
+  return handleResponse(res);
+};
+
+export const aidaSummarizeFeed = async () => {
+  const res = await fetch(`${BASE_URL}/aida/summarize-feed`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const aidaFlagPayments = async () => {
+  const res = await fetch(`${BASE_URL}/aida/flag-payments`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const aidaFlagPayments = async () => {
+  const res = await fetch(`${BASE_URL}/aida/flag-payments`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export const fetchNotifications = async (page = 1, limit = 30) => {
+  const res = await fetch(`${BASE_URL}/notifications?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchUnreadCount = async () => {
+  const res = await fetch(`${BASE_URL}/notifications/unread-count`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const markNotificationRead = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/notifications/${id}/read`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const markAllNotificationsRead = async () => {
+  const res = await fetch(`${BASE_URL}/notifications/read-all`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const deleteNotification = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/notifications/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const clearAllNotifications = async () => {
+  const res = await fetch(`${BASE_URL}/notifications`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Meetings ─────────────────────────────────────────────────────────────────
+
+export const createMeeting = async (data: {
+  roomId?: string;
+  title?: string;
+  type?: 'video' | 'voice' | 'group';
+  attendees?: string[];
+  attendeeNames?: string[];
+}) => {
+  const res = await fetch(`${BASE_URL}/meetings`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const fetchMeetings = async (page = 1, limit = 20) => {
+  const res = await fetch(`${BASE_URL}/meetings?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchMeetingById = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/meetings/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const addMeetingTranscriptChunk = async (
+  meetingId: string,
+  chunk: { speaker?: string; text: string; timestamp?: number }
+) => {
+  const res = await fetch(`${BASE_URL}/meetings/${meetingId}/transcript`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(chunk),
+  });
+  return handleResponse(res);
+};
+
+export const endMeeting = async (meetingId: string, transcriptRaw?: string) => {
+  const res = await fetch(`${BASE_URL}/meetings/${meetingId}/end`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ transcriptRaw }),
+  });
+  return handleResponse(res);
+};
+
+export const fetchMeetingActionItems = async (meetingId: string) => {
+  const res = await fetch(`${BASE_URL}/meetings/${meetingId}/action-items`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Templates ────────────────────────────────────────────────────────────────
+
+export const fetchTemplates = async (type?: 'meeting' | 'document' | 'task') => {
+  const q = type ? `?type=${type}` : '';
+  const res = await fetch(`${BASE_URL}/templates${q}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const createTemplate = async (data: {
+  type: 'meeting' | 'document' | 'task';
+  title: string;
+  description?: string;
+  content?: Record<string, any>;
+  tags?: string[];
+}) => {
+  const res = await fetch(`${BASE_URL}/templates`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const updateTemplate = async (id: string, data: any) => {
+  const res = await fetch(`${BASE_URL}/templates/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const useTemplate = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/templates/${id}/use`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const deleteTemplate = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/templates/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Activity Log ─────────────────────────────────────────────────────────────
+
+export const fetchActivityLog = async (params?: { page?: number; limit?: number; action?: string; entityType?: string }) => {
+  const q = new URLSearchParams();
+  if (params?.page)       q.set('page',       params.page.toString());
+  if (params?.limit)      q.set('limit',      params.limit.toString());
+  if (params?.action)     q.set('action',     params.action);
+  if (params?.entityType) q.set('entityType', params.entityType);
+
+  const res = await fetch(`${BASE_URL}/activity?${q.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const clearActivityLog = async () => {
+  const res = await fetch(`${BASE_URL}/activity`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Invoices ─────────────────────────────────────────────────────────────────
+
+export const createInvoice = async (data: {
+  recipientName?: string;
+  recipientEmail?: string;
+  items: { description: string; quantity: number; unitPrice: number }[];
+  tax?: number;
+  discount?: number;
+  currency?: string;
+  dueDate?: string;
+  notes?: string;
+}) => {
+  const res = await fetch(`${BASE_URL}/payment/invoice`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const fetchInvoices = async (status?: string) => {
+  const q = status ? `?status=${status}` : '';
+  const res = await fetch(`${BASE_URL}/payment/invoices${q}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchInvoiceById = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/payment/invoice/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const updateInvoice = async (id: string, data: { status?: string; dueDate?: string; notes?: string; recipientEmail?: string }) => {
+  const res = await fetch(`${BASE_URL}/payment/invoice/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const deleteInvoice = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/payment/invoice/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+// ─── Extended Tasks ───────────────────────────────────────────────────────────
+
+export const createTaskFull = async (data: {
+  title: string;
+  description?: string;
+  start_time: string;
+  end_time: string;
+  type?: 'event' | 'task' | 'synced';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  assignedTo?: string;
+  color?: string;
+  source?: string;
+  isRecurring?: boolean;
+  recurrence?: 'daily' | 'weekly' | 'monthly';
+}) => {
+  const res = await fetch(`${BASE_URL}/tasks`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const fetchTasks = async (params?: {
+  type?: string;
+  status?: string;
+  source?: string;
+  from?: string;
+  to?: string;
+}) => {
+  const q = new URLSearchParams();
+  if (params?.type)   q.set('type',   params.type);
+  if (params?.status) q.set('status', params.status);
+  if (params?.source) q.set('source', params.source);
+  if (params?.from)   q.set('from',   params.from);
+  if (params?.to)     q.set('to',     params.to);
+
+  const res = await fetch(`${BASE_URL}/tasks?${q.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const snoozeTask = async (id: string, snoozedUntil: string) => {
+  const res = await fetch(`${BASE_URL}/tasks/${id}/snooze`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ snoozedUntil }),
+  });
+  return handleResponse(res);
+};
+

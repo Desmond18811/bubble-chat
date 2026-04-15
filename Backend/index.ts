@@ -14,6 +14,7 @@ import messageRoutes from './routes/messageRoutes';
 import userRoutes from './routes/userRoutes';
 import storiesRoutes from './routes/storiesRoutes';
 import meetRoutes from './routes/meetRoutes';
+import meetingRoutes from './routes/meetingRoutes';
 import communityRoutes from './routes/communityRoutes';
 import feedRoutes from './routes/feedRoutes';
 import authRoutes from './routes/authRoutes';
@@ -24,6 +25,10 @@ import profileRoutes from './routes/profileRoutes';
 import workspaceRoutes from './routes/workspaceRoutes';
 import taskRoutes from './routes/taskRoutes';
 import aidaRoutes from './routes/aidaRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import templateRoutes from './routes/templateRoutes';
+import activityRoutes from './routes/activityRoutes';
+import { seedDefaultTemplates } from './controllers/templateController';
 
 
 // Load environment variables
@@ -239,6 +244,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/meet', meetRoutes);
+app.use('/api/v1/meetings', meetingRoutes);
 app.use('/api/v1/community', communityRoutes);
 app.use('/api/v1/feed', feedRoutes);
 app.use('/api/v1/payment', paymentRoutes);
@@ -246,6 +252,9 @@ app.use('/api/v1/security', securityRoutes);
 app.use('/api/v1/workspace', workspaceRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/aida', aidaRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/templates', templateRoutes);
+app.use('/api/v1/activity', activityRoutes);
 
 
 
@@ -257,11 +266,15 @@ const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble-ch
 const server = http.createServer(app);
 
 mongoose.connect(mongoURI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ MongoDB connected successfully.');
 
     // Initialize services that depend on the database
     initSecurityScheduler();
+
+    // Seed default platform templates (no-op if already seeded)
+    const systemUser = await import('./models/users').then(m => m.User.findOne({ is_bot: true }));
+    if (systemUser) await seedDefaultTemplates(String(systemUser._id));
 
     // Start the HTTP Server
     server.listen(PORT, () => {

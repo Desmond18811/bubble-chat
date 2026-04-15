@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
+import { fetchTemplates } from "@/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,7 @@ interface CalendarEvent {
   start_time: string;
   end_time: string;
   status: "todo" | "in-progress" | "done";
+  meetingRef?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -223,6 +225,8 @@ export default function CalendarPage() {
 
   const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => i + 7); // 7 AM to 9 PM
 
+  const [templates, setTemplates] = useState<any[]>([]);
+
   // Load functions
   const fetchTasks = async () => {
     try {
@@ -241,7 +245,19 @@ export default function CalendarPage() {
     }
   };
 
-  useEffect(() => { fetchTasks(); }, []);
+  const fetchAllTemplates = async () => {
+    try {
+      const data = await fetchTemplates();
+      if (data.templates) {
+        setTemplates(data.templates);
+      }
+    } catch (err) {}
+  };
+
+  useEffect(() => { 
+    fetchTasks(); 
+    fetchAllTemplates();
+  }, []);
 
   const handleCreateTask = async () => {
     if (!newTaskTitle) return;
@@ -463,13 +479,16 @@ export default function CalendarPage() {
                             opacity: isDone ? 0.6 : 1
                           }}>
                           <div className="flex justify-between items-start">
-                            <p className="font-bold text-[11px] leading-tight truncate transition-colors"
-                              style={{ color: isDone ? "var(--th-text)" : "var(--th-accent)" }}>
-                              {e.title}
-                            </p>
-                            <div className="hidden group-hover:flex gap-1 p-1 rounded-lg" style={{ background: "var(--th-surface)" }}>
-                              <button onClick={() => handleMarkDone(e._id, e.status)} style={{ color: "var(--th-accent)" }}><MSIcon icon="check_circle" filled={isDone} style={{ fontSize: 14 }} /></button>
-                              <button onClick={() => handleDelete(e._id)} style={{ color: "var(--th-muted)" }}><MSIcon icon="delete" style={{ fontSize: 14 }} /></button>
+                            <div className="flex items-center gap-1 overflow-hidden">
+                              {e.meetingRef && <MSIcon icon="auto_awesome" className="text-[10px] shrink-0" style={{ color: "var(--th-accent)" }} title="Synced by Aida" />}
+                              <p className="font-bold text-[11px] leading-tight truncate transition-colors"
+                                style={{ color: isDone ? "var(--th-text)" : "var(--th-accent)" }}>
+                                {e.title}
+                              </p>
+                            </div>
+                            <div className="hidden group-hover:flex gap-1 p-1 rounded-lg shrink-0" style={{ background: "var(--th-surface)" }}>
+                               <button onClick={() => handleMarkDone(e._id, e.status)} style={{ color: "var(--th-accent)" }} title="Mark status"><MSIcon icon="check_circle" filled={isDone} style={{ fontSize: 14 }} /></button>
+                               <button onClick={() => handleDelete(e._id)} style={{ color: "var(--th-muted)" }} title="Delete task"><MSIcon icon="delete" style={{ fontSize: 14 }} /></button>
                             </div>
                           </div>
                           {e.description && (
@@ -496,7 +515,25 @@ export default function CalendarPage() {
 
             <div className="space-y-4 relative z-10">
               <div>
-                <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Designation</label>
+                <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Use Template</label>
+                <select 
+                  onChange={e => {
+                     const t = templates.find(x => x._id === e.target.value);
+                     if (t) {
+                        setNewTaskTitle(t.name);
+                        setNewTaskDesc(t.content);
+                     }
+                  }}
+                  className="bg-transparent border transition-colors text-sm w-full p-2 rounded-xl outline-none" 
+                  style={{ borderColor: "var(--th-border)", color: "var(--th-text)", backgroundColor: "var(--th-surface)" }}>
+                  <option value="">-- Start from scratch --</option>
+                  {templates.map((t: any) => (
+                    <option key={t._id} value={t._id}>{t.name} ({t.type})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors mt-2" style={{ color: "var(--th-muted)" }}>Designation</label>
                 <Input value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} placeholder="e.g. Protocol Sync" className="bg-transparent border transition-colors text-sm" style={{ borderColor: "var(--th-border)", color: "var(--th-text)" }} />
               </div>
               <div>

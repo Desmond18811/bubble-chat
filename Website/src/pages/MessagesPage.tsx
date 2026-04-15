@@ -1172,6 +1172,8 @@ export default function BubbleMessages() {
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState<string | null>(null);
 
   const [sidebarSearch, setSidebarSearch] = useState("");
+  const [sidebarTab, setSidebarTab] = useState<'chats'|'contacts'>('chats');
+  const [contacts, setContacts] = useState<any[]>([]);
   const [chatSearch, setChatSearch] = useState("");
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -1399,12 +1401,14 @@ export default function BubbleMessages() {
   useEffect(() => {
     (async () => {
       try {
-        const [chatRes, storyRes] = await Promise.all([
+        const [chatRes, storyRes, contactsRes] = await Promise.all([
           api.fetchAllUserChats(),
           api.fetchStories(),
+          api.getContacts("").catch((e) => { console.error(e); return { contacts: [] } })
         ]);
         setChats(chatRes.conversations || []);
         setStories(storyRes.stories || []);
+        if (contactsRes.contacts) setContacts(contactsRes.contacts);
       } catch (e) {
         console.error("Initial load failed:", e);
       }
@@ -2145,37 +2149,53 @@ export default function BubbleMessages() {
               </div>
             </div>
 
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--th-border)', margin: '0 24px 16px' }}>
+              <button 
+                onClick={() => setSidebarTab('chats')} 
+                style={{ flex: 1, padding: '10px 0', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: sidebarTab === 'chats' ? 'var(--th-text)' : 'var(--th-muted)', borderBottom: sidebarTab === 'chats' ? '2px solid var(--th-accent)' : '2px solid transparent', transition: 'all 0.2s' }}>
+                CHATS
+              </button>
+              <button 
+                onClick={() => setSidebarTab('contacts')} 
+                style={{ flex: 1, padding: '10px 0', border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700, color: sidebarTab === 'contacts' ? 'var(--th-text)' : 'var(--th-muted)', borderBottom: sidebarTab === 'contacts' ? '2px solid var(--th-accent)' : '2px solid transparent', transition: 'all 0.2s' }}>
+                CONTACTS
+              </button>
+            </div>
+
             {/* Conversation list */}
             <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 12px" }}>
-              {chats.length === 0 && (
-                <div style={{ textAlign: "center", padding: "48px 24px", color: "var(--th-muted)" }}>
-                  <Icon name="chat_bubble_outline" size={40} style={{ opacity: 0.3, display: "block", margin: "0 auto 12px" }} />
-                  <p style={{ fontSize: 14 }}>No conversations yet.</p>
-                  <p style={{ fontSize: 12, marginTop: 6, opacity: 0.7 }}>Tap + to start one.</p>
-                </div>
-              )}
-              {chats
-                .filter((c: any) => {
-                  if (!sidebarSearch) return true;
-                  const name = getChatDisplayName(c, myId).toLowerCase();
-                  return name.includes(sidebarSearch.toLowerCase());
-                })
-                .sort((a, b) => {
-                  const aPin = a.pinnedBy?.includes(myId) ? 1 : 0;
-                  const bPin = b.pinnedBy?.includes(myId) ? 1 : 0;
-                  if (aPin !== bPin) return bPin - aPin;
-                  const aTime = new Date(a.latestMessage?.sentAt || 0).getTime();
-                  const bTime = new Date(b.latestMessage?.sentAt || 0).getTime();
-                  return bTime - aTime;
-                })
-                .map((c: any) => {
-                  const name = getChatDisplayName(c, myId);
-                  const avatar = getChatAvatar(c, myId);
-                  const other = getOtherUser(c, myId);
-                  const isActive = (activeChat?.id || activeChat?._id) === (c.id || c._id);
-                  const isPinned = c.pinnedBy?.includes(myId);
+              {sidebarTab === 'chats' ? (
+                <>
+                  {chats.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "48px 24px", color: "var(--th-muted)" }}>
+                      <Icon name="chat_bubble_outline" size={40} style={{ opacity: 0.3, display: "block", margin: "0 auto 12px" }} />
+                      <p style={{ fontSize: 14 }}>No conversations yet.</p>
+                      <p style={{ fontSize: 12, marginTop: 6, opacity: 0.7 }}>Tap + to start one.</p>
+                    </div>
+                  )}
+                  {chats
+                    .filter((c: any) => {
+                      if (!sidebarSearch) return true;
+                      const name = getChatDisplayName(c, myId).toLowerCase();
+                      return name.includes(sidebarSearch.toLowerCase());
+                    })
+                    .sort((a: any, b: any) => {
+                      const aPin = a.pinnedBy?.includes(myId) ? 1 : 0;
+                      const bPin = b.pinnedBy?.includes(myId) ? 1 : 0;
+                      if (aPin !== bPin) return bPin - aPin;
+                      const aTime = new Date(a.latestMessage?.sentAt || 0).getTime();
+                      const bTime = new Date(b.latestMessage?.sentAt || 0).getTime();
+                      return bTime - aTime;
+                    })
+                    .map((c: any) => {
+                      const name = getChatDisplayName(c, myId);
+                      const avatar = getChatAvatar(c, myId);
+                      const other = getOtherUser(c, myId);
+                      const isActive = (activeChat?.id || activeChat?._id) === (c.id || c._id);
+                      const isPinned = c.pinnedBy?.includes(myId);
 
-                  return (
+                      return (
                     <div
                       key={c.id || c._id}
                       onClick={() => setActiveChat(c)}
@@ -2215,6 +2235,86 @@ export default function BubbleMessages() {
                     </div>
                   );
                 })}
+                </>
+              ) : (
+                <>
+                  {contacts.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "48px 24px", color: "var(--th-muted)" }}>
+                      <Icon name="person_search" size={40} style={{ opacity: 0.3, display: "block", margin: "0 auto 12px" }} />
+                      <p style={{ fontSize: 14 }}>No contacts found.</p>
+                      <p style={{ fontSize: 12, marginTop: 6, opacity: 0.7 }}>Add people you chat with frequently.</p>
+                    </div>
+                  )}
+                  {contacts
+                    .filter((u: any) => {
+                      if (!sidebarSearch) return true;
+                      const name = (u.full_name || u.username || "").toLowerCase();
+                      return name.includes(sidebarSearch.toLowerCase());
+                    })
+                    .sort((a: any, b: any) => {
+                      if (a.isOnline === b.isOnline) return 0;
+                      return a.isOnline ? -1 : 1;
+                    })
+                    .map((user: any) => (
+                      <div
+                        key={user.id || user._id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "14px 16px",
+                          borderRadius: 16,
+                          background: "transparent",
+                          transition: "all 0.2s ease",
+                          marginBottom: 4,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "var(--th-surface-top)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                        }}
+                      >
+                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                           <Avatar
+                              src={user.avatarUrl || user.avatar}
+                              name={user.full_name || user.username}
+                              size={44}
+                              online={user.status === 'online' || user.isOnline}
+                           />
+                           <div>
+                              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--th-text)" }}>
+                                {user.full_name || user.username}
+                              </h3>
+                              <p style={{ margin: 0, fontSize: 12, color: "var(--th-muted)" }}>
+                                {user.bio || `@${user.username}`}
+                              </p>
+                           </div>
+                         </div>
+                         <button 
+                           onClick={async () => {
+                              try {
+                                 const exists = chats.find((c: any) => !c.isGroup && c.users.some((u: any) => (u.id || u._id) === (user.id || user._id)));
+                                 if (exists) {
+                                    setActiveChat(exists);
+                                 } else {
+                                    const res = await api.createChat({ isGroup: false, users: [user.id || user._id] });
+                                    setChats([res.conversation, ...chats]);
+                                    setActiveChat(res.conversation);
+                                 }
+                                 setSidebarTab('chats');
+                              } catch (err: any) {
+                                 toast.error("Failed to start chat.");
+                              }
+                           }}
+                           style={{ width: 32, height: 32, borderRadius: "50%", background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", border: "none", color: "var(--th-accent)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                         >
+                           <Icon name="chat" size={16} />
+                         </button>
+                      </div>
+                    ))}
+                </>
+              )}
             </div>
           </section>
 

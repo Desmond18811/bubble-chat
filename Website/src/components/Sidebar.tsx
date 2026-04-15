@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import { AvatarInitials } from "@/components/AvatarInitials";
 import BubbleIcon from "@/components/BubbleIcon";
+import { fetchUnreadCount } from "@/api";
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 const NAV_ICONS = [
@@ -16,6 +17,7 @@ const NAV_ICONS = [
   { icon: "calendar_today",label: "Calendar",  path: "/calendar"  },
   { icon: "payments",      label: "Payments",  path: "/payments"  },
 ];
+
 
 function MSIcon({
   icon,
@@ -43,7 +45,8 @@ function MSIcon({
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData]     = useState<any>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -52,13 +55,25 @@ export default function Sidebar() {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         });
         const json = await res.json();
-        if (json.data) {
-          setUserData(json.data);
-        }
+        if (json.data) setUserData(json.data);
       } catch (err) {}
     };
     fetchUser();
   }, []);
+
+  // Poll notification count every 30s
+  useEffect(() => {
+    const tick = async () => {
+      try {
+        const data = await fetchUnreadCount();
+        setUnreadCount(data.count || 0);
+      } catch { /* silent */ }
+    };
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
 
   // Match current route — use startsWith so nested paths (e.g. /meet/room) still activate /meet
   const isActive = (path: string) => {
@@ -147,6 +162,52 @@ export default function Sidebar() {
         className="mt-auto flex flex-col w-full shrink-0 pt-4"
         style={{ borderTop: "1px solid var(--th-border)" }}
       >
+        {/* Notifications bell */}
+        <Link
+          to="/notifications"
+          title={isExpanded ? undefined : "Notifications"}
+          className={cn(
+            "flex items-center h-12 mx-2 mb-1 rounded-xl border-l-[3px] transition-all duration-200 group overflow-hidden relative"
+          )}
+          style={{
+            color:           isActive("/notifications") ? "var(--th-accent)"  : "var(--th-secondary)",
+            borderLeftColor: isActive("/notifications") ? "var(--th-accent)"  : "transparent",
+            background:      isActive("/notifications") ? "color-mix(in srgb, var(--th-accent) 10%, transparent)" : "transparent",
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive("/notifications")) {
+              e.currentTarget.style.color = "var(--th-accent)";
+              e.currentTarget.style.background = "color-mix(in srgb, var(--th-accent) 5%, transparent)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive("/notifications")) {
+              e.currentTarget.style.color = "var(--th-secondary)";
+              e.currentTarget.style.background = "transparent";
+            }
+          }}
+        >
+          <span className="flex flex-shrink-0 items-center justify-center w-14 relative">
+            <MSIcon icon="notifications" filled={isActive("/notifications")} className="text-2xl" />
+            {unreadCount > 0 && (
+              <span
+                className="absolute top-0 right-2 min-w-[16px] h-4 rounded-full text-[9px] font-bold flex items-center justify-center px-1"
+                style={{ background: "#ef4444", color: "#fff" }}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </span>
+          <span
+            className={cn(
+              "font-headline text-sm font-medium tracking-wide whitespace-nowrap transition-all duration-300",
+              isExpanded ? "opacity-100 max-w-[180px]" : "opacity-0 max-w-0 overflow-hidden"
+            )}
+          >
+            Notifications{unreadCount > 0 && ` (${unreadCount})`}
+          </span>
+        </Link>
+
         {/* Settings */}
         <Link
           to="/settings"
@@ -154,6 +215,7 @@ export default function Sidebar() {
           className={cn(
             "flex items-center h-12 mx-2 mb-1 rounded-xl border-l-[3px] transition-all duration-200 group overflow-hidden"
           )}
+
           style={{
             color:           isActive("/settings") ? "var(--th-accent)"  : "var(--th-secondary)",
             borderLeftColor: isActive("/settings") ? "var(--th-accent)"  : "transparent",

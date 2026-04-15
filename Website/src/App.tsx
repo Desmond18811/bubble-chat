@@ -21,8 +21,10 @@ import SignupPage from "./pages/auth/SignupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import VerifyOTPPage from "./pages/auth/VerifyOTPPage";
 import AidaPage from "./pages/AidaPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 import { Navigate } from "react-router-dom";
+
 
 // Protected Route Component (Simpler version)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -59,8 +61,10 @@ const App = () => (
           <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/ai" element={<ProtectedRoute><AidaPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/logout" element={<LogoutPage />} />
           <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
