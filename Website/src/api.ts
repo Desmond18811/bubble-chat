@@ -820,13 +820,6 @@ export const aidaFlagPayments = async () => {
   return handleResponse(res);
 };
 
-export const aidaFlagPayments = async () => {
-  const res = await fetch(`${BASE_URL}/aida/flag-payments`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
-};
-
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export const fetchNotifications = async (page = 1, limit = 30) => {

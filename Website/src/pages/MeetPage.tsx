@@ -932,7 +932,7 @@ function MeetRoom() {
             Private room
           </div>
         </div>
-
+        <div className="flex items-center gap-2">
           <input
              type="file"
              ref={fileInputRef}
