@@ -8,6 +8,7 @@ import {
   scheduleSuggestion,
   summarizeFeed,
   flagPayments,
+  aidaScheduleTask,
 } from '../controllers/aidaController';
 import passport from 'passport';
 
@@ -23,8 +24,8 @@ router.get('/financial-advice',    requireAuth, getFinancialAdvice);
 router.post('/extract-action-items', requireAuth, extractActionItems);
 router.post('/search-workspace',     requireAuth, searchWorkspace);
 router.post('/schedule-suggestion',  requireAuth, scheduleSuggestion);
+router.post('/schedule-task',        requireAuth, aidaScheduleTask);
 router.post('/summarize-feed',       requireAuth, summarizeFeed);
 router.get('/flag-payments',         requireAuth, flagPayments);
 
 export default router;
-

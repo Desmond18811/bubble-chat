@@ -5,13 +5,13 @@ import {
   createWorkspaceFolder,
   listWorkspaceFiles,
   getSharedWorkspaceFolder,
-
   getWorkspaceFile,
   deleteWorkspaceFile,
   manageFileAccess,
   blockFileUser,
   proxyWorkspaceFile,
   updateWorkspaceFile,
+  getSharedWithMe,
 } from '../controllers/workspaceController';
 import { handleUpload } from '../middleware/upload';
 
@@ -242,5 +242,8 @@ router.put('/file/:fileId/access', manageFileAccess);
  *         description: Block status updated.
  */
 router.put('/file/:fileId/block', blockFileUser);
+
+/** GET /api/v1/workspace/shared-with-me — files shared with current user */
+router.get('/shared-with-me', getSharedWithMe);
 
 export default router;

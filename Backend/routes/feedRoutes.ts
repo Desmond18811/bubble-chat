@@ -3,6 +3,9 @@ import passport from 'passport';
 import multer from 'multer';
 import {
   getFeedPosts,
+  getTrendingPosts,
+  getFollowingFeed,
+  getSuggestedUsers,
   createPost,
   toggleLike,
   toggleRepost,
@@ -16,15 +19,17 @@ const router = express.Router();
 router.use(passport.authenticate('jwt', { session: false }));
 const upload = multer({ storage: multer.memoryStorage() });
 
-/**
- * @swagger
- * tags:
- *   name: Feed
- *   description: Public feed / blog posts timeline
- */
-
 /** GET /api/v1/feed — paginated feed */
 router.get('/', getFeedPosts);
+
+/** GET /api/v1/feed/trending — trending posts by engagement */
+router.get('/trending', getTrendingPosts);
+
+/** GET /api/v1/feed/following — posts from users you follow */
+router.get('/following', getFollowingFeed);
+
+/** GET /api/v1/feed/suggestions — suggested users to follow */
+router.get('/suggestions', getSuggestedUsers);
 
 /** GET /api/v1/feed/saved — posts saved by the authenticated user */
 router.get('/saved', getSavedPosts);

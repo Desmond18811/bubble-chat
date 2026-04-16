@@ -7,6 +7,10 @@ import {
   getUserStatus,
   toggleBlockUser,
   reportUser,
+  getSuggestions,
+  toggleFollowUser,
+  getUserFollowers,
+  getUserFollowing,
 } from '../controllers/userController';
 
 const router = express.Router();
@@ -31,6 +35,7 @@ router.use(passport.authenticate('jwt', { session: false }));
  *         description: List of matching users.
  */
 // NOTE: Specific named routes must come BEFORE /:userId to prevent collision
+router.route('/suggestions').get(getSuggestions);
 router.route('/search').get(searchUsers);
 
 /**
@@ -115,6 +120,15 @@ router.route('/block/:userId').post(toggleBlockUser);
 
 /** POST /api/v1/user/report/:userId — Report user for investigation */
 router.route('/report/:userId').post(reportUser);
+
+/** POST /api/v1/user/:userId/follow — Toggle follow/unfollow */
+router.post('/:userId/follow', toggleFollowUser);
+
+/** GET /api/v1/user/:userId/followers */
+router.get('/:userId/followers', getUserFollowers);
+
+/** GET /api/v1/user/:userId/following */
+router.get('/:userId/following', getUserFollowing);
 
 export default router;
 

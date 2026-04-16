@@ -7,7 +7,7 @@ import * as api from "@/api";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 type FileType = "image" | "video" | "audio" | "pdf" | "doc" | "spreadsheet" | "other";
-type FileSource = "manual" | "meeting" | "contact";
+type FileSource = "manual" | "meeting";
 
 interface WFile {
   id: string;
@@ -61,7 +61,6 @@ const FILE_TYPE_ICONS: Record<string, string> = {
 const SOURCE_ICONS: Record<FileSource, string> = {
   manual: "computer",
   meeting: "video_camera_front",
-  contact: "person",
 };
 
 const fmtBytes = (b: number) => {
@@ -371,7 +370,7 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
           <div>
             <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Source</label>
             <div style={{ display: "flex", gap: 8 }}>
-              {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
+              {(["manual", "meeting"] as FileSource[]).map(s => (
                 <button key={s} onClick={() => setSource(s)} style={{ flex: 1, background: source === s ? "color-mix(in srgb, var(--th-accent) 0.15)" : "rgba(255,255,255,0.03)", border: `1px solid ${source === s ? "color-mix(in srgb, var(--th-accent) 0.4)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px", cursor: "pointer", color: source === s ? "var(--th-accent)" : "var(--th-muted)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}>
                   <MSIcon name={SOURCE_ICONS[s]} style={{ fontSize: 16 }} />{s === "manual" ? "Computer" : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
@@ -601,22 +600,29 @@ export default function WorkspacesPage() {
   const [sidebarMenu, setSidebarMenu] = useState<{ x: number, y: number, folderId: string } | null>(null);
 
   const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
+  const [isShared, setIsShared] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
-      if (activeWs) params.workspace = activeWs;
-      if (activeSource) params.source = activeSource;
-      if (activeType) params.type = activeType;
-      if (search) params.search = search;
-      const r = await api.listWorkspaceFiles(params);
-      setFiles(r.files || []);
-      setFolderDocs(r.folderDocs || []);
-      const additionalWorkspaces = (r.files || []).filter((f: any) => f.isFolder).map((f: any) => f.name);
-      if (r.workspaces?.length || additionalWorkspaces.length || r.folderDocs?.length) {
-        const docNames = (r.folderDocs || []).map((fd: any) => fd.name);
-        setWorkspaces([...new Set(["Default", ...r.workspaces, ...additionalWorkspaces, ...docNames])]);
+      if (isShared) {
+        const r = await api.getSharedWithMeFiles();
+        setFiles(r.data || r.files || []);
+        setFolderDocs([]);
+      } else {
+        const params: any = {};
+        if (activeWs) params.workspace = activeWs;
+        if (activeSource) params.source = activeSource;
+        if (activeType) params.type = activeType;
+        if (search) params.search = search;
+        const r = await api.listWorkspaceFiles(params);
+        setFiles(r.files || []);
+        setFolderDocs(r.folderDocs || []);
+        const additionalWorkspaces = (r.files || []).filter((f: any) => f.isFolder).map((f: any) => f.name);
+        if (r.workspaces?.length || additionalWorkspaces.length || r.folderDocs?.length) {
+          const docNames = (r.folderDocs || []).map((fd: any) => fd.name);
+          setWorkspaces([...new Set(["Default", ...r.workspaces, ...additionalWorkspaces, ...docNames])]);
+        }
       }
     } catch (e: any) {
 
@@ -626,7 +632,7 @@ export default function WorkspacesPage() {
         toast.error("Failed to load workspace files");
       }
     } finally { setLoading(false); }
-  }, [activeWs, activeSource, activeType, search]);
+  }, [activeWs, activeSource, activeType, search, isShared]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -764,15 +770,24 @@ export default function WorkspacesPage() {
 
       <main className="flex overflow-hidden" style={{ marginLeft: "85px", paddingTop: "80px", height: "100vh" }}>
         {/* Left Sidebar */}
-        <aside className="w-72 flex flex-col gap-8 overflow-y-auto p-8 shrink-0" style={{ background: "var(--th-surface)" }}>
-          {/* All Files button */}
-          <button
-            onClick={() => { setActiveWs(null); setActiveSource(null); setActiveType(null); }}
-            className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 border-0 transition-all"
-            style={{ ...SG, background: !activeWs && !activeSource && !activeType ? "var(--th-accent)" : "rgba(17,39,63,0.5)", color: !activeWs && !activeSource && !activeType ? "var(--th-accent-text)" : "var(--th-muted)", cursor: "pointer" }}
-          >
-            <MSIcon name="folder_open" className="text-sm" />ALL FILES
-          </button>
+        <aside className="w-72 flex flex-col gap-6 overflow-y-auto p-8 shrink-0" style={{ background: "var(--th-surface)" }}>
+          {/* Main buttons */}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => { setIsShared(false); setActiveWs(null); setActiveSource(null); setActiveType(null); }}
+              className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 border-0 transition-all"
+              style={{ ...SG, background: !isShared && !activeWs && !activeSource && !activeType ? "var(--th-accent)" : "rgba(17,39,63,0.5)", color: !isShared && !activeWs && !activeSource && !activeType ? "var(--th-accent-text)" : "var(--th-muted)", cursor: "pointer" }}
+            >
+              <MSIcon name="folder_open" className="text-sm" />ALL FILES
+            </button>
+            <button
+              onClick={() => { setIsShared(true); setActiveWs(null); setActiveSource(null); setActiveType(null); }}
+              className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 border-0 transition-all"
+              style={{ ...SG, background: isShared ? "var(--th-accent)" : "rgba(17,39,63,0.5)", color: isShared ? "var(--th-accent-text)" : "var(--th-muted)", cursor: "pointer" }}
+            >
+              <MSIcon name="group" className="text-sm" />SHARED WITH ME
+            </button>
+          </div>
 
           {/* Workspaces */}
           <nav className="space-y-6">
@@ -784,7 +799,7 @@ export default function WorkspacesPage() {
                   return (
                     <li key={ws}>
                       <a href="#"
-                        onClick={(e) => { e.preventDefault(); setActiveWs(ws === activeWs ? null : ws); }}
+                        onClick={(e) => { e.preventDefault(); setIsShared(false); setActiveWs(ws === activeWs ? null : ws); }}
                         onContextMenu={(e) => {
                           if (doc) {
                             e.preventDefault();
@@ -809,7 +824,7 @@ export default function WorkspacesPage() {
               <ul className="space-y-1">
                 {QUICK_FILTERS.map(f => (
                   <li key={f.id}>
-                    <a href="#" onClick={(e) => { e.preventDefault(); setActiveType(activeType === f.id ? null : f.id); }}
+                    <a href="#" onClick={(e) => { e.preventDefault(); setIsShared(false); setActiveType(activeType === f.id ? null : f.id); }}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
                       style={activeType === f.id ? { background: "rgba(17,39,63,0.30)", color: FILE_TYPE_COLORS[f.id] } : { color: "var(--th-muted)" }}>
                       <MSIcon name={f.icon} className="text-lg" style={{ color: activeType === f.id ? FILE_TYPE_COLORS[f.id] : undefined }} />
@@ -826,7 +841,7 @@ export default function WorkspacesPage() {
               <ul className="space-y-1">
                 {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
                   <li key={s}>
-                    <a href="#" onClick={(e) => { e.preventDefault(); setActiveSource(activeSource === s ? null : s); }}
+                    <a href="#" onClick={(e) => { e.preventDefault(); setIsShared(false); setActiveSource(activeSource === s ? null : s); }}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
                       style={activeSource === s ? { background: "rgba(17,39,63,0.30)", color: "var(--th-accent)" } : { color: "var(--th-muted)" }}>
                       <MSIcon name={SOURCE_ICONS[s]} className="text-lg" />
@@ -849,11 +864,11 @@ export default function WorkspacesPage() {
               <nav className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2" style={{ ...SG, color: "var(--th-muted)" }}>
                 <span>Workspaces</span>
                 <MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} />
-                <span style={{ color: "var(--th-accent)" }}>{activeWs || "All Files"}</span>
-                {activeSource && <><MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} /><span style={{ color: "#a2c2fd" }}>From {activeSource}</span></>}
+                <span style={{ color: "var(--th-accent)" }}>{isShared ? "Shared with me" : (activeWs || "All Files")}</span>
+                {!isShared && activeSource && <><MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} /><span style={{ color: "#a2c2fd" }}>From {activeSource}</span></>}
               </nav>
               <h1 className="text-4xl font-bold tracking-tight" style={{ ...SG, color: "var(--th-text)" }}>
-                {activeWs || "All Files"}
+                {isShared ? "Shared with me" : (activeWs || "All Files")}
               </h1>
               <p style={{ ...SG, fontSize: 12, color: "#68768b", marginTop: 4 }}>{sorted.length} {sorted.length === 1 ? "file" : "files"} {loading ? "— loading..." : ""}</p>
             </div>

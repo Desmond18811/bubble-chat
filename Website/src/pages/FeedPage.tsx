@@ -2,14 +2,20 @@ import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import {
   fetchFeedPosts,
+  getTrendingFeedPosts,
+  getFollowingFeedPosts,
   createFeedPost,
   likeFeedPost,
   repostFeedPost,
   saveFeedPost,
   addFeedComment,
+  getTrendingTags,
+  getSuggestedUsers,
+  followUser,
 } from "@/api";
 import { formatDistanceToNow } from "date-fns";
 import { AvatarInitials } from "@/components/AvatarInitials";
+import { useNavigate } from "react-router-dom";
 
 /* ─── Icon ────────────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
@@ -45,6 +51,7 @@ const C = {
 /* ─── TopBar ──────────────────────────────────────────────────────────────── */
 function TopBar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const navigate = useNavigate();
   return (
     <header
       style={{
@@ -86,7 +93,7 @@ function TopBar() {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         <button
-          onClick={() => window.location.href = '/aida?trigger=feed'}
+          onClick={() => navigate('/ai')}
           style={{
             display: "flex", alignItems: "center", gap: 8,
             padding: "8px 16px", borderRadius: 12, border: `1px solid color-mix(in srgb, var(--th-accent) 30%, transparent)`,
@@ -456,16 +463,30 @@ function PostItem({ post }: { post: any }) {
 
 /* ─── Right Sidebar ───────────────────────────────────────────────────────── */
 function RightSidebar() {
-  const trending = [
-    { tag: "#Crystalline", count: "245 transmissions" },
-    { tag: "#DeepObservatory", count: "182 transmissions" },
-    { tag: "#SpaceGrotesk", count: "131 transmissions" },
-    { tag: "#Web3Collectives", count: "98 transmissions" },
-  ];
-  const suggestions = [
-    { name: "Nova Vance", handle: "@nova_v", avatar: "/placeholder-user.jpg" },
-    { name: "Orion Blake", handle: "@orion_bk", avatar: "/placeholder-user.jpg" },
-  ];
+  const navigate = useNavigate();
+  const [trending, setTrending] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadSidebars = async () => {
+      try {
+        const [tagsRes, suggRes] = await Promise.all([
+          getTrendingTags().catch(() => ({ data: [] })),
+          getSuggestedUsers().catch(() => ({ suggestions: [] }))
+        ]);
+        setTrending(tagsRes.data || []);
+        setSuggestions(suggRes.suggestions || []);
+      } catch { } // ignore
+    };
+    loadSidebars();
+  }, []);
+
+  const handleFollow = async (id: string, index: number) => {
+    try {
+      await followUser(id);
+      setSuggestions(prev => prev.filter((_, i) => i !== index));
+    } catch {}
+  };
 
   return (
     <aside style={{ padding: "32px 28px" }}>
@@ -494,7 +515,7 @@ function RightSidebar() {
             borderRadius: 999, padding: "7px 16px", fontFamily: "'Space Grotesk',sans-serif",
             fontWeight: 700, fontSize: 11, letterSpacing: "0.06em", cursor: "pointer",
             alignSelf: "flex-start",
-          }}>
+          }} onClick={() => navigate('/ai')}>
             ASK AIDA
           </button>
         </div>
@@ -506,15 +527,17 @@ function RightSidebar() {
               Trending
             </h3>
           </div>
-          {trending.map((t, i) => (
+          {trending.length > 0 ? trending.slice(0, 4).map((t, i) => (
             <div key={i} style={{ padding: "12px 20px", borderBottom: i < trending.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none", cursor: "pointer" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = C.surfaceTop)}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{t.tag}</p>
-              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: "2px 0 0" }}>{t.count}</p>
+              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: "2px 0 0" }}>{t.count} posts</p>
             </div>
-          ))}
+          )) : (
+            <div style={{ padding: "12px 20px", color: C.muted, fontSize: 13 }}>No trending tags yet.</div>
+          )}
         </div>
 
         {/* Suggested */}
@@ -524,23 +547,27 @@ function RightSidebar() {
               Who to Follow
             </h3>
           </div>
-          {suggestions.map((s, i) => (
-            <div key={i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none" }}>
+          {suggestions.length > 0 ? suggestions.slice(0, 3).map((s, i) => (
+            <div key={s._id || i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none" }}>
               <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden" }}>
-                  <AvatarInitials name={s.name || "U"} url={s.avatar !== "/placeholder-user.jpg" ? s.avatar : undefined} className="text-sm" />
+                  <AvatarInitials name={s.full_name || s.username || "U"} url={s.avatar} className="text-sm" />
               </div>
               <div style={{ flex: 1 }}>
-                <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.name}</p>
-                <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: 0 }}>{s.handle}</p>
+                <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.full_name || s.username}</p>
+                <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: 0 }}>{s.uniqueTag || `@${s.username}`}</p>
               </div>
-              <button style={{ padding: "5px 14px", border: `1px solid var(--th-accent)`, borderRadius: 999, background: "transparent", color: C.accent, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer", transition: "background 0.2s" }}
+              <button 
+                onClick={() => handleFollow(s._id, i)}
+                style={{ padding: "5px 14px", border: `1px solid var(--th-accent)`, borderRadius: 999, background: "transparent", color: C.accent, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer", transition: "background 0.2s" }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 15%, transparent)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
                 FOLLOW
               </button>
             </div>
-          ))}
+          )) : (
+            <div style={{ padding: "12px 20px", color: C.muted, fontSize: 13 }}>No suggestions right now.</div>
+          )}
         </div>
       </div>
     </aside>
@@ -621,7 +648,14 @@ export default function BubbleFeed() {
   const loadPosts = async () => {
     try {
       setLoading(true);
-      const data = await fetchFeedPosts(1, 40);
+      let data: any;
+      if (activeTab === "For You") {
+        data = await getTrendingFeedPosts(1, 40);
+      } else if (activeTab === "Following") {
+        data = await getFollowingFeedPosts(1, 40);
+      } else {
+        data = await fetchFeedPosts(1, 40);
+      }
       setPosts(data.posts || []);
     } catch (err) {
       console.error(err);
@@ -630,7 +664,7 @@ export default function BubbleFeed() {
     }
   };
 
-  useEffect(() => { loadPosts(); }, []);
+  useEffect(() => { loadPosts(); }, [activeTab]);
 
   return (
     <div style={{ background: "var(--th-bg)", color: "var(--th-text)", minHeight: "100vh", fontFamily: "'Manrope', sans-serif", position: "relative", overflow: "hidden" }}>

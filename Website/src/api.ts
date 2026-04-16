@@ -589,6 +589,20 @@ export const fetchFeedPosts = async (page = 1, limit = 20) => {
   return handleResponse(res);
 };
 
+export const getTrendingFeedPosts = async (page = 1, limit = 20) => {
+  const res = await fetch(`${BASE_URL}/feed/trending?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const getFollowingFeedPosts = async (page = 1, limit = 20) => {
+  const res = await fetch(`${BASE_URL}/feed/following?page=${page}&limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
 export const createFeedPost = async (content: string, file?: File) => {
   const token = localStorage.getItem('access_token');
   const formData = new FormData();
@@ -801,6 +815,15 @@ export const aidaScheduleSuggestion = async (duration = 30, preferredDay?: strin
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({ duration, preferredDay }),
+  });
+  return handleResponse(res);
+};
+
+export const aidaScheduleTask = async (data: { title: string; startTime?: string; description?: string }) => {
+  const res = await fetch(`${BASE_URL}/aida/schedule-task`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
   });
   return handleResponse(res);
 };
@@ -1101,6 +1124,66 @@ export const snoozeTask = async (id: string, snoozedUntil: string) => {
     headers: getAuthHeaders(),
     body: JSON.stringify({ snoozedUntil }),
   });
+  return handleResponse(res);
+};
+
+// ─── Feed: Trending Tags ──────────────────────────────────────────────────────
+
+export const getTrendingTags = async () => {
+  const res = await fetch(`${BASE_URL}/feed/trending`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+// ─── User: Follow / Suggestions ───────────────────────────────────────────────
+
+export const followUser = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/user/${userId}/follow`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const getSuggestedUsers = async () => {
+  const res = await fetch(`${BASE_URL}/user/suggestions`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+export const getMyFollowers = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/user/${userId}/followers`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+export const getMyFollowing = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/user/${userId}/following`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+// ─── Profile: Avatar Upload ───────────────────────────────────────────────────
+
+export const uploadAvatar = async (file: File) => {
+  const token = localStorage.getItem('access_token');
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${BASE_URL}/profile/avatar`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  return handleResponse(res);
+};
+
+// ─── Workspace: Shared With Me ────────────────────────────────────────────────
+
+export const getSharedWithMeFiles = async () => {
+  const res = await fetch(`${BASE_URL}/workspace/shared-with-me`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+// ─── Messages: Unread Count ───────────────────────────────────────────────────
+
+export const fetchUnreadMessageCount = async () => {
+  const res = await fetch(`${BASE_URL}/chat/unread-count`, { headers: getAuthHeaders() });
   return handleResponse(res);
 };
 

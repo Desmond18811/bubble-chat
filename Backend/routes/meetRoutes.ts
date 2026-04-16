@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import { getCallLogs, createCallLog, clearCallLogs } from '../controllers/meetController';
+import { getCallLogs, createCallLog, clearCallLogs, getRoomTranscript, saveTranscriptChunk } from '../controllers/meetController';
 
 const router = express.Router();
 router.use(passport.authenticate('jwt', { session: false }));
@@ -66,5 +66,7 @@ router.post('/logs', createCallLog);
  *         description: Logs cleared
  */
 router.delete('/logs', clearCallLogs);
+router.get('/logs/:roomId/transcript', getRoomTranscript);
+router.post('/logs/:roomId/transcript/chunks', saveTranscriptChunk);
 
 export default router;

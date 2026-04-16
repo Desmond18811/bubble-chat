@@ -396,3 +396,36 @@ export const updateWorkspaceFile = async (req: AuthRequest, res: Response): Prom
     res.status(500).json({ message: err.message });
   }
 };
+
+/**
+ * Get files shared WITH the current user by others
+ * GET /api/v1/workspace/shared-with-me
+ */
+export const getSharedWithMe = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized' }); return; }
+  try {
+    const files = await WorkspaceFile.find({
+      sharedWith: req.user._id,
+      uploadedBy: { $ne: req.user._id },
+    })
+      .populate('uploadedBy', 'full_name avatar uniqueTag username')
+      .populate('sharedWith', 'full_name avatar uniqueTag')
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({
+      message: 'Files shared with you.',
+      total: files.length,
+      files: files.map(f => ({
+        ...formatFile(f),
+        sharedBy: f.uploadedBy
+          ? { id: (f.uploadedBy as any)._id, full_name: (f.uploadedBy as any).full_name, username: (f.uploadedBy as any).username, avatar: (f.uploadedBy as any).avatar }
+          : null,
+        sharedSource: f.source || 'manual',
+        sharedSourceRef: f.sourceReference || null,
+      })),
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+

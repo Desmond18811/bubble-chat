@@ -9,7 +9,8 @@ import Post from '../models/post';
 import mongoose from 'mongoose';
 
 const hf = new HfInference(process.env.HF_API_KEY || '');
-const modelId = process.env.GEMMA_MODEL_ID || 'google/gemma-2-9b-it';
+// Prefer free inference models that don't require Pro
+const modelId = process.env.GEMMA_MODEL_ID || 'mistralai/Mistral-7B-Instruct-v0.2';
 const hasKey = () => process.env.HF_API_KEY && process.env.HF_API_KEY !== 'your_hugging_face_api_key_here';
 
 // ─── Helper: call Hugging Face with fallback ──────────────────────────────────
@@ -17,15 +18,82 @@ const callHF = async (prompt: string, maxTokens = 400, temp = 0.7): Promise<stri
   if (!hasKey()) return '';
 
   try {
-    const response = await hf.textGeneration({
+    // Try chat completion format first (works with Mistral/Llama)
+    const response = await hf.chatCompletion({
       model: modelId,
-      inputs: prompt,
-      parameters: { max_new_tokens: maxTokens, temperature: temp, repetition_penalty: 1.1 },
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: maxTokens,
+      temperature: temp,
     });
-    return response.generated_text.replace(prompt, '').trim();
-  } catch (err) {
-    console.error('HF API error:', err);
-    return '';
+    return response.choices?.[0]?.message?.content?.trim() || '';
+  } catch {
+    // Fallback to text generation
+    try {
+      const response = await hf.textGeneration({
+        model: modelId,
+        inputs: prompt,
+        parameters: { max_new_tokens: maxTokens, temperature: temp, repetition_penalty: 1.1 },
+      });
+      return response.generated_text.replace(prompt, '').trim();
+    } catch (err) {
+      console.error('HF API error:', err);
+      return '';
+    }
+  }
+};
+
+// ─── Smart local fallback when no AI key ─────────────────────────────────────
+const buildSmartFallback = (userName: string, tasks: any[], files: any[], message: string): string => {
+  const msg = message.toLowerCase();
+
+  if (msg.includes('task') || msg.includes('schedule') || msg.includes('calendar')) {
+    if (tasks.length === 0) return `Hi ${userName}! No tasks are scheduled for today. Want me to help you add one? Just say "Schedule a task: [task name] at [time]".`;
+    return `Hi ${userName}! You have ${tasks.length} task(s) today: ${tasks.map(t => `"${t.title}"`).join(', ')}. Need help managing any of them?`;
+  }
+
+  if (msg.includes('file') || msg.includes('workspace') || msg.includes('document')) {
+    if (files.length === 0) return `Your workspace is clean! No files uploaded yet. I can help you organise files once you start uploading.`;
+    return `You have ${files.length} file(s) in your workspace. Recent: ${files.slice(0, 3).map((f: any) => `"${f.name}"`).join(', ')}. Want me to find something specific?`;
+  }
+
+  if (msg.includes('brief') || msg.includes('today') || msg.includes('summary')) {
+    const taskPart = tasks.length > 0 ? `You have ${tasks.length} task(s) today.` : 'No tasks today — a free day!';
+    const filePart = files.length > 0 ? ` Your workspace has ${files.length} file(s).` : '';
+    return `Good day, ${userName}! ${taskPart}${filePart} I'm Aida, your Bubble assistant. How can I help?`;
+  }
+
+  return `Hello ${userName}! I'm Aida, your Bubble intelligence assistant. I can help you with tasks, workspace files, meetings, and more. What would you like to do today?`;
+};
+
+// ─── Schedule a task from Aida ────────────────────────────────────────────────
+export const aidaScheduleTask = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { title, startTime, description } = req.body;
+    const userId = (req.user as any)?._id;
+    if (!title) { res.status(400).json({ error: 'title is required' }); return; }
+
+    const start = startTime ? new Date(startTime) : (() => {
+      const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d;
+    })();
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    const task = await Task.create({
+      title,
+      description: description || '',
+      user_id: userId,
+      start_time: start,
+      end_time: end,
+      status: 'todo',
+      priority: 'medium',
+    });
+
+    res.status(201).json({
+      message: 'Task scheduled by Aida.',
+      task,
+      reply: `Done! I've scheduled "${title}" for ${start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}. You can view it on your Calendar.`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to schedule task.' });
   }
 };
 
@@ -42,81 +110,87 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
 
     const user = await User.findById(userId);
     const userName = user?.full_name || user?.username || 'Voyager';
-    const userTag  = user?.uniqueTag || 'anonymous';
+    const userTag = user?.uniqueTag || 'anonymous';
 
-    const recentFiles = await WorkspaceFile.find({ uploadedBy: userId }).sort({ createdAt: -1 }).limit(5);
-    const todayTasks  = await Task.find({
-      $or: [{ user_id: userId }, { assignedTo: userId }],
-      start_time: { $gte: new Date(new Date().setHours(0,0,0,0)) },
-      status:     { $nin: ['done', 'cancelled'] },
-    }).limit(5);
+    // Fetch rich context from DB in parallel
+    const [recentFiles, todayTasks, upcomingTasks] = await Promise.all([
+      WorkspaceFile.find({ uploadedBy: userId }).sort({ createdAt: -1 }).limit(5).lean(),
+      Task.find({
+        $or: [{ user_id: userId }, { assignedTo: userId }],
+        start_time: { $gte: new Date(new Date().setHours(0, 0, 0, 0)), $lte: new Date(new Date().setHours(23, 59, 59, 999)) },
+        status: { $nin: ['done', 'cancelled'] },
+      }).limit(5).lean(),
+      Task.find({
+        $or: [{ user_id: userId }, { assignedTo: userId }],
+        start_time: { $gt: new Date() },
+        status: { $nin: ['done', 'cancelled'] },
+      }).sort({ start_time: 1 }).limit(3).lean(),
+    ]);
 
     const fileContext = recentFiles.length > 0
-      ? `Recent workspace files: ${recentFiles.map(f => f.name).join(', ')}.`
-      : '';
+      ? `Recent workspace files: ${recentFiles.map((f: any) => `${f.name} (${f.fileType})`).join(', ')}.`
+      : 'Workspace is empty.';
     const taskContext = todayTasks.length > 0
-      ? `Today's tasks: ${todayTasks.map(t => t.title).join(', ')}.`
+      ? `Today's pending tasks: ${todayTasks.map((t: any) => `"${t.title}" at ${new Date(t.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`).join(', ')}.`
+      : 'No tasks today.';
+    const upcomingContext = upcomingTasks.length > 0
+      ? `Upcoming: ${upcomingTasks.map((t: any) => `"${t.title}" on ${new Date(t.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`).join(', ')}.`
       : '';
     const pageContext = context ? `User is currently in: ${context} section.` : '';
 
-    const prompt = `You are Aida, a luminous, agentic AI assistant built into the Sets platform — a unified work OS.
+    const prompt = `You are Aida, a smart AI assistant in the Bubble platform. Be concise and helpful.
 User: ${userName} (${userTag})
 ${pageContext}
 ${fileContext}
 ${taskContext}
+${upcomingContext}
 
-You are context-aware, helpful, and can take actions. Be proactive.
-If the user asks you to perform a specific action, you MUST include a JSON block in your response using this exact format:
-[ACTION: {"type": "ACTION_TYPE", "payload": "any search string or data"}]
+Available actions (respond with action JSON block if needed):
+- To schedule a task: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO string or description"}]
+- To find a file: [ACTION: {"type":"FIND_FILE","payload":"search query"}]
+- To view calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
 
-Allowed actions:
-- FIND_FILE (payload: search query string)
-- SCHEDULE_TASK (payload: task title or description)
-- SUMMARIZE_FEED (payload: null)
-- FINANCE_CHECK (payload: null)
-
-User: ${message}
+User message: ${message}
 Aida:`;
 
-    const rawReply = await callHF(prompt, 500, 0.7);
-    
+    const rawReply = await callHF(prompt, 400, 0.65);
+
     // Parse for action
     let reply = rawReply;
     let actionResult: any = null;
-    let actionMatch = rawReply.match(/\[ACTION:\s*(\{.*?\})\s*\]/is);
+    const actionMatch = rawReply.match(/\[ACTION:\s*(\{.*?\})\s*\]/is);
 
     if (actionMatch) {
       try {
         const actionData = JSON.parse(actionMatch[1]);
         reply = reply.replace(actionMatch[0], '').trim();
         actionResult = actionData;
-        
-        // Execute server-side data fetching for the action if needed
-        if (actionData.type === "FIND_FILE") {
-           const foundFiles = await WorkspaceFile.find({ 
-             uploadedBy: userId, 
-             $text: { $search: actionData.payload || "document" } 
-           }).limit(3).lean();
-           if (foundFiles.length > 0) {
-              actionResult.files = foundFiles;
-              reply += `\n\nI found ${foundFiles.length} file(s) matching your request.`;
-           } else {
-              reply += `\n\nI couldn't find any files matching "${actionData.payload}".`;
-           }
+
+        if (actionData.type === 'FIND_FILE') {
+          const keywords = (actionData.payload || '').toLowerCase().split(/\s+/);
+          const allFiles = await WorkspaceFile.find({ uploadedBy: userId }).lean();
+          const found = allFiles.filter((f: any) => {
+            const text = `${f.name} ${f.description || ''} ${(f.tags || []).join(' ')}`.toLowerCase();
+            return keywords.some((kw: string) => kw.length > 2 && text.includes(kw));
+          }).slice(0, 3);
+          actionResult.files = found;
+          if (found.length > 0) reply += `\n\nI found ${found.length} matching file(s).`;
         }
-      } catch(e) {
-        console.error("Failed to parse Aida action", e);
+
+        if (actionData.type === 'SCHEDULE_TASK') {
+          reply = reply || `I'll schedule "${actionData.title}" for you. One moment...`;
+        }
+      } catch (e) {
+        console.error('Failed to parse Aida action', e);
       }
     }
 
+    // Smart local fallback when AI not available
     if (!reply) {
-       reply = `Hello ${userName}! I'm Aida, your Sets assistant. I can see your workspace, tasks, and calendar — how can I help you today?`;
+      reply = buildSmartFallback(userName, todayTasks, recentFiles, message);
     }
 
-    res.status(200).json({
-      reply,
-      action: actionResult
-    });
+    res.status(200).json({ reply, action: actionResult });
   } catch (error: any) {
     console.error('Aida Chat Error:', error);
     res.status(500).json({ error: 'Error processing your request with Aida.' });
@@ -125,49 +199,57 @@ Aida:`;
 
 /**
  * GET /api/v1/aida/daily-briefing
- * Context-aware daily briefing pulling from Calendar and workspace.
  */
 export const getDailyBriefing = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req.user as any)._id;
-    const today  = new Date();
-    const start  = new Date(today.setHours(0, 0, 0, 0));
-    const end    = new Date(today.setHours(23, 59, 59, 999));
+    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const end = new Date(); end.setHours(23, 59, 59, 999);
 
-    const [todayTasks, pendingInvoices, user] = await Promise.all([
+    const [todayTasks, pendingInvoices, upcomingMeetings, user] = await Promise.all([
       Task.find({ $or: [{ user_id: userId }, { assignedTo: userId }], start_time: { $gte: start, $lte: end } }).lean(),
       Invoice.find({ user_id: userId, status: { $in: ['sent', 'overdue'] } }).lean(),
+      (async () => {
+        try {
+          const Meeting = (await import('../models/meeting')).Meeting;
+          return Meeting.find({ $or: [{ host: userId }, { attendees: userId }], startedAt: { $gte: start, $lte: end } }).lean();
+        } catch { return []; }
+      })(),
       User.findById(userId),
     ]);
 
     const userName = user?.full_name || user?.username || 'there';
 
-    if (todayTasks.length === 0 && pendingInvoices.length === 0) {
-      res.status(200).json({
-        reply: `Good day, ${userName}! Your schedule is clear today. A perfect time to get ahead — want me to suggest some focus tasks?`,
-        tasks: [],
-      });
-      return;
+    // Build a local briefing regardless of AI availability
+    const now = new Date();
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+    const localBriefing = [
+      `${greeting}, ${userName}!`,
+      todayTasks.length > 0
+        ? `You have ${todayTasks.length} task(s) scheduled today.`
+        : 'Your schedule is clear today.',
+      upcomingMeetings.length > 0
+        ? `${upcomingMeetings.length} meeting(s) on your calendar.`
+        : '',
+      pendingInvoices.length > 0
+        ? `⚠️ ${pendingInvoices.length} invoice(s) need attention.`
+        : '',
+    ].filter(Boolean).join(' ');
+
+    // Try AI enhancement
+    if (hasKey() && todayTasks.length > 0) {
+      const taskLines = todayTasks.map((t: any) => `- ${t.title} at ${new Date(t.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`).join('\n');
+      const prompt = `Write a warm, 2-sentence morning briefing for ${userName}. Keep it motivating.\nTasks today:\n${taskLines}\nBriefing:`;
+      const aiReply = await callHF(prompt, 150, 0.6);
+      if (aiReply) {
+        res.status(200).json({ reply: aiReply, tasks: todayTasks, invoices: pendingInvoices, meetings: upcomingMeetings });
+        return;
+      }
     }
 
-    const taskLines  = todayTasks.map(t => `- [${t.priority}] ${t.title} at ${new Date(t.start_time).toLocaleTimeString()}`).join('\n');
-    const invoiceInfo = pendingInvoices.length > 0
-      ? `\nPending invoices: ${pendingInvoices.length} awaiting payment.`
-      : '';
-
-    const prompt = `You are Aida. Generate a warm, motivating daily briefing for ${userName}.
-Tasks today:
-${taskLines}${invoiceInfo}
-
-Daily Briefing:`;
-
-    const reply = await callHF(prompt, 300, 0.6);
-
-    res.status(200).json({
-      reply: reply || `Good day, ${userName}! You have ${todayTasks.length} task(s) today. Let's make it count!`,
-      tasks:    todayTasks,
-      invoices: pendingInvoices,
-    });
+    res.status(200).json({ reply: localBriefing, tasks: todayTasks, invoices: pendingInvoices, meetings: upcomingMeetings });
   } catch (error: any) {
     console.error('Aida Briefing Error:', error);
     res.status(500).json({ error: 'Error getting daily briefing.' });
@@ -176,7 +258,6 @@ Daily Briefing:`;
 
 /**
  * GET /api/v1/aida/financial-advice
- * Financial analysis based on real transaction and invoice data.
  */
 export const getFinancialAdvice = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -187,61 +268,68 @@ export const getFinancialAdvice = async (req: Request, res: Response): Promise<v
       Invoice.find({ user_id: userId, status: 'overdue' }).lean(),
     ]);
 
-    const tStrings = recentTransactions.map(t => `${t.type}: $${(t.amount/100).toFixed(2)} ${t.currency}`).join('\n') || 'No recent transactions.';
-    const invoiceWarning = overdueInvoices.length > 0
-      ? `\nOVERDUE: ${overdueInvoices.length} invoice(s) are past due date.`
-      : '';
+    const tStrings = recentTransactions.map((t: any) => `${t.type}: $${(t.amount / 100).toFixed(2)} ${t.currency}`).join('\n') || 'No recent transactions.';
 
-    const prompt = `You are Aida, a financial advisor AI. Analyze these transactions for the user:
-${tStrings}${invoiceWarning}
+    // Local analysis
+    const expenses = recentTransactions.filter((t: any) => t.type === 'expense' || t.type === 'withdrawal');
+    const totalSpent = expenses.reduce((s, t) => s + t.amount, 0) / 100;
+    const localReply = overdueInvoices.length > 0
+      ? `You have ${overdueInvoices.length} overdue invoice(s) requiring immediate attention. Total recent spend: $${totalSpent.toFixed(2)}.`
+      : recentTransactions.length > 0
+        ? `Recent activity: ${tStrings.split('\n').slice(0, 3).join('; ')}. Total recent spend: $${totalSpent.toFixed(2)}.`
+        : 'No recent financial activity found.';
 
-Provide short, actionable financial advice:`;
+    if (hasKey() && recentTransactions.length > 0) {
+      const invoiceWarning = overdueInvoices.length > 0 ? `\nOVERDUE: ${overdueInvoices.length} invoice(s) past due.` : '';
+      const prompt = `You are a financial advisor AI. Give one short, helpful tip based on these transactions:\n${tStrings}${invoiceWarning}\nAdvice:`;
+      const aiReply = await callHF(prompt, 150, 0.5);
+      if (aiReply) { res.status(200).json({ reply: aiReply, overdueInvoices }); return; }
+    }
 
-    const reply = await callHF(prompt, 250, 0.5);
-
-    res.status(200).json({
-      reply: reply || `Based on your recent activity, here's a quick snapshot: ${tStrings.split('\n').slice(0,3).join('; ')}.`,
-      overdueInvoices,
-    });
+    res.status(200).json({ reply: localReply, overdueInvoices });
   } catch (error: any) {
-    console.error('Aida Finance Error:', error);
     res.status(500).json({ error: 'Error getting financial advice.' });
   }
 };
 
 /**
  * POST /api/v1/aida/extract-action-items
- * AGENTIC: Parse a raw meeting transcript → structured action items.
  */
 export const extractActionItems = async (req: Request, res: Response): Promise<void> => {
   try {
     const { transcript, attendeeNames = [] } = req.body;
     if (!transcript) { res.status(400).json({ error: 'transcript is required' }); return; }
 
+    if (!hasKey()) {
+      // Local pattern matching fallback
+      const lines = transcript.split(/[.\n]/);
+      const actionItems: any[] = [];
+      const actionPatterns = /\b(will|should|must|needs? to|action:|todo:|task:)\b/i;
+      lines.forEach((line: string) => {
+        const trimmed = line.trim();
+        if (trimmed.length > 10 && actionPatterns.test(trimmed)) {
+          const assignedTo = attendeeNames.find((n: string) => trimmed.toLowerCase().includes(n.toLowerCase())) || null;
+          actionItems.push({ text: trimmed, assignedToName: assignedTo, deadline: null });
+        }
+      });
+      res.status(200).json({ actionItems: actionItems.slice(0, 10), warning: 'Local extraction — configure HF_API_KEY for AI extraction.' });
+      return;
+    }
+
     const attendeeLine = attendeeNames.length > 0 ? `Attendees: ${attendeeNames.join(', ')}.` : '';
-    const prompt = `You are Aida. Extract concrete action items from this meeting transcript.
-${attendeeLine}
+    const prompt = `Extract action items from this transcript. ${attendeeLine}\nTRANSCRIPT:\n${transcript.substring(0, 3000)}\nReturn ONLY valid JSON: {"actionItems": [{"text": "...", "assignedToName": "...or null", "deadline": "...or null"}]}\nJSON:`;
 
-TRANSCRIPT:
-${transcript.substring(0, 3000)}
-
-Return ONLY valid JSON: {"actionItems": [{"text": "...", "assignedToName": "...or null", "deadline": "...or null"}]}
-
-JSON:`;
-
-    const raw   = await callHF(prompt, 500, 0.3);
+    const raw = await callHF(prompt, 500, 0.3);
     const match = raw.match(/\{[\s\S]*\}/);
 
     if (match) {
       try {
         const parsed = JSON.parse(match[0]);
-        res.status(200).json(parsed);
-        return;
+        res.status(200).json(parsed); return;
       } catch { /* fall through */ }
     }
 
-    // Fallback: return empty list, not an error
-    res.status(200).json({ actionItems: [], warning: 'Could not parse AI response. Please configure HF_API_KEY for live extraction.' });
+    res.status(200).json({ actionItems: [], warning: 'Could not parse AI response.' });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to extract action items.' });
   }
@@ -249,7 +337,6 @@ JSON:`;
 
 /**
  * POST /api/v1/aida/search-workspace
- * AGENTIC: Natural language file search across workspace.
  */
 export const searchWorkspace = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -257,27 +344,21 @@ export const searchWorkspace = async (req: Request, res: Response): Promise<void
     const userId = (req.user as any)?._id;
     if (!query) { res.status(400).json({ error: 'query is required' }); return; }
 
-    // Get all user's files
-    const files = await WorkspaceFile.find({ uploadedBy: userId }).select('name type source description tags createdAt').lean();
+    const files = await WorkspaceFile.find({ uploadedBy: userId }).select('name fileType source description tags createdAt').lean();
 
-    if (files.length === 0) {
-      res.status(200).json({ files: [], message: "Your workspace is empty." });
-      return;
-    }
+    if (files.length === 0) { res.status(200).json({ files: [], message: 'Your workspace is empty.' }); return; }
 
-    // Semantic keyword matching (fast fallback without AI)
     const keywords = query.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-    const scored = files.map(f => {
+    const scored = files.map((f: any) => {
       const text = `${f.name} ${f.description || ''} ${(f.tags || []).join(' ')}`.toLowerCase();
       const score = keywords.reduce((s: number, kw: string) => s + (text.includes(kw) ? 1 : 0), 0);
       return { ...f, score };
     }).filter((f: any) => f.score > 0).sort((a: any, b: any) => b.score - a.score);
 
-    // If AI available, use it for ranking/explanation
     let aiSummary = '';
     if (hasKey() && scored.length > 0) {
-      const fileList = scored.slice(0, 10).map((f: any) => `- ${f.name} (${f.type})`).join('\n');
-      const prompt = `User searched for: "${query}". Here are matching files:\n${fileList}\n\nExplain in one sentence which file is most relevant and why:\n`;
+      const fileList = scored.slice(0, 10).map((f: any) => `- ${f.name} (${f.fileType})`).join('\n');
+      const prompt = `User searched "${query}". Matching files:\n${fileList}\nWhich is most relevant and why? (one sentence):`;
       aiSummary = await callHF(prompt, 100, 0.5);
     }
 
@@ -289,7 +370,6 @@ export const searchWorkspace = async (req: Request, res: Response): Promise<void
 
 /**
  * POST /api/v1/aida/schedule-suggestion
- * AGENTIC: Suggest the best time to schedule a meeting/task.
  */
 export const scheduleSuggestion = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -303,36 +383,32 @@ export const scheduleSuggestion = async (req: Request, res: Response): Promise<v
     const endWindow = new Date(tomorrow);
     endWindow.setDate(endWindow.getDate() + 7);
 
-    // Get existing tasks/events in the next 7 days
     const existingTasks = await Task.find({
       $or: [{ user_id: userId }, { assignedTo: userId }],
       start_time: { $gte: tomorrow, $lte: endWindow },
-      status:     { $nin: ['done', 'cancelled'] },
+      status: { $nin: ['done', 'cancelled'] },
     }).sort({ start_time: 1 }).lean();
 
-    // Find open 30-min slots between 9am-6pm
     const suggestions: { date: string; time: string; label: string }[] = [];
     const cursor = new Date(tomorrow);
     cursor.setHours(9, 0, 0, 0);
 
     while (cursor <= endWindow && suggestions.length < 5) {
       const slotEnd = new Date(cursor.getTime() + duration * 60 * 1000);
-
-      const conflict = existingTasks.some(t => {
+      const conflict = existingTasks.some((t: any) => {
         const tStart = new Date(t.start_time);
-        const tEnd   = new Date(t.end_time);
+        const tEnd = new Date(t.end_time);
         return cursor < tEnd && slotEnd > tStart;
       });
 
       if (!conflict && cursor.getHours() < 18) {
         suggestions.push({
-          date:  cursor.toISOString().split('T')[0],
-          time:  cursor.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          label: `${cursor.toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })} at ${cursor.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+          date: cursor.toISOString().split('T')[0],
+          time: cursor.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          label: `${cursor.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at ${cursor.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`,
         });
       }
 
-      // Advance by 30 min
       cursor.setMinutes(cursor.getMinutes() + 30);
       if (cursor.getHours() >= 18) {
         cursor.setDate(cursor.getDate() + 1);
@@ -342,7 +418,7 @@ export const scheduleSuggestion = async (req: Request, res: Response): Promise<v
 
     res.status(200).json({
       suggestions,
-      message: `Found ${suggestions.length} open slot(s) in the next 7 days for a ${duration}-minute session.`,
+      message: `Found ${suggestions.length} open slot(s) for a ${duration}-min session.`,
     });
   } catch (error: any) {
     res.status(500).json({ error: 'Failed to generate schedule suggestion.' });
@@ -351,13 +427,11 @@ export const scheduleSuggestion = async (req: Request, res: Response): Promise<v
 
 /**
  * POST /api/v1/aida/summarize-feed
- * AGENTIC: Summarize today's Feed activity.
  */
 export const summarizeFeed = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req.user as any)?._id;
-    const today  = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
 
     const posts = await Post.find({ createdAt: { $gte: today } })
       .sort({ createdAt: -1 })
@@ -365,17 +439,18 @@ export const summarizeFeed = async (req: Request, res: Response): Promise<void> 
       .populate('author', 'full_name username')
       .lean();
 
-    if (posts.length === 0) {
-      res.status(200).json({ summary: "Nothing new in your Feed today — it's all quiet!" });
-      return;
+    if (posts.length === 0) { res.status(200).json({ summary: "Nothing new in your Feed today — it's quiet!" }); return; }
+
+    const postLines = posts.map((p: any) => `- ${p.author?.full_name || 'Someone'}: "${p.content?.substring(0, 80)}"`).join('\n');
+
+    if (hasKey()) {
+      const prompt = `Summarize today's social feed in 2 sentences:\n${postLines}\nSummary:`;
+      const summary = await callHF(prompt, 150, 0.6);
+      if (summary) { res.status(200).json({ summary, postCount: posts.length }); return; }
     }
 
-    const postLines = posts.map(p => `- ${(p.author as any)?.full_name || 'Someone'}: "${p.content.substring(0, 80)}..."`).join('\n');
-    const prompt = `Summarize today's Feed activity in 2-3 sentences for the user:\n${postLines}\n\nSummary:`;
-
-    const summary = await callHF(prompt, 150, 0.6);
     res.status(200).json({
-      summary: summary || `${posts.length} post(s) in your Feed today. Scroll down to catch up!`,
+      summary: `${posts.length} post(s) in your Feed today. Latest from: ${posts.slice(0, 3).map((p: any) => p.author?.username || 'someone').join(', ')}.`,
       postCount: posts.length,
     });
   } catch (error: any) {
@@ -385,7 +460,6 @@ export const summarizeFeed = async (req: Request, res: Response): Promise<void> 
 
 /**
  * GET /api/v1/aida/flag-payments
- * AGENTIC: Flag unusual expenses or overdue invoices.
  */
 export const flagPayments = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -399,38 +473,17 @@ export const flagPayments = async (req: Request, res: Response): Promise<void> =
 
     const flags: { severity: 'info' | 'warning' | 'critical'; message: string }[] = [];
 
-    // Check for overdue invoices
-    if (overdueInvoices.length > 0) {
-      flags.push({
-        severity: 'critical',
-        message: `${overdueInvoices.length} invoice(s) are overdue and need follow-up.`,
-      });
-    }
+    if (overdueInvoices.length > 0) flags.push({ severity: 'critical', message: `${overdueInvoices.length} invoice(s) are overdue.` });
+    if (unpaidInvoices.length > 0) flags.push({ severity: 'warning', message: `${unpaidInvoices.length} sent invoice(s) have passed their due date.` });
 
-    // Check for sent invoices that have passed due date
-    if (unpaidInvoices.length > 0) {
-      flags.push({
-        severity: 'warning',
-        message: `${unpaidInvoices.length} sent invoice(s) have passed their due date.`,
-      });
-    }
-
-    // Check for unusual spending (any single transaction > 10x average)
     if (transactions.length >= 3) {
-      const expenses = transactions.filter(t => t.type === 'expense' || t.type === 'withdrawal');
+      const expenses = transactions.filter((t: any) => t.type === 'expense' || t.type === 'withdrawal');
       const avg = expenses.reduce((s, t) => s + t.amount, 0) / (expenses.length || 1);
       const unusual = expenses.filter(t => t.amount > avg * 10);
-      if (unusual.length > 0) {
-        flags.push({
-          severity: 'warning',
-          message: `Unusual expense detected: ${unusual.map(t => `$${(t.amount/100).toFixed(2)}`).join(', ')} — significantly above your average.`,
-        });
-      }
+      if (unusual.length > 0) flags.push({ severity: 'warning', message: `Unusual expense detected: ${unusual.map(t => `$${(t.amount / 100).toFixed(2)}`).join(', ')} — significantly above your average.` });
     }
 
-    if (flags.length === 0) {
-      flags.push({ severity: 'info', message: 'All your finances look healthy — no flags detected.' });
-    }
+    if (flags.length === 0) flags.push({ severity: 'info', message: 'All finances look healthy — no flags detected.' });
 
     res.status(200).json({ flags, overdueInvoices, unpaidInvoices });
   } catch (error: any) {

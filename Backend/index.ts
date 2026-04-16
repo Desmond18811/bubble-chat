@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import http from 'http';
 import cors from 'cors';
 import { initSocket, getIO } from './utils/socket';
-import { initSecurityScheduler } from './utils/scheduler';
+import { initSecurityScheduler, initTranscriptProcessor } from './utils/scheduler';
 import './middleware/passport'; // Initialize passport strategies
 
 import chatRoutes from './routes/chatRoutes';
@@ -271,6 +271,7 @@ mongoose.connect(mongoURI)
 
     // Initialize services that depend on the database
     initSecurityScheduler();
+    initTranscriptProcessor();
 
     // Seed default platform templates (no-op if already seeded)
     const systemUser = await import('./models/users').then(m => m.User.findOne({ is_bot: true }));

@@ -47,6 +47,7 @@ export default function Sidebar() {
   const location = useLocation();
   const [userData, setUserData]     = useState<any>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadChatsCount, setUnreadChatsCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -65,8 +66,14 @@ export default function Sidebar() {
   useEffect(() => {
     const tick = async () => {
       try {
-        const data = await fetchUnreadCount();
-        setUnreadCount(data.count || 0);
+        const notifData = await fetchUnreadCount();
+        setUnreadCount(notifData.count || 0);
+
+        try {
+          const { fetchUnreadMessageCount } = await import('@/api');
+          const msgData = await fetchUnreadMessageCount();
+          setUnreadChatsCount(msgData.count || 0);
+        } catch { /* ignored */ }
       } catch { /* silent */ }
     };
     tick();
@@ -139,8 +146,16 @@ export default function Sidebar() {
               }}
             >
               {/* Icon zone — fixed 56px wide so items never shift */}
-              <span className="flex flex-shrink-0 items-center justify-center w-14">
+              <span className="flex flex-shrink-0 items-center justify-center w-14 relative">
                 <MSIcon icon={icon} filled={active} className="text-2xl" />
+                {path === '/messages' && unreadChatsCount > 0 && (
+                  <span
+                    className="absolute top-1 right-1 min-w-[14px] h-3.5 rounded-full text-[8px] font-bold flex items-center justify-center px-1"
+                    style={{ background: "#ef4444", color: "#fff" }}
+                  >
+                    {unreadChatsCount > 99 ? "99+" : unreadChatsCount}
+                  </span>
+                )}
               </span>
 
               {/* Label — slides in / out */}

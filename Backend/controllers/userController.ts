@@ -393,3 +393,66 @@ export const reportUser = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getSuggestions = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  try {
+    const currentUser = await User.findById(req.user._id).select('following').lean();
+    const alreadyFollowing = ((currentUser as any)?.following || []).map((id: any) => id.toString());
+    alreadyFollowing.push(req.user._id.toString());
+
+    const users = await User.find({ _id: { $nin: alreadyFollowing } })
+      .select('-password -refreshToken -privateKey -zegoToken -otp -otpExpires -passwordResetToken')
+      .limit(8);
+
+    res.status(200).json({
+      message: 'Suggestions loaded.',
+      data: users.map(formatUser),
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ─── Follow / Unfollow ────────────────────────────────────────────────────────
+export const toggleFollowUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized.' }); return; }
+  const targetId = req.params.userId;
+  if (String(req.user._id) === targetId) { res.status(400).json({ message: 'You cannot follow yourself.' }); return; }
+  try {
+    const currentUser = await User.findById(req.user._id).select('following');
+    const targetUser = await User.findById(targetId).select('followers');
+    if (!targetUser) { res.status(404).json({ message: 'User not found.' }); return; }
+    const isFollowing = currentUser?.following?.some(id => String(id) === targetId);
+    if (isFollowing) {
+      await User.findByIdAndUpdate(req.user._id, { $pull: { following: targetId } });
+      await User.findByIdAndUpdate(targetId, { $pull: { followers: req.user._id } });
+      res.status(200).json({ message: 'Unfollowed successfully.', following: false });
+    } else {
+      await User.findByIdAndUpdate(req.user._id, { $addToSet: { following: targetId } });
+      await User.findByIdAndUpdate(targetId, { $addToSet: { followers: req.user._id } });
+      res.status(200).json({ message: 'Now following.', following: true });
+    }
+  } catch (err: any) { res.status(500).json({ message: err.message }); }
+};
+
+export const getUserFollowers = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const u = await User.findById(req.params.userId).populate('followers', '-password -refreshToken -privateKey -zegoToken').lean();
+    if (!u) { res.status(404).json({ message: 'User not found.' }); return; }
+    res.status(200).json({ message: 'Followers retrieved.', total: (u.followers || []).length, followers: (u.followers || []).map(formatUser) });
+  } catch (err: any) { res.status(500).json({ message: err.message }); }
+};
+
+export const getUserFollowing = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const u = await User.findById(req.params.userId).populate('following', '-password -refreshToken -privateKey -zegoToken').lean();
+    if (!u) { res.status(404).json({ message: 'User not found.' }); return; }
+    res.status(200).json({ message: 'Following retrieved.', total: (u.following || []).length, following: (u.following || []).map(formatUser) });
+  } catch (err: any) { res.status(500).json({ message: err.message }); }
+};
+

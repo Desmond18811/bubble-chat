@@ -245,6 +245,13 @@ export const forwardNetworkPost = async (req: Request, res: Response) => {
     if (!original) return res.status(404).json({ message: 'Post not found' });
 
     const targetNetworkId_ = targetNetworkId || req.params.networkId;
+    const targetNetwork = await Network.findById(targetNetworkId_);
+    if (!targetNetwork) return res.status(404).json({ message: 'Target network not found' });
+
+    if (targetNetwork.onlyCreatorCanPost && !targetNetwork.creator.equals(userId)) {
+      return res.status(403).json({ message: 'Only the network creator can post updates.' });
+    }
+
     const forwarded = await NetworkPost.create({
       network: targetNetworkId_,
       author: userId,
