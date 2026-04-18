@@ -1,20 +1,23 @@
 # Use the official Node.js 20 Alpine image
 FROM node:20-alpine
 
-# Set the working directory directly
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set the working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Copy lockfile and package.json
+COPY pnpm-lock.yaml package.json ./
 
 # Install dependencies including dev dependencies for building
-RUN npm install
+RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the application code
 COPY . .
 
 # Build the TypeScript code
-RUN npm run build
+RUN pnpm run build
 
 # Expose the API port
 EXPOSE 3000

@@ -8,8 +8,6 @@ import { createNotification } from './notificationController';
 import { logActivity } from './activityLogController';
 
 const hf = new HfInference(process.env.HF_API_KEY || '');
-const modelId =
-  process.env.MIXTRAL_MODEL_ID || 'mistralai/Mixtral-8x7B-Instruct-v0.1';
 
 // ─── Helper: AI-powered transcript processing ────────────────────────────────
 
@@ -41,9 +39,14 @@ ${attendeeLine}
 TRANSCRIPT:
 ${transcript.substring(0, 3000)}
 
-Provide:
-1. A concise 2-3 sentence summary of what was discussed.
-2. A list of concrete action items with the person's name assigned to each if mentioned.
+Please summarize the following details based on the transcript:
+1. Who did what
+2. Who said what
+3. Any tasks/action items mentioned and who they are assigned to
+4. Any files referenced or shared during the meeting
+
+Provide a comprehensive "summary" string incorporating who said what, who did what, and files shared.
+Provide a list of "actionItems" for any tasks created.
 
 Format as JSON: {"summary": "...", "actionItems": [{"text": "...", "assignedToName": "...or null"}]}
 
@@ -51,7 +54,7 @@ JSON:`;
 
   try {
     const response = await hf.textGeneration({
-      model: modelId,
+      model: process.env.HF_MODEL_ID || 'meta-llama/Meta-Llama-3-8B-Instruct',
       inputs: prompt,
       parameters: { max_new_tokens: 600, temperature: 0.3 },
     });
