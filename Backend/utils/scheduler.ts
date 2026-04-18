@@ -115,7 +115,7 @@ export const processTranscriptQueue = async () => {
         if (hasHfKey()) {
           try {
             const hf = new HfInference(process.env.HF_API_KEY!);
-            const modelId = process.env.GEMMA_MODEL_ID || 'mistralai/Mistral-7B-Instruct-v0.2';
+            const modelId = process.env.MIXTRAL_MODEL_ID || 'mistralai/Mixtral-8x7B-Instruct-v0.1';
 
             const prompt = `Summarize this meeting transcript in 2-3 sentences. Be concise.\n\nTranscript:\n${fullText.substring(0, 2000)}\n\nSummary:`;
 

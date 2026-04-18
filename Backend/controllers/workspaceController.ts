@@ -63,25 +63,39 @@ const formatFile = (f: any) => ({
  * POST /api/v1/workspace/file
  */
 export const uploadWorkspaceFile = async (req: AuthRequest, res: Response): Promise<void> => {
-  const file = req.file;
-  if (!file) { res.status(400).json({ message: 'A file is required' }); return; }
+  const { linkUrl, workspace = 'Default', source = 'manual', sourceReference, tags, description, name } = req.body;
+  if (!req.file && !linkUrl) { res.status(400).json({ message: 'A file or linkUrl is required' }); return; }
   if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
   try {
-    const { workspace = 'Default', source = 'manual', sourceReference, tags, description, name } = req.body;
 
-    const fileKey = `workspace/${req.user._id}/${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const stream = fs.createReadStream(file.path);
-    const { url, key } = await uploadToFilebase(stream, fileKey, file.mimetype);
+    let url = linkUrl;
+    let key = undefined;
+    let fileType = 'link';
+    let mimeType = 'text/uri-list';
+    let fileSize = 0;
+    let originalName = name || 'Web Link';
+
+    if (req.file) {
+      const fileKey = `workspace/${req.user._id}/${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const stream = fs.createReadStream(req.file.path);
+      const resData = await uploadToFilebase(stream, fileKey, req.file.mimetype);
+      url = resData.url;
+      key = resData.key;
+      fileType = resolveFileType(req.file.mimetype);
+      mimeType = req.file.mimetype;
+      fileSize = req.file.size;
+      originalName = req.file.originalname;
+    }
 
     const wFile = await WorkspaceFile.create({
-      name: name || file.originalname,
-      originalName: file.originalname,
+      name: name || originalName,
+      originalName,
       fileUrl: url,
       fileKey: key,
-      fileType: resolveFileType(file.mimetype),
-      mimeType: file.mimetype,
-      fileSize: file.size,
+      fileType,
+      mimeType,
+      fileSize,
       uploadedBy: req.user._id,
       workspace: workspace.trim(),
       source,

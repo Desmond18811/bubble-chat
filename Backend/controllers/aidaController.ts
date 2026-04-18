@@ -10,36 +10,51 @@ import mongoose from 'mongoose';
 
 const hf = new HfInference(process.env.HF_API_KEY || '');
 // Prefer free inference models that don't require Pro
-const modelId = process.env.GEMMA_MODEL_ID || 'mistralai/Mistral-7B-Instruct-v0.2';
+const defaultModel = process.env.LLAMA_MODEL_ID || 'meta-llama/Llama-3.1-8B-Instruct';
+const fallbackModels = [
+  defaultModel,
+  'mistralai/Mistral-Nemo-Instruct-2407',
+  'mistralai/Mistral-7B-Instruct-v0.3',
+  'google/gemma-4-31B-it'
+];
+
 const hasKey = () => process.env.HF_API_KEY && process.env.HF_API_KEY !== 'your_hugging_face_api_key_here';
 
 // ─── Helper: call Hugging Face with fallback ──────────────────────────────────
 const callHF = async (prompt: string, maxTokens = 400, temp = 0.7): Promise<string> => {
   if (!hasKey()) return '';
 
-  try {
-    // Try chat completion format first (works with Mistral/Llama)
-    const response = await hf.chatCompletion({
-      model: modelId,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: maxTokens,
-      temperature: temp,
-    });
-    return response.choices?.[0]?.message?.content?.trim() || '';
-  } catch {
-    // Fallback to text generation
+  let lastError = null;
+
+  for (const fModel of fallbackModels) {
     try {
-      const response = await hf.textGeneration({
-        model: modelId,
-        inputs: prompt,
-        parameters: { max_new_tokens: maxTokens, temperature: temp, repetition_penalty: 1.1 },
+      const response = await hf.chatCompletion({
+        model: fModel,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: maxTokens,
+        temperature: temp,
       });
-      return response.generated_text.replace(prompt, '').trim();
-    } catch (err) {
-      console.error('HF API error:', err);
-      return '';
+      if (response.choices && response.choices.length > 0) {
+        return response.choices[0].message?.content?.trim() || '';
+      }
+    } catch (err: any) {
+      lastError = err;
+      try {
+        const txtRes = await hf.textGeneration({
+          model: fModel,
+          inputs: prompt,
+          parameters: { max_new_tokens: maxTokens, temperature: temp, repetition_penalty: 1.1 },
+        });
+        if (txtRes.generated_text) {
+          return txtRes.generated_text.replace(prompt, '').trim();
+        }
+      } catch (err2: any) {
+        lastError = err2;
+        continue; // Immediately try the next model
+      }
     }
   }
+  return '';
 };
 
 // ─── Smart local fallback when no AI key ─────────────────────────────────────
@@ -138,21 +153,31 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
       : '';
     const pageContext = context ? `User is currently in: ${context} section.` : '';
 
-    const prompt = `You are Aida, a smart AI assistant in the Bubble platform. Be concise and helpful.
+    const prompt = `You are Aida, a smart AI productivity assistant in the Bubble platform. You know the user's name — always address them personally as "${userName.split(' ')[0]}". Be warm, concise, and highly actionable.
 User: ${userName} (${userTag})
 ${pageContext}
 ${fileContext}
 ${taskContext}
 ${upcomingContext}
 
-Available actions (respond with action JSON block if needed):
-- To schedule a task: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO string or description"}]
-- To find a file: [ACTION: {"type":"FIND_FILE","payload":"search query"}]
-- To view calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
+Capabilities you have:
+1. Schedule tasks/meetings to the Calendar
+2. Create templates (meeting agendas, project plans, daily schedules, etc.)
+3. Search workspace files
+4. Summarize meetings and extract action items
+5. Give daily briefings and productivity tips
+6. Help plan the user's week/day in detail
+
+Available action blocks (embed inline in your reply when needed):
+- Schedule a task/meeting: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO or natural language","description":"..."}]
+- Find a file: [ACTION: {"type":"FIND_FILE","payload":"search query"}]
+- Open Calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
+- Create Template: [ACTION: {"type":"CREATE_TEMPLATE","templateType":"meeting_agenda|daily_plan|project_brief|weekly_review","title":"...","content":"full template text"}]
+
+When the user asks to plan their schedule, create a detailed day/week plan. When asked for a template, generate a complete ready-to-use template inline. Always end with a helpful follow-up question.
 
 User message: ${message}
 Aida:`;
-
     const rawReply = await callHF(prompt, 400, 0.65);
 
     // Parse for action
@@ -179,6 +204,11 @@ Aida:`;
 
         if (actionData.type === 'SCHEDULE_TASK') {
           reply = reply || `I'll schedule "${actionData.title}" for you. One moment...`;
+        }
+
+        if (actionData.type === 'CREATE_TEMPLATE') {
+          reply = reply || `Here's your **${actionData.title || actionData.templateType}** template, ${userName.split(' ')[0]}!`;
+          actionResult.templateContent = actionData.content;
         }
       } catch (e) {
         console.error('Failed to parse Aida action', e);

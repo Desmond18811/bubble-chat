@@ -26,10 +26,16 @@ const getStorageKey = () => {
 };
 
 export default function AidaPage() {
+  // Get user's real name for personalization
+  const currentUser = (() => { try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; } })();
+  const userName = currentUser?.full_name || currentUser?.username || null;
+  const greeting = userName
+    ? `Hey ${userName.split(" ")[0]}! 👋 I'm Aida, your intelligent workspace companion. I can help you plan your schedule, draft templates, summarize meetings, and much more. What shall we tackle today?`
+    : "Greetings! I'm Aida, your intelligent workspace companion. I can help you plan your schedule, draft templates, summarize meetings, and much more. How can I assist you today?";
+
   const defaultGreeting = {
     role: "assistant",
-    content:
-      "Greetings, voyager. I am Aida, your luminous guide through the Bubble universe. How can I assist your journey today?",
+    content: greeting,
   };
 
   const [messages, setMessages] = useState<any[]>(() => {
@@ -114,6 +120,15 @@ export default function AidaPage() {
         setTimeout(() => {
           window.location.href = '/calendar';
         }, 1500);
+      } else if (res.action?.type === 'CREATE_TEMPLATE' && res.action.templateContent) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: res.reply || "Here's your template!",
+            template: res.action.templateContent,
+          },
+        ]);
       }
     } catch (err: any) {
       toast.error("Aida connection failed: " + err.message);
@@ -379,6 +394,28 @@ export default function AidaPage() {
                     <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
                       <Icon name="calendar_month" style={{ color: "#ffe792" }} />
                       <p className="text-sm font-bold text-white">Opening Calendar...</p>
+                    </div>
+                  )}
+
+                  {/* Render Template Output */}
+                  {msg.template && (
+                    <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-[#111620] shadow-2xl">
+                      <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+                        <div className="flex items-center gap-2 text-[#ffe792]">
+                          <Icon name="description" style={{ fontSize: 18 }} />
+                          <span className="text-xs font-bold uppercase tracking-widest">Generated Template</span>
+                        </div>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(msg.template); toast.success("Copied to clipboard!"); }}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white/50 hover:text-white transition-colors"
+                        >
+                          <Icon name="content_copy" style={{ fontSize: 14 }} />
+                          Copy
+                        </button>
+                      </div>
+                      <pre className="text-sm text-white/80 whitespace-pre-wrap font-sans" style={{ lineHeight: 1.6 }}>
+                        {msg.template}
+                      </pre>
                     </div>
                   )}
                 </div>

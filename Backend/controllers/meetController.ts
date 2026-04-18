@@ -46,6 +46,29 @@ export const clearCallLogs = async (req: Request, res: Response) => {
   }
 };
 
+// DELETE /api/v1/meet/logs/:id
+export const deleteCallLog = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const { id } = req.params;
+
+    // Try deleting from CallLog
+    const logResult = await CallLog.deleteOne({ _id: id, user: userId });
+    
+    // Also try deleting from Meeting if it's a meeting id
+    const { Meeting } = require('../models/meeting');
+    const meetResult = await Meeting.deleteOne({ _id: id, host: userId });
+
+    if (logResult.deletedCount === 0 && meetResult.deletedCount === 0) {
+      return res.status(404).json({ message: 'Call log not found or access denied.' });
+    }
+
+    res.json({ message: 'Call log deleted successfully.' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // NEW: GET /api/v1/meet/logs/:roomId/transcript
 // Returns the full transcript log for a room (meeting) with AI intelligence
 export const getRoomTranscript = async (req: Request, res: Response) => {

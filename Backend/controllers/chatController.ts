@@ -436,3 +436,22 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * @swagger
+ * /api/v1/chat/unread-count:
+ *   get:
+ *     tags: [Chat]
+ *     summary: Get unread chat message count
+ *     security:
+ *       - bearerAuth: []
+ */
+export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    // Just a stub for now so it doesn't 404, returning 0 unread messages globally.
+    // In a real scenario, this would count messages where readBy does not contain req.user._id
+    res.status(200).json({ count: 0 });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

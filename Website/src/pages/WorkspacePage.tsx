@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import * as api from "@/api";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
-type FileType = "image" | "video" | "audio" | "pdf" | "doc" | "spreadsheet" | "other";
+type FileType = "image" | "video" | "audio" | "pdf" | "doc" | "spreadsheet" | "other" | "link";
 type FileSource = "manual" | "meeting";
 
 interface WFile {
@@ -24,6 +24,8 @@ interface WFile {
   source: FileSource;
   isPublic: boolean;
   uploadedBy: any;
+  sharedBy?: { id: string; full_name: string; username: string; avatar?: string };
+  sharedSource?: string;
   sharedWith: any[];
   blockedUsers: any[];
   tags: string[];
@@ -55,6 +57,7 @@ const FILE_TYPE_ICONS: Record<string, string> = {
   spreadsheet: "table_chart",
   folder: "folder",
   other: "attach_file",
+  link: "public",
 };
 
 
@@ -289,7 +292,9 @@ function FolderModal({ activeWs, onClose, onCreated }: { activeWs: string | null
 
 /* ─── Upload Modal ──────────────────────────────────────────────────────────── */
 function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]; onClose: () => void; onUploaded: (f: WFile) => void }) {
+  const [tabType, setTabType] = useState<"file" | "link">("file");
   const [file, setFile] = useState<File | null>(null);
+  const [linkUrl, setLinkUrl] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [workspace, setWorkspace] = useState(workspaces[0] || "Default");
@@ -307,11 +312,13 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
   };
 
   const submit = async () => {
-    if (!file) return toast.error("Select a file first");
+    if (tabType === "file" && !file) return toast.error("Select a file first");
+    if (tabType === "link" && !linkUrl.trim()) return toast.error("Enter a valid URL to share");
+    
     setUploading(true);
     try {
       const ws = newWs.trim() || workspace;
-      const r = await api.uploadWorkspaceFile(file, { name: name || file.name, workspace: ws, source, description, tags });
+      const r = await api.uploadWorkspaceFile(tabType === "file" ? file : null, { linkUrl: tabType === "link" ? linkUrl : undefined, name: name || (tabType === "file" ? file?.name : linkUrl), workspace: ws, source, description, tags });
       onUploaded(r.file);
       toast.success("File uploaded!");
       onClose();
@@ -323,32 +330,44 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: 520, background: "var(--th-surface)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
         <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ ...SG, fontSize: 18, fontWeight: 700, color: "var(--th-accent)", margin: 0 }}>Upload File</h2>
+          <div style={{ display: "flex", gap: 16 }}>
+            <h2 onClick={() => setTabType("file")} style={{ ...SG, fontSize: 18, fontWeight: 700, color: tabType === "file" ? "var(--th-accent)" : "var(--th-muted)", cursor: "pointer", margin: 0, transition: "color 0.2s" }}>Upload File</h2>
+            <h2 onClick={() => setTabType("link")} style={{ ...SG, fontSize: 18, fontWeight: 700, color: tabType === "link" ? "var(--th-accent)" : "var(--th-muted)", cursor: "pointer", margin: 0, transition: "color 0.2s" }}>Share Link</h2>
+          </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
         </div>
 
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16, maxHeight: "70vh", overflowY: "auto" }}>
-          {/* Drop zone */}
-          <div
-            onClick={() => fileRef.current?.click()}
-            style={{ border: "2px dashed color-mix(in srgb, var(--th-accent) 0.25)", borderRadius: 16, minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", background: "color-mix(in srgb, var(--th-accent) 0.02)", transition: "border-color 0.2s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.5)")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.25)")}
-          >
-            {preview ? (
-              file?.type.startsWith("image/") ? <img src={preview} style={{ maxHeight: 140, borderRadius: 10, objectFit: "cover" }} /> :
-              <video src={preview} style={{ maxHeight: 140, borderRadius: 10 }} controls />
-            ) : file ? (
-              <><MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 40, color: "var(--th-accent)", opacity: 0.7 }} /><p style={{ fontSize: 13, color: "var(--th-muted)" }}>{file.name}</p></>
-            ) : (
-              <><MSIcon name="cloud_upload" style={{ fontSize: 48, color: "var(--th-accent)", opacity: 0.5 }} /><p style={{ fontSize: 14, color: "var(--th-muted)" }}>Click to select any file type</p><p style={{ fontSize: 11, color: "#68768b" }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p></>
-            )}
-          </div>
-          <input ref={fileRef} type="file" hidden onChange={handleFile} />
+          {tabType === "file" ? (
+            <>
+              {/* Drop zone */}
+              <div
+                onClick={() => fileRef.current?.click()}
+                style={{ border: "2px dashed color-mix(in srgb, var(--th-accent) 0.25)", borderRadius: 16, minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", background: "color-mix(in srgb, var(--th-accent) 0.02)", transition: "border-color 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.5)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.25)")}
+              >
+                {preview ? (
+                  file?.type.startsWith("image/") ? <img src={preview} style={{ maxHeight: 140, borderRadius: 10, objectFit: "cover" }} /> :
+                  <video src={preview} style={{ maxHeight: 140, borderRadius: 10 }} controls />
+                ) : file ? (
+                  <><MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 40, color: "var(--th-accent)", opacity: 0.7 }} /><p style={{ fontSize: 13, color: "var(--th-muted)" }}>{file.name}</p></>
+                ) : (
+                  <><MSIcon name="cloud_upload" style={{ fontSize: 48, color: "var(--th-accent)", opacity: 0.5 }} /><p style={{ fontSize: 14, color: "var(--th-muted)" }}>Click to select any file type</p><p style={{ fontSize: 11, color: "#68768b" }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p></>
+                )}
+              </div>
+              <input ref={fileRef} type="file" hidden onChange={handleFile} />
+            </>
+          ) : (
+            <div>
+              <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Website URL</label>
+              <input type="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://example.com" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
+            </div>
+          )}
 
           {/* Name */}
           <div>
-            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>File Name</label>
+            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>{tabType === "file" ? "File Name" : "Link Title"}</label>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Custom name (optional)" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
           </div>
 
@@ -387,8 +406,8 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What is this file about?" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "Manrope, sans-serif" }} />
           </div>
 
-          <button onClick={submit} disabled={uploading || !file} style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || !file ? "default" : "pointer", opacity: uploading || !file ? 0.7 : 1, ...SG }}>
-            {uploading ? "Transmitting Artifact..." : "Upload to Workspace"}
+          <button onClick={submit} disabled={uploading || (tabType === "file" ? !file : !linkUrl)} style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || (tabType === "file" ? !file : !linkUrl) ? "default" : "pointer", opacity: uploading || (tabType === "file" ? !file : !linkUrl) ? 0.7 : 1, ...SG }}>
+            {uploading ? "Transmitting Artifact..." : (tabType === "file" ? "Upload to Workspace" : "Save Link to Workspace")}
           </button>
         </div>
       </div>
@@ -397,16 +416,21 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
 }
 
 /* ─── File Card ─────────────────────────────────────────────────────────────── */
-function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview }: { file: WFile; onDelete: (id: string) => void; onAccessManage: (f: WFile) => void; onOpenFolder: (name: string) => void; onPreview: (f: WFile) => void; }) {
+function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview }: { file: WFile; onDelete: (id: string) => void; onAccessManage: (f: WFile) => void; onOpenFolder: (name: string) => void; onPreview?: (f: WFile) => void; }) {
   const [hovered, setHovered] = useState(false);
   const color = FILE_TYPE_COLORS[file.fileType] || FILE_TYPE_COLORS.other;
   const icon = FILE_TYPE_ICONS[file.fileType] || FILE_TYPE_ICONS.other;
   const proxyUrl = `${BASE_API}/workspace/file/${file.id}/proxy`;
   const isPreviewable = file.fileType === "image" || file.fileType === "video";
 
+  const currentUser = (() => { try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; } })();
+  const myId = currentUser?.id || currentUser?._id;
+  const uploaderId = typeof file.uploadedBy === 'string' ? file.uploadedBy : (file.uploadedBy?._id || file.uploadedBy?.id);
+  const isOwner = file.isFolder ? true : (uploaderId === myId);
+
   return (
     <div
-      onClick={() => { if (file.isFolder) onOpenFolder(file.name); else onPreview(file); }}
+      onClick={() => { if (file.isFolder) onOpenFolder(file.name); else if (onPreview) onPreview(file); }}
       className="col-span-12 md:col-span-4 rounded-xl overflow-hidden cursor-pointer border transition-all"
       style={{ background: "var(--th-surface)", borderColor: hovered ? "color-mix(in srgb, var(--th-accent) 0.3)" : "transparent", position: "relative" }}
       onMouseEnter={() => setHovered(true)}
@@ -443,25 +467,36 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview }: {
         </div>
         )}
 
+        {/* NEW: Shared By indicator */}
+        {file.sharedBy && (
+          <div style={{ position: "absolute", bottom: 10, left: 10, display: "flex", alignItems: "center", gap: 6, background: "rgba(1,15,32,0.8)", backdropFilter: "blur(4px)", borderRadius: "20px", padding: "4px 8px" }}>
+            <img src={file.sharedBy.avatar || "https://ui-avatars.com/api/?name="+file.sharedBy.username} className="w-4 h-4 rounded-full object-cover" />
+            <span style={{ fontSize: 9, color: "white", fontWeight: 600, ...SG }}>Shared by {file.sharedBy.full_name || file.sharedBy.username}</span>
+          </div>
+        )}
+
         {/* Action buttons on hover */}
         {hovered && (
           <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 6 }}>
-            {!file.isFolder && (
+            {!file.isFolder && onPreview && (
             <button onClick={(e) => { e.stopPropagation(); onPreview(file); }} title="View Details"
               style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(162,194,253,0.2)", border: "1px solid rgba(162,194,253,0.3)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", cursor: "pointer" }}>
               <MSIcon name="visibility" style={{ fontSize: 15, color: "#a2c2fd" }} />
             </button>
             )}
 
-            <button onClick={(e) => { e.stopPropagation(); onAccessManage(file); }} title="Manage access"
-
-              style={{ width: 30, height: 30, borderRadius: "50%", background: "color-mix(in srgb, var(--th-accent) 0.2)", border: "1px solid color-mix(in srgb, var(--th-accent) 0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MSIcon name="manage_accounts" style={{ fontSize: 15, color: "var(--th-accent)" }} />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(file.id); }} title="Delete"
-              style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <MSIcon name="delete" style={{ fontSize: 15, color: "#ef4444" }} />
-            </button>
+            {isOwner && (
+              <>
+                <button onClick={(e) => { e.stopPropagation(); onAccessManage(file); }} title="Manage access"
+                  style={{ width: 30, height: 30, borderRadius: "50%", background: "color-mix(in srgb, var(--th-accent) 0.2)", border: "1px solid color-mix(in srgb, var(--th-accent) 0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MSIcon name="manage_accounts" style={{ fontSize: 15, color: "var(--th-accent)" }} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(file.id); }} title="Delete"
+                  style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.3)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MSIcon name="delete" style={{ fontSize: 15, color: "#ef4444" }} />
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -485,7 +520,7 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview }: {
           <div className="flex items-center gap-1.5 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
              {file.uploadedBy && (
                <>
-                 <div className="w-5 h-5 rounded-full overflow-hidden border border-[var(--th-border)]">
+                 <div className="w-5 h-5 rounded-full overflow-hidden border border-[var(--th-border)] bg-[var(--th-surface)] flex items-center justify-center">
                     <img src={file.uploadedBy.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${file.uploadedBy.username}`} className="w-full h-full object-cover" alt="avatar" />
                  </div>
                  <span className="text-[9px] font-bold uppercase tracking-tight" style={{ color: "var(--th-muted)", ...SG }}>
@@ -550,9 +585,15 @@ function FilePreviewModal({ file, onClose }: { file: WFile; onClose: () => void 
              <button onClick={copyLink} className="w-9 h-9 rounded-xl bg-[var(--th-surface-top)] hover:bg-[var(--th-accent)]/20 hover:text-[var(--th-accent)] flex items-center justify-center text-[var(--th-muted)] border border-[var(--th-border)] transition-colors glass" title="Copy Share Link">
                <MSIcon name="link" style={{ fontSize: 18 }} />
              </button>
-             <a href={`${proxyUrl}?download=true`} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-xl bg-[var(--th-surface-top)] hover:bg-[var(--th-secondary)]/20 hover:text-[var(--th-secondary)] flex items-center justify-center text-[var(--th-muted)] border border-[var(--th-border)] transition-colors glass" title="Download directly">
-               <MSIcon name="download" style={{ fontSize: 18 }} />
-             </a>
+             {file.fileType === "link" ? (
+               <a href={file.fileUrl} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-xl bg-[var(--th-surface-top)] hover:bg-[var(--th-secondary)]/20 hover:text-[var(--th-secondary)] flex items-center justify-center text-[var(--th-muted)] border border-[var(--th-border)] transition-colors glass" title="Open Link">
+                 <MSIcon name="open_in_new" style={{ fontSize: 18 }} />
+               </a>
+             ) : (
+               <a href={`${proxyUrl}?download=true`} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-xl bg-[var(--th-surface-top)] hover:bg-[var(--th-secondary)]/20 hover:text-[var(--th-secondary)] flex items-center justify-center text-[var(--th-muted)] border border-[var(--th-border)] transition-colors glass" title="Download directly">
+                 <MSIcon name="download" style={{ fontSize: 18 }} />
+               </a>
+             )}
              <button onClick={onClose} className="w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 flex items-center justify-center transition-colors">
                <MSIcon name="close" style={{ fontSize: 18 }} />
              </button>
@@ -563,6 +604,17 @@ function FilePreviewModal({ file, onClose }: { file: WFile; onClose: () => void 
               <img src={proxyUrl} alt={file.name} className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
            ) : isVideo ? (
               <video src={proxyUrl} controls autoPlay className="max-w-full max-h-full rounded-lg shadow-lg"></video>
+           ) : file.fileType === "link" ? (
+              <div className="text-center text-[var(--th-muted)] bg-[var(--th-surface)] p-12 rounded-3xl border border-[var(--th-border)] max-w-sm w-full mx-auto shadow-2xl">
+                 <MSIcon name="public" style={{ fontSize: 80, opacity: 0.3 }} className="mb-4 text-[var(--th-accent)]" />
+                 <p className="font-bold text-[var(--th-text)] text-lg mb-1 truncate">{file.name}</p>
+                 <p className="text-xs max-w-xs mx-auto opacity-70 mb-8 leading-relaxed">
+                    This is a saved website link. Click below to securely open it in a new tab.
+                 </p>
+                 <a href={file.fileUrl} target="_blank" rel="noreferrer" className="inline-flex w-full justify-center items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[var(--th-accent)] to-[var(--th-secondary)] text-[var(--th-accent-text)] font-bold text-sm shadow-xl transition-all hover:opacity-90">
+                   <MSIcon name="open_in_new" className="text-lg" /> Open Tab
+                 </a>
+              </div>
            ) : (
               <div className="text-center text-[var(--th-muted)] bg-[var(--th-surface)] p-12 rounded-3xl border border-[var(--th-border)] max-w-sm w-full mx-auto shadow-2xl">
                  <MSIcon name={FILE_TYPE_ICONS[file.fileType] || FILE_TYPE_ICONS.other} style={{ fontSize: 80, opacity: 0.3 }} className="mb-4 text-[var(--th-accent)]" />
@@ -762,7 +814,7 @@ export default function WorkspacesPage() {
           </Button>
           <div className="flex items-center gap-6 ml-2">
             <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
-               <MSIcon name="person" style={{ color: "var(--th-secondary)" }} />
+               <img src={(() => { try { return JSON.parse(localStorage.getItem("user") || "{}").avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=user`; } catch { return ''; } })()} className="w-full h-full object-cover" alt="Avatar"/>
             </div>
           </div>
         </div>
@@ -839,7 +891,7 @@ export default function WorkspacesPage() {
             <div>
               <h3 className="text-[10px] uppercase tracking-[0.2em] mb-4" style={{ ...SG, color: "var(--th-muted)" }}>Source</h3>
               <ul className="space-y-1">
-                {(["manual", "meeting", "contact"] as FileSource[]).map(s => (
+                {(["manual", "meeting"] as FileSource[]).map(s => (
                   <li key={s}>
                     <a href="#" onClick={(e) => { e.preventDefault(); setIsShared(false); setActiveSource(activeSource === s ? null : s); }}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
@@ -911,7 +963,16 @@ export default function WorkspacesPage() {
           {sorted.length > 0 && (
             <div className="grid grid-cols-12 gap-8" style={{ animation: "fadeUp 0.2s ease" }}>
               {sorted.map(f => (
-                <FileCard key={f.id} file={f} onDelete={handleDelete} onAccessManage={(file) => setAccessFile(file)} onOpenFolder={(name) => setActiveWs(name)} />
+                <FileCard
+                  key={f.id}
+                  file={f}
+                  onDelete={handleDelete}
+                  onAccessManage={(file) => setAccessFile(file)}
+                  onOpenFolder={(name) => setActiveWs(name)}
+                  onPreview={(f) => {
+                    setPreviewFile(f);
+                  }}
+                />
               ))}
             </div>
           )}

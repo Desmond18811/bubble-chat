@@ -11,6 +11,7 @@ import {
   clearChat,
   toggleChatPin,
   deleteChat,
+  getUnreadChatCount,
 } from '../controllers/chatController';
 
 
@@ -58,6 +59,9 @@ router.use(passport.authenticate('jwt', { session: false }));
  *         description: Missing userId or invalid request.
  */
 router.route('/').post(accessChat);
+
+/** GET /api/v1/chat/unread-count */
+router.route('/unread-count').get(getUnreadChatCount);
 
 /**
  * @swagger

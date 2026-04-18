@@ -186,7 +186,9 @@ export default function CommunityMessagesPage() {
     loadData();
   }, [id]);
 
-  const isCreator = network?.creator?._id === user?._id || network?.creator === user?._id;
+  const userId = user?.id || user?._id;
+  const creatorId = network?.creator?._id || network?.creator?.id || network?.creator;
+  const isCreator = String(creatorId) === String(userId);
 
   return (
     <>

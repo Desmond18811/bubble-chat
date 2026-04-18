@@ -2145,16 +2145,6 @@ export default function BubbleMessages() {
               </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--th-border)', margin: '0 24px 16px' }}>
-              <button
-                style={{ flex: 1, padding: '10px 0', border: 'none', background: 'transparent', cursor: 'default',
-                         fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, fontWeight: 700,
-                         color: 'var(--th-text)', borderBottom: '2px solid var(--th-accent)', letterSpacing: '0.1em' }}
-              >
-                CHATS
-              </button>
-            </div>
 
             {/* Conversation list */}
             <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 12px" }}>

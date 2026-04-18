@@ -17,6 +17,8 @@ const handleResponse = async (res: Response) => {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || `Request failed: ${res.status}`);
   }
+  // 204 No Content — nothing to parse
+  if (res.status === 204) return null;
   return res.json();
 };
 
@@ -104,16 +106,15 @@ export const verify2FA = async (token: string) => {
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const searchUsers = async (query: string) => {
-  const res = await fetch(`${BASE_URL}/user/search?search=${encodeURIComponent(query)}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/user/search?search=${encodeURIComponent(query)}`,
+    { headers: getAuthHeaders() }
+  );
   const data = await handleResponse(res);
-  // Normalize across possible response shapes
   const users = data.users || data.data || data.results || [];
   return { users };
 };
 
-/** Fetch a single user's full profile for the right panel */
 export const getUserProfile = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/user/${userId}`, {
     headers: getAuthHeaders(),
@@ -122,9 +123,10 @@ export const getUserProfile = async (userId: string) => {
 };
 
 export const getContacts = async (searchQuery = '') => {
-  const res = await fetch(`${BASE_URL}/user/contacts?search=${encodeURIComponent(searchQuery)}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/user/contacts?search=${encodeURIComponent(searchQuery)}`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
@@ -163,9 +165,7 @@ export const accessOrCreateChat = async (userId: string) => {
 };
 
 export const fetchAllUserChats = async () => {
-  const res = await fetch(`${BASE_URL}/chat`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(`${BASE_URL}/chat`, { headers: getAuthHeaders() });
   return handleResponse(res);
 };
 
@@ -178,7 +178,14 @@ export const createGroupChat = async (name: string, users: string[]) => {
   return handleResponse(res);
 };
 
-export const updateGroupChat = async (chatId: string, data: { chatName?: string; groupIcon?: string; groupDescription?: string }) => {
+export const updateGroupChat = async (
+  chatId: string,
+  data: {
+    chatName?: string;
+    groupIcon?: string;
+    groupDescription?: string;
+  }
+) => {
   const res = await fetch(`${BASE_URL}/chat/group/${chatId}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -217,7 +224,11 @@ export const fetchMessages = async (chatId: string) => {
 export const sendTextMessage = async (
   chatId: string,
   content: string,
-  opts?: { parent_message?: string; mentions?: string[]; is_forwarded?: boolean }
+  opts?: {
+    parent_message?: string;
+    mentions?: string[];
+    is_forwarded?: boolean;
+  }
 ) => {
   const res = await fetch(`${BASE_URL}/message`, {
     method: 'POST',
@@ -227,28 +238,33 @@ export const sendTextMessage = async (
   return handleResponse(res);
 };
 
-/**
- * Upload an attachment / voice note as a message.
- * Passes message_type explicitly so backend stores the correct type.
- */
 export const sendMediaMessage = async (
   chatId: string,
   file: File,
-  opts?: { content?: string; parent_message?: string; message_type?: string; media_duration?: number }
+  opts?: {
+    content?: string;
+    parent_message?: string;
+    message_type?: string;
+    media_duration?: number;
+  }
 ) => {
   const token = localStorage.getItem('access_token');
   const formData = new FormData();
   formData.append('chatId', chatId);
   if (opts?.content) formData.append('content', opts.content);
-  if (opts?.parent_message) formData.append('parent_message', opts.parent_message);
-  if (opts?.media_duration !== undefined) formData.append('media_duration', opts.media_duration.toString());
+  if (opts?.parent_message)
+    formData.append('parent_message', opts.parent_message);
+  if (opts?.media_duration !== undefined)
+    formData.append('media_duration', opts.media_duration.toString());
 
-  // Resolve message_type from mime if not provided
   const resolvedType =
     opts?.message_type ||
-    (file.type.startsWith('image/') ? 'image'
-      : file.type.startsWith('video/') ? 'video'
-        : file.type.startsWith('audio/') ? 'voice'
+    (file.type.startsWith('image/')
+      ? 'image'
+      : file.type.startsWith('video/')
+        ? 'video'
+        : file.type.startsWith('audio/')
+          ? 'voice'
           : 'file');
 
   formData.append('message_type', resolvedType);
@@ -262,7 +278,6 @@ export const sendMediaMessage = async (
   return handleResponse(res);
 };
 
-/** Edit an existing message (own messages only) */
 export const updateMessage = async (messageId: string, content: string) => {
   const res = await fetch(`${BASE_URL}/message/${messageId}`, {
     method: 'PUT',
@@ -272,7 +287,6 @@ export const updateMessage = async (messageId: string, content: string) => {
   return handleResponse(res);
 };
 
-/** Delete a message for yourself only (soft-delete, always available) */
 export const deleteMessageForMe = async (messageId: string) => {
   const res = await fetch(`${BASE_URL}/message/${messageId}/for-me`, {
     method: 'DELETE',
@@ -281,7 +295,6 @@ export const deleteMessageForMe = async (messageId: string) => {
   return handleResponse(res);
 };
 
-/** Delete a message for everyone — sender only, within 2 minutes of sending */
 export const deleteMessageForEveryone = async (messageId: string) => {
   const res = await fetch(`${BASE_URL}/message/${messageId}/for-everyone`, {
     method: 'DELETE',
@@ -290,10 +303,6 @@ export const deleteMessageForEveryone = async (messageId: string) => {
   return handleResponse(res);
 };
 
-/**
- * Mark all messages in a chat as read by the current user.
- * Emits read receipts on the backend via socket.
- */
 export const markMessagesRead = async (chatId: string) => {
   const res = await fetch(`${BASE_URL}/message/read/${chatId}`, {
     method: 'PUT',
@@ -302,7 +311,6 @@ export const markMessagesRead = async (chatId: string) => {
   return handleResponse(res);
 };
 
-/** Toggle a reaction emoji on a message */
 export const reactToMessage = async (messageId: string, emoji: string) => {
   const res = await fetch(`${BASE_URL}/message/${messageId}/react`, {
     method: 'POST',
@@ -312,7 +320,6 @@ export const reactToMessage = async (messageId: string, emoji: string) => {
   return handleResponse(res);
 };
 
-/** Block / Unblock a user */
 export const blockUser = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/user/block/${userId}`, {
     method: 'POST',
@@ -321,7 +328,6 @@ export const blockUser = async (userId: string) => {
   return handleResponse(res);
 };
 
-/** Report a user for investigation */
 export const reportUser = async (userId: string, reason: string) => {
   const res = await fetch(`${BASE_URL}/user/report/${userId}`, {
     method: 'POST',
@@ -331,7 +337,6 @@ export const reportUser = async (userId: string, reason: string) => {
   return handleResponse(res);
 };
 
-/** Mute / Unmute a conversation */
 export const muteChat = async (chatId: string) => {
   const res = await fetch(`${BASE_URL}/chat/mute/${chatId}`, {
     method: 'PUT',
@@ -340,7 +345,6 @@ export const muteChat = async (chatId: string) => {
   return handleResponse(res);
 };
 
-/** Clear chat history for me */
 export const clearChat = async (chatId: string) => {
   const res = await fetch(`${BASE_URL}/chat/clear/${chatId}`, {
     method: 'PUT',
@@ -349,7 +353,6 @@ export const clearChat = async (chatId: string) => {
   return handleResponse(res);
 };
 
-/** Toggle Pin status for a chat */
 export const toggleChatPin = async (chatId: string) => {
   const res = await fetch(`${BASE_URL}/chat/pin/${chatId}`, {
     method: 'PUT',
@@ -358,7 +361,6 @@ export const toggleChatPin = async (chatId: string) => {
   return handleResponse(res);
 };
 
-/** Toggle Pin status for a message */
 export const toggleMessagePin = async (messageId: string) => {
   const res = await fetch(`${BASE_URL}/message/${messageId}/pin`, {
     method: 'PUT',
@@ -370,9 +372,7 @@ export const toggleMessagePin = async (messageId: string) => {
 // ─── Stories ──────────────────────────────────────────────────────────────────
 
 export const fetchStories = async () => {
-  const res = await fetch(`${BASE_URL}/story`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(`${BASE_URL}/story`, { headers: getAuthHeaders() });
   return handleResponse(res);
 };
 
@@ -387,7 +387,6 @@ export const uploadStory = async (
   if (opts?.bg_gradient) formData.append('bg_gradient', opts.bg_gradient);
   if (opts?.text_color) formData.append('text_color', opts.text_color);
   if (file) formData.append('file', file);
-
   const res = await fetch(`${BASE_URL}/story`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -406,7 +405,6 @@ export const deleteStory = async (storyId: string) => {
 
 // ─── E2EE ─────────────────────────────────────────────────────────────────────
 
-/** Upload the user's ECDH public key for E2E encrypted messaging */
 export const uploadPublicKey = async (publicKey: string) => {
   const res = await fetch(`${BASE_URL}/user/public-key`, {
     method: 'PUT',
@@ -416,7 +414,6 @@ export const uploadPublicKey = async (publicKey: string) => {
   return handleResponse(res);
 };
 
-/** Fetch another user's public key for encryption */
 export const getPublicKey = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/user/${userId}/public-key`, {
     headers: getAuthHeaders(),
@@ -426,7 +423,6 @@ export const getPublicKey = async (userId: string) => {
 
 // ─── Chat Deletion ────────────────────────────────────────────────────────────
 
-/** Delete a chat from your view — soft-delete, hides from list until re-added */
 export const deleteChat = async (chatId: string) => {
   const res = await fetch(`${BASE_URL}/chat/${chatId}`, {
     method: 'DELETE',
@@ -437,18 +433,27 @@ export const deleteChat = async (chatId: string) => {
 
 // ─── Workspace Files ──────────────────────────────────────────────────────────
 
-/** Upload a file to a workspace bucket */
 export const uploadWorkspaceFile = async (
-  file: File,
-  opts?: { name?: string; workspace?: string; source?: string; sourceReference?: string; tags?: string; description?: string }
+  file: File | null,
+  opts?: {
+    name?: string;
+    workspace?: string;
+    source?: string;
+    sourceReference?: string;
+    tags?: string;
+    description?: string;
+    linkUrl?: string;
+  }
 ) => {
   const token = localStorage.getItem('access_token');
   const formData = new FormData();
-  formData.append('file', file);
+  if (file) formData.append('file', file);
+  if (opts?.linkUrl) formData.append('linkUrl', opts.linkUrl);
   if (opts?.name) formData.append('name', opts.name);
   if (opts?.workspace) formData.append('workspace', opts.workspace);
   if (opts?.source) formData.append('source', opts.source);
-  if (opts?.sourceReference) formData.append('sourceReference', opts.sourceReference);
+  if (opts?.sourceReference)
+    formData.append('sourceReference', opts.sourceReference);
   if (opts?.tags) formData.append('tags', opts.tags);
   if (opts?.description) formData.append('description', opts.description);
   const res = await fetch(`${BASE_URL}/workspace/file`, {
@@ -459,8 +464,10 @@ export const uploadWorkspaceFile = async (
   return handleResponse(res);
 };
 
-/** Create an empty folder representation */
-export const createWorkspaceFolder = async (name: string, workspace?: string) => {
+export const createWorkspaceFolder = async (
+  name: string,
+  workspace?: string
+) => {
   const res = await fetch(`${BASE_URL}/workspace/folder`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -469,7 +476,6 @@ export const createWorkspaceFolder = async (name: string, workspace?: string) =>
   return handleResponse(res);
 };
 
-/** List workspace files (filtered by workspace, type, source, or search) */
 export const listWorkspaceFiles = async (params?: {
   workspace?: string;
   type?: string;
@@ -487,7 +493,6 @@ export const listWorkspaceFiles = async (params?: {
   return handleResponse(res);
 };
 
-/** Get public shared folder */
 export const getSharedWorkspaceFolder = async (folderId: string) => {
   const res = await fetch(`${BASE_URL}/workspace/shared/${folderId}`, {
     headers: getAuthHeaders(),
@@ -495,7 +500,6 @@ export const getSharedWorkspaceFolder = async (folderId: string) => {
   return handleResponse(res);
 };
 
-/** Delete a workspace file (owner only) */
 export const deleteWorkspaceFile = async (fileId: string) => {
   const res = await fetch(`${BASE_URL}/workspace/file/${fileId}`, {
     method: 'DELETE',
@@ -504,7 +508,6 @@ export const deleteWorkspaceFile = async (fileId: string) => {
   return handleResponse(res);
 };
 
-/** Manage file access — add/remove collaborators or toggle public */
 export const manageWorkspaceFileAccess = async (
   fileId: string,
   payload: { action?: 'add' | 'remove'; userId?: string; isPublic?: boolean }
@@ -517,7 +520,6 @@ export const manageWorkspaceFileAccess = async (
   return handleResponse(res);
 };
 
-/** Block or unblock a user from a file */
 export const blockWorkspaceFileUser = async (
   fileId: string,
   userId: string,
@@ -531,14 +533,17 @@ export const blockWorkspaceFileUser = async (
   return handleResponse(res);
 };
 
-/** Get the secure proxy URL for a workspace file */
 export const getWorkspaceFileProxyUrl = (fileId: string) =>
   `${BASE_URL}/workspace/file/${fileId}/proxy`;
 
-/** Update file metadata */
 export const updateWorkspaceFileMeta = async (
   fileId: string,
-  data: { name?: string; workspace?: string; tags?: string; description?: string }
+  data: {
+    name?: string;
+    workspace?: string;
+    tags?: string;
+    description?: string;
+  }
 ) => {
   const res = await fetch(`${BASE_URL}/workspace/file/${fileId}`, {
     method: 'PUT',
@@ -580,6 +585,14 @@ export const clearCallLogs = async () => {
   return handleResponse(res);
 };
 
+export const deleteCallLog = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/meet/logs/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
 // ─── Feed / Blog ──────────────────────────────────────────────────────────────
 
 export const fetchFeedPosts = async (page = 1, limit = 20) => {
@@ -590,16 +603,18 @@ export const fetchFeedPosts = async (page = 1, limit = 20) => {
 };
 
 export const getTrendingFeedPosts = async (page = 1, limit = 20) => {
-  const res = await fetch(`${BASE_URL}/feed/trending?page=${page}&limit=${limit}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/feed/trending?page=${page}&limit=${limit}`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
 export const getFollowingFeedPosts = async (page = 1, limit = 20) => {
-  const res = await fetch(`${BASE_URL}/feed/following?page=${page}&limit=${limit}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/feed/following?page=${page}&limit=${limit}`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
@@ -608,7 +623,6 @@ export const createFeedPost = async (content: string, file?: File) => {
   const formData = new FormData();
   formData.append('content', content);
   if (file) formData.append('file', file);
-
   const res = await fetch(`${BASE_URL}/feed`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -665,16 +679,21 @@ export const fetchNetworkOfTheMonth = async () => {
   return handleResponse(res);
 };
 
-export const fetchNetworks = async (params?: { search?: string; category?: string; page?: number; limit?: number }) => {
+export const fetchNetworks = async (params?: {
+  search?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}) => {
   const q = new URLSearchParams();
   if (params?.search) q.set('search', params.search);
   if (params?.category) q.set('category', params.category);
   if (params?.page) q.set('page', params.page.toString());
   if (params?.limit) q.set('limit', params.limit.toString());
-
-  const res = await fetch(`${BASE_URL}/community/networks?${q.toString()}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/community/networks?${q.toString()}`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
@@ -711,42 +730,59 @@ export const leaveNetwork = async (id: string) => {
 };
 
 export const fetchNetworkPosts = async (id: string) => {
-  const res = await fetch(`${BASE_URL}/community/networks/${id}/posts`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/community/networks/${id}/posts`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
 export const createNetworkPost = async (id: string, data: any) => {
-  const res = await fetch(`${BASE_URL}/community/networks/${id}/posts`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
+  const res = await fetch(
+    `${BASE_URL}/community/networks/${id}/posts`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    }
+  );
   return handleResponse(res);
 };
 
-export const reactToNetworkPost = async (networkId: string, postId: string, emoji: string) => {
-  const res = await fetch(`${BASE_URL}/community/networks/${networkId}/posts/${postId}/react`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ emoji }),
-  });
+export const reactToNetworkPost = async (
+  networkId: string,
+  postId: string,
+  emoji: string
+) => {
+  const res = await fetch(
+    `${BASE_URL}/community/networks/${networkId}/posts/${postId}/react`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ emoji }),
+    }
+  );
   return handleResponse(res);
 };
 
-export const forwardNetworkPost = async (networkId: string, postId: string, targetNetworkId?: string) => {
-  const res = await fetch(`${BASE_URL}/community/networks/${networkId}/posts/${postId}/forward`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ targetNetworkId }),
-  });
+export const forwardNetworkPost = async (
+  networkId: string,
+  postId: string,
+  targetNetworkId?: string
+) => {
+  const res = await fetch(
+    `${BASE_URL}/community/networks/${networkId}/posts/${postId}/forward`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ targetNetworkId }),
+    }
+  );
   return handleResponse(res);
 };
 
 // ─── Saved Posts ──────────────────────────────────────────────────────────────
 
-/** Toggle save/unsave a feed post */
 export const saveFeedPost = async (postId: string) => {
   const res = await fetch(`${BASE_URL}/feed/${postId}/save`, {
     method: 'POST',
@@ -755,16 +791,15 @@ export const saveFeedPost = async (postId: string) => {
   return handleResponse(res);
 };
 
-/** Fetch all posts saved by the current user */
 export const fetchSavedPosts = async () => {
   const res = await fetch(`${BASE_URL}/feed/saved`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(res);
 };
+
 // ─── Aida AI ──────────────────────────────────────────────────────────────────
 
-/** Send a message to Aida and get a response from Gemma */
 export const chatWithAida = async (message: string) => {
   const res = await fetch(`${BASE_URL}/aida/chat`, {
     method: 'POST',
@@ -774,7 +809,6 @@ export const chatWithAida = async (message: string) => {
   return handleResponse(res);
 };
 
-/** Get a context-aware daily briefing from Aida */
 export const fetchAidaBriefing = async () => {
   const res = await fetch(`${BASE_URL}/aida/daily-briefing`, {
     headers: getAuthHeaders(),
@@ -782,7 +816,6 @@ export const fetchAidaBriefing = async () => {
   return handleResponse(res);
 };
 
-/** Get financial advice from Aida based on recent transactions */
 export const fetchAidaFinanceAdvice = async () => {
   const res = await fetch(`${BASE_URL}/aida/financial-advice`, {
     headers: getAuthHeaders(),
@@ -790,9 +823,10 @@ export const fetchAidaFinanceAdvice = async () => {
   return handleResponse(res);
 };
 
-// ─── Aida Agentic Actions ─────────────────────────────────────────────────────
-
-export const aidaExtractActionItems = async (transcript: string, attendeeNames?: string[]) => {
+export const aidaExtractActionItems = async (
+  transcript: string,
+  attendeeNames?: string[]
+) => {
   const res = await fetch(`${BASE_URL}/aida/extract-action-items`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -810,7 +844,10 @@ export const aidaSearchWorkspace = async (query: string) => {
   return handleResponse(res);
 };
 
-export const aidaScheduleSuggestion = async (duration = 30, preferredDay?: string) => {
+export const aidaScheduleSuggestion = async (
+  duration = 30,
+  preferredDay?: string
+) => {
   const res = await fetch(`${BASE_URL}/aida/schedule-suggestion`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -819,7 +856,11 @@ export const aidaScheduleSuggestion = async (duration = 30, preferredDay?: strin
   return handleResponse(res);
 };
 
-export const aidaScheduleTask = async (data: { title: string; startTime?: string; description?: string }) => {
+export const aidaScheduleTask = async (data: {
+  title: string;
+  startTime?: string;
+  description?: string;
+}) => {
   const res = await fetch(`${BASE_URL}/aida/schedule-task`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -846,9 +887,10 @@ export const aidaFlagPayments = async () => {
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export const fetchNotifications = async (page = 1, limit = 30) => {
-  const res = await fetch(`${BASE_URL}/notifications?page=${page}&limit=${limit}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/notifications?page=${page}&limit=${limit}`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
@@ -909,9 +951,10 @@ export const createMeeting = async (data: {
 };
 
 export const fetchMeetings = async (page = 1, limit = 20) => {
-  const res = await fetch(`${BASE_URL}/meetings?page=${page}&limit=${limit}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetch(
+    `${BASE_URL}/meetings?page=${page}&limit=${limit}`,
+    { headers: getAuthHeaders() }
+  );
   return handleResponse(res);
 };
 
@@ -922,6 +965,11 @@ export const fetchMeetingById = async (id: string) => {
   return handleResponse(res);
 };
 
+/**
+ * Fire-and-forget transcript chunk — called in real-time from SpeechRecognition.
+ * Uses meetingId (MongoDB _id) which is stored in the MeetRoom state after
+ * createMeeting() is called at the start of the call.
+ */
 export const addMeetingTranscriptChunk = async (
   meetingId: string,
   chunk: { speaker?: string; text: string; timestamp?: number }
@@ -934,7 +982,10 @@ export const addMeetingTranscriptChunk = async (
   return handleResponse(res);
 };
 
-export const endMeeting = async (meetingId: string, transcriptRaw?: string) => {
+export const endMeeting = async (
+  meetingId: string,
+  transcriptRaw?: string
+) => {
   const res = await fetch(`${BASE_URL}/meetings/${meetingId}/end`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -944,15 +995,92 @@ export const endMeeting = async (meetingId: string, transcriptRaw?: string) => {
 };
 
 export const fetchMeetingActionItems = async (meetingId: string) => {
-  const res = await fetch(`${BASE_URL}/meetings/${meetingId}/action-items`, {
+  const res = await fetch(
+    `${BASE_URL}/meetings/${meetingId}/action-items`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse(res);
+};
+
+// ── NEW: Meeting file sharing ─────────────────────────────────────────────────
+
+/**
+ * Log a file or link to the meeting's file list.
+ * Call this AFTER the workspace upload succeeds to attach the record
+ * to the meeting so it appears in the transcript drawer's Files tab.
+ */
+export const logMeetingFile = async (
+  meetingId: string,
+  data: {
+    fileId?: string;
+    name: string;
+    fileType?: string;
+    fileSize?: number;
+    fileUrl?: string;
+    linkUrl?: string;
+    source?: 'file_upload' | 'tab_share' | 'screen_share';
+  }
+) => {
+  const res = await fetch(`${BASE_URL}/meetings/${meetingId}/files`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+/** Fetch all files shared during a specific meeting. */
+export const fetchMeetingFiles = async (meetingId: string) => {
+  const res = await fetch(`${BASE_URL}/meetings/${meetingId}/files`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(res);
 };
 
+// ── NEW: Screen / tab share session tracking ──────────────────────────────────
+
+/**
+ * Record the start of a screen / window / tab share.
+ * Returns a sessionId to be used when the share ends.
+ */
+export const startMeetingScreenShare = async (
+  meetingId: string,
+  data: { shareType?: 'screen' | 'window' | 'tab'; label?: string }
+) => {
+  const res = await fetch(
+    `${BASE_URL}/meetings/${meetingId}/screen-share/start`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    }
+  );
+  return handleResponse(res);
+};
+
+/**
+ * Record the end of a screen / window / tab share session.
+ * Persists duration automatically on the backend.
+ */
+export const endMeetingScreenShare = async (
+  meetingId: string,
+  sessionId: string
+) => {
+  const res = await fetch(
+    `${BASE_URL}/meetings/${meetingId}/screen-share/${sessionId}/end`,
+    {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+    }
+  );
+  return handleResponse(res);
+};
+
 // ─── Templates ────────────────────────────────────────────────────────────────
 
-export const fetchTemplates = async (type?: 'meeting' | 'document' | 'task') => {
+export const fetchTemplates = async (
+  type?: 'meeting' | 'document' | 'task'
+) => {
   const q = type ? `?type=${type}` : '';
   const res = await fetch(`${BASE_URL}/templates${q}`, {
     headers: getAuthHeaders(),
@@ -1002,13 +1130,17 @@ export const deleteTemplate = async (id: string) => {
 
 // ─── Activity Log ─────────────────────────────────────────────────────────────
 
-export const fetchActivityLog = async (params?: { page?: number; limit?: number; action?: string; entityType?: string }) => {
+export const fetchActivityLog = async (params?: {
+  page?: number;
+  limit?: number;
+  action?: string;
+  entityType?: string;
+}) => {
   const q = new URLSearchParams();
-  if (params?.page)       q.set('page',       params.page.toString());
-  if (params?.limit)      q.set('limit',      params.limit.toString());
-  if (params?.action)     q.set('action',     params.action);
+  if (params?.page) q.set('page', params.page.toString());
+  if (params?.limit) q.set('limit', params.limit.toString());
+  if (params?.action) q.set('action', params.action);
   if (params?.entityType) q.set('entityType', params.entityType);
-
   const res = await fetch(`${BASE_URL}/activity?${q.toString()}`, {
     headers: getAuthHeaders(),
   });
@@ -1058,7 +1190,15 @@ export const fetchInvoiceById = async (id: string) => {
   return handleResponse(res);
 };
 
-export const updateInvoice = async (id: string, data: { status?: string; dueDate?: string; notes?: string; recipientEmail?: string }) => {
+export const updateInvoice = async (
+  id: string,
+  data: {
+    status?: string;
+    dueDate?: string;
+    notes?: string;
+    recipientEmail?: string;
+  }
+) => {
   const res = await fetch(`${BASE_URL}/payment/invoice/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -1106,12 +1246,11 @@ export const fetchTasks = async (params?: {
   to?: string;
 }) => {
   const q = new URLSearchParams();
-  if (params?.type)   q.set('type',   params.type);
+  if (params?.type) q.set('type', params.type);
   if (params?.status) q.set('status', params.status);
   if (params?.source) q.set('source', params.source);
-  if (params?.from)   q.set('from',   params.from);
-  if (params?.to)     q.set('to',     params.to);
-
+  if (params?.from) q.set('from', params.from);
+  if (params?.to) q.set('to', params.to);
   const res = await fetch(`${BASE_URL}/tasks?${q.toString()}`, {
     headers: getAuthHeaders(),
   });
@@ -1130,7 +1269,9 @@ export const snoozeTask = async (id: string, snoozedUntil: string) => {
 // ─── Feed: Trending Tags ──────────────────────────────────────────────────────
 
 export const getTrendingTags = async () => {
-  const res = await fetch(`${BASE_URL}/feed/trending`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE_URL}/feed/trending`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res);
 };
 
@@ -1145,17 +1286,23 @@ export const followUser = async (userId: string) => {
 };
 
 export const getSuggestedUsers = async () => {
-  const res = await fetch(`${BASE_URL}/user/suggestions`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE_URL}/user/suggestions`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res);
 };
 
 export const getMyFollowers = async (userId: string) => {
-  const res = await fetch(`${BASE_URL}/user/${userId}/followers`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE_URL}/user/${userId}/followers`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res);
 };
 
 export const getMyFollowing = async (userId: string) => {
-  const res = await fetch(`${BASE_URL}/user/${userId}/following`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE_URL}/user/${userId}/following`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res);
 };
 
@@ -1176,14 +1323,17 @@ export const uploadAvatar = async (file: File) => {
 // ─── Workspace: Shared With Me ────────────────────────────────────────────────
 
 export const getSharedWithMeFiles = async () => {
-  const res = await fetch(`${BASE_URL}/workspace/shared-with-me`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE_URL}/workspace/shared-with-me`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res);
 };
 
 // ─── Messages: Unread Count ───────────────────────────────────────────────────
 
 export const fetchUnreadMessageCount = async () => {
-  const res = await fetch(`${BASE_URL}/chat/unread-count`, { headers: getAuthHeaders() });
+  const res = await fetch(`${BASE_URL}/chat/unread-count`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(res);
 };
-
