@@ -28,6 +28,7 @@ import aidaRoutes from './routes/aidaRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import templateRoutes from './routes/templateRoutes';
 import activityRoutes from './routes/activityRoutes';
+import orgRoutes from './routes/orgRoutes';
 import { seedDefaultTemplates } from './controllers/templateController';
 
 
@@ -255,6 +256,7 @@ app.use('/api/v1/aida', aidaRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/templates', templateRoutes);
 app.use('/api/v1/activity', activityRoutes);
+app.use('/api/v1/org', orgRoutes);
 
 
 

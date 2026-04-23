@@ -49,6 +49,7 @@ export interface IUser extends Document {
   isPremium: boolean;
   is_bot: boolean;
   verified_badge: boolean;
+  role?: 'employee' | 'admin' | 'HR';
 
   // Auth
   password?: string;
@@ -109,6 +110,7 @@ const UserSchema: Schema<IUser> = new Schema(
     isPremium: { type: Boolean, default: false },
     is_bot: { type: Boolean, default: false },
     verified_badge: { type: Boolean, default: false },
+    role: { type: String, enum: ['employee', 'admin', 'HR'], default: 'employee' },
 
     notification_settings: {
       muted: { type: Boolean, default: false },

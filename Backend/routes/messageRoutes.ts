@@ -10,6 +10,7 @@ import {
   reactToMessage,
   proxyMedia,
   toggleMessagePin,
+  shareWorkspaceFile,
 } from '../controllers/messageController';
 import { handleUpload } from '../middleware/upload';
 
@@ -54,6 +55,17 @@ router.use(passport.authenticate('jwt', { session: false }));
  *                 data: { $ref: '#/components/schemas/Message' }
  */
 router.route('/').post(handleUpload.single('file'), sendMessage);
+
+/**
+ * @swagger
+ * /api/v1/message/share-workspace-file:
+ *   post:
+ *     tags: [Messages]
+ *     summary: Share a workspace file to a chat
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/share-workspace-file', shareWorkspaceFile);
 
 /**
  * @swagger

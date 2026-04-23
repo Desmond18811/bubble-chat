@@ -508,6 +508,15 @@ export const deleteWorkspaceFile = async (fileId: string) => {
   return handleResponse(res);
 };
 
+export const shareWorkspaceFile = async (chatId: string, fileId: string) => {
+  const res = await fetch(`${BASE_URL}/message/share-workspace-file`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ chatId, fileId }),
+  });
+  return handleResponse(res);
+};
+
 export const manageWorkspaceFileAccess = async (
   fileId: string,
   payload: { action?: 'add' | 'remove'; userId?: string; isPublic?: boolean }
@@ -799,6 +808,25 @@ export const fetchSavedPosts = async () => {
 };
 
 // ─── Aida AI ──────────────────────────────────────────────────────────────────
+
+export const fetchAidaConversationObj = async () => {
+  const res = await fetch(`${BASE_URL}/aida/conversation`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+export const chatMessageAida = async (message: string, conversationId?: string) => {
+  const res = await fetch(`${BASE_URL}/aida/chat-message`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ message, conversationId }),
+  });
+  return handleResponse(res);
+};
+
+export const fetchAidaConversationSummary = async (conversationId: string) => {
+  const res = await fetch(`${BASE_URL}/aida/conversation-summary/${conversationId}`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
 
 export const chatWithAida = async (message: string) => {
   const res = await fetch(`${BASE_URL}/aida/chat`, {

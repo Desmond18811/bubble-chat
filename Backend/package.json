@@ -17,6 +17,7 @@
     "@aws-sdk/lib-storage": "^3.1019.0",
     "@aws-sdk/s3-request-presigner": "^3.1026.0",
     "@huggingface/inference": "^4.13.15",
+    "@pinecone-database/pinecone": "^7.2.0",
     "@types/node-cron": "^3.0.11",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

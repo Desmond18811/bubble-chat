@@ -1173,6 +1173,8 @@ export default function BubbleMessages() {
 
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [chatSearch, setChatSearch] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [actionMenuMsgId, setActionMenuMsgId] = useState<string | null>(null);
@@ -1399,11 +1401,17 @@ export default function BubbleMessages() {
   useEffect(() => {
     (async () => {
       try {
-        const [chatRes, storyRes] = await Promise.all([
+        const [chatRes, storyRes, aidaRes] = await Promise.all([
           api.fetchAllUserChats(),
           api.fetchStories(),
+          api.fetchAidaConversationObj().catch(() => null)
         ]);
-        setChats(chatRes.conversations || []);
+        const fetchedChats = chatRes.conversations || [];
+        if (aidaRes && aidaRes.conversation) {
+          const aidaExists = fetchedChats.some((c: any) => c._id === aidaRes.conversation._id || c.id === aidaRes.conversation._id);
+          if (!aidaExists) fetchedChats.unshift(aidaRes.conversation);
+        }
+        setChats(fetchedChats);
         setStories(storyRes.stories || []);
       } catch (e) {
         console.error("Initial load failed:", e);
@@ -1415,6 +1423,7 @@ export default function BubbleMessages() {
     if (!activeChat) return;
     (async () => {
       try {
+        setSessionSummary(null);
         const res = await api.fetchMessages(activeChat.id || activeChat._id);
         const msgs = res.messages || [];
         const mediaMsgs = msgs.filter((m: any) => m.mediaUrl || m.media_url);
@@ -1439,6 +1448,29 @@ export default function BubbleMessages() {
     const parentMsgId = replyingToMsg ? replyingToMsg.id || replyingToMsg._id : undefined;
     setReplyingToMsg(null);
     try {
+      if (activeChat.isAidaBot) {
+        // Optimistic UI update for user message
+        const targetChatId = activeChat.id || activeChat._id;
+        const tempId = `temp-${Date.now()}`;
+        setMessages(prev => [...prev, { _id: tempId, content: text, sender: { _id: myId }, chat: targetChatId, createdAt: new Date().toISOString() }]);
+
+        try {
+          const res = await api.chatMessageAida(text, targetChatId);
+          // Backend returns: userMessage, botMessage
+          setMessages(prev => {
+            let updated = prev.filter(m => m._id !== tempId); // Remove optimistic
+            if (res.userMessage) updated.push(res.userMessage);
+            if (res.botMessage) updated.push({ ...res.botMessage, action: res.action });
+            return updated;
+          });
+          return;
+        } catch (e) {
+          toast.error("Failed to connect to Aida.");
+          setMessages(prev => prev.filter(m => m._id !== tempId));
+          return;
+        }
+      }
+
       const res = await api.sendTextMessage(activeChat.id || activeChat._id, text, { parent_message: parentMsgId });
       const msg = res.data || res;
       setMessages((prev) => {
@@ -1736,6 +1768,21 @@ export default function BubbleMessages() {
     setChatContextMenu(null);
   };
 
+  const loadSessionSummary = async () => {
+    if (!activeChat) return;
+    setSummaryLoading(true);
+    try {
+      const targetChatId = activeChat.id || activeChat._id;
+      const res = await api.fetchAidaConversationSummary(targetChatId);
+      setSessionSummary(res.summary);
+      toast.success("Summary generated");
+    } catch (e) {
+      toast.error("Failed to summarize session");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
   const handleMessageInfo = (msg: any) => {
     setMessageInfoModal(msg);
   };
@@ -1948,6 +1995,24 @@ export default function BubbleMessages() {
                   </ul>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Settings/Summary Modals ── */}
+      {sessionSummary && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setSessionSummary(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: 440, background: "#031427", border: "1px solid rgba(255,231,146,0.3)", borderRadius: 20, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 40px 100px rgba(0,0,0,0.8)" }}>
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(255,231,146,0.1)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Icon name="auto_awesome" style={{ color: "#ffe792" }} />
+                <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 700, color: "#ffe792", margin: 0 }}>Session Summary</h2>
+              </div>
+              <button onClick={() => setSessionSummary(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 4 }}><Icon name="close" size={20} /></button>
+            </div>
+            <div style={{ padding: "28px 24px", color: "#d8e6ff", fontSize: 15, fontFamily: "'Manrope', sans-serif", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+              {sessionSummary}
             </div>
           </div>
         </div>
@@ -2326,6 +2391,9 @@ export default function BubbleMessages() {
                             <Icon name={btn.name} size={20} />
                           </button>
                         ))}
+                        <button title="Summarize conversation" onClick={loadSessionSummary} disabled={summaryLoading} style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: "8px 10px", cursor: summaryLoading ? "not-allowed" : "pointer", color: "#ffe792", opacity: summaryLoading ? 0.5 : 1, transition: "background 0.2s" }} onMouseEnter={e => !summaryLoading && (e.currentTarget.style.background = "rgba(255,231,146,0.2)")} onMouseLeave={e => !summaryLoading && (e.currentTarget.style.background = "rgba(255,231,146,0.1)")}>
+                          <Icon name={summaryLoading ? "hourglass_empty" : "auto_awesome"} size={20} />
+                        </button>
                       </div>
                     </div>
                   </header>

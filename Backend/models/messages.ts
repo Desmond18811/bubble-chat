@@ -5,7 +5,7 @@ export interface IMessage extends Document {
   content: string; // Used for text or captions
   chat: mongoose.Types.ObjectId;
   readBy: mongoose.Types.ObjectId[];
-  
+
   // Rich Messaging Metadata
   message_type: 'text' | 'image' | 'video' | 'voice' | 'file' | 'location' | 'contact' | 'system';
   parent_message?: mongoose.Types.ObjectId; // For replies/threading
@@ -14,7 +14,10 @@ export interface IMessage extends Document {
   is_encrypted: boolean;
   is_pinned: boolean;
   client_id?: string; // For idempotency
-  
+
+  // Workspace File Attachment
+  workspaceFile?: mongoose.Types.ObjectId;
+
   // Interaction & History
   reactions: {
     user: mongoose.Types.ObjectId;
@@ -38,7 +41,7 @@ export interface IMessage extends Document {
     mime_type?: string;
     quality?: 'sd' | 'hd';
   };
-  
+
   // Location specific
   location?: {
     latitude: number;
@@ -68,7 +71,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
     content: {
       type: String,
       trim: true,
-      default: '', 
+      default: '',
     },
     chat: {
       type: mongoose.Schema.Types.ObjectId,
@@ -81,7 +84,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
         ref: 'User',
       },
     ],
-    
+
     // Type & Threading
     message_type: {
       type: String,
@@ -97,6 +100,11 @@ const MessageSchema: Schema<IMessage> = new Schema(
     is_encrypted: { type: Boolean, default: false },
     is_pinned: { type: Boolean, default: false },
     client_id: { type: String },
+
+    workspaceFile: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'WorkspaceFile',
+    },
 
     // Interactions
     reactions: [
@@ -137,7 +145,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
       mime_type: { type: String },
       quality: { type: String, enum: ['sd', 'hd'], default: 'sd' },
     },
-    
+
     // Location
     location: {
       latitude: { type: Number },
@@ -145,7 +153,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
       address: { type: String },
       name: { type: String },
     },
-    
+
     // Privacy Logic
     isBurnAfterReading: {
       type: Boolean,

@@ -57,6 +57,14 @@ const formatMessage = (m: any) => ({
   chat: m.chat
     ? { id: m.chat._id, chatName: m.chat.chatName || null, isGroupChat: m.chat.isGroupChat ?? false }
     : null,
+  workspaceFile: m.workspaceFile ? {
+    id: m.workspaceFile._id,
+    name: m.workspaceFile.name || m.workspaceFile.originalName,
+    fileType: m.workspaceFile.fileType,
+    fileSize: m.workspaceFile.fileSize,
+    fileUrl: m.workspaceFile.fileUrl,
+    fileKey: m.workspaceFile.fileKey,
+  } : null,
   sentAt: m.createdAt || null,
   updatedAt: m.updatedAt || null,
 });
@@ -168,6 +176,72 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(201).json({
       message: 'Message sent successfully.',
+      data: formatted,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Share a Workspace File into Chat
+ * POST /api/v1/message/share-workspace-file
+ * Body: { workspaceFileId, chatId, content? }
+ */
+export const shareWorkspaceFile = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { workspaceFileId, chatId, content } = req.body;
+
+  if (!workspaceFileId || !chatId) {
+    res.status(400).json({ message: 'workspaceFileId and chatId are required' });
+    return;
+  }
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const WorkspaceFile = (await import('../models/workspaceFile')).WorkspaceFile;
+    const wFile = await WorkspaceFile.findById(workspaceFileId);
+    if (!wFile) {
+      res.status(404).json({ message: 'Workspace file not found' });
+      return;
+    }
+
+    // Verify chat access (could be added)
+    // Create the message with the workspacefile attachment
+    let message = await Message.create({
+      sender: req.user._id,
+      content: content || `Shared file: ${wFile.name || wFile.originalName}`,
+      chat: chatId,
+      message_type: 'file',
+      workspaceFile: wFile._id,
+      mediaUrl: wFile.fileUrl,
+      mediaType: 'file',
+      fileSize: wFile.fileSize,
+    });
+
+    message = await message.populate('sender', 'full_name username avatar email uniqueTag isOnline status_message');
+    message = await message.populate({ path: 'chat', select: 'chatName isGroupChat' });
+    message = await message.populate('workspaceFile', 'name originalName fileType fileUrl fileSize fileKey');
+
+    await Conversation.findByIdAndUpdate(chatId, { latestMessage: message._id });
+
+    const formatted = formatMessage(message);
+
+    const io = (req as any).io;
+    if (io) {
+      io.to(chatId).emit('new_message', formatted);
+      const chatDoc = await Conversation.findById(chatId);
+      if (chatDoc && chatDoc.users) {
+        chatDoc.users.forEach((u: any) => {
+          io.to(u.toString()).emit('new_message', formatted);
+        });
+      }
+    }
+
+    res.status(201).json({
+      message: 'Workspace file shared to chat successfully.',
       data: formatted,
     });
   } catch (error: any) {
