@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import { cn } from "@/lib/utils";
-import { chatWithAida, fetchAidaBriefing, fetchAidaFinanceAdvice, aidaFlagPayments, aidaScheduleTask } from "@/api";
+import { chatWithAida, fetchAidaBriefing, fetchAidaFinanceAdvice, aidaFlagPayments, aidaScheduleTask, aidaExtractActionItems } from "@/api";
 import { toast } from "sonner";
 
 /* ─── UI Components ───────────────────────────────────────────────────────── */
@@ -94,41 +94,33 @@ export default function AidaPage() {
     setLoading(true);
     try {
       const res = await chatWithAida(text);
+      const actions = res.actions || (res.action ? [res.action] : []);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content: res.reply || "I'm having trouble connecting to the model.",
-          action: res.action,
+          actions: actions,
         },
       ]);
 
-      if (res.action?.type === 'SCHEDULE_TASK') {
-        const t = await aidaScheduleTask({
-          title: res.action.title,
-          startTime: res.action.startTime,
-          description: res.action.description
-        });
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: t.reply,
-          },
-        ]);
-      } else if (res.action?.type === 'OPEN_CALENDAR') {
-        setTimeout(() => {
-          window.location.href = '/calendar';
-        }, 1500);
-      } else if (res.action?.type === 'CREATE_TEMPLATE' && res.action.templateContent) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: res.reply || "Here's your template!",
-            template: res.action.templateContent,
-          },
-        ]);
+      if (actions.length > 0) {
+        for (const action of actions) {
+          if (action.type === 'OPEN_CALENDAR') {
+            setTimeout(() => {
+              window.location.href = '/calendar';
+            }, 1500);
+          } else if (action.type === 'CREATE_TEMPLATE' && action.templateContent) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content: "Here's your template!",
+                template: action.templateContent,
+              },
+            ]);
+          }
+        }
       }
     } catch (err: any) {
       toast.error("Aida connection failed: " + err.message);
@@ -195,7 +187,7 @@ export default function AidaPage() {
       const res = await chatWithAida("Summarize recent feed activity");
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: res.reply, action: res.action },
+        { role: "assistant", content: res.reply, actions: res.actions || (res.action ? [res.action] : []) },
       ]);
     } catch (err: any) {
       toast.error("Feed summarization failed: " + err.message);
@@ -222,6 +214,34 @@ export default function AidaPage() {
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err: any) {
       toast.error("Audit failed: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTranscript = async () => {
+    const transcript = window.prompt("Paste your meeting transcript here to extract action items:");
+    if (!transcript) return;
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: "Extract action items and tasks from this meeting transcript." },
+    ]);
+    setLoading(true);
+    try {
+      const res = await aidaExtractActionItems(transcript);
+      if (res.actionItems && res.actionItems.length > 0) {
+        const items = res.actionItems.map((item: any) => `- ${item.text} (Assignee: ${item.assignedToName || 'Unassigned'})`).join('\n');
+        setMessages((prev) => [...prev, { role: "assistant", content: `I found the following action items:\n\n${items}` }]);
+      } else {
+        setMessages((prev) => [...prev, { role: "assistant", content: "I couldn't find any clear action items in that transcript." }]);
+      }
+    } catch (err: any) {
+      toast.error("Failed to extract action items: " + err.message);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "My systems encountered an error analyzing the transcript." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -294,6 +314,14 @@ export default function AidaPage() {
               Finance Advisor
             </button>
             <button
+              onClick={handleTranscript}
+              disabled={loading}
+              className="px-5 py-2 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-xs font-bold uppercase tracking-widest hover:border-[#ffe792]/40 hover:text-[#ffe792] transition-all disabled:opacity-50"
+              style={SG}
+            >
+              Meeting Transcripts
+            </button>
+            <button
               onClick={handleClearConversation}
               title="Clear conversation"
               className="w-10 h-10 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] flex items-center justify-center text-[var(--th-muted)] hover:text-red-400 hover:border-red-400/30 transition-all"
@@ -355,49 +383,52 @@ export default function AidaPage() {
                 >
                   {msg.content}
 
-                  {/* File action results */}
-                  {msg.action && msg.action.type === "FIND_FILE" && msg.action.files?.length > 0 && (
-                    <div className="mt-4 flex flex-col gap-2">
-                      <p className="text-sm font-semibold opacity-70 mb-1">Found files:</p>
-                      {msg.action.files.map((f: any) => (
-                        <a
-                          href="/workspace"
-                          key={f._id}
-                          className="block p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-black/40 transition-colors"
-                        >
-                          <p
-                            className="text-sm font-bold truncate"
-                            style={{ color: "#ffe792" }}
-                          >
-                            {f.name}
-                          </p>
-                          <p className="text-[10px] text-white/50 uppercase mt-1 tracking-widest">
-                            {f.fileType}
-                          </p>
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  {/* Action results mapped for multiple actions */}
+                  {msg.actions && msg.actions.map((action: any, idx: number) => (
+                    <div key={idx}>
+                      {action.type === "FIND_FILE" && action.files?.length > 0 && (
+                        <div className="mt-4 flex flex-col gap-2">
+                          <p className="text-sm font-semibold opacity-70 mb-1">Found files:</p>
+                          {action.files.map((f: any) => (
+                            <a
+                              href="/workspace"
+                              key={f._id}
+                              className="block p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-black/40 transition-colors"
+                            >
+                              <p
+                                className="text-sm font-bold truncate"
+                                style={{ color: "#ffe792" }}
+                              >
+                                {f.name}
+                              </p>
+                              <p className="text-[10px] text-white/50 uppercase mt-1 tracking-widest">
+                                {f.fileType}
+                              </p>
+                            </a>
+                          ))}
+                        </div>
+                      )}
 
-                  {/* Task action results */}
-                  {msg.action && msg.action.type === "SCHEDULE_TASK" && (
-                    <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
-                      <Icon name="event_available" style={{ color: "#ffe792" }} />
-                      <div>
-                        <p className="text-sm font-bold text-white">{msg.action.title}</p>
-                        <p className="text-xs text-white/60">Preparing to schedule...</p>
-                      </div>
-                    </div>
-                  )}
+                      {action.type === "SCHEDULE_TASK" && (
+                        <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
+                          <Icon name="event_available" style={{ color: "#ffe792" }} />
+                          <div>
+                            <p className="text-sm font-bold text-white">{action.title}</p>
+                            <p className="text-xs text-white/60">Preparing to schedule...</p>
+                          </div>
+                        </div>
+                      )}
 
-                  {msg.action && msg.action.type === "OPEN_CALENDAR" && (
-                    <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
-                      <Icon name="calendar_month" style={{ color: "#ffe792" }} />
-                      <p className="text-sm font-bold text-white">Opening Calendar...</p>
+                      {action.type === "OPEN_CALENDAR" && (
+                        <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
+                          <Icon name="calendar_month" style={{ color: "#ffe792" }} />
+                          <div>
+                            <p className="text-sm font-bold text-white">Opening Calendar...</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* Render Template Output */}
+                  ))}{/* Render Template Output */}
                   {msg.template && (
                     <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-[#111620] shadow-2xl">
                       <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
@@ -484,7 +515,7 @@ export default function AidaPage() {
             className="text-center text-[10px] text-white/20 mt-4 uppercase tracking-widest"
             style={SG}
           >
-            Powered by Gemma 2 · Luminous Intelligence · Conversation persisted across sessions
+            Powered by Deep Six AI · Luminous Intelligence · Conversation persisted across sessions
           </p>
         </div>
       </main>

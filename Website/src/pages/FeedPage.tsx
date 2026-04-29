@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import PageHeader from "@/components/PageHeader";
 import {
   fetchFeedPosts,
   getTrendingFeedPosts,
@@ -33,86 +34,20 @@ const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
 
 /* ─── Colour tokens ──────────────────────────────────────────────────────── */
 const C = {
-  bg:         "var(--th-bg)",
-  surface:    "var(--th-surface)",
+  bg: "var(--th-bg)",
+  surface: "var(--th-surface)",
   surfaceLow: "var(--th-surface-low)",
-  surfaceHigh:"var(--th-surface-high)",
+  surfaceHigh: "var(--th-surface-high)",
   surfaceTop: "var(--th-surface-top)",
-  border:     "var(--th-border)",
-  accent:     "var(--th-accent)",
+  border: "var(--th-border)",
+  accent: "var(--th-accent)",
   accentText: "var(--th-accent-text)",
-  secondary:  "var(--th-secondary)",
-  text:       "var(--th-text)",
-  muted:      "var(--th-muted)",
-  error:      "#ff716c",
-  repost:     "#4ade80",
+  secondary: "var(--th-secondary)",
+  text: "var(--th-text)",
+  muted: "var(--th-muted)",
+  error: "#ff716c",
+  repost: "#4ade80",
 };
-
-/* ─── TopBar ──────────────────────────────────────────────────────────────── */
-function TopBar() {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const navigate = useNavigate();
-  return (
-    <header
-      style={{
-        position: "fixed", top: 0, left: 85, right: 0, height: 72, zIndex: 40,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 32px",
-        background: `color-mix(in srgb, var(--th-bg) 85%, transparent)`,
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 4px 32px rgba(0,0,0,0.4)",
-        borderBottom: `1px solid var(--th-border)`,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <h1
-          style={{
-            fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
-            fontSize: 20, color: "var(--th-accent)", letterSpacing: "0.08em",
-            textTransform: "uppercase", margin: 0,
-          }}
-        >
-          FEED
-        </h1>
-        <div
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: C.surfaceTop, borderRadius: 999,
-            padding: "8px 16px", border: `1px solid var(--th-border)`, width: 320,
-          }}
-        >
-          <Icon name="search" style={{ color: C.muted, fontSize: 18 }} />
-          <input
-            placeholder="Explore the feed..."
-            style={{
-              background: "transparent", border: "none", outline: "none",
-              fontSize: 14, color: C.text, fontFamily: "'Manrope',sans-serif", width: "100%",
-            }}
-          />
-        </div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <button
-          onClick={() => navigate('/ai')}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "8px 16px", borderRadius: 12, border: `1px solid color-mix(in srgb, var(--th-accent) 30%, transparent)`,
-            background: "color-mix(in srgb, var(--th-accent) 10%, transparent)", color: "var(--th-accent)",
-            fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", transition: "all 0.2s"
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "color-mix(in srgb, var(--th-accent) 20%, transparent)"}
-          onMouseLeave={e => e.currentTarget.style.background = "color-mix(in srgb, var(--th-accent) 10%, transparent)"}
-        >
-          <Icon name="auto_awesome" style={{ fontSize: 16 }} />
-          Summarize Feed
-        </button>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
-          <AvatarInitials name={user.full_name || user.username || "GUEST"} url={user.avatar} className="text-sm" />
-        </div>
-      </div>
-    </header>
-  );
-}
 
 /* ─── Composer Modal ─────────────────────────────────────────────────────── */
 function ComposerModal({ onPostCreated, onClose }: { onPostCreated: (post: any) => void; onClose: () => void }) {
@@ -268,7 +203,7 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
       {comments.slice(0, 3).map((c: any, i: number) => (
         <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
           <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
-             <AvatarInitials name={c.user?.full_name || c.user?.username || "G"} url={c.user?.avatar} className="text-xs" />
+            <AvatarInitials name={c.user?.full_name || c.user?.username || "G"} url={c.user?.avatar} className="text-xs" />
           </div>
           <div>
             <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 12, color: C.text }}>{c.user?.username || "user"} </span>
@@ -278,7 +213,7 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
       ))}
       <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
         <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
-           <AvatarInitials name={user.full_name || user.username || "G"} url={user.avatar} className="text-xs" />
+          <AvatarInitials name={user.full_name || user.username || "G"} url={user.avatar} className="text-xs" />
         </div>
         <input
           value={text} onChange={(e) => setText(e.target.value)}
@@ -305,7 +240,7 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
 function PostMenu({ post, onClose }: { post: any; onClose: () => void }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isFollowing = false; // TODO: wire real follow state
-  const handleSave = async () => { try { await saveFeedPost(post._id); } catch(e) {} onClose(); };
+  const handleSave = async () => { try { await saveFeedPost(post._id); } catch (e) { } onClose(); };
   const handleCopy = () => { navigator.clipboard.writeText(`${window.location.origin}/post/${post._id}`); onClose(); };
 
   const items = [
@@ -485,7 +420,7 @@ function RightSidebar() {
     try {
       await followUser(id);
       setSuggestions(prev => prev.filter((_, i) => i !== index));
-    } catch {}
+    } catch { }
   };
 
   return (
@@ -550,13 +485,13 @@ function RightSidebar() {
           {suggestions.length > 0 ? suggestions.slice(0, 3).map((s, i) => (
             <div key={s._id || i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none" }}>
               <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden" }}>
-                  <AvatarInitials name={s.full_name || s.username || "U"} url={s.avatar} className="text-sm" />
+                <AvatarInitials name={s.full_name || s.username || "U"} url={s.avatar} className="text-sm" />
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.text, margin: 0 }}>{s.full_name || s.username}</p>
                 <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 11, color: C.muted, margin: 0 }}>{s.uniqueTag || `@${s.username}`}</p>
               </div>
-              <button 
+              <button
                 onClick={() => handleFollow(s._id, i)}
                 style={{ padding: "5px 14px", border: `1px solid var(--th-accent)`, borderRadius: 999, background: "transparent", color: C.accent, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer", transition: "background 0.2s" }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 15%, transparent)`; }}
@@ -669,7 +604,12 @@ export default function BubbleFeed() {
   return (
     <div style={{ background: "var(--th-bg)", color: "var(--th-text)", minHeight: "100vh", fontFamily: "'Manrope', sans-serif", position: "relative", overflow: "hidden" }}>
       <Sidebar />
-      <TopBar />
+      <PageHeader title="Feed" icon="rss_feed" subtitle="Explore your network">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.surfaceTop, borderRadius: 999, padding: "8px 16px", border: `1px solid rgba(255,255,255,0.07)`, width: 280 }}>
+          <Icon name="search" style={{ color: C.muted, fontSize: 16 }} />
+          <input placeholder="Explore the feed..." style={{ background: "transparent", border: "none", outline: "none", fontSize: 14, color: C.text, fontFamily: "'Manrope',sans-serif", width: "100%" }} />
+        </div>
+      </PageHeader>
 
       {/* Glows */}
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
@@ -677,7 +617,7 @@ export default function BubbleFeed() {
       <div className="absolute top-[40%] left-[-10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
         style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
 
-      <main style={{ marginLeft: 85, paddingTop: 72, display: "flex", minHeight: "100vh", background: "transparent", position: "relative", zIndex: 10 }}>
+      <main style={{ marginLeft: 85, paddingTop: 70, display: "flex", minHeight: "100vh", background: "transparent", position: "relative", zIndex: 10 }}>
         {/* Feed column */}
         <section style={{ flex: 1, borderRight: `1px solid var(--th-border)`, minWidth: 0 }}>
           {/* Centered Dropdown bar — no title */}

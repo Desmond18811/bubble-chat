@@ -88,18 +88,18 @@
 
 /* ─── Runtime Theme Variables (managed by ThemeContext.tsx) ──────────────── */
 :root {
-  --th-bg:           #010f20;
-  --th-surface:      #071a2f;
-  --th-surface-low:  #031427;
-  --th-surface-high: #0c2037;
-  --th-surface-top:  #11273f;
+  --th-bg:           #000000;
+  --th-surface:      #0d0d0d;
+  --th-surface-low:  #080808;
+  --th-surface-high: #161616;
+  --th-surface-top:  #1f1f1f;
   --th-accent:       #ffe792;
-  --th-accent-text:  #655400;
+  --th-accent-text:  #1a0e00;
   --th-secondary:    #a2c2fd;
-  --th-text:         #d8e6ff;
-  --th-muted:        #9eacc3;
-  --th-border:       rgba(59,73,92,0.15);
-  --th-glow:         rgba(255,231,146,0.2);
+  --th-text:         #f0f0f0;
+  --th-muted:        #666666;
+  --th-border:       rgba(255,255,255,0.07);
+  --th-glow:         rgba(255,231,146,0.12);
 }
 
 @layer utilities {

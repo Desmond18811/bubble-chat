@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
+import PageHeader from "@/components/PageHeader";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,61 +45,31 @@ function MSIcon({
   );
 }
 
-function TopBar() {
-  return (
-    <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
-      style={{ left: "85px" }}>
-      <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-        PAYMENTS
-      </h1>
-      <div className="flex flex-1 justify-end mr-6">
-        <div className="relative">
-          <MSIcon
-            name="search"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-sm transition-colors"
-            style={{ color: "var(--th-secondary)", fontSize: "18px" }}
-          />
-          <Input
-            placeholder="Search transactions..."
-            className="pl-9 pr-4 py-2 text-sm w-64 rounded-full border-none transition-colors"
-            style={{ background: "var(--th-surface-top)", color: "var(--th-text)" }}
-          />
-        </div>
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
-          <MSIcon name="person" style={{ color: "var(--th-secondary)" }} />
-        </div>
-      </div>
-    </header>
-  );
-}
-
 function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, transactions: Transaction[] }) {
   const [loading, setLoading] = useState(false);
   const balance = transactions.reduce((acc, tx) => {
     return (tx.type === "deposit" || tx.type === "income") ? acc + tx.amount : acc - tx.amount;
   }, 0);
-  
+
   const formattedBalance = balance.toFixed(2);
   const intPart = formattedBalance.split('.')[0];
   const decPart = formattedBalance.split('.')[1];
 
   const handleDeposit = async () => {
     try {
-        setLoading(true);
-        const res = await fetch("http://localhost:3000/api/v1/payment/deposit", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-            body: JSON.stringify({ amount: 500, source: "stripe_deposit" })
-        });
-        const data = await res.json();
-        if (data.transaction) {
-            toast.success("Deposit successful");
-            onRefresh();
-        } else {
-            toast.error(data.message || "Failed to execute deposit.");
-        }
+      setLoading(true);
+      const res = await fetch("http://localhost:3000/api/v1/payment/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
+        body: JSON.stringify({ amount: 500, source: "stripe_deposit" })
+      });
+      const data = await res.json();
+      if (data.transaction) {
+        toast.success("Deposit successful");
+        onRefresh();
+      } else {
+        toast.error(data.message || "Failed to execute deposit.");
+      }
     } catch (e) {
       toast.error("Deposit failed.");
     } finally {
@@ -108,23 +79,23 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
 
   const handleWithdraw = async () => {
     try {
-        setLoading(true);
-        const res = await fetch("http://localhost:3000/api/v1/payment/withdraw", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
-            body: JSON.stringify({ amount: 250, destination_account: "acct_1Ou" })
-        });
-        const data = await res.json();
-        if (data.transaction) {
-             toast.success("Withdrawal initiated");
-             onRefresh();
-        } else {
-             toast.error(data.message || "Failed to execute withdrawal.");
-        }
+      setLoading(true);
+      const res = await fetch("http://localhost:3000/api/v1/payment/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
+        body: JSON.stringify({ amount: 250, destination_account: "acct_1Ou" })
+      });
+      const data = await res.json();
+      if (data.transaction) {
+        toast.success("Withdrawal initiated");
+        onRefresh();
+      } else {
+        toast.error(data.message || "Failed to execute withdrawal.");
+      }
     } catch (e) {
-        toast.error("Withdrawal failed.");
+      toast.error("Withdrawal failed.");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -192,18 +163,18 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                   height: "auto",
                 }}
               >
-                 {loading ? "Processing..." : "Withdraw Funds"}
+                {loading ? "Processing..." : "Withdraw Funds"}
               </Button>
             </div>
 
             <div className="mt-6 pt-6 border-t border-[var(--th-border)] flex flex-col gap-3">
-              <button 
-                onClick={() => window.location.href='/aida?trigger=finance'}
+              <button
+                onClick={() => window.location.href = '/aida?trigger=finance'}
                 className="w-full p-4 rounded-2xl border border-[#ffe792]/20 bg-[#ffe792]/5 hover:bg-[#ffe792]/10 flex items-center justify-between group transition-all"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 border border-[#ffe792]/20 flex items-center justify-center">
-                     <MSIcon name="auto_awesome" style={{ color: "#ffe792", fontSize: 18 }} />
+                    <MSIcon name="auto_awesome" style={{ color: "#ffe792", fontSize: 18 }} />
                   </div>
                   <div className="text-left">
                     <p className="text-[10px] uppercase font-bold text-[#ffe792] tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Financial Oracle</p>
@@ -213,13 +184,13 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                 <MSIcon name="chevron_right" style={{ color: "rgba(255,231,146,0.4)" }} className="group-hover:translate-x-1 transition-transform" />
               </button>
 
-              <button 
-                onClick={() => window.location.href='/aida?trigger=flag_payments'}
+              <button
+                onClick={() => window.location.href = '/aida?trigger=flag_payments'}
                 className="w-full p-4 rounded-2xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 flex items-center justify-between group transition-all"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                     <MSIcon name="warning" style={{ color: "#ef4444", fontSize: 18 }} />
+                    <MSIcon name="warning" style={{ color: "#ef4444", fontSize: 18 }} />
                   </div>
                   <div className="text-left">
                     <p className="text-[10px] uppercase font-bold text-red-400 tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Run Audit</p>
@@ -274,10 +245,10 @@ function TransactionCard({ tx }: { tx: Transaction }) {
         </p>
         <div className="flex items-end justify-between">
           <span className="text-2xl font-bold tracking-tight transition-colors" style={{ color: isIncome ? "var(--th-accent)" : "var(--th-text)" }}>
-             {isIncome ? "+" : "-"}${tx.amount}
+            {isIncome ? "+" : "-"}${tx.amount}
           </span>
           <span className="text-[10px] uppercase tracking-widest font-bold transition-colors" style={{ color: "var(--th-muted)" }}>
-              {new Date(tx.createdAt).toLocaleDateString()}
+            {new Date(tx.createdAt).toLocaleDateString()}
           </span>
         </div>
       </div>
@@ -339,7 +310,7 @@ function TransactionsGrid({ transactions }: { transactions: Transaction[] }) {
 
       <div className="columns-1 lg:columns-2 gap-6 space-y-6 relative z-10">
         {filtered.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: "var(--th-muted)" }}>No transactions available.</div>
+          <div className="p-8 text-center" style={{ color: "var(--th-muted)" }}>No transactions available.</div>
         ) : filtered.map((tx) => (
           <TransactionCard key={tx._id} tx={tx} />
         ))}
@@ -351,42 +322,42 @@ function TransactionsGrid({ transactions }: { transactions: Transaction[] }) {
 // ─── Aida Sidebar ─────────────────────────────────────────────────────────────
 
 function AidaFinancialAssistant({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-        <aside className="w-96 border-l h-full absolute right-0 top-0 bottom-0 z-50 flex flex-col transition-all"
-          style={{ background: "color-mix(in srgb, var(--th-bg) 80%, var(--th-surface))", borderColor: "var(--th-border)", backdropFilter: "blur(20px)" }}>
-            <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: "var(--th-border)" }}>
-               <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{background: "var(--th-accent)", color: "var(--th-accent-text)", fontFamily: "'Space Grotesk', sans-serif"}}>A</div>
-                   <div>
-                      <h4 className="font-bold text-sm transition-colors" style={{ color: "var(--th-text)"}}>Aida Financial</h4>
-                      <p className="text-[10px] transition-colors" style={{ color: "var(--th-muted)" }}>Analyzing Your Ledger Data</p>
-                   </div>
-               </div>
-               <button onClick={onClose} className="p-1 rounded-full transition-colors" style={{color: "var(--th-muted)"}}
-                  onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
-                  onMouseLeave={e => e.currentTarget.style.color = "var(--th-muted)"}>
-                   <MSIcon name="close" />
-               </button>
-            </div>
-            <div className="flex-1 p-6 overflow-y-auto space-y-4">
-               <div className="bg-transparent border rounded-2xl p-4 text-sm" style={{borderColor: "var(--th-border)", color: "var(--th-text)"}}>
-                   Hello! I am Aida. Based on your recent ledger activity, you've withdrawn a significant amount compared to your deposits this week. Would you like me to map out an expense-saving projection?
-               </div>
-            </div>
-            <div className="p-4 border-t" style={{ borderColor: "var(--th-border)" }}>
-               <div className="relative">
-                   <Input placeholder="Ask Aida about your finances..." 
-                     className="w-full rounded-xl pl-4 pr-10 py-3 border transition-colors" 
-                     style={{background: "var(--th-surface)", color: "var(--th-text)", borderColor: "var(--th-border)"}} />
-                   <button className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--th-accent)" }}>
-                       <MSIcon name="send" />
-                   </button>
-               </div>
-            </div>
-        </aside>
-    );
+  return (
+    <aside className="w-96 border-l h-full absolute right-0 top-0 bottom-0 z-50 flex flex-col transition-all"
+      style={{ background: "color-mix(in srgb, var(--th-bg) 80%, var(--th-surface))", borderColor: "var(--th-border)", backdropFilter: "blur(20px)" }}>
+      <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: "var(--th-border)" }}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", fontFamily: "'Space Grotesk', sans-serif" }}>A</div>
+          <div>
+            <h4 className="font-bold text-sm transition-colors" style={{ color: "var(--th-text)" }}>Aida Financial</h4>
+            <p className="text-[10px] transition-colors" style={{ color: "var(--th-muted)" }}>Analyzing Your Ledger Data</p>
+          </div>
+        </div>
+        <button onClick={onClose} className="p-1 rounded-full transition-colors" style={{ color: "var(--th-muted)" }}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--th-muted)"}>
+          <MSIcon name="close" />
+        </button>
+      </div>
+      <div className="flex-1 p-6 overflow-y-auto space-y-4">
+        <div className="bg-transparent border rounded-2xl p-4 text-sm" style={{ borderColor: "var(--th-border)", color: "var(--th-text)" }}>
+          Hello! I am Aida. Based on your recent ledger activity, you've withdrawn a significant amount compared to your deposits this week. Would you like me to map out an expense-saving projection?
+        </div>
+      </div>
+      <div className="p-4 border-t" style={{ borderColor: "var(--th-border)" }}>
+        <div className="relative">
+          <Input placeholder="Ask Aida about your finances..."
+            className="w-full rounded-xl pl-4 pr-10 py-3 border transition-colors"
+            style={{ background: "var(--th-surface)", color: "var(--th-text)", borderColor: "var(--th-border)" }} />
+          <button className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--th-accent)" }}>
+            <MSIcon name="send" />
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
@@ -396,21 +367,21 @@ export default function PaymentsDashboard() {
   const [showAida, setShowAida] = useState(false);
 
   const fetchTx = async () => {
-      try {
-          const res = await fetch("http://localhost:3000/api/v1/payment/transactions", {
-              headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
-          });
-          const json = await res.json();
-          if (json.transactions) {
-              setData(json.transactions);
-          }
-      } catch (err) {
-          console.error(err);
+    try {
+      const res = await fetch("http://localhost:3000/api/v1/payment/transactions", {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+      });
+      const json = await res.json();
+      if (json.transactions) {
+        setData(json.transactions);
       }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
-      fetchTx();
+    fetchTx();
   }, []);
 
   return (
@@ -419,10 +390,18 @@ export default function PaymentsDashboard() {
       style={{ background: "var(--th-bg)", color: "var(--th-text)", fontFamily: "'Manrope', sans-serif" }}
     >
       <Sidebar />
-      <TopBar />
+      <PageHeader
+        title="Payments"
+        icon="payments"
+        subtitle="Ledger & transactions"
+      >
+        <div className="relative">
+          <MSIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--th-muted)", fontSize: "18px" }} />
+          <Input placeholder="Search transactions..." className="pl-9 pr-4 py-2 text-sm w-56 rounded-full border-none" style={{ background: "rgba(255,255,255,0.06)", color: "var(--th-text)" }} />
+        </div>
+      </PageHeader>
+      <main className="flex relative" style={{ marginLeft: "85px", paddingTop: "4.375rem", minHeight: "100vh" }}>
 
-      <main className="flex relative" style={{ marginLeft: "85px", paddingTop: "5rem", minHeight: "100vh" }}>
-        
         {/* Glows */}
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors scale-150"
           style={{ background: "var(--th-glow)" }} />

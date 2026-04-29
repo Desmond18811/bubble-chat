@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { HfInference } from '@huggingface/inference';
+import OpenAI from 'openai';
 import { Task } from '../models/task';
 import { Transaction } from '../models/transaction';
 import { Invoice } from '../models/invoice';
@@ -9,51 +10,36 @@ import { Conversation } from '../models/conversations';
 import { Message } from '../models/messages';
 import Post from '../models/post';
 import mongoose from 'mongoose';
-import { generateEmbedding } from '../utils/embeddings';
-import { queryVectors, hasPinecone } from '../utils/pinecone';
+// Metadata search and utilities for Aida
+
 
 const hf = new HfInference(process.env.HF_API_KEY || '');
-const defaultModel = process.env.LLAMA_MODEL_ID || 'meta-llama/Llama-3.1-8B-Instruct';
-const fallbackModels = [
-  defaultModel,
-  'mistralai/Mistral-Nemo-Instruct-2407',
-  'mistralai/Mistral-7B-Instruct-v0.3',
-  'google/gemma-4-31B-it',
-];
 
-const hasKey = () => process.env.HF_API_KEY && process.env.HF_API_KEY !== 'your_hugging_face_api_key_here';
+const deepseekClient = new OpenAI({
+  baseURL: 'https://api.deepseek.com/v1',
+  apiKey: process.env.DEEPSEEK_API_KEY || process.env.DEEP_SIX_API_KEY || '',
+});
 
-// ─── Helper: call Hugging Face with fallback ──────────────────────────────────
-const callHF = async (prompt: string, maxTokens = 400, temp = 0.7): Promise<string> => {
+const hasKey = () => {
+  const key = process.env.DEEPSEEK_API_KEY || process.env.DEEP_SIX_API_KEY;
+  return key && key !== 'your_api_key_here';
+};
+
+// ─── Helper: call DeepSeek AI ──────────────────────────────────
+const callAIDA = async (prompt: string, maxTokens = 800, temp = 0.7): Promise<string> => {
   if (!hasKey()) return '';
-  let lastError = null;
-  for (const fModel of fallbackModels) {
-    try {
-      const response = await hf.chatCompletion({
-        model: fModel,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: maxTokens,
-        temperature: temp,
-      });
-      if (response.choices && response.choices.length > 0) {
-        return response.choices[0].message?.content?.trim() || '';
-      }
-    } catch (err: any) {
-      lastError = err;
-      try {
-        const txtRes = await hf.textGeneration({
-          model: fModel,
-          inputs: prompt,
-          parameters: { max_new_tokens: maxTokens, temperature: temp, repetition_penalty: 1.1 },
-        });
-        if (txtRes.generated_text) return txtRes.generated_text.replace(prompt, '').trim();
-      } catch (err2: any) {
-        lastError = err2;
-        continue;
-      }
-    }
+  try {
+    const response = await deepseekClient.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: maxTokens,
+      temperature: temp,
+    });
+    return response.choices[0].message?.content?.trim() || '';
+  } catch (err) {
+    console.error('[DeepSeek] Error calling API:', err);
+    return '';
   }
-  return '';
 };
 
 // ─── Smart local fallback when no AI key ─────────────────────────────────────
@@ -95,28 +81,26 @@ const getAidaBotUser = async () => {
   return bot;
 };
 
-// ─── RAG: query Pinecone for relevant org context ─────────────────────────────
-const getOrgContext = async (message: string, userAccessLevel: string): Promise<string> => {
-  if (!hasPinecone()) return '';
+// ─── Direct Context: query MongoDB for relevant org knowledge files ───────────
+const getOrgContextFromMongo = async (message: string, userId: string): Promise<string> => {
   try {
-    const embedding = await generateEmbedding(message);
-    if (embedding.length === 0) return '';
+    // Search for files tagged as organizational knowledge or context
+    const contextFiles = await WorkspaceFile.find({
+      $or: [
+        { tags: { $in: ['org-context', 'role-info', 'knowledge', 'policy', 'mission'] } },
+        { workspace: 'Organizational' }
+      ]
+    }).limit(10).lean();
 
-    const filter: any = { accessLevel: { $in: ['public'] } };
-    if (userAccessLevel === 'admin') filter.accessLevel = { $in: ['public', 'restricted', 'admin'] };
-    else if (userAccessLevel === 'HR') filter.accessLevel = { $in: ['public', 'restricted'] };
+    if (contextFiles.length === 0) return '';
 
-    const results = await queryVectors(embedding, 5, filter);
-    if (results.length === 0) return '';
-
-    const relevant = results
-      .filter(r => r.score > 0.6)
-      .map(r => `[${r.metadata?.department?.toUpperCase() || 'ORG'} — ${r.metadata?.title}]\n${r.metadata?.chunk}`)
+    const contextText = contextFiles
+      .map(f => `[FILE: ${f.name}]\nDescription: ${f.description || 'No description'}\nTags: ${f.tags.join(', ')}`)
       .join('\n\n');
 
-    return relevant;
+    return contextText;
   } catch (err) {
-    console.error('[Aida] RAG context error:', err);
+    console.error('[Aida] MongoDB context error:', err);
     return '';
   }
 };
@@ -217,7 +201,7 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
     // Fetch conversation history (last 6 messages)
     const history = await Message.find({ chat: conv._id })
       .sort({ createdAt: -1 })
-      .limit(6)
+      .limit(26)
       .populate('sender', 'full_name username is_bot')
       .lean();
     const historyText = history.reverse().map((m: any) => {
@@ -225,17 +209,39 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
       return `${senderName}: ${m.content}`;
     }).join('\n');
 
-    // RAG org context
-    const orgContext = await getOrgContext(message, userRole);
+    // Fetch organization-wide context from MongoDB
+    const orgContext = await getOrgContextFromMongo(message, userId);
+    const userContext = `User Role: ${userRole}\nUser Bio: ${user?.bio || 'No bio provided'}`;
 
     const fileContext = recentFiles.length > 0 ? `Workspace files: ${recentFiles.map((f: any) => `${f.name} (${f.fileType})`).join(', ')}.` : '';
     const taskContext = todayTasks.length > 0 ? `Today's tasks: ${todayTasks.map((t: any) => `"${t.title}"`).join(', ')}.` : 'No tasks today.';
 
     const prompt = `You are Aida, a smart AI assistant inside the Bubble organizational platform. You are chatting with ${userName}. Be warm, concise, and helpful.
 
-${orgContext ? `ORGANIZATION KNOWLEDGE (use this to answer company-specific questions):\n${orgContext}\n` : ''}
+YOUR IDENTITY & ROLE IN THE ORG:
+${userContext}
+
+${orgContext ? `ORGANIZATION KNOWLEDGE (use this to understand the company context and files):\n${orgContext}\n` : ''}
 ${fileContext}
 ${taskContext}
+
+Capabilities you have:
+1. Schedule tasks/meetings to the Calendar
+2. Create templates (meeting agendas, project plans, daily schedules, etc.)
+3. Search workspace files
+4. Summarize meetings and extract action items
+5. Give daily briefings and productivity tips
+6. Answer questions about the organization using company knowledge
+7. Support System / Escalation: If a user needs help from higher heads or management, guide them and prepare request templates to bridge the communication.
+8. Goal Timelines: If given a high-level goal or deadline, break it down into actionable steps and create schedules to improve throughput.
+
+Available action blocks (embed inline in your reply when needed):
+- Schedule a task/meeting: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO or natural language","description":"..."}]
+- Find a file: [ACTION: {"type":"FIND_FILE","payload":"search query"}]
+- Open Calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
+- Create Template: [ACTION: {"type":"CREATE_TEMPLATE","templateType":"meeting_agenda|daily_plan|project_brief|weekly_review|management_request","title":"...","content":"full template text"}]
+
+When the user sets a goal/deadline, create a detailed timeline and use [ACTION: {"type":"SCHEDULE_TASK"...}] for the most immediate actionable chunk. When asked for a template or to ping higher-ups, generate a ready-to-use template inline. Always end with a helpful follow-up question.
 
 Recent conversation:
 ${historyText}
@@ -243,17 +249,14 @@ ${historyText}
 User: ${message}
 Aida:`;
 
-    const rawReply = await callHF(prompt, 400, 0.65);
-    let reply = rawReply || buildSmartFallback(userName, todayTasks, recentFiles, message);
-
-    // Parse for action blocks
-    let actionResult: any = null;
-    const actionMatch = rawReply.match(/\[ACTION:\s*(\{.*?\})\s*\]/is);
-    if (actionMatch) {
+    const rawReply = await callAIDA(prompt, 400, 0.65);
+    let reply = rawReply;
+    const actionResults: any[] = [];
+    const actionMatches = [...rawReply.matchAll(/\[ACTION:\s*(\{.*?\})\s*\]/gis)];
+    for (const match of actionMatches) {
       try {
-        const actionData = JSON.parse(actionMatch[1]);
-        reply = reply.replace(actionMatch[0], '').trim();
-        actionResult = actionData;
+        const actionData = JSON.parse(match[1]);
+        reply = reply.replace(match[0], '').trim();
         if (actionData.type === 'FIND_FILE') {
           const keywords = (actionData.payload || '').toLowerCase().split(/\s+/);
           const allFiles = await WorkspaceFile.find({ uploadedBy: userId }).lean();
@@ -261,10 +264,35 @@ Aida:`;
             const text = `${f.name} ${f.description || ''} ${(f.tags || []).join(' ')}`.toLowerCase();
             return keywords.some((kw: string) => kw.length > 2 && text.includes(kw));
           }).slice(0, 3);
-          actionResult.files = found;
+          actionData.files = found;
+          if (found.length > 0) reply += `\n\nI found ${found.length} matching file(s).`;
         }
+        if (actionData.type === 'SCHEDULE_TASK') {
+          const start = actionData.startTime ? new Date(actionData.startTime) : (() => {
+            const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d;
+          })();
+          const end = new Date(start.getTime() + 60 * 60 * 1000);
+          await Task.create({
+            title: actionData.title,
+            description: actionData.description || '',
+            user_id: userId,
+            start_time: start,
+            end_time: end,
+            status: 'todo',
+            priority: 'medium',
+          });
+          reply = reply || `Done! I've scheduled "${actionData.title}" for ${start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}. You can view it on your Calendar.`;
+        }
+        if (actionData.type === 'CREATE_TEMPLATE') {
+          reply = reply || `Here's your **${actionData.title || actionData.templateType}** template, ${userName.split(' ')[0]}!`;
+          reply += `\n\n\`\`\`\n${actionData.content}\n\`\`\``;
+          actionData.templateContent = actionData.content;
+        }
+        actionResults.push(actionData);
       } catch (e) { /* ignore */ }
     }
+
+    if (!reply) reply = buildSmartFallback(userName, todayTasks, recentFiles, message);
 
     // Save Aida's reply as a message
     const botMsg = await Message.create({
@@ -280,7 +308,7 @@ Aida:`;
 
     res.status(200).json({
       reply,
-      action: actionResult,
+      actions: actionResults,
       userMessage: userMsg,
       botMessage: botMsg,
       conversationId: conv._id,
@@ -321,7 +349,7 @@ export const summarizeConversation = async (req: Request, res: Response): Promis
     let summary = '';
     if (hasKey()) {
       const prompt = `Summarize this conversation in 2–4 bullet points. Focus on decisions made, action items, and key information shared. Be concise.\n\nConversation:\n${transcript.substring(0, 3000)}\n\nSummary:`;
-      summary = await callHF(prompt, 200, 0.5);
+      summary = await callAIDA(prompt, 200, 0.5);
     }
 
     if (!summary) {
@@ -396,8 +424,9 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
       }).sort({ start_time: 1 }).limit(3).lean(),
     ]);
 
-    // RAG org context
-    const orgContext = await getOrgContext(message, userRole);
+    // Fetch organization-wide context from MongoDB
+    const orgContext = await getOrgContextFromMongo(message, userId);
+    const userContext = `User Role: ${userRole}\nUser Bio: ${user?.bio || 'No bio provided'}\nUser Tag: ${userTag}`;
 
     const fileContext = recentFiles.length > 0 ? `Recent workspace files: ${recentFiles.map((f: any) => `${f.name} (${f.fileType})`).join(', ')}.` : 'Workspace is empty.';
     const taskContext = todayTasks.length > 0 ? `Today's pending tasks: ${todayTasks.map((t: any) => `"${t.title}" at ${new Date(t.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`).join(', ')}.` : 'No tasks today.';
@@ -405,8 +434,11 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
     const pageContext = context ? `User is currently in: ${context} section.` : '';
 
     const prompt = `You are Aida, a smart AI productivity assistant in the Bubble platform. You know the user's name — always address them personally as "${userName.split(' ')[0]}". Be warm, concise, and highly actionable.
-User: ${userName} (${userTag})
+
+YOUR IDENTITY & ROLE:
+${userContext}
 ${pageContext}
+
 ${orgContext ? `ORGANIZATION KNOWLEDGE:\n${orgContext}\n` : ''}
 ${fileContext}
 ${taskContext}
@@ -419,29 +451,30 @@ Capabilities you have:
 4. Summarize meetings and extract action items
 5. Give daily briefings and productivity tips
 6. Answer questions about the organization using company knowledge
+7. Support System / Escalation: If a user needs help from higher heads or management, guide them and prepare request templates to bridge the communication.
+8. Goal Timelines: If given a high-level goal or deadline, break it down into actionable steps and create schedules to improve throughput.
 
 Available action blocks (embed inline in your reply when needed):
 - Schedule a task/meeting: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO or natural language","description":"..."}]
 - Find a file: [ACTION: {"type":"FIND_FILE","payload":"search query"}]
 - Open Calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
-- Create Template: [ACTION: {"type":"CREATE_TEMPLATE","templateType":"meeting_agenda|daily_plan|project_brief|weekly_review","title":"...","content":"full template text"}]
+- Create Template: [ACTION: {"type":"CREATE_TEMPLATE","templateType":"meeting_agenda|daily_plan|project_brief|weekly_review|management_request","title":"...","content":"full template text"}]
 
-When the user asks to plan their schedule, create a detailed day/week plan. When asked for a template, generate a complete ready-to-use template inline. Always end with a helpful follow-up question.
+When the user sets a goal/deadline, create a detailed timeline and use [ACTION: {"type":"SCHEDULE_TASK"...}] for the most immediate actionable chunk. When asked for a template or to ping higher-ups, generate a ready-to-use template inline. Always end with a helpful follow-up question.
 
 User message: ${message}
 Aida:`;
 
-    const rawReply = await callHF(prompt, 400, 0.65);
+    const rawReply = await callAIDA(prompt, 400, 0.65);
 
     let reply = rawReply;
-    let actionResult: any = null;
-    const actionMatch = rawReply.match(/\[ACTION:\s*(\{.*?\})\s*\]/is);
+    const actionResults: any[] = [];
+    const actionMatches = [...rawReply.matchAll(/\[ACTION:\s*(\{.*?\})\s*\]/gis)];
 
-    if (actionMatch) {
+    for (const match of actionMatches) {
       try {
-        const actionData = JSON.parse(actionMatch[1]);
-        reply = reply.replace(actionMatch[0], '').trim();
-        actionResult = actionData;
+        const actionData = JSON.parse(match[1]);
+        reply = reply.replace(match[0], '').trim();
 
         if (actionData.type === 'FIND_FILE') {
           const keywords = (actionData.payload || '').toLowerCase().split(/\s+/);
@@ -450,18 +483,33 @@ Aida:`;
             const text = `${f.name} ${f.description || ''} ${(f.tags || []).join(' ')}`.toLowerCase();
             return keywords.some((kw: string) => kw.length > 2 && text.includes(kw));
           }).slice(0, 3);
-          actionResult.files = found;
+          actionData.files = found;
           if (found.length > 0) reply += `\n\nI found ${found.length} matching file(s).`;
         }
 
         if (actionData.type === 'SCHEDULE_TASK') {
-          reply = reply || `I'll schedule "${actionData.title}" for you. One moment...`;
+          const start = actionData.startTime ? new Date(actionData.startTime) : (() => {
+            const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d;
+          })();
+          const end = new Date(start.getTime() + 60 * 60 * 1000);
+          await Task.create({
+            title: actionData.title,
+            description: actionData.description || '',
+            user_id: userId,
+            start_time: start,
+            end_time: end,
+            status: 'todo',
+            priority: 'medium',
+          });
+          reply = reply || `Done! I've scheduled "${actionData.title}" for ${start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}. You can view it on your Calendar.`;
         }
 
         if (actionData.type === 'CREATE_TEMPLATE') {
           reply = reply || `Here's your **${actionData.title || actionData.templateType}** template, ${userName.split(' ')[0]}!`;
-          actionResult.templateContent = actionData.content;
+          actionData.templateContent = actionData.content;
         }
+
+        actionResults.push(actionData);
       } catch (e) {
         console.error('Failed to parse Aida action', e);
       }
@@ -469,7 +517,7 @@ Aida:`;
 
     if (!reply) reply = buildSmartFallback(userName, todayTasks, recentFiles, message);
 
-    res.status(200).json({ reply, action: actionResult, usedOrgContext: !!orgContext });
+    res.status(200).json({ reply, actions: actionResults, usedOrgContext: !!orgContext });
   } catch (error: any) {
     console.error('Aida Chat Error:', error);
     res.status(500).json({ error: 'Error processing your request with Aida.' });
@@ -512,7 +560,7 @@ export const getDailyBriefing = async (req: Request, res: Response): Promise<voi
     if (hasKey() && todayTasks.length > 0) {
       const taskLines = todayTasks.map((t: any) => `- ${t.title} at ${new Date(t.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`).join('\n');
       const prompt = `Write a warm, 2-sentence morning briefing for ${userName}. Keep it motivating.\nTasks today:\n${taskLines}\nBriefing:`;
-      const aiReply = await callHF(prompt, 150, 0.6);
+      const aiReply = await callAIDA(prompt, 150, 0.6);
       if (aiReply) {
         res.status(200).json({ reply: aiReply, tasks: todayTasks, invoices: pendingInvoices, meetings: upcomingMeetings });
         return;
@@ -549,7 +597,7 @@ export const getFinancialAdvice = async (req: Request, res: Response): Promise<v
     if (hasKey() && recentTransactions.length > 0) {
       const invoiceWarning = overdueInvoices.length > 0 ? `\nOVERDUE: ${overdueInvoices.length} invoice(s) past due.` : '';
       const prompt = `You are a financial advisor AI. Give one short, helpful tip based on these transactions:\n${tStrings}${invoiceWarning}\nAdvice:`;
-      const aiReply = await callHF(prompt, 150, 0.5);
+      const aiReply = await callAIDA(prompt, 150, 0.5);
       if (aiReply) { res.status(200).json({ reply: aiReply, overdueInvoices }); return; }
     }
 
@@ -584,7 +632,7 @@ export const extractActionItems = async (req: Request, res: Response): Promise<v
 
     const attendeeLine = attendeeNames.length > 0 ? `Attendees: ${attendeeNames.join(', ')}.` : '';
     const prompt = `Extract action items from this transcript. ${attendeeLine}\nTRANSCRIPT:\n${transcript.substring(0, 3000)}\nReturn ONLY valid JSON: {"actionItems": [{"text": "...", "assignedToName": "...or null", "deadline": "...or null"}]}\nJSON:`;
-    const raw = await callHF(prompt, 500, 0.3);
+    const raw = await callAIDA(prompt, 500, 0.3);
     const match = raw.match(/\{[\s\S]*\}/);
 
     if (match) {
@@ -623,7 +671,7 @@ export const searchWorkspace = async (req: Request, res: Response): Promise<void
     if (hasKey() && scored.length > 0) {
       const fileList = scored.slice(0, 10).map((f: any) => `- ${f.name} (${f.fileType})`).join('\n');
       const prompt = `User searched "${query}". Matching files:\n${fileList}\nWhich is most relevant and why? (one sentence):`;
-      aiSummary = await callHF(prompt, 100, 0.5);
+      aiSummary = await callAIDA(prompt, 100, 0.5);
     }
 
     res.status(200).json({ files: scored.slice(0, 10), aiSummary });
@@ -696,7 +744,7 @@ export const summarizeFeed = async (req: Request, res: Response): Promise<void> 
 
     if (hasKey()) {
       const prompt = `Summarize today's social feed in 2 sentences:\n${postLines}\nSummary:`;
-      const summary = await callHF(prompt, 150, 0.6);
+      const summary = await callAIDA(prompt, 150, 0.6);
       if (summary) { res.status(200).json({ summary, postCount: posts.length }); return; }
     }
 

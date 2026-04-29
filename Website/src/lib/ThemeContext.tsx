@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type ThemeId = "obsidian-gold" | "cyber-mint" | "nebula-violet" | "monolith-gray" | "crimson-eclipse" | "cyberpunk-edge" | "neon-synth" | "solar-flare" | "liquid-glass";
+export type ThemeId = "void-black" | "obsidian-gold" | "cyber-mint" | "nebula-violet" | "monolith-gray" | "crimson-eclipse" | "cyberpunk-edge" | "neon-synth" | "solar-flare" | "liquid-glass";
 
 export interface ThemeDefinition {
   id: ThemeId;
@@ -25,6 +25,27 @@ export interface ThemeDefinition {
 }
 
 export const THEMES: ThemeDefinition[] = [
+  {
+    id: "void-black",
+    label: "Void Black",
+    swatches: ["#000000", "#ffe792", "#1a1a1a"],
+    vars: {
+      "--th-bg": "#000000",
+      "--th-surface": "#0d0d0d",
+      "--th-surface-low": "#080808",
+      "--th-surface-high": "#161616",
+      "--th-surface-top": "#1f1f1f",
+      "--th-accent": "#ffe792",
+      "--th-accent-text": "#1a0e00",
+      "--th-secondary": "#a2c2fd",
+      "--th-text": "#f0f0f0",
+      "--th-muted": "#666666",
+      "--th-border": "rgba(255,255,255,0.07)",
+      "--th-glow": "rgba(255,231,146,0.12)",
+      "--th-glass-blur": "16px",
+      "--th-glass-opacity": "0.06",
+    },
+  },
   {
     id: "obsidian-gold",
     label: "Obsidian Gold",
@@ -204,7 +225,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue>({
   themeId: "obsidian-gold",
   theme: THEMES[0],
-  setTheme: () => {},
+  setTheme: () => { },
 });
 
 function applyTheme(theme: ThemeDefinition) {
@@ -212,14 +233,11 @@ function applyTheme(theme: ThemeDefinition) {
   Object.entries(theme.vars).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
-  
+
   // Dynamically update the global Favicon to an SVG referencing the current theme's accent color
-  const accentColor = theme.vars["--th-accent"].replace('#', '%23');
-  const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <rect width="100" height="100" rx="30" fill="${accentColor}" fill-opacity="0.2" stroke="${accentColor}" stroke-width="6"/>
-    <circle cx="50" cy="50" r="25" fill="${accentColor}"/>
-  </svg>`;
-  
+  const accentColor = theme.vars["--th-accent"].replace(/#/g, '%23');
+  const svgFavicon = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="%23000"/><circle cx="30" cy="55" r="18" fill="${accentColor}"/><circle cx="56" cy="40" r="24" fill="${accentColor}" fill-opacity="0.8"/><circle cx="78" cy="58" r="14" fill="${accentColor}" fill-opacity="0.6"/></svg>`;
+
   let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
   if (!link) {
     link = document.createElement('link');
@@ -230,7 +248,7 @@ function applyTheme(theme: ThemeDefinition) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const saved = (localStorage.getItem("bubble-theme") as ThemeId) || "obsidian-gold";
+  const saved = (localStorage.getItem("bubble-theme") as ThemeId) || "void-black";
   const [themeId, setThemeId] = useState<ThemeId>(saved);
 
   const theme = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
