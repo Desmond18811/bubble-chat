@@ -189,6 +189,7 @@ export default function CommunityMessagesPage() {
   const userId = user?.id || user?._id;
   const creatorId = network?.creator?._id || network?.creator?.id || network?.creator;
   const isCreator = String(creatorId) === String(userId);
+  const canPost = network?.onlyCreatorCanPost ? isCreator : true;
 
   return (
     <>
@@ -238,7 +239,7 @@ export default function CommunityMessagesPage() {
             <div className="max-w-3xl mx-auto">
               <Breadcrumb network={network} />
 
-              {isCreator && <BroadcastComposer networkId={id!} onPostCreated={loadData} />}
+              {canPost && <BroadcastComposer networkId={id!} onPostCreated={loadData} />}
 
               {loading ? (
                 <div className="flex flex-col gap-4">
@@ -255,9 +256,9 @@ export default function CommunityMessagesPage() {
                         <Icon name="auto_quiet" style={{ color: "#9eacc3", fontSize: 28 }} />
                       </div>
                       <p className="text-[#9eacc3] text-lg mb-2">
-                        {isCreator ? "No updates broadcast yet." : "No updates transmitted from the creator yet."}
+                        {canPost ? "No updates broadcast yet." : "No updates transmitted from the creator yet."}
                       </p>
-                      {isCreator && (
+                      {canPost && (
                         <p className="text-[#9eacc3] text-sm">Use the composer above to send your first broadcast.</p>
                       )}
                     </div>

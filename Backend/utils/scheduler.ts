@@ -185,3 +185,71 @@ export const initTranscriptProcessor = () => {
 
   console.log('🎙️ [Transcript] Background processor initialized (runs every 5 min).');
 };
+
+// ─── Task & Goal Reminder Automation ──────────────────────────────────────────
+
+/**
+ * Checks for tasks that are due soon and sends email reminders.
+ * Runs every 30 minutes.
+ */
+export const processTaskReminders = async () => {
+  try {
+    const { Task } = await import('../models/task');
+    const { User } = await import('../models/users');
+    const { sendTaskReminderEmail } = await import('./mailer');
+
+    // Retrieve tasks due within the next 24 hours that haven't been reminded
+    const now = new Date();
+    const imminentWindow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const upcomingTasks = await Task.find({
+      status: { $in: ['todo', 'in-progress'] },
+      end_time: { $gte: now, $lte: imminentWindow },
+      reminderSent: { $ne: true },
+    }).limit(20); // Batch process
+
+    if (upcomingTasks.length === 0) return;
+
+    console.log(`⏰ [TaskReminders] Found ${upcomingTasks.length} tasks ready for reminder triggers.`);
+
+    for (const task of upcomingTasks) {
+      try {
+        const assignedUserId = task.assignedTo || task.user_id;
+        const user = await User.findById(assignedUserId);
+
+        if (user && user.email) {
+          // Send formatted email using customized template
+          await sendTaskReminderEmail(
+            user.email,
+            user.full_name || user.username || 'User',
+            task.title,
+            task.end_time,
+            task.description
+          );
+
+          // Mark task as processed so we don't spam
+          task.reminderSent = true;
+          await task.save();
+          console.log(`✅ [TaskReminders] Reminder sent for Task ${task._id} directly to ${user.email}`);
+        } else {
+          // If the user has no registered email, log that we're skipping them
+          task.reminderSent = true; // Mark sent so we don't loop endlessly
+          await task.save();
+        }
+      } catch (err) {
+        console.error(`❌ [TaskReminders] Failed processing task ${task._id}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('❌ [TaskReminders] Scheduler processing error:', err);
+  }
+};
+
+export const initTaskReminderScheduler = () => {
+  // Check every 30 minutes
+  cron.schedule('*/30 * * * *', async () => {
+    await processTaskReminders();
+  });
+
+  console.log('⏰ [TaskReminders] Background auto-reminder initialized (runs every 30 min).');
+};

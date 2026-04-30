@@ -12,11 +12,11 @@ const NAV_ICONS = [
   { icon: "work", label: "Work", path: "/workspace" },
   { icon: "video_chat", label: "Meet", path: "/meet" },
   { icon: "group", label: "Community", path: "/community" },
-  { icon: "rss_feed", label: "Feed", path: "/feed" },
+  // { icon: "rss_feed", label: "Feed", path: "/feed" },
   { icon: "smart_toy", label: "Aida AI", path: "/ai" },
-  { icon: "bookmark", label: "Saved", path: "/saved" },
+  // { icon: "bookmark", label: "Saved", path: "/saved" },
   { icon: "calendar_today", label: "Calendar", path: "/calendar" },
-  { icon: "payments", label: "Payments", path: "/payments" },
+  // { icon: "payments", label: "Payments", path: "/payments" },
 ];
 
 function MSIcon({ icon, filled = false, className }: { icon: string; filled?: boolean; className?: string }) {
@@ -80,7 +80,7 @@ function SidebarNotifPopup({ onClose }: { onClose: () => void }) {
         bottom: 100,
         width: 360,
         maxHeight: 500,
-        background: "#050505",
+        background: "color-mix(in srgb, var(--th-bg) 95%, transparent)",
         border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 18,
         boxShadow: "0 24px 80px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.04)",
@@ -211,8 +211,7 @@ export default function Sidebar() {
           boxShadow: "1px 0 40px rgba(0,0,0,0.8)",
         }}
       >
-        {/* Logo */}
-        <div className={cn("mb-6 flex items-center h-10 px-6 transition-all overflow-hidden shrink-0", isExpanded ? "justify-start" : "justify-center")}>
+        <div className={cn("mb-6 flex items-center h-10 px-6 transition-all overflow-hidden shrink-0", isExpanded ? "justify-start" : "justify-center")} style={{ background: "color-mix(in srgb, var(--th-bg) 70%, transparent)" }}>
           <BubbleIcon
             style={{ width: isExpanded ? "120px" : "32px", height: "32px", transition: "width 0.3s" }}
             primaryColor="var(--th-accent)"

@@ -6,6 +6,7 @@ import {
   fetchCallLogs,
   saveCallLog,
   clearCallLogs,
+  deleteCallLog,
   uploadWorkspaceFile,
   fetchMeetings,
   createMeeting as apiCreateMeeting,
@@ -351,7 +352,7 @@ function MeetLobby() {
   const handleClearLogs = async () => {
     if (!confirm("Clear all recent calls?")) return;
     try {
-      await api.clearCallLogs();
+      await clearCallLogs();
       setRecentCalls([]);
       toast.success("Call logs cleared");
     } catch { toast.error("Failed to clear logs"); }
@@ -360,7 +361,7 @@ function MeetLobby() {
   const handleDeleteLog = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await api.deleteCallLog(id);
+      await deleteCallLog(id);
       setRecentCalls(prev => prev.filter(c => c.id !== id));
       toast.success("Call log deleted");
     } catch { toast.error("Failed to delete log"); }
@@ -1171,7 +1172,7 @@ export default function BubbleMeet() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(158,172,195,0.4); }
         [class*="zego"] { font-family: 'Manrope', sans-serif !important; }
       `}</style>
-      <div className="bg-[#010f20] text-[#d8e6ff] overflow-hidden h-screen flex" style={{ fontFamily: "'Manrope', sans-serif" }}>
+      <div className="bg-[var(--th-bg)] text-[var(--th-text)] overflow-hidden h-screen flex" style={{ fontFamily: "'Manrope', sans-serif" }}>
         <Sidebar />
         <main className="ml-[85px] flex-1 flex flex-col h-full relative p-6 gap-4 overflow-hidden">
           <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />
