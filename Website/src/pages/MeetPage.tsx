@@ -879,6 +879,8 @@ function MeetRoom() {
         // Create the meeting record in our backend first so we have a DB id
         // to attach transcript chunks and file shares to from the start.
         const currentUser = getCurrentUser();
+        const storedUser = (() => { try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; } })();
+        const userAvatar = storedUser?.avatar || '';
         try {
           const result = await apiCreateMeeting({
             roomId,
@@ -923,6 +925,7 @@ function MeetRoom() {
           showNonVideoUser: true,
           showTextChat: true,
           onLeaveRoom: handleLeave,
+          ...(userAvatar ? { userAvatar } : {}),
         });
 
         setIsInitializing(false);

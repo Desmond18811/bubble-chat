@@ -100,40 +100,6 @@ function TopBar() {
           SETTINGS
         </span>
       </div>
-      <div className="flex items-center gap-6">
-        <div
-          className="relative flex items-center px-4 py-2 rounded-full w-64 transition-colors"
-          style={{ background: "var(--th-surface-top)" }}
-        >
-          <MSIcon
-            name="search"
-            className="text-sm mr-2 transition-colors"
-            style={{ color: "var(--th-muted)", fontSize: "18px" }}
-          />
-          <Input
-            placeholder="Search settings..."
-            className="bg-transparent border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto transition-colors"
-            style={{ color: "var(--th-text)" }}
-          />
-        </div>
-        <div className="flex items-center gap-4">
-          {["notifications", "account_circle"].map((icon) => (
-            <button
-              key={icon}
-              className="transition-colors duration-300"
-              style={{ color: "var(--th-secondary)" }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = "var(--th-accent)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.color = "var(--th-secondary)")
-              }
-            >
-              <MSIcon name={icon} />
-            </button>
-          ))}
-        </div>
-      </div>
     </header>
   );
 }

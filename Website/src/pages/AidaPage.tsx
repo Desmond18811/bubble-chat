@@ -125,7 +125,7 @@ const KnowledgeBaseModal = ({
     setSaving(true);
     try {
       const tags = form.tags.split(",").map((t) => t.trim()).filter(Boolean);
-      await createOrgDoc({ ...form, tags });
+      await createOrgDoc({ ...form, tags, accessLevel: form.accessLevel as 'public' | 'restricted' | 'admin' });
       toast.success(`"${form.title}" added to Aida's knowledge base!`);
       setForm({ title: "", content: "", department: "general", accessLevel: "public", tags: "" });
       setShowForm(false);

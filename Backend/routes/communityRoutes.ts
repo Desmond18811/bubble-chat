@@ -13,6 +13,7 @@ import {
   createNetworkPost,
   reactToNetworkPost,
   forwardNetworkPost,
+  deleteNetworkPost,
 } from '../controllers/communityController';
 
 const router = express.Router();
@@ -264,5 +265,6 @@ router.post('/networks/:networkId/posts/:postId/react', reactToNetworkPost);
  *               targetNetworkId: { type: string, description: "Leave empty to forward to same network" }
  */
 router.post('/networks/:networkId/posts/:postId/forward', forwardNetworkPost);
+router.delete('/networks/:networkId/posts/:postId', deleteNetworkPost);
 
 export default router;

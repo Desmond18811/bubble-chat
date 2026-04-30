@@ -596,9 +596,8 @@ export const getDailyBriefing = async (req: Request, res: Response): Promise<voi
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const end = new Date(); end.setHours(23, 59, 59, 999);
 
-    const [todayTasks, pendingInvoices, upcomingMeetings, user] = await Promise.all([
+    const [todayTasks, upcomingMeetings, user] = await Promise.all([
       Task.find({ $or: [{ user_id: userId }, { assignedTo: userId }], start_time: { $gte: start, $lte: end } }).lean(),
-      Invoice.find({ user_id: userId, status: { $in: ['sent', 'overdue'] } }).lean(),
       (async () => {
         try {
           const Meeting = (await import('../models/meeting')).Meeting;
@@ -617,7 +616,6 @@ export const getDailyBriefing = async (req: Request, res: Response): Promise<voi
       `${greeting}, ${userName}!`,
       todayTasks.length > 0 ? `You have ${todayTasks.length} task(s) scheduled today.` : 'Your schedule is clear today.',
       upcomingMeetings.length > 0 ? `${upcomingMeetings.length} meeting(s) on your calendar.` : '',
-      pendingInvoices.length > 0 ? `⚠️ ${pendingInvoices.length} invoice(s) need attention.` : '',
     ].filter(Boolean).join(' ');
 
     if (hasKey() && todayTasks.length > 0) {
@@ -628,12 +626,12 @@ export const getDailyBriefing = async (req: Request, res: Response): Promise<voi
         150, 0.6
       );
       if (aiReply) {
-        res.status(200).json({ reply: aiReply, tasks: todayTasks, invoices: pendingInvoices, meetings: upcomingMeetings });
+        res.status(200).json({ reply: aiReply, tasks: todayTasks, meetings: upcomingMeetings });
         return;
       }
     }
 
-    res.status(200).json({ reply: localBriefing, tasks: todayTasks, invoices: pendingInvoices, meetings: upcomingMeetings });
+    res.status(200).json({ reply: localBriefing, tasks: todayTasks, meetings: upcomingMeetings });
   } catch (error: any) {
     console.error('Aida Briefing Error:', error);
     res.status(500).json({ error: 'Error getting daily briefing.' });

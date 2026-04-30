@@ -790,6 +790,14 @@ export const forwardNetworkPost = async (
   return handleResponse(res);
 };
 
+export const deleteNetworkPost = async (networkId: string, postId: string) => {
+  const res = await fetch(
+    `${BASE_URL}/community/networks/${networkId}/posts/${postId}`,
+    { method: 'DELETE', headers: getAuthHeaders() }
+  );
+  return handleResponse(res);
+};
+
 // ─── Saved Posts ──────────────────────────────────────────────────────────────
 
 export const saveFeedPost = async (postId: string) => {

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import { fetchTemplates, fetchAidaBriefing } from "@/api";
+import { AvatarInitials } from "@/components/AvatarInitials";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,14 +43,17 @@ function MSIcon({
   filled = false,
   className,
   style,
+  title,
 }: {
   icon: string;
   filled?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  title?: string;
 }) {
   return (
     <span
+      title={title}
       className={cn("material-symbols-outlined select-none", className)}
       style={
         filled
@@ -85,6 +89,8 @@ function TopBar({
     new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
       .formatToParts(new Date())
       .find((p) => p.type === "timeZoneName")?.value || "Local";
+
+  const user = (() => { try { return JSON.parse(localStorage.getItem('user') || "{}"); } catch { return {}; } })();
 
   return (
     <header
@@ -140,8 +146,8 @@ function TopBar({
             Get Briefing
           </span>
         </button>
-        <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
-          <MSIcon icon="person" style={{ color: "var(--th-secondary)" }} />
+        <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border overflow-hidden" style={{ borderColor: "var(--th-border)" }}>
+          <AvatarInitials name={user?.full_name || user?.username || "U"} url={user?.avatar} />
         </div>
       </div>
     </header>

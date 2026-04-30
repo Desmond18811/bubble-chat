@@ -7,7 +7,8 @@ import {
   fetchNetworkPosts,
   reactToNetworkPost,
   forwardNetworkPost,
-  createNetworkPost
+  createNetworkPost,
+  deleteNetworkPost
 } from "@/api";
 import { formatDistanceToNow } from "date-fns";
 
@@ -39,7 +40,7 @@ function Breadcrumb({ network }: { network: any }) {
 }
 
 /* ─── Post Item ────────────────────────────────────────────────────────────── */
-function BroadcastPost({ post, networkId, onUpdate }: { post: any, networkId: string, onUpdate: () => void }) {
+function BroadcastPost({ post, networkId, isCreator, onUpdate }: { post: any, networkId: string, isCreator: boolean, onUpdate: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleReact = async (emoji: string) => {
@@ -111,13 +112,27 @@ function BroadcastPost({ post, networkId, onUpdate }: { post: any, networkId: st
             );
           })}
         </div>
-        <button
-          onClick={handleForward}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0c2037] text-[#9eacc3] hover:text-[#ffe792] hover:bg-[#ffe792]/10 transition-all text-xs border border-transparent hover:border-[#ffe792]/30"
-        >
-          <Icon name="forward" className="text-sm" />
-          {copied ? "COPIED" : "FORWARD"}
-        </button>
+        <div className="flex items-center gap-2">
+          {isCreator && (
+            <button
+              onClick={async () => {
+                if (!confirm('Delete this post?')) return;
+                try { await deleteNetworkPost(networkId, post._id); onUpdate(); } catch { }
+              }}
+              className="flex items-center gap-1 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-xs border border-transparent hover:border-red-400/30"
+            >
+              <Icon name="delete" className="text-sm" />
+              DELETE
+            </button>
+          )}
+          <button
+            onClick={handleForward}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0c2037] text-[#9eacc3] hover:text-[#ffe792] hover:bg-[#ffe792]/10 transition-all text-xs border border-transparent hover:border-[#ffe792]/30"
+          >
+            <Icon name="forward" className="text-sm" />
+            {copied ? "COPIED" : "FORWARD"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -248,7 +263,7 @@ export default function CommunityMessagesPage() {
               ) : (
                 <div className="flex flex-col">
                   {posts.map(post => (
-                    <BroadcastPost key={post._id} post={post} networkId={id!} onUpdate={loadData} />
+                    <BroadcastPost key={post._id} post={post} networkId={id!} isCreator={isCreator} onUpdate={loadData} />
                   ))}
                   {posts.length === 0 && (
                     <div className="py-20 text-center">

@@ -36,6 +36,10 @@ function MSIcon({
 }
 
 function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const avatarUrl = storedUser.avatar;
+  const displayName = storedUser.full_name || storedUser.username || "G";
+  const initials = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
   return (
     <header className="fixed top-0 right-0 left-[85px] z-40 flex justify-between items-center h-20 px-10 border-b transition-colors"
       style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderColor: "var(--th-border)" }}>
@@ -64,8 +68,10 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
         </div>
       </div>
       <div className="flex items-center gap-6 ml-8">
-        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden" }}>
-          <img src={JSON.parse(localStorage.getItem("user") || "{}").avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=guest"} alt="profile" className="w-full h-full object-cover" />
+        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden", background: "var(--th-surface-high)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "var(--th-accent)" }}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="profile" className="w-full h-full object-cover" />
+            : <span>{initials}</span>}
         </div>
       </div>
     </header>
@@ -75,19 +81,30 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
 function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, onClose: () => void, onSuccess: () => void }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [categories, setCategories_] = useState<string[]>([]);
+  const [catInput, setCatInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
+  const addCategory = () => {
+    const trimmed = catInput.trim();
+    if (trimmed && !categories.includes(trimmed)) {
+      setCategories_(prev => [...prev, trimmed]);
+    }
+    setCatInput("");
+  };
+
+  const removeCategory = (cat: string) => setCategories_(prev => prev.filter(c => c !== cat));
+
   const handleSubmit = async () => {
-    if (!name || !category) return;
+    if (!name || categories.length === 0) return;
     try {
       setLoading(true);
       await createNetwork({
         title: name,
         description,
-        categories: [category]
+        categories,
       });
       onSuccess();
       onClose();
@@ -125,14 +142,28 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
             />
           </div>
           <div>
-            <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Category</label>
-            <Input
-              className="rounded-xl transition-colors border"
-              style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)", color: "var(--th-text)" }}
-              placeholder="e.g. AI & ML"
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-            />
+            <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Categories (press Enter to add)</label>
+            <div className="flex gap-2 mb-2 flex-wrap">
+              {categories.map(cat => (
+                <span key={cat} className="flex items-center gap-1 text-xs px-2 py-1 rounded-full font-bold" style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", color: "var(--th-accent)", border: "1px solid color-mix(in srgb, var(--th-accent) 30%, transparent)" }}>
+                  {cat}
+                  <button type="button" onClick={() => removeCategory(cat)} style={{ marginLeft: 2, lineHeight: 1, color: "var(--th-accent)" }}>×</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                className="rounded-xl transition-colors border flex-1"
+                style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)", color: "var(--th-text)" }}
+                placeholder="e.g. AI & ML"
+                value={catInput}
+                onChange={e => setCatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
+              />
+              <button type="button" onClick={addCategory}
+                className="px-3 rounded-xl font-bold text-xs uppercase"
+                style={{ background: "var(--th-accent)", color: "var(--th-accent-text)" }}>Add</button>
+            </div>
           </div>
           <div>
             <label className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors" style={{ color: "var(--th-muted)" }}>Description</label>
@@ -148,7 +179,7 @@ function CreateNetworkModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, o
 
         <Button
           onClick={handleSubmit}
-          disabled={loading || !name || !category}
+          disabled={loading || !name || categories.length === 0}
           className="w-full mt-8 font-bold uppercase py-6 rounded-xl transition-all"
           style={{ background: "var(--th-accent)", color: "var(--th-accent-text)" }}
           onMouseEnter={e => e.currentTarget.style.opacity = "0.9"}

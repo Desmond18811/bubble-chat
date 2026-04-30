@@ -269,3 +269,25 @@ export const forwardNetworkPost = async (req: Request, res: Response) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+// DELETE /api/v1/community/networks/:networkId/posts/:postId
+export const deleteNetworkPost = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const post = await NetworkPost.findById(req.params.postId);
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+
+    const network = await Network.findById(req.params.networkId);
+    const isAuthor = post.author.equals(userId);
+    const isCreator = network?.creator.equals(userId);
+
+    if (!isAuthor && !isCreator) {
+      return res.status(403).json({ message: 'Only the post author or network creator can delete posts.' });
+    }
+
+    await NetworkPost.findByIdAndDelete(req.params.postId);
+    res.json({ message: 'Post deleted' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
