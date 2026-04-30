@@ -3,14 +3,22 @@ import mongoose from 'mongoose';
 import { Meeting, IMeeting } from '../models/meeting';
 import { Task } from '../models/task';
 import { User } from '../models/users';
-import { HfInference } from '@huggingface/inference';
+import OpenAI from 'openai';
 import { createNotification } from './notificationController';
 import { logActivity } from './activityLogController';
 
-const hf = new HfInference(process.env.HF_API_KEY || '');
+// ─── DeepSeek client (same engine as aidaController) ─────────────────────────
+const deepseekClient = new OpenAI({
+  baseURL: 'https://api.deepseek.com/v1',
+  apiKey: process.env.DEEPSEEK_API_KEY || '',
+});
 
-// ─── Helper: AI-powered transcript processing ────────────────────────────────
+const hasDeepSeekKey = (): boolean => {
+  const key = process.env.DEEPSEEK_API_KEY;
+  return !!(key && key.length > 10 && key !== 'your_api_key_here');
+};
 
+// ─── Helper: AI-powered transcript processing via DeepSeek ───────────────────
 const extractMeetingIntelligence = async (
   transcript: string,
   attendeeNames: string[]
@@ -18,14 +26,9 @@ const extractMeetingIntelligence = async (
   summary: string;
   actionItems: { text: string; assignedToName?: string }[];
 }> => {
-  const hasKey =
-    process.env.HF_API_KEY &&
-    process.env.HF_API_KEY !== 'your_hugging_face_api_key_here';
-
-  if (!hasKey || !transcript) {
+  if (!hasDeepSeekKey() || !transcript) {
     return {
-      summary:
-        'Meeting summary is available once Hugging Face API key is configured.',
+      summary: 'Meeting summary unavailable — DeepSeek API key not configured.',
       actionItems: [],
     };
   }
@@ -33,49 +36,49 @@ const extractMeetingIntelligence = async (
   const attendeeLine =
     attendeeNames.length > 0 ? `Attendees: ${attendeeNames.join(', ')}.` : '';
 
-  const prompt = `You are Aida, an intelligent meeting assistant. Analyze the following meeting transcript and return structured output.
+  try {
+    const response = await deepseekClient.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'system',
+          content: `You are Aida, an expert meeting intelligence assistant. Analyze transcripts and extract structured data. Always return valid JSON only.`,
+        },
+        {
+          role: 'user',
+          content: `Analyze this meeting transcript and return a JSON object.
 ${attendeeLine}
 
 TRANSCRIPT:
 ${transcript.substring(0, 3000)}
 
-Please summarize the following details based on the transcript:
-1. Who did what
-2. Who said what
-3. Any tasks/action items mentioned and who they are assigned to
-4. Any files referenced or shared during the meeting
+Extract:
+1. A comprehensive summary (who said what, who did what, decisions made, files shared)
+2. All action items with who they are assigned to
 
-Provide a comprehensive "summary" string incorporating who said what, who did what, and files shared.
-Provide a list of "actionItems" for any tasks created.
-
-Format as JSON: {"summary": "...", "actionItems": [{"text": "...", "assignedToName": "...or null"}]}
-
-JSON:`;
-
-  try {
-    const response = await hf.textGeneration({
-      model: process.env.HF_MODEL_ID || 'meta-llama/Meta-Llama-3-8B-Instruct',
-      inputs: prompt,
-      parameters: { max_new_tokens: 600, temperature: 0.3 },
+Return ONLY this JSON (no other text):
+{"summary": "...", "actionItems": [{"text": "...", "assignedToName": "...or null"}]}`,
+        },
+      ],
+      max_tokens: 700,
+      temperature: 0.3,
     });
 
-    const raw = response.generated_text.replace(prompt, '').trim();
+    const raw = response.choices[0].message?.content?.trim() || '';
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
         summary: parsed.summary || 'No summary generated.',
-        actionItems: Array.isArray(parsed.actionItems)
-          ? parsed.actionItems
-          : [],
+        actionItems: Array.isArray(parsed.actionItems) ? parsed.actionItems : [],
       };
     }
   } catch (err) {
-    console.error('Aida transcript extraction error:', err);
+    console.error('[Meeting AI] DeepSeek transcript extraction error:', err);
   }
 
   return {
-    summary: transcript.substring(0, 200) + '...',
+    summary: transcript.substring(0, 300) + '...',
     actionItems: [],
   };
 };

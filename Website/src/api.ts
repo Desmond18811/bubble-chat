@@ -912,6 +912,64 @@ export const aidaFlagPayments = async () => {
   return handleResponse(res);
 };
 
+// ─── Aida Org Knowledge Base (RAG Documents) ──────────────────────────────────
+
+export const fetchOrgDocs = async (params?: { q?: string; department?: string; page?: number }) => {
+  const q = new URLSearchParams();
+  if (params?.q) q.set('q', params.q);
+  if (params?.department) q.set('department', params.department);
+  if (params?.page) q.set('page', params.page.toString());
+  const res = await fetch(`${BASE_URL}/aida/org-docs?${q.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const fetchOrgDoc = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
+export const createOrgDoc = async (data: {
+  title: string;
+  content: string;
+  department?: string;
+  accessLevel?: 'public' | 'restricted' | 'admin';
+  tags?: string[];
+}) => {
+  const res = await fetch(`${BASE_URL}/aida/org-docs`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const updateOrgDoc = async (id: string, data: Partial<{
+  title: string;
+  content: string;
+  department: string;
+  accessLevel: string;
+  tags: string[];
+}>) => {
+  const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+export const deleteOrgDoc = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export const fetchNotifications = async (page = 1, limit = 30) => {

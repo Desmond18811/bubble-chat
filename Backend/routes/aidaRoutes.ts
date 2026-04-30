@@ -12,6 +12,12 @@ import {
   getAidaConversation,
   chatWithAidaInConversation,
   summarizeConversation,
+  // Org Knowledge Base (RAG)
+  listOrgDocs,
+  getOrgDoc,
+  createOrgDoc,
+  updateOrgDoc,
+  deleteOrgDoc,
 } from '../controllers/aidaController';
 import passport from 'passport';
 
@@ -35,5 +41,12 @@ router.post('/schedule-suggestion', requireAuth, scheduleSuggestion);
 router.post('/schedule-task', requireAuth, aidaScheduleTask);
 router.post('/summarize-feed', requireAuth, summarizeFeed);
 router.get('/flag-payments', requireAuth, flagPayments);
+
+// ── Org Knowledge Base (RAG Documents) ───────────────────────────────────────
+router.get('/org-docs', requireAuth, listOrgDocs);
+router.get('/org-docs/:id', requireAuth, getOrgDoc);
+router.post('/org-docs', requireAuth, createOrgDoc);
+router.patch('/org-docs/:id', requireAuth, updateOrgDoc);
+router.delete('/org-docs/:id', requireAuth, deleteOrgDoc);
 
 export default router;
