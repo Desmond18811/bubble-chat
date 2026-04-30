@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import redisClient from '../utils/redis';
+// Redis disabled
 
 /**
  * Basic health check
@@ -23,21 +23,11 @@ export const checkHealthDetailed = async (req: Request, res: Response) => {
   try {
     // Check MongoDB Status
     const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-    
-    // Check Redis Status 
-    let cacheStatus = 'disconnected';
-    try {
-      if (redisClient.status === 'ready' || redisClient.status === 'connect') {
-          const ping = await redisClient.ping();
-          if (ping === 'PONG') {
-              cacheStatus = 'connected';
-          }
-      }
-    } catch (e) {
-      cacheStatus = 'disconnected';
-    }
 
-    const overallStatus = (dbStatus === 'connected' && cacheStatus === 'connected') ? 'healthy' : 'degraded';
+    // Check Redis Status (Disabled per user request)
+    let cacheStatus = 'disabled';
+
+    const overallStatus = (dbStatus === 'connected') ? 'healthy' : 'degraded';
     const statusCode = overallStatus === 'healthy' ? 200 : 503;
 
     res.status(statusCode).json({

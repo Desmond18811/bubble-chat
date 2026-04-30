@@ -267,7 +267,7 @@ const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble-ch
 
 const server = http.createServer(app);
 
-mongoose.connect(mongoURI)
+mongoose.connect(mongoURI, { family: 4 })
   .then(async () => {
     console.log('✅ MongoDB connected successfully.');
 
