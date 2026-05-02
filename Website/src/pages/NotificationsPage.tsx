@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import BubbleLayout from "@/components/BubbleLayout";
+import { AvatarInitials } from "@/components/AvatarInitials";
 import {
   fetchNotifications,
   markNotificationRead,
@@ -9,61 +10,61 @@ import {
 } from "@/api";
 
 const TYPE_ICONS: Record<string, string> = {
-  new_message:         "chat",
-  new_group_message:   "group",
-  task_assigned:       "task_alt",
-  task_due_soon:       "alarm",
-  meeting_started:     "videocam",
-  meeting_ended:       "meeting_room",
+  new_message: "chat",
+  new_group_message: "group",
+  task_assigned: "task_alt",
+  task_due_soon: "alarm",
+  meeting_started: "videocam",
+  meeting_ended: "meeting_room",
   meeting_action_item: "checklist",
-  meeting_invite:      "video_call",
-  payment_received:    "payments",
-  payment_due:         "credit_card_off",
-  invoice_sent:        "receipt_long",
-  file_shared:         "folder_shared",
-  community_post:      "groups",
-  feed_mention:        "alternate_email",
-  feed_like:           "favorite",
-  feed_comment:        "comment",
-  contact_added:       "person_add",
-  system:              "info",
+  meeting_invite: "video_call",
+  payment_received: "payments",
+  payment_due: "credit_card_off",
+  invoice_sent: "receipt_long",
+  file_shared: "folder_shared",
+  community_post: "groups",
+  feed_mention: "alternate_email",
+  feed_like: "favorite",
+  feed_comment: "comment",
+  contact_added: "person_add",
+  system: "info",
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  new_message:         "#6366f1",
-  new_group_message:   "#8b5cf6",
-  task_assigned:       "#f59e0b",
-  task_due_soon:       "#ef4444",
-  meeting_started:     "#10b981",
-  meeting_ended:       "#6366f1",
+  new_message: "#6366f1",
+  new_group_message: "#8b5cf6",
+  task_assigned: "#f59e0b",
+  task_due_soon: "#ef4444",
+  meeting_started: "#10b981",
+  meeting_ended: "#6366f1",
   meeting_action_item: "#f59e0b",
-  payment_received:    "#10b981",
-  payment_due:         "#ef4444",
-  invoice_sent:        "#3b82f6",
-  file_shared:         "#6366f1",
-  community_post:      "#8b5cf6",
-  feed_mention:        "#ec4899",
-  feed_like:           "#ef4444",
-  feed_comment:        "#6366f1",
-  contact_added:       "#10b981",
-  system:              "#6b7280",
+  payment_received: "#10b981",
+  payment_due: "#ef4444",
+  invoice_sent: "#3b82f6",
+  file_shared: "#6366f1",
+  community_post: "#8b5cf6",
+  feed_mention: "#ec4899",
+  feed_like: "#ef4444",
+  feed_comment: "#6366f1",
+  contact_added: "#10b981",
+  system: "#6b7280",
 };
 
 function timeAgo(dateStr: string) {
   const date = new Date(dateStr);
   const diff = Date.now() - date.getTime();
-  const mins  = Math.floor(diff / 60000);
+  const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(diff / 86400000);
-  if (mins < 1)   return "just now";
-  if (mins < 60)  return `${mins}m ago`;
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;
 }
 
 function groupByDay(notifications: any[]) {
   const groups: Record<string, any[]> = {};
-  const today     = new Date().toDateString();
+  const today = new Date().toDateString();
   const yesterday = new Date(Date.now() - 86400000).toDateString();
 
   for (const n of notifications) {
@@ -75,15 +76,27 @@ function groupByDay(notifications: any[]) {
   return groups;
 }
 
-function MSIcon({ icon, className = "" }: { icon: string; className?: string }) {
-  return <span className={`material-symbols-outlined select-none ${className}`}>{icon}</span>;
+function MSIcon({ icon, className = "", style }: { icon: string; className?: string; style?: React.CSSProperties }) {
+  return <span className={`material-symbols-outlined select-none ${className}`} style={style}>{icon}</span>;
 }
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount]     = useState(0);
-  const [loading, setLoading]             = useState(true);
-  const [filter, setFilter]               = useState<"all" | "unread">("all");
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [userData, setUserData] = useState<any>(null);
+
+  // Fetch logged-in user for the avatar
+  useEffect(() => {
+    const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    fetch(`${BASE}/profile/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    })
+      .then(r => r.json())
+      .then(j => { if (j.data) setUserData(j.data); })
+      .catch(() => { });
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -122,7 +135,7 @@ export default function NotificationsPage() {
   };
 
   const displayed = filter === "unread" ? notifications.filter(n => !n.read) : notifications;
-  const grouped   = groupByDay(displayed);
+  const grouped = groupByDay(displayed);
 
   return (
     <BubbleLayout>
@@ -151,7 +164,7 @@ export default function NotificationsPage() {
                 className="px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all"
                 style={{
                   background: filter === f ? "var(--th-accent)" : "var(--th-border)",
-                  color:      filter === f ? "#fff"            : "var(--th-secondary)",
+                  color: filter === f ? "#fff" : "var(--th-secondary)",
                 }}
               >
                 {f}
@@ -177,6 +190,9 @@ export default function NotificationsPage() {
                 Clear all
               </button>
             )}
+            <div className="w-10 h-10 rounded-xl overflow-hidden border ml-2 shrink-0" style={{ borderColor: 'var(--th-border)' }}>
+              <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
+            </div>
           </div>
         </div>
 
@@ -205,7 +221,7 @@ export default function NotificationsPage() {
                   <div className="space-y-1">
                     {items.map(n => {
                       const color = TYPE_COLORS[n.type] || "#6366f1";
-                      const icon  = TYPE_ICONS[n.type]  || "notifications";
+                      const icon = TYPE_ICONS[n.type] || "notifications";
                       return (
                         <div
                           key={n._id}

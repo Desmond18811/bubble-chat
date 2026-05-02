@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface AvatarInitialsProps {
@@ -26,27 +26,33 @@ function getHashIndex(str: string) {
   return Math.abs(hash) % backgrounds.length;
 }
 
+function Initials({ name, className }: { name: string; className?: string }) {
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
+  const bg = name ? backgrounds[getHashIndex(name)] : "var(--th-surface-top)";
+  return (
+    <div
+      className={cn("flex flex-shrink-0 items-center justify-center font-bold text-white", className)}
+      style={{ background: bg, width: "100%", height: "100%", borderRadius: "inherit" }}
+    >
+      {initial}
+    </div>
+  );
+}
+
 export function AvatarInitials({ name, url, className }: AvatarInitialsProps) {
-  if (url) {
+  const [imgError, setImgError] = useState(false);
+
+  if (url && !imgError) {
     return (
       <img
         src={url}
         alt={name || "Avatar"}
         className={cn("object-cover", className)}
         style={{ display: "block", width: "100%", height: "100%", borderRadius: "inherit" }}
+        onError={() => setImgError(true)}
       />
     );
   }
-  
-  const initial = name ? name.charAt(0).toUpperCase() : '?';
-  const bg = name ? backgrounds[getHashIndex(name)] : "var(--th-surface-top)";
-  
-  return (
-    <div 
-      className={cn("flex flex-shrink-0 items-center justify-center font-bold text-white", className)} 
-      style={{ background: bg, width: "100%", height: "100%", borderRadius: "inherit" }}
-    >
-      {initial}
-    </div>
-  );
+
+  return <Initials name={name} className={className} />;
 }

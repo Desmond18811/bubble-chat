@@ -5,6 +5,7 @@ import { AvatarInitials } from "@/components/AvatarInitials";
 import BubbleIcon from "@/components/BubbleIcon";
 import { fetchNotifications, fetchUnreadCount, markAllNotificationsRead, markNotificationRead } from "@/api";
 import { formatDistanceToNow } from "date-fns";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 // ─── Static nav ──────────────────────────────────────────────────────────────
 const NAV_ICONS = [
@@ -157,19 +158,11 @@ function SidebarNotifPopup({ onClose }: { onClose: () => void }) {
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
-  const [userData, setUserData] = useState<any>(null);
+  const { userData } = useUserProfile();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadChatsCount, setUnreadChatsCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
 
-  useEffect(() => {
-    fetch("http://localhost:3000/api/v1/profile/me", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-    })
-      .then(r => r.json())
-      .then(j => { if (j.data) setUserData(j.data); })
-      .catch(() => { });
-  }, []);
 
   useEffect(() => {
     const tick = async () => {

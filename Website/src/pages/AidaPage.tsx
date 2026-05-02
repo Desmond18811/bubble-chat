@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import { AvatarInitials } from "@/components/AvatarInitials";
 import { cn } from "@/lib/utils";
 import {
   chatWithAida,
@@ -13,6 +14,7 @@ import {
   deleteOrgDoc,
 } from "@/api";
 import { toast } from "sonner";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 /* ─── UI Components ───────────────────────────────────────────────────────── */
 
@@ -325,6 +327,8 @@ export default function AidaPage() {
     } catch { }
   }, [messages]);
 
+  const { userData } = useUserProfile();
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
@@ -500,6 +504,9 @@ export default function AidaPage() {
             >
               <Icon name="delete_sweep" style={{ fontSize: 17 }} />
             </button>
+            <div className="w-11 h-11 rounded-2xl overflow-hidden border ml-2" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+              <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
+            </div>
           </div>
         </header>
 
@@ -590,28 +597,186 @@ export default function AidaPage() {
                           <p className="text-sm font-bold text-white">Opening Calendar…</p>
                         </div>
                       )}
+
+                      {action.type === "SCHEDULE_CALL" && (
+                        <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffe792]/5 blur-2xl rounded-full pointer-events-none" />
+                          <div className="flex items-start justify-between relative z-10">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30 shrink-0">
+                                <Icon name="video_call" style={{ color: "#ffe792" }} />
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-bold text-white">Generate Call Link</h3>
+                                <p className="text-xs text-white/50">Start or schedule a secure meeting</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex gap-3 relative z-10">
+                            <button
+                              onClick={() => {
+                                const uuid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+                                const roomId = `bubble-${uuid}-${Date.now()}`;
+                                window.location.href = `/meet/room/${roomId}?type=${action.callType || 'video'}`;
+                              }}
+                              className="flex-1 py-2.5 rounded-xl bg-[#ffe792] text-[#655400] text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors"
+                            >
+                              Join Now
+                            </button>
+                            <button
+                              onClick={() => {
+                                const uuid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+                                const roomId = `bubble-${uuid}-${Date.now()}`;
+                                const link = `${window.location.origin}/meet/room/${roomId}?type=${action.callType || 'video'}`;
+                                navigator.clipboard.writeText(link);
+                                toast.success("Secure Call Link Copied!");
+                              }}
+                              className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-xs font-bold uppercase tracking-widest hover:text-white hover:border-white/40 transition-colors"
+                            >
+                              Copy Link
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ─── SCHEDULE_GROUP_CALL card ─── */}
+                      {action.type === "SCHEDULE_GROUP_CALL" && (
+                        <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffe792]/5 blur-2xl rounded-full pointer-events-none" />
+                          <div className="flex items-center gap-3 mb-3 relative z-10">
+                            <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30 shrink-0">
+                              <Icon name={action.callType === 'audio' ? "phone" : "video_call"} style={{ color: "#ffe792" }} />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-white">{action.title || "Group Call"}</h3>
+                              <p className="text-xs text-white/50">{action.callType === 'audio' ? 'Audio' : 'Video'} call link ready</p>
+                            </div>
+                          </div>
+
+                          {/* Participants */}
+                          {action.participants && action.participants.length > 0 && (
+                            <div className="mb-3 flex flex-wrap gap-1.5 relative z-10">
+                              {action.participants.map((p: string, pi: number) => (
+                                <span key={pi} className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: 'rgba(255,231,146,0.1)', color: '#ffe792', border: '1px solid rgba(255,231,146,0.2)' }}>
+                                  {p}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex gap-3 relative z-10">
+                            <button
+                              onClick={() => {
+                                const uuid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+                                const roomId = `bubble-${uuid}-${Date.now()}`;
+                                window.location.href = `/meet/room/${roomId}?type=${action.callType || 'video'}`;
+                              }}
+                              className="flex-1 py-2.5 rounded-xl bg-[#ffe792] text-[#655400] text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors"
+                            >
+                              Join Now
+                            </button>
+                            <button
+                              onClick={() => {
+                                const uuid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+                                const roomId = `bubble-${uuid}-${Date.now()}`;
+                                const link = `${window.location.origin}/meet/room/${roomId}?type=${action.callType || 'video'}`;
+                                navigator.clipboard.writeText(link);
+                                toast.success(`${action.callType === 'audio' ? 'Audio' : 'Video'} Call Link Copied!`);
+                              }}
+                              className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-xs font-bold uppercase tracking-widest hover:text-white hover:border-white/40 transition-colors"
+                            >
+                              Copy & Share
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ─── PLAN_PHASES card ─── */}
+                      {action.type === "PLAN_PHASES" && action.createdTasks && (
+                        <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-40 h-40 bg-[#ffe792]/4 blur-3xl rounded-full pointer-events-none" />
+                          <div className="flex items-center gap-3 mb-4 relative z-10">
+                            <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30 shrink-0">
+                              <Icon name="account_tree" style={{ color: "#ffe792" }} />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-white">{action.planTitle || 'Plan'}</h3>
+                              <p className="text-xs text-white/50">{action.createdTasks.length} phase(s) added to Calendar</p>
+                            </div>
+                          </div>
+
+                          {/* Phase timeline */}
+                          <div className="space-y-2 relative z-10 mb-4">
+                            {action.createdTasks.map((task: any, ti: number) => (
+                              <div key={ti} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                <div className="w-7 h-7 rounded-lg bg-[#ffe792]/10 border border-[#ffe792]/20 flex items-center justify-center text-[10px] font-bold" style={{ color: '#ffe792' }}>{ti + 1}</div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-white truncate">{task.title}</p>
+                                  <p className="text-[10px] text-white/40">
+                                    {task.start_time ? new Date(task.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                                    {task.end_time ? ` → ${new Date(task.end_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                                  </p>
+                                </div>
+                                <Icon name="check_circle" style={{ color: 'rgba(255,231,146,0.3)', fontSize: 16 }} />
+                              </div>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={() => window.location.href = '/calendar'}
+                            className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors relative z-10"
+                            style={{ background: 'rgba(255,231,146,0.1)', color: '#ffe792', border: '1px solid rgba(255,231,146,0.2)' }}
+                          >
+                            View in Calendar
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
 
                   {/* Template output */}
                   {msg.template && (
-                    <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-[#111620] shadow-2xl">
-                      <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-                        <div className="flex items-center gap-2 text-[#ffe792]">
-                          <Icon name="description" style={{ fontSize: 16 }} />
-                          <span className="text-xs font-bold uppercase tracking-widest">Generated Template</span>
+                    <div className="mt-4 p-6 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative">
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-[#ffe792]/5 blur-3xl rounded-full pointer-events-none" />
+                      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30">
+                            <Icon name="description" style={{ fontSize: 16, color: "#ffe792" }} />
+                          </div>
+                          <span className="text-xs font-bold text-white uppercase tracking-widest">Aida Drafted Document</span>
                         </div>
-                        <button
-                          onClick={() => { navigator.clipboard.writeText(msg.template); toast.success("Copied!"); }}
-                          className="flex items-center gap-1 text-xs font-semibold text-white/40 hover:text-white transition-colors"
-                        >
-                          <Icon name="content_copy" style={{ fontSize: 14 }} />
-                          Copy
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+                                const blob = new Blob([msg.template], { type: "text/plain" });
+                                const formData = new FormData();
+                                formData.append("file", blob, "Template.txt");
+                                await fetch(`${BASE}/workspace/upload`, {
+                                  method: "POST",
+                                  headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+                                  body: formData,
+                                });
+                                toast.success("Saved to Workspace!");
+                              } catch { toast.error("Failed to save to Workspace"); }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 text-[10px] uppercase font-bold text-white/60 hover:text-white hover:border-[#ffe792]/40 transition-colors bg-black/40"
+                          >
+                            <Icon name="save" style={{ fontSize: 14 }} /> Workspace
+                          </button>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(msg.template); toast.success("Copied to Clipboard!"); }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#ffe792]/20 text-[10px] uppercase font-bold text-[#ffe792] hover:bg-[#ffe792]/10 transition-colors bg-[#ffe792]/5"
+                          >
+                            <Icon name="content_copy" style={{ fontSize: 14 }} /> Copy
+                          </button>
+                        </div>
                       </div>
-                      <pre className="text-sm text-white/70 whitespace-pre-wrap font-sans" style={{ lineHeight: 1.6 }}>
+                      <div className="text-sm text-white/80 whitespace-pre-wrap font-sans relative z-10 bg-black/20 p-4 rounded-xl border border-white/5" style={{ lineHeight: 1.7 }}>
                         {msg.template}
-                      </pre>
+                      </div>
                     </div>
                   )}
                 </div>

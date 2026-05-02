@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
+import { AvatarInitials } from "@/components/AvatarInitials";
 import {
   fetchNetworks,
   fetchCommunityCategories,
@@ -16,19 +17,22 @@ function MSIcon({
   icon,
   filled = false,
   className,
+  style,
 }: {
   icon: string;
   filled?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <span
       className={cn("material-symbols-outlined select-none", className)}
-      style={
-        filled
+      style={{
+        ...style,
+        ...(filled
           ? { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" }
-          : { fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }
-      }
+          : { fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" })
+      }}
     >
       {icon}
     </span>
@@ -36,10 +40,17 @@ function MSIcon({
 }
 
 function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
-  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const avatarUrl = storedUser.avatar;
-  const displayName = storedUser.full_name || storedUser.username || "G";
-  const initials = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    fetch(`${BASE}/profile/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    })
+      .then(r => r.json())
+      .then(j => { if (j.data) setUserData(j.data); })
+      .catch(() => { });
+  }, []);
   return (
     <header className="fixed top-0 right-0 left-[85px] z-40 flex justify-between items-center h-20 px-10 border-b transition-colors"
       style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderColor: "var(--th-border)" }}>
@@ -68,10 +79,8 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
         </div>
       </div>
       <div className="flex items-center gap-6 ml-8">
-        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden", background: "var(--th-surface-high)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "var(--th-accent)" }}>
-          {avatarUrl
-            ? <img src={avatarUrl} alt="profile" className="w-full h-full object-cover" />
-            : <span>{initials}</span>}
+        <div style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid color-mix(in srgb, var(--th-accent) 25%, transparent)`, overflow: "hidden", background: "var(--th-surface-high)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
         </div>
       </div>
     </header>

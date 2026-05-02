@@ -26,12 +26,30 @@ import NotFound from "./pages/NotFound";
 import { Navigate } from "react-router-dom";
 
 
-// Protected Route Component (Simpler version)
+// Protected Route Component — checks token exists AND is not expired
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('access_token');
   if (!token) return <Navigate to="/login" replace />;
+
+  // Decode JWT exp field (base64 payload, no library needed)
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      // Token has expired — clear storage and redirect with reason
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      return <Navigate to="/login?reason=expired" replace />;
+    }
+  } catch {
+    // Malformed token — treat as invalid
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    return <Navigate to="/login?reason=expired" replace />;
+  }
+
   return <>{children}</>;
 };
+
 
 const queryClient = new QueryClient();
 

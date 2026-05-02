@@ -50,14 +50,27 @@ const callAIDA = async (
 // ─── Smart local fallback when no AI key ─────────────────────────────────────
 const buildSmartFallback = (userName: string, tasks: any[], files: any[], message: string): string => {
   const msg = message.toLowerCase();
+  if (msg.includes('schedule a call') || msg.includes('book a meeting') || msg.includes('set up a call')) {
+    return `Right away, ${userName}. I've set up a fast-track UI below so you can generate a secure call link directly. [ACTION: {"type":"SCHEDULE_CALL"}]`;
+  }
+
+  if (msg.includes('template') || msg.includes('draft')) {
+    return `Here is a standard template that you can use, ${userName}: [ACTION: {"type":"CREATE_TEMPLATE", "templateType":"Standard Template", "title":"Standard Organizational Template", "content":"# Standard Template\\n\\n## 1. Overview\\nBrief overview of the topic.\\n\\n## 2. Action Items\\n- [ ] Task 1\\n- [ ] Task 2\\n\\n## 3. Notes\\nAdditional notes go here."}]`;
+  }
+
   if (msg.includes('task') || msg.includes('schedule') || msg.includes('calendar')) {
+    if (msg.includes('schedule a task') || msg.includes('add a task')) {
+      return `I'll schedule a placeholder task for you right now. [ACTION: {"type":"SCHEDULE_TASK", "title":"Placeholder Task From Aida", "description":"Automatically generated task fallback."}]`;
+    }
     if (tasks.length === 0) return `Hi ${userName}! No tasks are scheduled for today. Want me to help you add one? Just say "Schedule a task: [task name] at [time]".`;
     return `Hi ${userName}! You have ${tasks.length} task(s) today: ${tasks.map(t => `"${t.title}"`).join(', ')}. Need help managing any of them?`;
   }
+
   if (msg.includes('file') || msg.includes('workspace') || msg.includes('document')) {
     if (files.length === 0) return `Your workspace is clean! No files uploaded yet. I can help you organise files once you start uploading.`;
     return `You have ${files.length} file(s) in your workspace. Recent: ${files.slice(0, 3).map((f: any) => `"${f.name}"`).join(', ')}. Want me to find something specific?`;
   }
+
   if (msg.includes('brief') || msg.includes('today') || msg.includes('summary')) {
     const taskPart = tasks.length > 0 ? `You have ${tasks.length} task(s) today.` : 'No tasks today — a free day!';
     const filePart = files.length > 0 ? ` Your workspace has ${files.length} file(s).` : '';
@@ -169,6 +182,7 @@ const buildAidaSystemPrompt = (
   fileContext: string,
   taskContext: string,
   upcomingContext: string,
+  contactsContext: string = '',
   pageContext?: string
 ): string => `You are Aida, the intelligent AI assistant of the Bubble organizational platform. You are powered by DeepSeek AI.
 
@@ -184,6 +198,7 @@ ${orgContext}
 `
     : 'No organizational documents are currently indexed. Admins can add company knowledge docs via Settings > Aida Knowledge Base.\n'
   }
+${contactsContext ? `USER CONTACTS (people the user can call or invite to meetings):\n${contactsContext}\n` : ''}
 WORKSPACE SNAPSHOT:
 ${fileContext}
 ${taskContext}
@@ -191,24 +206,30 @@ ${upcomingContext}
 
 YOUR CAPABILITIES:
 1. Answer questions using the organization's knowledge base above
-2. Schedule tasks/meetings to the Calendar
+2. Schedule tasks/meetings/phases to the Calendar
 3. Find files in the workspace
 4. Create professional templates (meeting agendas, project plans, daily schedules, policy drafts, etc.)
 5. Summarize meetings and extract action items
 6. Give daily briefings and productivity tips
-7. Break down goals into realistic timelines and actionable steps
-8. Support escalation — prepare messages to management when users need help
+7. Break down goals into realistic timelines and actionable phases (multi-week plans)
+8. Schedule a call or group call with contacts
+9. Support escalation — prepare messages to management when users need help
 
 INLINE ACTION BLOCKS (embed in your reply only when performing an action):
-- Schedule: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO datetime or natural language","description":"..."}]
+- Schedule task: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO datetime or natural language","description":"..."}]
 - Find file: [ACTION: {"type":"FIND_FILE","payload":"search keywords"}]
 - Open Calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
-- Create Template: [ACTION: {"type":"CREATE_TEMPLATE","templateType":"meeting_agenda|daily_plan|project_brief|weekly_review|management_request|goal_timeline","title":"...","content":"full template text here"}]
+- Generate Call Link (solo): [ACTION: {"type":"SCHEDULE_CALL","callType":"video"}]
+- Group/Contact Call: [ACTION: {"type":"SCHEDULE_GROUP_CALL","title":"...","participants":["Name1","Name2"],"callType":"video|audio"}]
+- Plan phases into calendar: [ACTION: {"type":"PLAN_PHASES","planTitle":"...","phases":[{"title":"...","description":"...","startOffsetDays":0,"durationDays":7}]}]
+- Create Template: [ACTION: {"type":"CREATE_TEMPLATE","templateType":"meeting_agenda|daily_plan|project_brief|weekly_review|management_request|goal_timeline|goal_breakdown","title":"...","content":"full template text here"}]
 
 RULES:
 - Always address the user by their first name
 - When org knowledge is available, cite it in your answer ("According to our [doc name]...")
 - When scheduling or goal planning, always confirm with a specific date/time and follow up
+- Use PLAN_PHASES for multi-week plans; it will create real calendar entries for each phase
+- When the user mentions a person's name and wants to call them, use SCHEDULE_GROUP_CALL with that name in participants
 - Be concise, warm, and action-oriented
 - Never make up company policies — use only what's in the knowledge base`;
 
@@ -287,8 +308,8 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
       readBy: [userId],
     });
 
-    // Fetch all context in parallel
-    const [recentFiles, todayTasks, upcomingTasks, { context: orgContext }] = await Promise.all([
+    // Fetch all context in parallel (including contacts)
+    const [recentFiles, todayTasks, upcomingTasks, { context: orgContext }, userContacts] = await Promise.all([
       WorkspaceFile.find({ uploadedBy: userId }).sort({ createdAt: -1 }).limit(5).lean(),
       Task.find({
         $or: [{ user_id: userId }, { assignedTo: userId }],
@@ -301,6 +322,10 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
         status: { $nin: ['done', 'cancelled'] },
       }).sort({ start_time: 1 }).limit(3).lean(),
       retrieveOrgContext(message, userRole),
+      User.findById(userId).select('contacts').lean().then(async (u: any) => {
+        if (!u?.contacts?.length) return [];
+        return User.find({ _id: { $in: u.contacts } }).select('full_name username').limit(15).lean();
+      }).catch(() => []),
     ]);
 
     // Conversation history (last 26 messages as memory)
@@ -323,9 +348,12 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
     const upcomingContext = upcomingTasks.length > 0
       ? `Upcoming: ${upcomingTasks.map((t: any) => `"${t.title}" on ${new Date(t.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`).join(', ')}.`
       : '';
+    const contactsContext = (userContacts as any[]).length > 0
+      ? (userContacts as any[]).map((c: any) => `- ${c.full_name || c.username}`).join('\n')
+      : '';
 
     const systemPrompt = buildAidaSystemPrompt(
-      userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext
+      userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext, contactsContext
     );
     const fullUserMessage = historyText
       ? `Recent conversation:\n${historyText}\n\nUser: ${message}`
@@ -368,6 +396,48 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
             priority: 'medium',
           });
           if (!reply) reply = `Done! I've scheduled "${actionData.title}" for ${start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}. You can view it on your Calendar.`;
+        }
+
+        // SCHEDULE_GROUP_CALL — generates a room link with contact info
+        if (actionData.type === 'SCHEDULE_GROUP_CALL') {
+          const callType = actionData.callType || 'video';
+          const participants = actionData.participants || [];
+          actionData.callType = callType;
+          actionData.participants = participants;
+          if (!reply) {
+            const whoText = participants.length > 0 ? ` with ${participants.join(', ')}` : '';
+            reply = `Ready! I've set up a ${callType} call link${whoText}. Use the card below to join or copy the link to share.`;
+          }
+        }
+
+        // PLAN_PHASES — create sequential tasks for each phase
+        if (actionData.type === 'PLAN_PHASES') {
+          const phases: any[] = actionData.phases || [];
+          const createdTasks: any[] = [];
+          const now = new Date();
+          for (const phase of phases) {
+            const start = new Date(now);
+            start.setDate(start.getDate() + (phase.startOffsetDays || 0));
+            start.setHours(9, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(end.getDate() + (phase.durationDays || 7));
+            const task = await Task.create({
+              title: phase.title,
+              description: `[${actionData.planTitle}] ${phase.description || ''}`.trim(),
+              user_id: userId,
+              start_time: start,
+              end_time: end,
+              status: 'todo',
+              priority: 'medium',
+            });
+            createdTasks.push(task);
+          }
+          actionData.createdTasks = createdTasks;
+          if (!reply) {
+            reply = `I've broken "${actionData.planTitle}" into ${phases.length} phase(s) and added them all to your Calendar. Check the plan card below!`;
+          } else {
+            reply += `\n\nAll ${phases.length} phases added to your Calendar.`;
+          }
         }
 
         if (actionData.type === 'CREATE_TEMPLATE') {
@@ -499,7 +569,7 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
     const userName = user?.full_name || user?.username || 'Voyager';
     const userRole = (user as any)?.role || 'employee';
 
-    const [recentFiles, todayTasks, upcomingTasks, { context: orgContext }] = await Promise.all([
+    const [recentFiles, todayTasks, upcomingTasks, { context: orgContext }, userContacts] = await Promise.all([
       WorkspaceFile.find({ uploadedBy: userId }).sort({ createdAt: -1 }).limit(5).lean(),
       Task.find({
         $or: [{ user_id: userId }, { assignedTo: userId }],
@@ -512,6 +582,10 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
         status: { $nin: ['done', 'cancelled'] },
       }).sort({ start_time: 1 }).limit(3).lean(),
       retrieveOrgContext(message, userRole),
+      User.findById(userId).select('contacts').lean().then(async (u: any) => {
+        if (!u?.contacts?.length) return [];
+        return User.find({ _id: { $in: u.contacts } }).select('full_name username').limit(15).lean();
+      }).catch(() => []),
     ]);
 
     const fileContext = recentFiles.length > 0
@@ -523,9 +597,12 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
     const upcomingContext = upcomingTasks.length > 0
       ? `Upcoming: ${upcomingTasks.map((t: any) => `"${t.title}" on ${new Date(t.start_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`).join(', ')}.`
       : '';
+    const contactsContext = (userContacts as any[]).length > 0
+      ? (userContacts as any[]).map((c: any) => `- ${c.full_name || c.username}`).join('\n')
+      : '';
 
     const systemPrompt = buildAidaSystemPrompt(
-      userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext,
+      userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext, contactsContext,
       context ? `${context} section` : undefined
     );
 
@@ -565,6 +642,46 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
             priority: 'medium',
           });
           if (!reply) reply = `Done! I've scheduled "${actionData.title}" for ${start.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}. You can view it on your Calendar.`;
+        }
+
+        if (actionData.type === 'SCHEDULE_GROUP_CALL') {
+          const callType = actionData.callType || 'video';
+          const participants = actionData.participants || [];
+          actionData.callType = callType;
+          actionData.participants = participants;
+          if (!reply) {
+            const whoText = participants.length > 0 ? ` with ${participants.join(', ')}` : '';
+            reply = `Ready! I've set up a ${callType} call link${whoText}. Use the card below to join or copy the link to share.`;
+          }
+        }
+
+        if (actionData.type === 'PLAN_PHASES') {
+          const phases: any[] = actionData.phases || [];
+          const createdTasks: any[] = [];
+          const now = new Date();
+          for (const phase of phases) {
+            const start = new Date(now);
+            start.setDate(start.getDate() + (phase.startOffsetDays || 0));
+            start.setHours(9, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(end.getDate() + (phase.durationDays || 7));
+            const task = await Task.create({
+              title: phase.title,
+              description: `[${actionData.planTitle}] ${phase.description || ''}`.trim(),
+              user_id: userId,
+              start_time: start,
+              end_time: end,
+              status: 'todo',
+              priority: 'medium',
+            });
+            createdTasks.push(task);
+          }
+          actionData.createdTasks = createdTasks;
+          if (!reply) {
+            reply = `I've broken "${actionData.planTitle}" into ${phases.length} phase(s) and added them all to your Calendar!`;
+          } else {
+            reply += `\n\nAll ${phases.length} phases added to your Calendar.`;
+          }
         }
 
         if (actionData.type === 'CREATE_TEMPLATE') {

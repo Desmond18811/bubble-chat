@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
+import { AvatarInitials } from "@/components/AvatarInitials";
 import {
   fetchNetworkById,
   fetchNetworkPosts,
@@ -181,7 +182,18 @@ export default function CommunityMessagesPage() {
   const [network, setNetwork] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  useEffect(() => {
+    const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    fetch(`${BASE}/profile/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    })
+      .then(r => r.json())
+      .then(j => { if (j.data) setUserData(j.data); })
+      .catch(() => { });
+  }, []);
 
   const loadData = async () => {
     if (!id) return;
@@ -246,6 +258,9 @@ export default function CommunityMessagesPage() {
               <button className="w-10 h-10 rounded-xl bg-[#0c2037] flex items-center justify-center text-[#9eacc3] hover:text-[#ffe792] transition-all border border-[#3b495c]/20">
                 <Icon name="more_vert" />
               </button>
+              <div className="w-10 h-10 rounded-xl overflow-hidden border ml-2" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+                <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
+              </div>
             </div>
           </header>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { AvatarInitials } from "@/components/AvatarInitials";
 import * as api from "@/api";
 
 /* ─── Types & Config ─── */
@@ -39,6 +40,18 @@ export default function SharedWorkspacePage() {
   const [folder, setFolder] = useState<any>(null);
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!localStorage.getItem("access_token")) return;
+    const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    fetch(`${BASE}/profile/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    })
+      .then(r => r.json())
+      .then(j => { if (j.data) setUserData(j.data); })
+      .catch(() => { });
+  }, []);
 
   useEffect(() => {
     if (!folderId) return;
@@ -71,7 +84,7 @@ export default function SharedWorkspacePage() {
         body { font-family: 'Manrope', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
       `}</style>
-      
+
       {/* Navbar Minimal */}
       <header className="px-10 py-6 border-b border-[rgba(59,73,92,0.2)] flex justify-between items-center" style={{ background: "#031427" }}>
         <div className="flex items-center gap-3">
@@ -80,10 +93,14 @@ export default function SharedWorkspacePage() {
           </div>
           <span style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#d8e6ff" }}>Bubble workspace</span>
         </div>
-        {!localStorage.getItem("access_token") && (
+        {!localStorage.getItem("access_token") ? (
           <button onClick={() => navigate("/login")} style={{ ...SG, background: "rgba(255,231,146,0.1)", color: "#ffe792", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontWeight: 700 }}>
             Sign In
           </button>
+        ) : (
+          <div className="w-10 h-10 rounded-xl overflow-hidden border shrink-0" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
+            <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
+          </div>
         )}
       </header>
 
@@ -143,11 +160,11 @@ function SharedFileCard({ file }: { file: any }) {
             <span style={{ fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.08em" }}>{file.mimeType?.split("/")[1] || "FILE"}</span>
           </div>
         )}
-        
+
         {/* Force download using ?download=true */}
         <a href={`${proxyUrl}?download=true`} target="_blank" rel="noreferrer" title="Download"
-           className="absolute top-8 right-8 w-10 h-10 rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center transform group-hover:translate-y-0 translate-y-4"
-           style={{ background: "rgba(162,194,253,0.3)", border: "1px solid rgba(162,194,253,0.5)", textDecoration: "none" }}>
+          className="absolute top-8 right-8 w-10 h-10 rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center transform group-hover:translate-y-0 translate-y-4"
+          style={{ background: "rgba(162,194,253,0.3)", border: "1px solid rgba(162,194,253,0.5)", textDecoration: "none" }}>
           <MSIcon name="download" style={{ fontSize: 18, color: "#a2c2fd" }} />
         </a>
       </div>

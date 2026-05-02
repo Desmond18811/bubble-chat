@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+
 import { AvatarInitials } from "@/components/AvatarInitials";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "@/api";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 /* ─── Icon helper ──────────────────────────────────────────────────────────── */
 function Icon({ name, filled = false, size = 22, style = {}, className = "" }: any) {
@@ -164,21 +166,14 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, icon, children }: PageHeaderProps) {
     const navigate = useNavigate();
-    const [userData, setUserData] = useState<any>(null);
+    const { userData } = useUserProfile();
     const [unread, setUnread] = useState(0);
     const [notifOpen, setNotifOpen] = useState(false);
 
     useEffect(() => {
-        // Load profile
-        fetch("http://localhost:3000/api/v1/profile/me", {
-            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-        })
-            .then(r => r.json())
-            .then(j => { if (j.data) setUserData(j.data); })
-            .catch(() => { });
-
-        // Load unread count
-        fetch("http://localhost:3000/api/v1/notifications/unread-count", {
+        const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+        // Load unread count only
+        fetch(`${BASE}/notifications/unread-count`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
         })
             .then(r => r.json())

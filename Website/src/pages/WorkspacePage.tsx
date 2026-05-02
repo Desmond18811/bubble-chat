@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Sidebar from "@/components/Sidebar";
+import { AvatarInitials } from "@/components/AvatarInitials";
 import { toast } from "sonner";
 import * as api from "@/api";
 
@@ -290,73 +291,104 @@ function FolderModal({ activeWs, onClose, onCreated }: { activeWs: string | null
   );
 }
 
-/* ─── Upload Modal ──────────────────────────────────────────────────────────── */
+/* ─── Upload Modal (Multi-File) ─────────────────────────────────────────────── */
 function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]; onClose: () => void; onUploaded: (f: WFile) => void }) {
   const [tabType, setTabType] = useState<"file" | "link">("file");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
-  const [preview, setPreview] = useState<string | null>(null);
-  const [name, setName] = useState("");
   const [workspace, setWorkspace] = useState(workspaces[0] || "Default");
   const [newWs, setNewWs] = useState("");
   const [source, setSource] = useState<FileSource>("manual");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return;
-    setFile(f); setName(f.name);
-    if (f.type.startsWith("image/") || f.type.startsWith("video/")) setPreview(URL.createObjectURL(f));
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    setFiles(prev => [...prev, ...selected].slice(0, 20)); // max 20 files
   };
 
+  const removeFile = (idx: number) => setFiles(prev => prev.filter((_, i) => i !== idx));
+
   const submit = async () => {
-    if (tabType === "file" && !file) return toast.error("Select a file first");
+    if (tabType === "file" && files.length === 0) return toast.error("Select at least one file");
     if (tabType === "link" && !linkUrl.trim()) return toast.error("Enter a valid URL to share");
 
     setUploading(true);
     try {
       const ws = newWs.trim() || workspace;
-      const r = await api.uploadWorkspaceFile(tabType === "file" ? file : null, { linkUrl: tabType === "link" ? linkUrl : undefined, name: name || (tabType === "file" ? file?.name : linkUrl), workspace: ws, source, description, tags });
-      onUploaded(r.file);
-      toast.success("File uploaded!");
+      if (tabType === "link") {
+        const r = await api.uploadWorkspaceFile(null, { linkUrl, name: linkUrl, workspace: ws, source, description, tags });
+        onUploaded(r.file);
+        toast.success("Link saved!");
+      } else {
+        // Upload files in parallel with progress counter
+        let done = 0;
+        setUploadProgress(`Uploading 0/${files.length}...`);
+        const results = await Promise.allSettled(
+          files.map(async (file) => {
+            const r = await api.uploadWorkspaceFile(file, { name: file.name, workspace: ws, source, description, tags });
+            done++;
+            setUploadProgress(`Uploading ${done}/${files.length}...`);
+            onUploaded(r.file);
+            return r.file;
+          })
+        );
+        const failed = results.filter(r => r.status === "rejected").length;
+        const succeeded = results.length - failed;
+        if (failed > 0) toast.warning(`${succeeded} uploaded, ${failed} failed`);
+        else toast.success(`${succeeded} file${succeeded !== 1 ? 's' : ''} uploaded!`);
+      }
       onClose();
     } catch (e: any) { toast.error(e.message || "Upload failed"); }
-    finally { setUploading(false); }
+    finally { setUploading(false); setUploadProgress(""); }
   };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: 520, background: "var(--th-surface)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 540, background: "var(--th-surface)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
         <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid rgba(59,73,92,0.2)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 16 }}>
-            <h2 onClick={() => setTabType("file")} style={{ ...SG, fontSize: 18, fontWeight: 700, color: tabType === "file" ? "var(--th-accent)" : "var(--th-muted)", cursor: "pointer", margin: 0, transition: "color 0.2s" }}>Upload File</h2>
+            <h2 onClick={() => setTabType("file")} style={{ ...SG, fontSize: 18, fontWeight: 700, color: tabType === "file" ? "var(--th-accent)" : "var(--th-muted)", cursor: "pointer", margin: 0, transition: "color 0.2s" }}>Upload Files</h2>
             <h2 onClick={() => setTabType("link")} style={{ ...SG, fontSize: 18, fontWeight: 700, color: tabType === "link" ? "var(--th-accent)" : "var(--th-muted)", cursor: "pointer", margin: 0, transition: "color 0.2s" }}>Share Link</h2>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
         </div>
 
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16, maxHeight: "70vh", overflowY: "auto" }}>
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16, maxHeight: "72vh", overflowY: "auto" }}>
           {tabType === "file" ? (
             <>
               {/* Drop zone */}
               <div
                 onClick={() => fileRef.current?.click()}
-                style={{ border: "2px dashed color-mix(in srgb, var(--th-accent) 0.25)", borderRadius: 16, minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, cursor: "pointer", background: "color-mix(in srgb, var(--th-accent) 0.02)", transition: "border-color 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.5)")}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 0.25)")}
+                style={{ border: "2px dashed color-mix(in srgb, var(--th-accent) 40%, transparent)", borderRadius: 16, minHeight: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", background: "color-mix(in srgb, var(--th-accent) 4%, transparent)", transition: "border-color 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--th-accent)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "color-mix(in srgb, var(--th-accent) 40%, transparent)")}
               >
-                {preview ? (
-                  file?.type.startsWith("image/") ? <img src={preview} style={{ maxHeight: 140, borderRadius: 10, objectFit: "cover" }} /> :
-                    <video src={preview} style={{ maxHeight: 140, borderRadius: 10 }} controls />
-                ) : file ? (
-                  <><MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 40, color: "var(--th-accent)", opacity: 0.7 }} /><p style={{ fontSize: 13, color: "var(--th-muted)" }}>{file.name}</p></>
-                ) : (
-                  <><MSIcon name="cloud_upload" style={{ fontSize: 48, color: "var(--th-accent)", opacity: 0.5 }} /><p style={{ fontSize: 14, color: "var(--th-muted)" }}>Click to select any file type</p><p style={{ fontSize: 11, color: "#68768b" }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p></>
-                )}
+                <MSIcon name="cloud_upload" style={{ fontSize: 40, color: "var(--th-accent)", opacity: 0.6 }} />
+                <p style={{ fontSize: 14, color: "var(--th-muted)", margin: 0 }}>Click to select files <span style={{ color: "var(--th-accent)" }}>(multiple allowed)</span></p>
+                <p style={{ fontSize: 11, color: "#68768b", margin: 0 }}>Images, Videos, Audio, PDFs, Docs, Spreadsheets</p>
               </div>
-              <input ref={fileRef} type="file" hidden onChange={handleFile} />
+              <input ref={fileRef} type="file" hidden multiple onChange={handleFiles} />
+
+              {/* File queue */}
+              {files.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{files.length} file{files.length !== 1 ? 's' : ''} selected</div>
+                  {files.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "var(--th-surface-low)", borderRadius: 10, border: "1px solid var(--th-border)" }}>
+                      <MSIcon name={FILE_TYPE_ICONS["other"]} style={{ fontSize: 16, color: "var(--th-muted)" }} />
+                      <span style={{ flex: 1, fontSize: 12, color: "var(--th-text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                      <span style={{ fontSize: 11, color: "var(--th-muted)", flexShrink: 0 }}>{fmtBytes(f.size)}</span>
+                      <button onClick={() => removeFile(i)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 0, display: "flex" }}>
+                        <MSIcon name="close" style={{ fontSize: 14 }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <div>
@@ -364,12 +396,6 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
               <input type="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://example.com" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
             </div>
           )}
-
-          {/* Name */}
-          <div>
-            <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>{tabType === "file" ? "File Name" : "Link Title"}</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Custom name (optional)" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", boxSizing: "border-box" }} />
-          </div>
 
           {/* Workspace */}
           <div style={{ display: "flex", gap: 12 }}>
@@ -390,8 +416,8 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
             <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8 }}>Source</label>
             <div style={{ display: "flex", gap: 8 }}>
               {(["manual", "meeting"] as FileSource[]).map(s => (
-                <button key={s} onClick={() => setSource(s)} style={{ flex: 1, background: source === s ? "color-mix(in srgb, var(--th-accent) 0.15)" : "rgba(255,255,255,0.03)", border: `1px solid ${source === s ? "color-mix(in srgb, var(--th-accent) 0.4)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px", cursor: "pointer", color: source === s ? "var(--th-accent)" : "var(--th-muted)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}>
-                  <MSIcon name={SOURCE_ICONS[s]} style={{ fontSize: 16 }} />{s === "manual" ? "Computer" : s.charAt(0).toUpperCase() + s.slice(1)}
+                <button key={s} onClick={() => setSource(s)} style={{ flex: 1, background: source === s ? "color-mix(in srgb, var(--th-accent) 15%, transparent)" : "rgba(255,255,255,0.03)", border: `1px solid ${source === s ? "color-mix(in srgb, var(--th-accent) 40%, transparent)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px", cursor: "pointer", color: source === s ? "var(--th-accent)" : "var(--th-muted)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}>
+                  <MSIcon name={SOURCE_ICONS[s]} style={{ fontSize: 16 }} />{s === "manual" ? "Computer" : "Meeting"}
                 </button>
               ))}
             </div>
@@ -403,11 +429,11 @@ function UploadModal({ workspaces, onClose, onUploaded }: { workspaces: string[]
           </div>
           <div>
             <label style={{ ...SG, fontSize: 11, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>Description (optional)</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What is this file about?" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "Manrope, sans-serif" }} />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="What are these files about?" style={{ width: "100%", background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "var(--th-text)", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "Manrope, sans-serif" }} />
           </div>
 
-          <button onClick={submit} disabled={uploading || (tabType === "file" ? !file : !linkUrl)} style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || (tabType === "file" ? !file : !linkUrl) ? "default" : "pointer", opacity: uploading || (tabType === "file" ? !file : !linkUrl) ? 0.7 : 1, ...SG }}>
-            {uploading ? "Transmitting Artifact..." : (tabType === "file" ? "Upload to Workspace" : "Save Link to Workspace")}
+          <button onClick={submit} disabled={uploading || (tabType === "file" ? files.length === 0 : !linkUrl)} style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", border: "none", borderRadius: 12, padding: "14px", fontWeight: 700, fontSize: 14, cursor: uploading || (tabType === "file" ? files.length === 0 : !linkUrl) ? "default" : "pointer", opacity: uploading || (tabType === "file" ? files.length === 0 : !linkUrl) ? 0.7 : 1, ...SG }}>
+            {uploading ? (uploadProgress || "Uploading...") : (tabType === "file" ? `Upload ${files.length > 0 ? files.length + " File" + (files.length !== 1 ? "s" : "") : "Files"} to Workspace` : "Save Link to Workspace")}
           </button>
         </div>
       </div>
@@ -729,7 +755,7 @@ function FilePreviewModal({ file, onClose }: { file: WFile; onClose: () => void 
 export default function WorkspacesPage() {
   const [files, setFiles] = useState<WFile[]>([]);
   const [workspaces, setWorkspaces] = useState<string[]>(["Default"]);
-  const [folderDocs, setFolderDocs] = useState<any[]>([]); // Added folderDocs state
+  const [folderDocs, setFolderDocs] = useState<any[]>([]);
   const [activeWs, setActiveWs] = useState<string | null>(null);
   const [activeSource, setActiveSource] = useState<FileSource | null>(null);
   const [activeType, setActiveType] = useState<FileType | null>(null);
@@ -740,12 +766,24 @@ export default function WorkspacesPage() {
   const [accessFile, setAccessFile] = useState<WFile | null>(null);
   const [previewFile, setPreviewFile] = useState<WFile | null>(null);
   const [shareFile, setShareFile] = useState<WFile | null>(null);
+  const [userData, setUserData] = useState<any>(null);
 
   // Context Menu Sidebar logic
   const [sidebarMenu, setSidebarMenu] = useState<{ x: number, y: number, folderId: string } | null>(null);
 
   const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
   const [isShared, setIsShared] = useState(false);
+
+  // Fetch logged-in user for the avatar
+  useEffect(() => {
+    const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    fetch(`${BASE}/profile/me`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    })
+      .then(r => r.json())
+      .then(j => { if (j.data) setUserData(j.data); })
+      .catch(() => { });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -904,12 +942,11 @@ export default function WorkspacesPage() {
             style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", padding: "10px 20px", ...SG }}
           >
             <MSIcon name="add_circle" className="text-sm" />
-            UPLOAD FILE
+            UPLOAD FILES
           </Button>
-          <div className="flex items-center gap-6 ml-2">
-            <div className="w-10 h-10 rounded-full bg-[var(--th-surface-high)] flex items-center justify-center cursor-pointer border border-[var(--th-border)] overflow-hidden">
-              <img src={(() => { try { return JSON.parse(localStorage.getItem("user") || "{}").avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=user`; } catch { return ''; } })()} className="w-full h-full object-cover" alt="Avatar" />
-            </div>
+          {/* Avatar */}
+          <div style={{ width: 38, height: 38, borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", flexShrink: 0 }}>
+            <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
           </div>
         </div>
       </header>

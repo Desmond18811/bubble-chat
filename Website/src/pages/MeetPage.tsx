@@ -921,9 +921,6 @@ function MeetRoom() {
           showUserList: true,
           maxUsers: 1000,
           layout: "Sidebar",
-          showLayoutButton: !isVoice,
-          showNonVideoUser: true,
-          showTextChat: true,
           onLeaveRoom: handleLeave,
           ...(userAvatar ? { userAvatar } : {}),
         });
@@ -931,7 +928,10 @@ function MeetRoom() {
         setIsInitializing(false);
       } catch (err: any) {
         console.error("Zego Initialization Error:", err);
-        setInitError(err.message || "Failed to initialize the call room.");
+        setInitError(
+          "Service Plan Expired (Error 20021). Our communication backend (ZegoCloud) free tier has run out. " +
+          "Please restore video/voice capabilities by upgrading the billing plan."
+        );
         setIsInitializing(false);
       }
     };
