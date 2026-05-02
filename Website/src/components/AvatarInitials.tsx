@@ -42,10 +42,16 @@ function Initials({ name, className }: { name: string; className?: string }) {
 export function AvatarInitials({ name, url, className }: AvatarInitialsProps) {
   const [imgError, setImgError] = useState(false);
 
-  if (url && !imgError) {
+  let finalUrl = url;
+  if (finalUrl && finalUrl.startsWith('/') && !finalUrl.startsWith('//')) {
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1').replace(/\/api\/v1\/?$/, '');
+    finalUrl = `${baseUrl}${finalUrl}`;
+  }
+
+  if (finalUrl && !imgError) {
     return (
       <img
-        src={url}
+        src={finalUrl}
         alt={name || "Avatar"}
         className={cn("object-cover", className)}
         style={{ display: "block", width: "100%", height: "100%", borderRadius: "inherit" }}

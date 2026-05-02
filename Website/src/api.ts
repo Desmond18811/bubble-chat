@@ -836,11 +836,11 @@ export const fetchAidaConversationSummary = async (conversationId: string) => {
   return handleResponse(res);
 };
 
-export const chatWithAida = async (message: string) => {
+export const chatWithAida = async (message: string, history: any[] = []) => {
   const res = await fetch(`${BASE_URL}/aida/chat`, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, history }),
   });
   return handleResponse(res);
 };

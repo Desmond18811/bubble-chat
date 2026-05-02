@@ -355,11 +355,19 @@ export default function AidaPage() {
   const handleSend = async (customText?: string) => {
     const text = customText || input;
     if (!text.trim()) return;
+
+    // Build the history payload BEFORE pushing the immediate user message
+    // so we don't duplicate the current prompt in the context
+    const historyPayload = messages
+      .filter((m) => m.role !== "system" && !m.type?.includes("widget"))
+      .slice(-12) // Keep the last 12 interactions for healthy memory limits
+      .map((m) => ({ role: m.role, content: String(m.content) }));
+
     pushMessage("user", text);
     if (!customText) setInput("");
     setLoading(true);
     try {
-      const res = await chatWithAida(text);
+      const res = await chatWithAida(text, historyPayload);
       const actions = res.actions || (res.action ? [res.action] : []);
       pushMessage("assistant", res.reply || "I'm having trouble connecting to my intelligence core.", { actions });
 

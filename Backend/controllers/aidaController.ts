@@ -606,7 +606,13 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
       context ? `${context} section` : undefined
     );
 
-    const rawReply = await callAIDA(systemPrompt, message, 600, 0.65);
+    let finalMessage = message;
+    if (req.body.history && Array.isArray(req.body.history) && req.body.history.length > 0) {
+      const historyStr = req.body.history.map((m: any) => `${m.role === 'user' ? 'User' : 'Aida'}: ${m.content}`).join('\n\n');
+      finalMessage = `### Recent Conversation History ###\n${historyStr}\n\n### Current Input ###\nUser: ${message}`;
+    }
+
+    const rawReply = await callAIDA(systemPrompt, finalMessage, 600, 0.65);
     let reply = rawReply;
     const actionResults: any[] = [];
 

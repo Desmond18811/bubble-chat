@@ -30,7 +30,7 @@ const BubbleIcon: React.FC<BubbleIconProps> = ({
           <stop offset="100%" stopColor={secondaryColor} stopOpacity="0.9" />
         </linearGradient>
         <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feGaussianBlur stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -38,25 +38,13 @@ const BubbleIcon: React.FC<BubbleIconProps> = ({
         </filter>
       </defs>
 
-      {/* Main chat bubble body */}
-      <rect
-        x="2" y="3"
-        width="30" height="27"
-        rx="10"
-        fill={`url(#${gradId})`}
-        filter={`url(#${glowId})`}
-      />
-
-      {/* Bubble tail */}
-      <path
-        d="M8 30 L4 38 L18 30"
-        fill={`url(#${gradId})`}
-      />
-
-      {/* Inner dots */}
-      <circle cx="11" cy="16" r="2.5" fill="white" fillOpacity="0.9" />
-      <circle cx="17" cy="16" r="2.5" fill="white" fillOpacity="0.9" />
-      <circle cx="23" cy="16" r="2.5" fill="white" fillOpacity="0.9" />
+      {/* Main chat bubble shaped by Favicon style */}
+      <g transform="scale(0.38) translate(0, 5)" filter={`url(#${glowId})`}>
+        <rect width="100" height="100" rx="24" fill="transparent" />
+        <circle cx="30" cy="55" r="18" fill={`url(#${gradId})`} />
+        <circle cx="56" cy="40" r="24" fill={`url(#${gradId})`} fillOpacity="0.8" />
+        <circle cx="78" cy="58" r="14" fill={`url(#${gradId})`} fillOpacity="0.6" />
+      </g>
 
       {/* Brand text */}
       <text
