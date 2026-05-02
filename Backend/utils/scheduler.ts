@@ -198,42 +198,63 @@ export const processTaskReminders = async () => {
     const { User } = await import('../models/users');
     const { sendTaskReminderEmail } = await import('./mailer');
 
-    // Retrieve tasks due within the next 24 hours that haven't been reminded
+    // We evaluate tasks starting/ending within the next 5.5 days that aren't fully reminded
     const now = new Date();
-    const imminentWindow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const imminentWindow = new Date(now.getTime() + 5.5 * 24 * 60 * 60 * 1000);
 
     const upcomingTasks = await Task.find({
       status: { $in: ['todo', 'in-progress'] },
-      end_time: { $gte: now, $lte: imminentWindow },
-      reminderSent: { $ne: true },
-    }).limit(20); // Batch process
+      $or: [
+        { end_time: { $gte: now, $lte: imminentWindow } },
+        { start_time: { $gte: now, $lte: imminentWindow } }
+      ]
+    }).limit(50);
 
     if (upcomingTasks.length === 0) return;
 
-    console.log(`⏰ [TaskReminders] Found ${upcomingTasks.length} tasks ready for reminder triggers.`);
-
     for (const task of upcomingTasks) {
+      if (!task.end_time && !task.start_time) continue;
+
+      const targetDate = task.end_time || task.start_time;
+      const diffMs = targetDate.getTime() - now.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+      const levelsStr = (task as any).reminderLevelsSent || [];
+      let newLevel = null;
+
+      // 5-2-1 Logic Thresholds
+      if (diffDays <= 5.1 && diffDays > 2 && !levelsStr.includes('5d')) {
+        newLevel = '5d';
+      } else if (diffDays <= 2.1 && diffDays > 1 && !levelsStr.includes('2d')) {
+        newLevel = '2d';
+      } else if (diffDays <= 1.1 && diffDays > 0 && !levelsStr.includes('1d')) {
+        newLevel = '1d';
+      }
+
+      if (!newLevel) continue;
+
       try {
         const assignedUserId = task.assignedTo || task.user_id;
         const user = await User.findById(assignedUserId);
 
         if (user && user.email) {
-          // Send formatted email using customized template
+          const daysText = newLevel === '5d' ? '5 days' : newLevel === '2d' ? '2 days' : '1 day';
           await sendTaskReminderEmail(
             user.email,
             user.full_name || user.username || 'User',
-            task.title,
-            task.end_time,
+            `${task.title} (Starts in ${daysText})`,
+            targetDate,
             task.description
           );
 
-          // Mark task as processed so we don't spam
-          task.reminderSent = true;
+          (task as any).reminderLevelsSent = levelsStr;
+          (task as any).reminderLevelsSent.push(newLevel);
           await task.save();
-          console.log(`✅ [TaskReminders] Reminder sent for Task ${task._id} directly to ${user.email}`);
+          console.log(`✅ [TaskReminders] ${newLevel} email sent for Task ${task._id}`);
         } else {
-          // If the user has no registered email, log that we're skipping them
-          task.reminderSent = true; // Mark sent so we don't loop endlessly
+          // Prevent infinite loop if no email mapped
+          (task as any).reminderLevelsSent = levelsStr;
+          (task as any).reminderLevelsSent.push(newLevel);
           await task.save();
         }
       } catch (err) {

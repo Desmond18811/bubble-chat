@@ -288,7 +288,12 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
       },
     });
   } catch (err: any) {
-    res.status(500).json({ message: 'Avatar upload failed: ' + err.message });
+    console.error('Avatar Upload Exception: ', err);
+    res.status(500).json({ 
+      message: 'Avatar upload failed', 
+      error: err.message, 
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+    });
   }
 };
 

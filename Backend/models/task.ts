@@ -30,7 +30,7 @@ export interface ITask extends Document {
 
   // Snooze
   snoozedUntil?: Date;
-  reminderSent?: boolean;
+  reminderLevelsSent?: string[];
 
   createdAt: Date;
   updatedAt: Date;
@@ -58,7 +58,7 @@ const TaskSchema = new Schema<ITask>(
     isRecurring: { type: Boolean, default: false },
     recurrence: { type: String, enum: ['daily', 'weekly', 'monthly'] },
     snoozedUntil: { type: Date },
-    reminderSent: { type: Boolean, default: false },
+    reminderLevelsSent: { type: [String], default: [] },
   },
   { timestamps: true }
 );

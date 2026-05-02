@@ -344,8 +344,7 @@ export default function AidaPage() {
     const params = new URLSearchParams(window.location.search);
     const trigger = params.get("trigger");
     if (trigger === "briefing") handleBriefing();
-    else if (trigger === "finance") handleFinance();
-    else if (trigger === "flag_payments") handleAudit();
+    else if (trigger === "flag_payments") handleSend("Please run an audit on my recent payments and detect any anomalies.");
     window.history.replaceState({}, document.title, window.location.pathname);
   }, []);
 
@@ -395,30 +394,6 @@ export default function AidaPage() {
     } catch (err: any) {
       toast.error("Failed to get briefing: " + err.message);
       pushMessage("assistant", "Could not retrieve your briefing right now.");
-    } finally { setLoading(false); }
-  };
-
-  const handleFinance = async () => {
-    pushMessage("user", "What's my financial situation?");
-    setLoading(true);
-    try {
-      const res = await fetchAidaFinanceAdvice();
-      pushMessage("assistant", res.reply);
-    } catch (err: any) {
-      toast.error("Failed to get financial advice: " + err.message);
-      pushMessage("assistant", "Could not retrieve financial data right now.");
-    } finally { setLoading(false); }
-  };
-
-  const handleAudit = async () => {
-    pushMessage("user", "Please run an audit on my recent payments and detect any anomalies.");
-    setLoading(true);
-    try {
-      const res = await aidaFlagPayments();
-      const flagsText = res.flags.map((f: any) => `- [${f.severity.toUpperCase()}] ${f.message}`).join("\n");
-      pushMessage("assistant", `Audit complete. Here is what I found:\n\n${flagsText}`);
-    } catch (err: any) {
-      toast.error("Audit failed: " + err.message);
     } finally { setLoading(false); }
   };
 
@@ -489,10 +464,8 @@ export default function AidaPage() {
 
           <div className="flex items-center gap-2">
             {[
-              { label: "Briefing", icon: "wb_sunny", action: handleBriefing },
-              { label: "Finance", icon: "account_balance", action: handleFinance },
-              { label: "Transcript", icon: "mic", action: () => setShowTranscript(true) },
-              { label: "Knowledge", icon: "library_books", action: () => setShowKnowledge(true) },
+              { label: "Check Calendar", icon: "calendar_month", action: () => handleSend("What's on my calendar today?") },
+              { label: "Knowledge Docs", icon: "library_books", action: () => setShowKnowledge(true) },
             ].map(({ label, icon, action }) => (
               <button
                 key={label}
@@ -846,6 +819,6 @@ export default function AidaPage() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,231,146,0.1); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,231,146,0.2); }
       `}</style>
-    </div>
+    </div >
   );
 }

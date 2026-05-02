@@ -15,6 +15,7 @@ import {
   getDaysInMonth,
   getDay,
   isToday,
+  subDays,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,14 +67,8 @@ function MSIcon({
   );
 }
 
-/**
- * Format hour to 12-hour AM/PM string
- */
 function formatHour(h: number): string {
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
-  return `${h - 12} PM`;
+  return `${h.toString().padStart(2, "0")}:00`;
 }
 
 function TopBar({
@@ -326,8 +321,8 @@ export default function CalendarPage() {
   const [newTaskDesc, setNewTaskDesc] = useState("");
   const [newTaskHour, setNewTaskHour] = useState("09");
 
-  const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => i + 7); // 7 AM → 9 PM
-  const PIXELS_PER_HOUR = 96;
+  const TIME_SLOTS = Array.from({ length: 24 }, (_, i) => i); // 00:00 → 23:00
+  const PIXELS_PER_HOUR = 80;
 
   const [templates, setTemplates] = useState<any[]>([]);
 
@@ -551,63 +546,32 @@ export default function CalendarPage() {
 
             <div className="flex gap-2">
               <button
-                className="p-2 rounded-xl transition-colors border flex items-center justify-center hover:scale-105"
-                title="Previous Month"
-                onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                style={{
-                  background: "var(--th-surface)",
-                  borderColor: "var(--th-border)",
-                  color: "var(--th-secondary)",
-                }}
+                className="px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase transition-colors border hover:scale-105 flex items-center gap-1"
+                onClick={() => setCurrentDate(subDays(currentDate, 1))}
+                style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }}
               >
-                <MSIcon icon="keyboard_double_arrow_left" />
+                <MSIcon icon="chevron_left" style={{ fontSize: 14 }} /> Prev Day
               </button>
               <button
-                className="p-2 rounded-xl transition-colors border flex items-center justify-center hover:scale-105"
-                title="Previous Week"
-                onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
-                style={{
-                  background: "var(--th-surface)",
-                  borderColor: "var(--th-border)",
-                  color: "var(--th-secondary)",
-                }}
-              >
-                <MSIcon icon="chevron_left" />
-              </button>
-              <button
-                className="px-4 py-2 rounded-xl font-bold text-xs uppercase transition-colors border hover:scale-105"
+                className="px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase transition-colors border hover:scale-105 flex items-center gap-1"
                 onClick={() => setCurrentDate(new Date())}
-                style={{
-                  background: "var(--th-surface)",
-                  borderColor: "var(--th-border)",
-                  color: "var(--th-accent)",
-                }}
+                style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-accent)" }}
               >
                 Today
               </button>
               <button
-                className="p-2 rounded-xl transition-colors border flex items-center justify-center hover:scale-105"
-                title="Next Week"
-                onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
-                style={{
-                  background: "var(--th-surface)",
-                  borderColor: "var(--th-border)",
-                  color: "var(--th-secondary)",
-                }}
+                className="px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase transition-colors border hover:scale-105 flex items-center gap-1"
+                onClick={() => setCurrentDate(addDays(currentDate, 1))}
+                style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }}
               >
-                <MSIcon icon="chevron_right" />
+                Next Day <MSIcon icon="chevron_right" style={{ fontSize: 14 }} />
               </button>
               <button
-                className="p-2 rounded-xl transition-colors border flex items-center justify-center hover:scale-105"
-                title="Next Month"
-                onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                style={{
-                  background: "var(--th-surface)",
-                  borderColor: "var(--th-border)",
-                  color: "var(--th-secondary)",
-                }}
+                className="px-3 py-1.5 ml-2 rounded-xl font-bold text-[10px] uppercase transition-colors border hover:scale-105 flex items-center gap-1"
+                onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
+                style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }}
               >
-                <MSIcon icon="keyboard_double_arrow_right" />
+                Next Week <MSIcon icon="keyboard_double_arrow_right" style={{ fontSize: 14 }} />
               </button>
             </div>
           </div>
@@ -632,29 +596,33 @@ export default function CalendarPage() {
               </span>
             </div>
             {weekDays.map((day) => {
-              const today = isSameDay(day, new Date());
+              const isSelected = isSameDay(day, currentDate);
+              const isTodayDate = isSameDay(day, new Date());
               return (
                 <div
                   key={day.toISOString()}
-                  className="p-4 flex flex-col items-center transition-colors"
+                  className="p-4 flex flex-col items-center transition-colors cursor-pointer hover:bg-white/5"
+                  onClick={() => setCurrentDate(day)}
                   style={{
-                    background: today
+                    background: isSelected
+                      ? "color-mix(in srgb, var(--th-accent) 15%, transparent)"
+                      : isTodayDate
                       ? "color-mix(in srgb, var(--th-accent) 5%, transparent)"
                       : "transparent",
                   }}
                 >
                   <span
                     className="text-[10px] uppercase font-semibold font-mono transition-colors"
-                    style={{ color: today ? "var(--th-accent)" : "var(--th-secondary)" }}
+                    style={{ color: isSelected || isTodayDate ? "var(--th-accent)" : "var(--th-secondary)" }}
                   >
                     {format(day, "eee")}
                   </span>
                   <button
-                    onClick={() => setCurrentDate(day)}
                     className="text-xl font-bold mt-0.5 transition-all hover:scale-110 w-9 h-9 rounded-full flex items-center justify-center"
                     style={{
-                      color: today ? "var(--th-accent-text)" : "var(--th-text)",
-                      background: today ? "var(--th-accent)" : "transparent",
+                      color: isSelected ? "var(--th-accent-text)" : "var(--th-text)",
+                      background: isSelected ? "var(--th-accent)" : "transparent",
+                      border: isTodayDate && !isSelected ? "1px solid var(--th-accent)" : "none",
                     }}
                   >
                     {format(day, "d")}
@@ -678,8 +646,9 @@ export default function CalendarPage() {
                 {TIME_SLOTS.map((h) => (
                   <div
                     key={h}
-                    className="h-24 border-b flex items-start justify-center pt-2 transition-colors"
+                    className="border-b flex items-start justify-center pt-2 transition-colors"
                     style={{
+                      height: PIXELS_PER_HOUR,
                       borderColor: "color-mix(in srgb, var(--th-border) 20%, transparent)",
                     }}
                   >
@@ -708,8 +677,9 @@ export default function CalendarPage() {
                     {TIME_SLOTS.map((h) => (
                       <div
                         key={`tick-${h}`}
-                        className="h-24 border-b pointer-events-none transition-colors"
+                        className="border-b pointer-events-none transition-colors"
                         style={{
+                          height: PIXELS_PER_HOUR,
                           borderColor: "color-mix(in srgb, var(--th-border) 10%, transparent)",
                         }}
                       />
