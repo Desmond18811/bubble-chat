@@ -186,6 +186,10 @@ const buildAidaSystemPrompt = (
   pageContext?: string
 ): string => `You are Aida, the intelligent AI assistant of the Bubble organizational platform. You are powered by DeepSeek AI.
 
+CRITICAL TEMPORAL ANCHOR (YOUR SYSTEM CLOCK):
+- Today's Exact Date and Time: ${new Date().toString()}
+- You must always calculate relativity (like "tomorrow" or "today" or "next week" or "this Tuesday") strictly using this timestamp. Do not hallucinate dates!
+
 IDENTITY OF THE USER YOU ARE HELPING:
 - Name: ${userName}
 - Role: ${userRole}
@@ -216,7 +220,7 @@ YOUR CAPABILITIES:
 9. Support escalation — prepare messages to management when users need help
 
 INLINE ACTION BLOCKS (embed in your reply only when performing an action):
-- Schedule task: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"ISO datetime or natural language","description":"..."}]
+- Schedule task: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"YYYY-MM-DDTHH:mm:ss","description":"..."}]
 - Find file: [ACTION: {"type":"FIND_FILE","payload":"search keywords"}]
 - Open Calendar: [ACTION: {"type":"OPEN_CALENDAR"}]
 - Generate Call Link (solo): [ACTION: {"type":"SCHEDULE_CALL","callType":"video"}]
@@ -382,9 +386,12 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
         }
 
         if (actionData.type === 'SCHEDULE_TASK') {
-          const start = actionData.startTime ? new Date(actionData.startTime) : (() => {
-            const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d;
-          })();
+          let start = actionData.startTime ? new Date(actionData.startTime) : new Date();
+          if (isNaN(start.getTime())) {
+            console.warn(`[Aida] Invalid date parsed: ${actionData.startTime}. Fallback to Now+1hr.`);
+            start = new Date();
+            start.setHours(start.getHours() + 1, 0, 0, 0);
+          }
           const end = new Date(start.getTime() + 60 * 60 * 1000);
           await Task.create({
             title: actionData.title,

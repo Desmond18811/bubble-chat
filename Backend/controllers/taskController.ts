@@ -14,14 +14,14 @@ export const getTasks = async (req: Request, res: Response): Promise<any> => {
       $or: [{ user_id: userId }, { assignedTo: userId }],
     };
 
-    if (type)       filter.type   = type;
-    if (status)     filter.status = status;
-    if (source)     filter.source = source;
+    if (type) filter.type = type;
+    if (status) filter.status = status;
+    if (source) filter.source = source;
     if (assignedTo) filter.assignedTo = assignedTo;
     if (from || to) {
       filter.start_time = {};
       if (from) filter.start_time.$gte = new Date(from as string);
-      if (to)   filter.start_time.$lte = new Date(to as string);
+      if (to) filter.start_time.$lte = new Date(to as string);
     }
 
     const tasks = await Task.find(filter)
@@ -48,17 +48,17 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
     } = req.body;
 
     const task = await Task.create({
-      user_id:    userId,
+      user_id: userId,
       assignedTo: assignedTo || userId,
-      type:       type       || 'task',
+      type: type || 'task',
       title,
       description,
       start_time,
       end_time,
-      status:     status   || 'todo',
-      priority:   priority || 'medium',
-      color:      color    || '#6366f1',
-      source:     source   || 'manual',
+      status: status || 'todo',
+      priority: priority || 'medium',
+      color: color || '#6366f1',
+      source: source || 'manual',
       meetingRef,
       isRecurring: isRecurring || false,
       recurrence,
@@ -67,21 +67,21 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
     // Notify the assigned person if different from creator
     if (assignedTo && String(assignedTo) !== String(userId)) {
       await createNotification({
-        recipient:   assignedTo,
-        sender:      userId,
-        type:        'task_assigned',
-        title:       'New task assigned to you',
-        body:        task.title,
-        entityId:    String(task._id),
-        entityType:  'Task',
+        recipient: assignedTo,
+        sender: userId,
+        type: 'task_assigned',
+        title: 'New task assigned to you',
+        body: task.title,
+        entityId: String(task._id),
+        entityType: 'Task',
       });
     }
 
     await logActivity({
-      actor:       userId,
-      action:      'task_created',
-      entityId:    String(task._id),
-      entityType:  'Task',
+      actor: userId,
+      action: 'task_created',
+      entityId: String(task._id),
+      entityType: 'Task',
       entityLabel: task.title,
     });
 
@@ -110,11 +110,11 @@ export const updateTask = async (req: Request, res: Response): Promise<any> => {
 
     if (updateFields.status === 'done') {
       await logActivity({
-        actor:      userId,
-        action:     'task_completed',
-        entityId:   String(task._id),
+        actor: userId,
+        action: 'task_completed',
+        entityId: String(task._id),
         entityType: 'Task',
-        entityLabel:task.title,
+        entityLabel: task.title,
       });
     }
 
@@ -147,6 +147,28 @@ export const snoozeTask = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
+// ─── DELETE /api/v1/tasks/all — Delete all tasks ──────────────────────────────
+export const clearAllTasks = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    await Task.deleteMany({ user_id: userId });
+
+    await logActivity({
+      actor: userId,
+      action: 'task_deleted',
+      entityId: String(userId),
+      entityType: 'User',
+      entityLabel: 'Cleared all scheduled tasks',
+    });
+
+    res.status(200).json({ message: 'All tasks deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to clear tasks', error: err.message });
+  }
+};
+
 // ─── DELETE /api/v1/tasks/:id — Delete a task ────────────────────────────────
 export const deleteTask = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -157,11 +179,11 @@ export const deleteTask = async (req: Request, res: Response): Promise<any> => {
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
     await logActivity({
-      actor:      userId,
-      action:     'task_deleted',
-      entityId:   String(task._id),
+      actor: userId,
+      action: 'task_deleted',
+      entityId: String(task._id),
       entityType: 'Task',
-      entityLabel:task.title,
+      entityLabel: task.title,
     });
 
     res.status(200).json({ message: 'Task deleted' });

@@ -428,6 +428,28 @@ export default function CalendarPage() {
     } catch {}
   };
 
+  const handleClearAllTasks = async () => {
+    if (!window.confirm("Are you sure you want to clear absolutely ALL your schedules? This action cannot be undone.")) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"}/tasks/all`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.ok) {
+        setEvents([]);
+        toast.success("All schedules have been wiped clean.");
+      } else {
+        toast.error("Failed to execute clearance protocol.");
+      }
+    } catch {
+      toast.error("Network timeout while attempting to clear schedules.");
+    }
+  };
+
   /**
    * Get Briefing — opens an inline modal, does NOT navigate away
    */
@@ -544,7 +566,15 @@ export default function CalendarPage() {
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <button
+                className="px-3 py-1.5 mr-2 rounded-xl font-bold text-[10px] uppercase transition-colors border hover:scale-105 flex items-center gap-1"
+                onClick={handleClearAllTasks}
+                style={{ background: "color-mix(in srgb, red 10%, transparent)", borderColor: "red", color: "#ff6b6b" }}
+                title="Wipe all schedules directly"
+              >
+                <MSIcon icon="delete_sweep" style={{ fontSize: 14 }} /> Clear All
+              </button>
               <button
                 className="px-3 py-1.5 rounded-xl font-bold text-[10px] uppercase transition-colors border hover:scale-105 flex items-center gap-1"
                 onClick={() => setCurrentDate(subDays(currentDate, 1))}

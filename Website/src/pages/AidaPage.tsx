@@ -464,6 +464,7 @@ export default function AidaPage() {
 
           <div className="flex items-center gap-2">
             {[
+              { label: "Briefing", icon: "wb_sunny", action: handleBriefing },
               { label: "Check Calendar", icon: "calendar_month", action: () => handleSend("What's on my calendar today?") },
               { label: "Knowledge Docs", icon: "library_books", action: () => setShowKnowledge(true) },
             ].map(({ label, icon, action }) => (
@@ -563,11 +564,14 @@ export default function AidaPage() {
                       )}
 
                       {action.type === "SCHEDULE_TASK" && (
-                        <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
+                        <div
+                          onClick={() => window.location.href = '/calendar'}
+                          className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3 cursor-pointer hover:bg-black/40 transition-all hover:border-[#ffe792]/40"
+                        >
                           <Icon name="event_available" style={{ color: "#ffe792" }} />
                           <div>
                             <p className="text-sm font-bold text-white">{action.title}</p>
-                            <p className="text-xs text-white/50">Scheduled to Calendar</p>
+                            <p className="text-xs text-white/50">Scheduled to Calendar (Click to view)</p>
                           </div>
                         </div>
                       )}
