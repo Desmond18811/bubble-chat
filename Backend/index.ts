@@ -271,7 +271,7 @@ const server = http.createServer(app);
 // server object itself — it doesn't need the server to be listening yet.
 initSocket(server);
 
-const mongoURI = process.env.MONGODB_URI;
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble-chat';
 
 mongoose.connect(mongoURI, { family: 4 })
   .then(async () => {
