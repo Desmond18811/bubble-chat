@@ -11,7 +11,7 @@ import Network, { NetworkPost } from '../models/network';
 import { Task } from '../models/task';
 import { Transaction } from '../models/transaction';
 import { Goal } from '../models/goal';
-import FeedPost, { Comment as FeedComment } from '../models/feed';
+import Post from '../models/post';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble-chat';
 
@@ -28,8 +28,7 @@ const seed = async () => {
     await Task.deleteMany({});
     await Transaction.deleteMany({});
     await Goal.deleteMany({});
-    await FeedPost.deleteMany({});
-    await FeedComment.deleteMany({});
+    await Post.deleteMany({});
 
     // 2. Create Users
     console.log('Creating users...');
@@ -66,10 +65,10 @@ const seed = async () => {
     });
 
     // 3. Setup Contacts and Social Graph
-    alpha.contacts.push(beta._id, gamma._id);
-    alpha.following.push(beta._id);
-    beta.followers.push(alpha._id);
-    beta.contacts.push(alpha._id);
+    alpha.contacts?.push(beta._id as any, gamma._id as any);
+    alpha.following?.push(beta._id as any);
+    beta.followers?.push(alpha._id as any);
+    beta.contacts?.push(alpha._id as any);
     await alpha.save();
     await beta.save();
 
@@ -168,27 +167,29 @@ const seed = async () => {
     await Task.create({
       user_id: alpha._id,
       title: "Review Figma mockups",
-      dueDate: new Date(),
-      status: "pending",
+      start_time: new Date(),
+      end_time: new Date(Date.now() + 3600000),
+      status: "todo",
       priority: "high"
     });
 
     await Task.create({
       user_id: alpha._id,
       title: "Setup Stripe Webhooks",
-      dueDate: new Date(Date.now() + 86400000), // Tomorrow
-      status: "pending",
+      start_time: new Date(Date.now() + 86400000), // Tomorrow
+      end_time: new Date(Date.now() + 86400000 + 3600000),
+      status: "todo",
       priority: "medium"
     });
 
     // 8. Add Feed Posts
-    await FeedPost.create({
+    await Post.create({
       author: alpha._id,
       content: "Just finalized the new Sets theme engine! 🌌 What does everyone think?",
       likes: [beta._id],
     });
 
-    await FeedPost.create({
+    await Post.create({
       author: gamma._id,
       content: "Studying WebGL shaders today. The mathematics is beautiful.",
       likes: [alpha._id, beta._id],

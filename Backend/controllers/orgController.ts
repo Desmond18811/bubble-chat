@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { OrgDocument } from '../models/orgDocument';
 import { chunkText, generateEmbedding } from '../utils/embeddings';
 import { upsertVectors, deleteVectors, hasPinecone } from '../utils/pinecone';
-import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
 
 /**
  * POST /api/v1/org/documents
@@ -26,7 +26,7 @@ export const ingestDocument = async (req: Request, res: Response): Promise<void>
             for (const chunk of chunks) {
                 const embedding = await generateEmbedding(chunk);
                 if (embedding.length > 0) {
-                    const id = `org-${uuidv4()}`;
+                    const id = `org-${crypto.randomUUID()}`;
                     pineconeIds.push(id);
                     vectors.push({
                         id,
