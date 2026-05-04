@@ -24,10 +24,12 @@ FROM nginx:alpine
 # Copy built files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config if you have one, 
-# otherwise default is fine for simple SPA routing if we add it.
-# For now, let's just use the default.
+# Copy our custom nginx config template
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
-EXPOSE 80
+# Railway injects $PORT at runtime — envsubst replaces ${PORT} in the template
+# nginx docker image automatically processes /etc/nginx/templates/ via envsubst
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
+
