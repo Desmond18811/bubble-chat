@@ -2,7 +2,7 @@
  * Centralized API utility for interacting with the Bubble Chat Backend.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token');

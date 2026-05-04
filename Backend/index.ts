@@ -43,7 +43,12 @@ const PORT = process.env.PORT || 3000;
 // Falls back to wildcard in dev if FRONTEND_URL is not set.
 const allowedOrigins = process.env.FRONTEND_URL
   ? [process.env.FRONTEND_URL]
-  : ['http://localhost:8080', 'http://localhost:3000'];
+  : [
+    'http://localhost:8080',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://bubble-frontend-production.up.railway.app', // production fallback
+  ];
 
 app.use(cors({
   origin: (origin, callback) => {
