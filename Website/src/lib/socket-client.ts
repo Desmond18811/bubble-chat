@@ -1,8 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 
 // Strip /api/v1 (or /api) to get the bare server root
-const raw = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-const SOCKET_URL = raw.replace(/\/api(\/v\d+)?$/, '').replace(/\/$/, '') || 'http://localhost:3000';
+const raw = import.meta.env.VITE_API_URL
+const SOCKET_URL = raw.replace(/\/api(\/v\d+)?$/, '').replace(/\/$/, '')
 
 let socket: Socket | null = null;
 
