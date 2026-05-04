@@ -258,13 +258,14 @@ app.use('/api/v1/templates', templateRoutes);
 app.use('/api/v1/activity', activityRoutes);
 app.use('/api/v1/org', orgRoutes);
 
-
-
-
-
 // Database Connection
-const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble-chat';
-
+const mongoURI = process.env.MONGODB_URI;
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'Welcome to the Bubble Chat Backend API! ✨',
+    status: 'online'
+  });
+});
 const server = http.createServer(app);
 
 mongoose.connect(mongoURI, { family: 4 })
