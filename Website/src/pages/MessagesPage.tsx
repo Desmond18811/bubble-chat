@@ -1424,6 +1424,7 @@ export default function BubbleMessages() {
     (async () => {
       try {
         setSessionSummary(null);
+        setMessages([]); // Clear previous messages to prevent UI bleeding
         const res = await api.fetchMessages(activeChat.id || activeChat._id);
         const msgs = res.messages || [];
         const mediaMsgs = msgs.filter((m: any) => m.mediaUrl || m.media_url);
@@ -1460,7 +1461,7 @@ export default function BubbleMessages() {
           setMessages(prev => {
             let updated = prev.filter(m => m._id !== tempId); // Remove optimistic
             if (res.userMessage) updated.push(res.userMessage);
-            if (res.botMessage) updated.push({ ...res.botMessage, action: res.action });
+            if (res.botMessage) updated.push({ ...res.botMessage, actions: res.actions });
             return updated;
           });
           return;

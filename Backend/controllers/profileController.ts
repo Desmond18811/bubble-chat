@@ -264,9 +264,9 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
     return;
   }
 
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 50 * 1024 * 1024; // 50MB
   if (req.file.size > maxSize) {
-    res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
+    res.status(400).json({ message: 'File too large. Maximum size is 50MB.' });
     return;
   }
 

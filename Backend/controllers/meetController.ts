@@ -40,6 +40,10 @@ export const clearCallLogs = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id;
     await CallLog.deleteMany({ user: userId });
+
+    const { Meeting } = require('../models/meeting');
+    await Meeting.deleteMany({ host: userId });
+
     res.json({ message: 'Call logs cleared successfully.' });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -54,7 +58,7 @@ export const deleteCallLog = async (req: Request, res: Response) => {
 
     // Try deleting from CallLog
     const logResult = await CallLog.deleteOne({ _id: id, user: userId });
-    
+
     // Also try deleting from Meeting if it's a meeting id
     const { Meeting } = require('../models/meeting');
     const meetResult = await Meeting.deleteOne({ _id: id, host: userId });

@@ -71,7 +71,7 @@ export const getContacts = async (req: AuthRequest, res: Response): Promise<void
     : {};
 
   try {
-    const users = await User.find({ ...keyword, _id: { $ne: req.user._id } })
+    const users = await User.find({ ...keyword, _id: { $ne: req.user._id }, is_bot: { $ne: true } })
       .select('-password -refreshToken -privateKey -zegoToken -otp -otpExpires -passwordResetToken')
       .limit(30);
 
@@ -300,6 +300,7 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
     const query = (req.query.search as string) || '';
     const users = await User.find({
       _id: { $ne: req.user?._id },
+      is_bot: { $ne: true },
       $or: [
         { full_name: { $regex: query, $options: 'i' } },
         { username: { $regex: query, $options: 'i' } },
@@ -326,7 +327,7 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
  */
 export const getOnlineScannedUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const users = await User.find({ isOnline: true, _id: { $ne: req.user?._id } })
+    const users = await User.find({ isOnline: true, is_bot: { $ne: true }, _id: { $ne: req.user?._id } })
       .select('full_name username avatar uniqueTag isOnline')
       .limit(50);
     res.status(200).json({ message: 'Online users fetched.', users: users.map(formatUser) });
@@ -405,7 +406,7 @@ export const getSuggestions = async (req: AuthRequest, res: Response): Promise<v
     const alreadyFollowing = ((currentUser as any)?.following || []).map((id: any) => id.toString());
     alreadyFollowing.push(req.user._id.toString());
 
-    const users = await User.find({ _id: { $nin: alreadyFollowing } })
+    const users = await User.find({ _id: { $nin: alreadyFollowing }, is_bot: { $ne: true } })
       .select('-password -refreshToken -privateKey -zegoToken -otp -otpExpires -passwordResetToken')
       .limit(8);
 
