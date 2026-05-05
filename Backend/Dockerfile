@@ -19,8 +19,6 @@ COPY . .
 # Build the TypeScript code
 RUN pnpm run build
 
-# Expose the API port
-EXPOSE 3000
-
+# Railway injects PORT at runtime — do not hardcode EXPOSE
 # Start the application using the compiled JavaScript
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]

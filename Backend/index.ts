@@ -39,27 +39,41 @@ const app = express();
 // FIX 1: Railway injects PORT dynamically — never hardcode this
 const PORT = process.env.PORT || 3000;
 
-// FIX 2: Restrict CORS to your actual frontend URL via env var.
-// Falls back to wildcard in dev if FRONTEND_URL is not set.
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL]
+// CORS: always allow both local dev and all production Railway deployments.
+// Set CORS_ORIGINS in Railway to a comma-separated list to override.
+const PRODUCTION_ORIGINS = [
+  'https://bubble-frontend-production.up.railway.app',
+];
+
+const allowedOrigins: string[] = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
   : [
     'http://localhost:8080',
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://bubble-frontend-production.up.railway.app', // production fallback
+    ...PRODUCTION_ORIGINS,
   ];
+
+// Also honour the legacy FRONTEND_URL var if set
+if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+console.log('✅ CORS allowed origins:', allowedOrigins);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Postman)
+    // Allow requests with no origin (mobile apps, curl, Postman, Railway health checks)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+    console.warn(`🚫 CORS blocked for origin: ${origin}`);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());

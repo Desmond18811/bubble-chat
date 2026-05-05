@@ -5,6 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FilterTab = "All" | "Income" | "Expenses";
@@ -58,7 +60,7 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
   const handleDeposit = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:3000/api/v1/payment/deposit", {
+      const res = await fetch(`${BASE_URL}/payment/deposit`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
         body: JSON.stringify({ amount: 500, source: "stripe_deposit" })
@@ -80,7 +82,7 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
   const handleWithdraw = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:3000/api/v1/payment/withdraw", {
+      const res = await fetch(`${BASE_URL}/payment/withdraw`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("access_token")}` },
         body: JSON.stringify({ amount: 250, destination_account: "acct_1Ou" })
@@ -368,7 +370,7 @@ export default function PaymentsDashboard() {
 
   const fetchTx = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/v1/payment/transactions", {
+      const res = await fetch(`${BASE_URL}/payment/transactions`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
       });
       const json = await res.json();
