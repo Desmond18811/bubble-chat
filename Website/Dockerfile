@@ -1,6 +1,15 @@
 # Stage 1: Build stage
 FROM node:20-alpine AS build
 
+# Pass required build arguments for Vite
+ARG VITE_API_URL
+ARG VITE_ZEGO_APP_ID
+ARG VITE_ZEGO_SERVER_SECRET
+
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_ZEGO_APP_ID=${VITE_ZEGO_APP_ID}
+ENV VITE_ZEGO_SERVER_SECRET=${VITE_ZEGO_SERVER_SECRET}
+
 # Install pnpm
 RUN npm install -g pnpm
 

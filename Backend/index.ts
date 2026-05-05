@@ -46,7 +46,7 @@ const PRODUCTION_ORIGINS = [
 ];
 
 const allowedOrigins: string[] = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim().replace(/^FRONTEND_URL=/, ''))
   : [
     'http://localhost:8080',
     'http://localhost:5173',
@@ -55,8 +55,11 @@ const allowedOrigins: string[] = process.env.CORS_ORIGINS
   ];
 
 // Also honour the legacy FRONTEND_URL var if set
-if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+if (process.env.FRONTEND_URL) {
+  const fUrl = process.env.FRONTEND_URL.replace(/^FRONTEND_URL=/, '').trim();
+  if (fUrl && !allowedOrigins.includes(fUrl)) {
+    allowedOrigins.push(fUrl);
+  }
 }
 
 console.log('✅ CORS allowed origins:', allowedOrigins);

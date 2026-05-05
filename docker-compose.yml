@@ -41,15 +41,16 @@ services:
     build:
       context: ./Website
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://bubble-backend-production-96a0.up.railway.app/api/v1}
+        - VITE_ZEGO_APP_ID=${VITE_ZEGO_APP_ID:-}
+        - VITE_ZEGO_SERVER_SECRET=${VITE_ZEGO_SERVER_SECRET:-}
     container_name: bubble-website
     restart: always
     ports:
       - "8080:80"
     depends_on:
       - backend
-    # Note: VITE environment variables are baked into the build
-    # If using build-time args, we'd add them here.
-    # For now, it assumes Website/.env is present during build.
 
 volumes:
   mongodb_data:
