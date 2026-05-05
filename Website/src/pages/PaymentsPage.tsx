@@ -5,7 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

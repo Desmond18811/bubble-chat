@@ -14,7 +14,7 @@ import { useTheme, THEMES, ThemeId } from "@/lib/ThemeContext";
 import { uploadAvatar, getMyFollowers, getMyFollowing, followUser } from "@/api";
 import * as api from "@/api";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

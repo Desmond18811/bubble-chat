@@ -44,7 +44,7 @@ export function AvatarInitials({ name, url, className }: AvatarInitialsProps) {
 
   let finalUrl = url;
   if (finalUrl && finalUrl.startsWith('/') && !finalUrl.startsWith('//')) {
-    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1').replace(/\/api\/v1\/?$/, '');
+    const baseUrl = ((import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1').replace(/\/api\/v1\/?$/, '');
     finalUrl = `${baseUrl}${finalUrl}`;
   }
 

@@ -735,7 +735,7 @@ export default function AidaPage() {
                           <button
                             onClick={async () => {
                               try {
-                                const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+                                const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
                                 const blob = new Blob([msg.template], { type: "text/plain" });
                                 const formData = new FormData();
                                 formData.append("file", blob, "Template.txt");

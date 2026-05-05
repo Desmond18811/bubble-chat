@@ -43,7 +43,7 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
-    const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+    const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
     fetch(`${BASE}/profile/me`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
     })

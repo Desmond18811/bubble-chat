@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 
 // Strip /api/v1 (or /api) to get the bare server root
 const raw: string =
-  import.meta.env.VITE_API_URL ||
+  (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) ||
   'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
 const SOCKET_URL = raw.replace(/\/api(\/v\d+)?$/, '').replace(/\/$/, '')

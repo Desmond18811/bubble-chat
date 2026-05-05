@@ -331,7 +331,7 @@ export default function CalendarPage() {
       setLoading(true);
       const token = localStorage.getItem("access_token");
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"}/tasks`,
+        `${(import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1"}/tasks`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await res.json();
@@ -365,7 +365,7 @@ export default function CalendarPage() {
 
       const token = localStorage.getItem("access_token");
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"}/tasks`,
+        `${(import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1"}/tasks`,
         {
           method: "POST",
           headers: {
@@ -399,7 +399,7 @@ export default function CalendarPage() {
       const nextStatus = currentStatus === "done" ? "todo" : "done";
       const token = localStorage.getItem("access_token");
       await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"}/tasks/${id}`,
+        `${(import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1"}/tasks/${id}`,
         {
           method: "PUT",
           headers: {
@@ -417,7 +417,7 @@ export default function CalendarPage() {
     try {
       const token = localStorage.getItem("access_token");
       await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"}/tasks/${id}`,
+        `${(import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1"}/tasks/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -433,7 +433,7 @@ export default function CalendarPage() {
     try {
       const token = localStorage.getItem("access_token");
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1"}/tasks/all`,
+        `${(import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1"}/tasks/all`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

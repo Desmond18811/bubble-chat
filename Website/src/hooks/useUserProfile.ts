@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
 
 // Module-level cache so multiple components share one fetch result per session
 let cachedProfile: any = null;

@@ -171,7 +171,7 @@ export default function PageHeader({ title, subtitle, icon, children }: PageHead
     const [notifOpen, setNotifOpen] = useState(false);
 
     useEffect(() => {
-        const BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+        const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
         // Load unread count only
         fetch(`${BASE}/notifications/unread-count`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },

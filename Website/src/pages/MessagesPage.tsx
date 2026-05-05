@@ -20,7 +20,7 @@ import { generateKeyPair, exportPrivateKey, exportPublicKey } from "@/lib/crypto
 import { useNavigate } from "react-router-dom";
 
 /* ─── Module-level secure media URL proxy helper ──────────────────────────── */
-const _BASE_API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+const _BASE_API = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1';
 const getSecureMediaUrl = (url?: string | null, proxyType: 'message' | 'story' = 'message'): string | null => {
   if (!url) return null;
   if (url.includes('filebase.com')) {
