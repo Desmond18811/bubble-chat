@@ -2,6 +2,11 @@ import { io, Socket } from 'socket.io-client';
 
 // Strip /api/v1 (or /api) to get the bare server root
 const raw = import.meta.env.VITE_API_URL
+
+if (!raw) {
+  throw new Error('❌ VITE_API_URL is not defined. Add it to your Railway frontend environment variables.')
+}
+
 const SOCKET_URL = raw.replace(/\/api(\/v\d+)?$/, '').replace(/\/$/, '')
 
 let socket: Socket | null = null;
