@@ -1,5 +1,10 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+// Railway outbound IPv6 SMTP is blocked; force IPv4 resolution natively
+dns.setDefaultResultOrder('ipv4first');
+
 dotenv.config();
 
 // ──────────────────────────────────────────────────────
