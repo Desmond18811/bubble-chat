@@ -21,6 +21,7 @@ export const initiateSocket = (token: string) => {
     auth: { token },
     reconnectionAttempts: 5,
     reconnectionDelay: 2000,
+    withCredentials: true,
   });
 
   socket.on('connect', () => {
