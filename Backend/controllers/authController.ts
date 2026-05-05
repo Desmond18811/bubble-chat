@@ -116,7 +116,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Send OTP via email
     if (email) {
-      await sendOTPEmail(email, full_name || 'User', otp);
+      try {
+        await sendOTPEmail(email, full_name || 'User', otp);
+      } catch (emailErr: any) {
+        console.warn(`⚠️ Could not send OTP email to ${email}:`, emailErr.message);
+        console.log(`[DEV/TESTING] OTP for ${email} is: ${otp}`);
+      }
     }
 
     // No tokens issued for unverified users
@@ -235,7 +240,12 @@ export const resendOTP = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (user.email) {
-      await sendOTPEmail(user.email, user.full_name || 'User', otp);
+      try {
+        await sendOTPEmail(user.email, user.full_name || 'User', otp);
+      } catch (emailErr: any) {
+        console.warn(`⚠️ Could not send OTP email to ${user.email}:`, emailErr.message);
+        console.log(`[DEV/TESTING] OTP for ${user.email} is: ${otp}`);
+      }
     }
 
     res.status(200).json({
@@ -283,7 +293,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       // Re-send OTP and prompt them to verify
       const otp = generateOTP();
       const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-      
+
       await Otp.create({
         userId: user._id,
         otp,
@@ -291,7 +301,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         expiresAt: otpExpires,
       });
 
-      if (user.email) await sendOTPEmail(user.email, user.full_name || 'User', otp);
+      if (user.email) {
+        try {
+          await sendOTPEmail(user.email, user.full_name || 'User', otp);
+        } catch (emailErr: any) {
+          console.warn(`⚠️ Could not send OTP email to ${user.email}:`, emailErr.message);
+          console.log(`[DEV/TESTING] OTP for ${user.email} is: ${otp}`);
+        }
+      }
 
       res.status(200).json({
         message: 'Account is not verified. A new OTP has been sent to your email.',
@@ -393,7 +410,12 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       expiresAt: otpExpires,
     });
 
-    await sendPasswordResetEmail(user.email!, user.full_name || 'User', otp);
+    try {
+      await sendPasswordResetEmail(user.email!, user.full_name || 'User', otp);
+    } catch (emailErr: any) {
+      console.warn(`⚠️ Could not send password reset email to ${user.email}:`, emailErr.message);
+      console.log(`[DEV/TESTING] Reset OTP for ${user.email} is: ${otp}`);
+    }
 
     res.status(200).json({
       message: 'If an account with that email exists, a verification code has been sent.',
@@ -591,19 +613,19 @@ export const setup2FA = async (req: any, res: Response): Promise<void> => {
       res.status(401).json({ message: 'Unauthorized.' });
       return;
     }
-    
+
     // In a real application, you would use 'otplib' to generate a secret
     // and 'qrcode' to generate a data URL. 
     // Here we return a mock data URL since package manager blocks our direct usage.
-    
+
     const mockQrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=otpauth://totp/Bubble:User?secret=JBSWY3DPEHPK3PXP&issuer=Bubble";
-    
+
     // Save the mock secret on user (JBSWY3DPEHPK3PXP in base32 would be standard)
     // For mock, we'll verify any 6 digit token directly for demo.
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       qrCode: mockQrUrl,
-      message: 'Scan this QR code with your authenticator app.' 
+      message: 'Scan this QR code with your authenticator app.'
     });
   } catch (err: any) {
     res.status(500).json({ message: 'Failed to initialize 2FA.' });
@@ -616,19 +638,19 @@ export const verify2FA = async (req: any, res: Response): Promise<void> => {
       res.status(401).json({ message: 'Unauthorized.' });
       return;
     }
-    
+
     const { token } = req.body;
     if (!token || token.length !== 6) {
       res.status(400).json({ success: false, message: 'Invalid 2FA token.' });
       return;
     }
-    
+
     // Mark user as 2FA enabled
     await User.findByIdAndUpdate(req.user._id, { twoFactorEnabled: true });
-    
-    res.status(200).json({ 
-      success: true, 
-      message: '2FA verification successful.' 
+
+    res.status(200).json({
+      success: true,
+      message: '2FA verification successful.'
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to verify 2FA token.' });
