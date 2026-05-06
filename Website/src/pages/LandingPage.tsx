@@ -462,7 +462,7 @@ export default function BubbleObservatory() {
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-16 mb-24">
                         <div className="col-span-2">
                             <div className="text-3xl font-bold text-[#ffe792] bg-[#010f20] p-2 rounded-lg font-['Space_Grotesk'] inline-block mb-8">
-                                BB
+                                <img src="/icon.png" alt="Logo" className="w-10 h-10" />
                             </div>
                             <p className="text-[#9eacc3] text-sm max-w-xs mb-10 leading-relaxed">
                                 The Ethereal Observatory. A new horizon for digital synthesis
