@@ -83,6 +83,10 @@ app.use(cors({
 
 app.use(compression());
 
+// Trust proxy is required when hosted on Railway (which uses reverse proxies)
+// otherwise express-rate-limit treats all users as a single IP
+app.set('trust proxy', 1);
+
 // Speed / Rate limits
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes

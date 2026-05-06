@@ -1128,7 +1128,7 @@ export const updateOrgDoc = async (req: Request, res: Response): Promise<void> =
         ...(accessLevel && { accessLevel }),
         ...(tags && { tags: tags.map((t: string) => t.toLowerCase().trim()) }),
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!doc) { res.status(404).json({ error: 'Document not found or not yours to edit.' }); return; }

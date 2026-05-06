@@ -57,7 +57,7 @@ export const updateTemplate = async (req: Request, res: Response): Promise<any> 
     const template = await Template.findOneAndUpdate(
       { _id: req.params.id, user_id: userId },
       { title, description, content, tags },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!template) return res.status(404).json({ message: 'Template not found' });
@@ -73,7 +73,7 @@ export const useTemplate = async (req: Request, res: Response): Promise<any> => 
     const template = await Template.findByIdAndUpdate(
       req.params.id,
       { $inc: { usageCount: 1 } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!template) return res.status(404).json({ message: 'Template not found' });
     res.status(200).json({ template });

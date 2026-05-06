@@ -107,7 +107,7 @@ export const updateInvoice = async (req: Request, res: Response): Promise<any> =
     const invoice = await Invoice.findOneAndUpdate(
       { _id: req.params.id, user_id: userId },
       { ...(status && { status }), ...(dueDate && { dueDate }), ...(notes && { notes }), ...(recipientEmail && { recipientEmail }) },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });

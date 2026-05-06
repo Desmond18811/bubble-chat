@@ -146,7 +146,7 @@ export const initSocket = (server: HttpServer) => {
         const user = await User.findOneAndUpdate(
           { socketId: socket.id },
           { socketId: '', isOnline: false, lastSeen: new Date() },
-          { new: true }
+          { returnDocument: 'after' }
         );
 
         if (user) {

@@ -233,7 +233,7 @@ export const addTranscriptChunk = async (
           },
         },
       },
-      { new: true, select: '_id' }
+      { returnDocument: 'after', select: '_id' }
     );
 
     if (!meeting) {
@@ -293,7 +293,7 @@ export const logSharedFile = async (
           },
         },
       },
-      { new: true, select: 'filesShared' }
+      { returnDocument: 'after', select: 'filesShared' }
     );
 
     if (!meeting) {
@@ -369,7 +369,7 @@ export const startScreenShare = async (
           },
         },
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!meeting) {

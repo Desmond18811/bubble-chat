@@ -103,7 +103,7 @@ export const updateTask = async (req: Request, res: Response): Promise<any> => {
     const task = await Task.findOneAndUpdate(
       { _id: id, $or: [{ user_id: userId }, { assignedTo: userId }] },
       { $set: updateFields },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!task) return res.status(404).json({ message: 'Task not found' });
@@ -137,7 +137,7 @@ export const snoozeTask = async (req: Request, res: Response): Promise<any> => {
     const task = await Task.findOneAndUpdate(
       { _id: req.params.id, $or: [{ user_id: userId }, { assignedTo: userId }] },
       { status: 'snoozed', snoozedUntil: new Date(snoozedUntil) },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!task) return res.status(404).json({ message: 'Task not found' });

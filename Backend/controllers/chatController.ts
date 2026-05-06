@@ -234,7 +234,7 @@ export const renameGroup = async (req: AuthRequest, res: Response): Promise<void
     const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { chatName },
-      { new: true }
+      { returnDocument: 'after' }
     )
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');
@@ -264,7 +264,7 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
     const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { $push: { users: userId } },
-      { new: true }
+      { returnDocument: 'after' }
     )
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');
@@ -297,7 +297,7 @@ export const removeFromGroup = async (req: AuthRequest, res: Response): Promise<
     const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { $pull: { users: userId } },
-      { new: true }
+      { returnDocument: 'after' }
     )
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');

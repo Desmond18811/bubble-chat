@@ -220,7 +220,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     const updated = await User.findByIdAndUpdate(
       req.user._id,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updated) {
@@ -277,7 +277,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { avatar: url },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.status(200).json({
@@ -503,7 +503,7 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
 //           gender, date_of_birth, hobbies, location, notification_settings, privacy_settings
 //         }
 //       },
-//       { new: true, runValidators: true }
+//       { returnDocument: 'after', runValidators: true }
 //     );
 
 //     if (!updated) {
@@ -547,7 +547,7 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
 //     const updatedUser = await User.findByIdAndUpdate(
 //       req.user._id,
 //       { avatar: url },
-//       { new: true }
+//       { returnDocument: 'after' }
 //     );
 
 //     res.status(200).json({
