@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 // --- Tailwind config is assumed to be set up with the custom tokens from the original.
 // All custom color names are used as arbitrary values where needed (e.g. bg-[#010f20]).
 
 const NAV_LINKS = ["Discover", "Live", "Editorial"];
+const navigate = useNavigate();
+
 
 const BENTO_ITEMS = [
     {
@@ -205,10 +208,10 @@ export default function BubbleObservatory() {
                             clarity.
                         </p>
                         <div className="animate-fadeInUp delay-3 flex flex-col sm:flex-row gap-6">
-                            <button className="bg-[#ffe792] text-[#655400] px-12 py-5 rounded-xl font-['Space_Grotesk'] font-bold text-lg hover:scale-105 active:scale-95 transition-transform shadow-2xl shadow-[#ffe792]/20">
+                            <button className="bg-[#ffe792] text-[#655400] px-12 py-5 rounded-xl font-['Space_Grotesk'] font-bold text-lg hover:scale-105 active:scale-95 transition-transform shadow-2xl shadow-[#ffe792]/20" onClick={() => navigate("/login")}>
                                 Join the Observatory
                             </button>
-                            <button className="glass-panel text-[#ffe792] border border-[#ffe792]/20 px-12 py-5 rounded-xl font-['Space_Grotesk'] font-bold text-lg hover:bg-[#ffe792]/5 transition-all">
+                            <button className="glass-panel text-[#ffe792] border border-[#ffe792]/20 px-12 py-5 rounded-xl font-['Space_Grotesk'] font-bold text-lg hover:bg-[#ffe792]/5 transition-all" onClick={() => navigate("/signup")}>
                                 Explore Transmissions
                             </button>
                         </div>
