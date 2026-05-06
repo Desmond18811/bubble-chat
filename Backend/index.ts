@@ -45,6 +45,7 @@ const PORT = process.env.PORT || 3000;
 // Set CORS_ORIGINS in Railway to a comma-separated list to override.
 const PRODUCTION_ORIGINS = [
   'https://bubble-frontend-production.up.railway.app',
+  'https://bubblespace.xyz',
 ];
 
 const allowedOrigins: string[] = process.env.CORS_ORIGINS
