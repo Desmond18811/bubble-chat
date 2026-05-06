@@ -23,6 +23,7 @@ import VerifyOTPPage from "./pages/auth/VerifyOTPPage";
 import AidaPage from "./pages/AidaPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
 import { Navigate } from "react-router-dom";
 
 
@@ -61,12 +62,14 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
 
-            <Route path="/" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><FeedPage /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
             <Route path="/workspace" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
             <Route path="/workspace/shared/:folderId" element={<SharedWorkspacePage />} />
