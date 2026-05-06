@@ -205,11 +205,24 @@ export default function Sidebar() {
         }}
       >
         <div className={cn("mb-6 flex items-center h-10 px-6 transition-all overflow-hidden shrink-0", isExpanded ? "justify-start" : "justify-center")} style={{ background: "color-mix(in srgb, var(--th-bg) 70%, transparent)" }}>
-          <BubbleIcon
-            style={{ width: isExpanded ? "120px" : "32px", height: "32px", transition: "width 0.3s" }}
-            primaryColor="var(--th-accent)"
-            secondaryColor="var(--th-secondary)"
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/icon.png" alt="Bubble space" style={{ width: "32px", height: "32px", objectFit: "contain", flexShrink: 0 }} />
+            <span
+              style={{
+                fontSize: "16px",
+                fontWeight: 700,
+                color: "var(--th-accent)",
+                fontFamily: "'Space Grotesk', sans-serif",
+                whiteSpace: "nowrap",
+                opacity: isExpanded ? 1 : 0,
+                maxWidth: isExpanded ? "120px" : 0,
+                transition: "all 0.3s ease",
+                overflow: "hidden"
+              }}
+            >
+              BUBBLE SPACE
+            </span>
+          </div>
         </div>
 
         {/* Nav links */}

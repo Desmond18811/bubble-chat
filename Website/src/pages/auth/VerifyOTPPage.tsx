@@ -31,7 +31,7 @@ const VerifyOTPPage: React.FC = () => {
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
-      toast.success('Verification successful! Welcome back to Bubble.');
+      toast.success('Verification successful! Welcome back to Bubble space.');
       navigate('/login');
     } catch (error: any) {
       toast.error(error.message || 'Verification failed');
@@ -49,7 +49,7 @@ const VerifyOTPPage: React.FC = () => {
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-2 mb-4">
             <img src="/icon.png" alt="Bubble" className="w-9 h-9 object-contain" />
-            <span className="text-2xl font-bold font-['Space_Grotesk'] text-[var(--th-accent)] tracking-tight">BUBBLE</span>
+            <span className="text-2xl font-bold font-['Space_Grotesk'] text-[var(--th-accent)] tracking-tight">BUBBLE SPACE</span>
           </div>
           <h1 className="text-4xl font-bold font-['Space_Grotesk'] text-[var(--th-accent)] mb-2 tracking-tight">Security Check</h1>
           <p className="text-[var(--th-muted)] text-sm tracking-wide uppercase font-['Space_Grotesk']">Enter 5-digit pulse code sent to your email</p>

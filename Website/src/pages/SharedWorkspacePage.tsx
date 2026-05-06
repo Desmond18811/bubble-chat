@@ -91,7 +91,7 @@ export default function SharedWorkspacePage() {
           <div className="w-10 h-10 rounded-xl" style={{ background: "linear-gradient(135deg, #ffd709, #ffe792)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(255, 215, 9, 0.3)" }}>
             <span style={{ fontSize: 18, color: "#1a0a00" }} className="material-symbols-outlined">bubble_chart</span>
           </div>
-          <span style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#d8e6ff" }}>Bubble workspace</span>
+          <span style={{ ...SG, fontSize: 18, fontWeight: 700, color: "#d8e6ff" }}>Bubble space</span>
         </div>
         {!localStorage.getItem("access_token") ? (
           <button onClick={() => navigate("/login")} style={{ ...SG, background: "rgba(255,231,146,0.1)", color: "#ffe792", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontWeight: 700 }}>

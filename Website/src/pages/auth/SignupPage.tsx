@@ -27,7 +27,7 @@ const SignupPage: React.FC = () => {
       localStorage.setItem('bubble_sk', secretKey); // store private key locally only
 
       const response = await register({ email, username, password, confirm_password, full_name, phone_number, publicKey });
-      
+
       toast.success('Registration successful! Check your email for your verification code.');
       navigate('/verify-otp', { state: { email: response.data.email || email } });
     } catch (error: any) {
@@ -55,7 +55,7 @@ const SignupPage: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
             <img src="/icon.png" alt="Bubble" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--th-accent)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--th-accent)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE SPACE</span>
           </div>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#d8e6ff', margin: '0 0 8px', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>New Explorer</h1>
           <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9eacc3', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Request Transmission Access</p>
@@ -114,7 +114,7 @@ const SignupPage: React.FC = () => {
 
         <p style={{ textAlign: 'center', marginTop: 28, fontSize: 13, color: '#9eacc3', fontFamily: "'Space Grotesk', sans-serif" }}>
           Already registered?{' '}
-          <Link to="/login" style={{ color: 'var(--th-accent)', fontWeight: 700, textDecoration: 'none' }}>Enter the Bubble</Link>
+          <Link to="/login" style={{ color: 'var(--th-accent)', fontWeight: 700, textDecoration: 'none' }}>Enter the Bubble space</Link>
         </p>
       </div>
     </div>

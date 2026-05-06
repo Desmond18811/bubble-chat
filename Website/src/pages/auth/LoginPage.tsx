@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
         localStorage.setItem('access_token', accessToken);
         localStorage.setItem('refresh_token', refreshToken);
         localStorage.setItem('user', JSON.stringify(user));
-        toast.success('Welcome back to the Bubble!');
+        toast.success('Welcome back to the Bubble space!');
         navigate('/messages');
       }
     } catch (error: any) {
@@ -77,7 +77,7 @@ const LoginPage: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
             <img src="/icon.png" alt="Bubble" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--th-accent)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--th-accent)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE SPACE</span>
           </div>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: '#d8e6ff', margin: '0 0 8px', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>Welcome Back</h1>
           <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9eacc3', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Secure Encryption Protocol</p>
@@ -122,7 +122,7 @@ const LoginPage: React.FC = () => {
             onMouseEnter={(e) => { if (!loading) e.currentTarget.style.filter = 'brightness(1.1)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
           >
-            {loading ? 'Authenticating...' : 'Enter the Bubble'}
+            {loading ? 'Authenticating...' : 'Enter the Bubble space'}
           </button>
         </form>
 

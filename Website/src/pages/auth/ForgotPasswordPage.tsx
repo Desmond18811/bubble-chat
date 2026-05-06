@@ -47,7 +47,7 @@ const ForgotPasswordPage: React.FC = () => {
       <div className="w-full max-w-md p-8 bg-[#031427]/60 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl z-10">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold font-['Space_Grotesk'] text-[#ffe792] mb-2 tracking-tight">Access Recovery</h1>
-          <p className="text-[#9eacc3] text-sm tracking-wide uppercase font-['Space_Grotesk']">Recover Link to the Bubble</p>
+          <p className="text-[#9eacc3] text-sm tracking-wide uppercase font-['Space_Grotesk']">Recover Link to the Bubble space</p>
         </div>
 
         {step === 1 ? (

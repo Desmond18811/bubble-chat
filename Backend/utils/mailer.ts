@@ -1,66 +1,37 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
-import dns from 'dns';
-
-// Railway outbound IPv6 SMTP is blocked; force IPv4 resolution natively
-dns.setDefaultResultOrder('ipv4first');
-
 dotenv.config();
 
 // ──────────────────────────────────────────────────────
-// Transport Factory — Gmail (default) or Postmark
-// Set EMAIL_PROVIDER=postmark in .env to switch
+// Resend HTTP API — works on Railway (no SMTP blocking)
+// Set RESEND_API_KEY in your Railway environment variables
+// Get a free key at https://resend.com (3,000 emails/month free)
 // ──────────────────────────────────────────────────────
-const createTransport = () => {
-  const provider = process.env.EMAIL_PROVIDER || 'gmail';
 
-  if (provider === 'postmark') {
-    // Postmark via SMTP relay
-    return nodemailer.createTransport({
-      host: 'smtp.postmarkapp.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.POSTMARK_API_KEY,
-        pass: process.env.POSTMARK_API_KEY,
-      },
-    });
-  }
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  // Default: Gmail
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_PORT === '465', // true only for port 465
-    connectionTimeout: 5000,
-    greetingTimeout: 5000,
-    socketTimeout: 5000,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-};
-
-const transporter = createTransport();
-
+const FROM_ADDRESS = process.env.SMTP_FROM_EMAIL || 'noreply@yourdomain.com';
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'Bubble Chat';
-const FROM_ADDRESS = process.env.SMTP_USER || 'noreply@bubble.chat';
 
 export const sendMail = async (to: string, subject: string, html: string) => {
-  try {
-    const info = await transporter.sendMail({
-      from: `"${FROM_NAME}" <${FROM_ADDRESS}>`,
-      to,
-      subject,
-      html,
-    });
-    console.log(`✅ Email sent to ${to}: ${info.messageId}`);
-    return info;
-  } catch (error) {
-    console.error(`❌ Mailer error:`, error);
-    throw new Error('Failed to send email');
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
   }
+
+  const { data, error } = await resend.emails.send({
+    from: `${FROM_NAME} <${FROM_ADDRESS}>`,
+    to,
+    subject,
+    html,
+  });
+
+  if (error) {
+    console.error(`❌ Resend error:`, error);
+    throw new Error(error.message);
+  }
+
+  console.log(`✅ Email sent to ${to}: ${data?.id}`);
+  return data;
 };
 
 /**
@@ -79,9 +50,7 @@ export const sendOTPEmail = async (to: string, name: string, otp: string) => {
       <!-- Body -->
       <div style="padding: 40px 32px; background-color: #000814;">
         <h2 style="color: #d8e6ff; font-size: 20px; font-weight: 600; margin: 0 0 12px;">Security Flash 🔐</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">
-          Hello ${name},
-        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">Hello ${name},</p>
         <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 28px;">
           A verification code has been requested for your Bubble account. Use the code below to complete your action:
         </p>
@@ -123,9 +92,7 @@ export const sendPasswordResetEmail = async (to: string, name: string, otp: stri
       <!-- Body -->
       <div style="padding: 40px 32px; background-color: #000814;">
         <h2 style="color: #d8e6ff; font-size: 20px; font-weight: 600; margin: 0 0 12px;">Reset Password ⚡️</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">
-          Hello ${name},
-        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">Hello ${name},</p>
         <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 28px;">
           You requested to reset your password. Use the verification code below on the reset screen. This code will expire in 15 minutes.
         </p>
@@ -168,9 +135,7 @@ export const sendTaskReminderEmail = async (to: string, name: string, taskTitle:
       <!-- Body -->
       <div style="padding: 40px 32px; background-color: #000814;">
         <h2 style="color: #d8e6ff; font-size: 20px; font-weight: 600; margin: 0 0 12px;">Task Deadline Reminder ⏳</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">
-          Hello ${name},
-        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">Hello ${name},</p>
         <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 28px;">
           This is an automated reminder regarding an upcoming task assigned to you in your Bubble Workspace.
         </p>
