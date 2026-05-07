@@ -32,6 +32,11 @@ const formatUser = (u: any) => ({
   blog: u.blog || null,
   links: u.links || [],
   sharedResources: u.sharedResources || [],
+  // Org identity
+  organization: u.organization || null,
+  org_role: u.org_role || null,
+  org_industry: u.org_industry || null,
+  org_size: u.org_size || null,
   isVerified: u.isVerified ?? false,
   isPremium: u.isPremium ?? false,
   is_bot: u.is_bot ?? false,
@@ -308,7 +313,7 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
         { uniqueTag: { $regex: query, $options: 'i' } },
       ],
     })
-      .select('full_name username email avatar uniqueTag isOnline verified_badge')
+      .select('full_name username email avatar uniqueTag isOnline verified_badge lastSeen organization org_role org_industry org_size')
       .limit(20);
 
     res.status(200).json({

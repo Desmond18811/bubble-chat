@@ -33,6 +33,12 @@ const formatUser = (u: any, includePrivate = false) => ({
   blog: u.blog || null,
   links: u.links || [],
   sharedResources: u.sharedResources || [],
+  // Org Identity
+  organization: u.organization || null,
+  org_role: u.org_role || null,
+  org_industry: u.org_industry || null,
+  org_size: u.org_size || null,
+  onboardingComplete: u.onboardingComplete ?? false,
   isVerified: u.isVerified ?? false,
   isPremium: u.isPremium ?? false,
   is_bot: u.is_bot ?? false,
@@ -289,10 +295,10 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
     });
   } catch (err: any) {
     console.error('Avatar Upload Exception: ', err);
-    res.status(500).json({ 
-      message: 'Avatar upload failed', 
-      error: err.message, 
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+    res.status(500).json({
+      message: 'Avatar upload failed',
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 };
@@ -407,155 +413,52 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+// ─── SETUP PROFILE (Onboarding) ───────────────────────────────────────────────
+/**
+ * PATCH /api/v1/profile/setup
+ * Called once after OTP verification to save org details and complete onboarding.
+ */
+export const setupProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
 
+  const { organization, org_role, org_industry, org_size, bio, full_name } = req.body;
 
-// import { Request, Response } from 'express';
-// import { User } from '../models/users';
-// import { uploadToFilebase } from '../utils/filebase';
+  const validOrgSizes = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
+  if (org_size && !validOrgSizes.includes(org_size)) {
+    res.status(400).json({ message: 'Invalid org_size value.' });
+    return;
+  }
 
-// export interface AuthRequest extends Request {
-//   user?: any;
-// }
+  try {
+    const updateData: Record<string, any> = {
+      onboardingComplete: true,
+    };
+    if (organization !== undefined) updateData.organization = organization;
+    if (org_role !== undefined) updateData.org_role = org_role;
+    if (org_industry !== undefined) updateData.org_industry = org_industry;
+    if (org_size !== undefined) updateData.org_size = org_size;
+    if (bio !== undefined) updateData.bio = bio;
+    if (full_name !== undefined) updateData.full_name = full_name;
 
-// const formatUser = (u: any) => ({
-//   id: u._id,
-//   full_name: u.full_name || null,
-//   username: u.username || null,
-//   email: u.email || null,
-//   phone_number: u.phone_number || null,
-//   avatar: u.avatar || null,
-//   gender: u.gender || null,
-//   date_of_birth: u.date_of_birth || null,
-//   status_message: u.status_message || null,
-//   mood_emoji: u.mood_emoji || null,
-//   hobbies: u.hobbies || [],
-//   location: {
-//     city: u.location?.city || null,
-//     country: u.location?.country || null,
-//     timezone: u.location?.timezone || 'UTC',
-//   },
-//   isOnline: u.isOnline ?? false,
-//   lastSeen: u.lastSeen || null,
-//   last_active_at: u.last_active_at || null,
-//   uniqueTag: u.uniqueTag || null,
-//   bio: u.bio || null,
-//   blog: u.blog || null,
-//   links: u.links || [],
-//   sharedResources: u.sharedResources || [],
-//   isVerified: u.isVerified ?? false,
-//   isPremium: u.isPremium ?? false,
-//   is_bot: u.is_bot ?? false,
-//   verified_badge: u.verified_badge ?? false,
-//   publicKey: u.publicKey || null,
-//   notification_settings: u.notification_settings || null,
-//   privacy_settings: u.privacy_settings || null,
-//   createdAt: u.createdAt,
-//   updatedAt: u.updatedAt,
-// });
+    const updated = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updateData },
+      { returnDocument: 'after', runValidators: true }
+    );
 
-// /**
-//  * Get Profile Details
-//  * GET /api/v1/profile
-//  */
-// export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
-//   if (!req.user || !req.user._id) {
-//      res.status(401).json({ message: 'Unauthorized' });
-//      return;
-//   }
+    if (!updated) {
+      res.status(404).json({ message: 'User not found.' });
+      return;
+    }
 
-//   try {
-//     const user = await User.findById(req.user._id);
-//     if (!user) {
-//       res.status(404).json({ message: 'User not found' });
-//       return;
-//     }
-
-//     res.status(200).json({
-//       message: 'Profile retrieved successfully',
-//       data: formatUser(user)
-//     });
-//   } catch (err: any) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// /**
-//  * Update Profile Details
-//  * PUT /api/v1/profile
-//  */
-// export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
-//   if (!req.user?._id) {
-//     res.status(401).json({ message: 'Unauthorized' });
-//     return;
-//   }
-
-//   const {
-//     full_name, bio, blog, links, status_message, mood_emoji,
-//     gender, date_of_birth, hobbies, location, notification_settings, privacy_settings
-//   } = req.body;
-
-//   try {
-//     const updated = await User.findByIdAndUpdate(
-//       req.user._id,
-//       {
-//         $set: {
-//           full_name, bio, blog, links, status_message, mood_emoji,
-//           gender, date_of_birth, hobbies, location, notification_settings, privacy_settings
-//         }
-//       },
-//       { returnDocument: 'after', runValidators: true }
-//     );
-
-//     if (!updated) {
-//       res.status(404).json({ message: 'User not found' });
-//       return;
-//     }
-
-//     res.status(200).json({
-//       message: 'Profile updated successfully.',
-//       user: formatUser(updated),
-//     });
-//   } catch (err: any) {
-//     res.status(500).json({ message: 'Profile update failed: ' + err.message });
-//   }
-// };
-
-// /**
-//  * Upload Profile Avatar
-//  * POST /api/v1/profile/avatar
-//  * Requires FormData with field `file`
-//  */
-// export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<void> => {
-//   if (!req.user?._id) {
-//     res.status(401).json({ message: 'Unauthorized' });
-//     return;
-//   }
-  
-//   if (!req.file) {
-//     res.status(400).json({ message: 'No image file provided. Make sure to send FormData with a "file" key.' });
-//     return;
-//   }
-
-//   try {
-//     const file = req.file;
-//     const fileKey = `avatars/${req.user._id}/${Date.now()}-${file.originalname}`;
-    
-//     // Upload image directly to Filebase S3
-//     const { url } = await uploadToFilebase(file.buffer, fileKey, file.mimetype);
-
-//     // Save Filebase URL to User avatar field
-//     const updatedUser = await User.findByIdAndUpdate(
-//       req.user._id,
-//       { avatar: url },
-//       { returnDocument: 'after' }
-//     );
-
-//     res.status(200).json({
-//       message: 'Profile avatar successfully updated in Database from Filebase URL.',
-//       avatarUrl: url,
-//       user: updatedUser ? formatUser(updatedUser) : null,
-//     });
-//   } catch (error: any) {
-//     res.status(500).json({ message: 'Failed to upload profile image: ' + error.message });
-//   }
-// };
+    res.status(200).json({
+      message: 'Profile setup complete. Welcome to Bubble Space!',
+      data: formatUser(updated, true),
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Profile setup failed: ' + err.message });
+  }
+};

@@ -13,6 +13,9 @@ import {
   fetchTrendingNetworks
 } from "@/api";
 
+const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1';
+const token = () => localStorage.getItem('access_token') || '';
+
 function MSIcon({
   icon,
   filled = false,
@@ -254,11 +257,13 @@ export default function BubbleCommunity() {
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [networks, setNetworks] = useState<any[]>([]);
+  const [myNetworks, setMyNetworks] = useState<any[]>([]);
   const [trending, setTrending] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState("Trending");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [myLoading, setMyLoading] = useState(false);
 
   const loadData = async () => {
     try {
@@ -282,8 +287,25 @@ export default function BubbleCommunity() {
     }
   };
 
+  const loadMyNetworks = async () => {
+    setMyLoading(true);
+    try {
+      const res = await fetch(`${BASE}/community/my`, { headers: { Authorization: `Bearer ${token()}` } });
+      const data = await res.json();
+      setMyNetworks(data.networks || data.data || []);
+    } catch (err) {
+      console.error('Failed to load my networks:', err);
+    } finally {
+      setMyLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadData();
+    if (activeCategory === 'My Communities') {
+      loadMyNetworks();
+    } else {
+      loadData();
+    }
   }, [activeCategory, searchQuery]);
 
   const handleJoin = async (id: string) => {
@@ -339,6 +361,23 @@ export default function BubbleCommunity() {
         />
 
         <section className="mb-10 flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+          {/* Fixed: My Communities tab always first */}
+          <button
+            onClick={() => setActiveCategory('My Communities')}
+            className={cn("px-6 py-2.5 rounded-xl font-bold uppercase tracking-wider text-[10px] whitespace-nowrap transition-all border")}
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              background: activeCategory === 'My Communities' ? "#ffe792" : "var(--th-surface)",
+              color: activeCategory === 'My Communities' ? "#655400" : "var(--th-muted)",
+              borderColor: activeCategory === 'My Communities' ? "transparent" : "var(--th-border)"
+            }}
+            onMouseEnter={e => { if (activeCategory !== 'My Communities') e.currentTarget.style.color = '#ffe792'; }}
+            onMouseLeave={e => { if (activeCategory !== 'My Communities') e.currentTarget.style.color = "var(--th-muted)"; }}
+          >
+            🏠 My Communities
+          </button>
+
+          {/* Dynamic API categories (Trending, etc.) */}
           {categories.map((cat) => (
             <button
               key={cat}
@@ -360,7 +399,23 @@ export default function BubbleCommunity() {
           ))}
         </section>
 
-        {loading ? (
+        {activeCategory === 'My Communities' ? (
+          myLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map(i => (<div key={i} className="h-80 animate-pulse rounded-xl" style={{ background: "var(--th-surface-top)" }} />))}
+            </div>
+          ) : myNetworks.length === 0 ? (
+            <div className="py-24 text-center flex flex-col items-center gap-4">
+              <div style={{ fontSize: 48 }}>🏘️</div>
+              <p className="text-lg" style={{ color: "var(--th-muted)" }}>You haven't joined any networks yet.</p>
+              <button onClick={() => setActiveCategory('Trending')} className="px-6 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest" style={{ background: 'var(--th-accent)', color: 'var(--th-accent-text)' }}>Discover Networks</button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {myNetworks.map((network) => (<NetworkCard key={network._id} network={network} onJoin={handleJoin} />))}
+            </div>
+          )
+        ) : loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-80 animate-pulse rounded-xl transition-colors" style={{ background: "var(--th-surface-top)" }} />

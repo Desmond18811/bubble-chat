@@ -51,6 +51,13 @@ export interface IUser extends Document {
   verified_badge: boolean;
   role?: 'employee' | 'admin' | 'HR';
 
+  // Organizational Identity
+  organization?: string;
+  org_role?: string;
+  org_industry?: string;
+  org_size?: 'solo' | '2-10' | '11-50' | '51-200' | '201-500' | '500+';
+  onboardingComplete?: boolean;
+
   // Auth
   password?: string;
   refreshToken?: string;
@@ -111,6 +118,13 @@ const UserSchema: Schema<IUser> = new Schema(
     is_bot: { type: Boolean, default: false },
     verified_badge: { type: Boolean, default: false },
     role: { type: String, enum: ['employee', 'admin', 'HR'], default: 'employee' },
+
+    // Organizational Identity
+    organization: { type: String, trim: true, default: '' },
+    org_role: { type: String, trim: true, default: '' },
+    org_industry: { type: String, trim: true, default: '' },
+    org_size: { type: String, enum: ['solo', '2-10', '11-50', '51-200', '201-500', '500+'] },
+    onboardingComplete: { type: Boolean, default: false },
 
     notification_settings: {
       muted: { type: Boolean, default: false },

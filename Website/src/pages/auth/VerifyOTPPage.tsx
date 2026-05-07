@@ -12,27 +12,24 @@ const VerifyOTPPage: React.FC = () => {
 
   useEffect(() => {
     if (!email) {
-      toast.error('Session expired. Please sign up or log in again.');
+      toast.error('Session expired. Please sign up again.');
       navigate('/signup');
     }
   }, [email, navigate]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp.length !== 5) {
-      toast.error('Code must be 5 digits');
-      return;
-    }
+    if (otp.length !== 5) { toast.error('Code must be 5 digits'); return; }
     setLoading(true);
     try {
       const response = await verifyOTP(email!, otp);
-      // Session born here — store tokens only after successful verification
       const { accessToken, refreshToken, user } = response.data;
       localStorage.setItem('access_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
-      toast.success('Verification successful! Welcome back to Bubble space.');
-      navigate('/login');
+      toast.success('Email verified! Let\'s set up your profile.');
+      // Redirect to onboarding — not login
+      navigate('/profile-setup', { state: { fresh: true } });
     } catch (error: any) {
       toast.error(error.message || 'Verification failed');
     } finally {
@@ -51,30 +48,28 @@ const VerifyOTPPage: React.FC = () => {
             <img src="/icon.png" alt="Bubble" className="w-9 h-9 object-contain" />
             <span className="text-2xl font-bold font-['Space_Grotesk'] text-[#ffe792] tracking-tight">BUBBLE SPACE</span>
           </div>
-          <h1 className="text-4xl font-bold font-['Space_Grotesk'] text-[#ffe792] mb-2 tracking-tight">Security Check</h1>
-          <p className="text-[#9eacc3] text-sm tracking-wide uppercase font-['Space_Grotesk']">Enter 5-digit pulse code sent to your email</p>
-          <p className="text-[#ffe792] text-xs font-bold mt-2">{email}</p>
+          <h1 className="text-4xl font-bold font-['Space_Grotesk'] text-[#ffe792] mb-2 tracking-tight">Verify Email</h1>
+          <p className="text-[#9eacc3] text-sm tracking-wide font-['Space_Grotesk']">Enter the 5-digit code sent to</p>
+          <p className="text-[#ffe792] text-xs font-bold mt-1">{email}</p>
         </div>
 
         <form onSubmit={handleVerify} className="space-y-8">
-          <div>
-            <input
-              type="text"
-              required
-              maxLength={5}
-              className="w-full bg-[#071a2f] border border-white/5 rounded-2xl px-6 py-5 text-[#d8e6ff] text-center text-4xl font-bold tracking-[1rem] focus:outline-none focus:border-[#ffe792]/50 transition-all placeholder:text-white/10"
-              placeholder="00000"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-            />
-          </div>
+          <input
+            type="text"
+            required
+            maxLength={5}
+            className="w-full bg-[#071a2f] border border-white/5 rounded-2xl px-6 py-5 text-[#d8e6ff] text-center text-4xl font-bold tracking-[1rem] focus:outline-none focus:border-[#ffe792]/50 transition-all placeholder:text-white/10"
+            placeholder="00000"
+            value={otp}
+            onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+          />
 
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-[#ffe792] text-[#655400] font-bold font-['Space_Grotesk'] py-5 rounded-2xl active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,231,146,0.15)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest"
           >
-            {loading ? 'Decrypting...' : 'Verify Transmission'}
+            {loading ? 'Verifying…' : 'Verify & Continue'}
           </button>
         </form>
 
@@ -85,14 +80,14 @@ const VerifyOTPPage: React.FC = () => {
             onClick={async () => {
               try {
                 await resendOTP(email!);
-                toast.success('A new signal has been mapped to your frequency.');
+                toast.success('A new code has been sent to your email.');
               } catch (err: any) {
-                toast.error(err.message || 'Failed to resend signal.');
+                toast.error(err.message || 'Failed to resend code.');
               }
             }}
             className="text-[#ffe792] font-bold hover:underline"
           >
-            Resend Signal
+            Resend Code
           </button>
         </p>
       </div>

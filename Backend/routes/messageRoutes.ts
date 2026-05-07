@@ -12,6 +12,12 @@ import {
   toggleMessagePin,
   shareWorkspaceFile,
 } from '../controllers/messageController';
+import {
+  sendMessageRequest,
+  respondToMessageRequest,
+  getMessageRequests,
+  canMessageUser,
+} from '../controllers/messageRequestController';
 import { handleUpload } from '../middleware/upload';
 
 const router = express.Router();
@@ -20,6 +26,12 @@ const router = express.Router();
 router.get('/media/proxy', proxyMedia);
 
 router.use(passport.authenticate('jwt', { session: false }));
+
+// ─── Message Request routes (cross-org) ─────────────────────────────────────
+router.get('/requests', getMessageRequests);
+router.get('/can-message/:userId', canMessageUser);
+router.post('/request/:userId', sendMessageRequest);
+router.patch('/request/:requestId', respondToMessageRequest);
 
 /**
  * @swagger

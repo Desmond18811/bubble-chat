@@ -10,6 +10,7 @@ import {
   getFollowers,
   getFollowing,
   deleteAccount,
+  setupProfile,
 } from '../controllers/profileController';
 
 const router = express.Router();
@@ -83,6 +84,9 @@ const upload = multer({
  *                             has_links: { type: boolean }
  */
 router.get('/me', jwtAuth, getMyProfile);
+
+// Onboarding setup — called once after OTP verification
+router.patch('/setup', jwtAuth, setupProfile);
 
 /**
  * @swagger

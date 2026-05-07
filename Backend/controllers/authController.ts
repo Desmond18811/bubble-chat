@@ -24,12 +24,16 @@ const generateOTP = (): string =>
 const formatUser = (u: any) => ({
   id: u._id,
   full_name: u.full_name || null,
-  username: u.username || null,
   email: u.email || null,
   phone_number: u.phone_number || null,
   avatar: u.avatar || null,
   uniqueTag: u.uniqueTag || null,
   bio: u.bio || null,
+  organization: u.organization || null,
+  org_role: u.org_role || null,
+  org_industry: u.org_industry || null,
+  org_size: u.org_size || null,
+  onboardingComplete: u.onboardingComplete ?? false,
   isVerified: u.isVerified ?? false,
   isPremium: u.isPremium ?? false,
   is_bot: u.is_bot ?? false,
@@ -63,7 +67,7 @@ const generateUniqueTag = async (base: string): Promise<string> => {
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { full_name, email, phone_number, password, username } = req.body;
+    const { full_name, email, phone_number, password } = req.body;
 
     if (!email && !phone_number) {
       res.status(400).json({ message: 'Email or phone number is required.' });
@@ -84,27 +88,19 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    if (username) {
-      const existingUsername = await User.findOne({ username: username.toLowerCase() });
-      if (existingUsername) {
-        res.status(409).json({ message: 'This username is already taken.' });
-        return;
-      }
-    }
-
     const hashedPassword = await bcrypt.hash(password, 12);
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    const uniqueTag = await generateUniqueTag(username || full_name || 'user');
+    const uniqueTag = await generateUniqueTag(full_name || 'user');
 
     const newUser = await User.create({
       full_name,
       email: email?.toLowerCase(),
       phone_number,
-      username: username?.toLowerCase(),
       password: hashedPassword,
       isVerified: false,
       uniqueTag,
+      onboardingComplete: false,
     });
 
     await Otp.create({

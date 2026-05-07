@@ -183,7 +183,8 @@ const buildAidaSystemPrompt = (
   taskContext: string,
   upcomingContext: string,
   contactsContext: string = '',
-  pageContext?: string
+  pageContext?: string,
+  orgIdentity?: { organization?: string; org_role?: string; org_size?: string; org_industry?: string }
 ): string => `You are Aida, the intelligent AI assistant of the Bubble organizational platform. You are powered by DeepSeek AI.
 
 CRITICAL TEMPORAL ANCHOR (YOUR SYSTEM CLOCK):
@@ -192,7 +193,11 @@ CRITICAL TEMPORAL ANCHOR (YOUR SYSTEM CLOCK):
 
 IDENTITY OF THE USER YOU ARE HELPING:
 - Name: ${userName}
-- Role: ${userRole}
+- Platform Role: ${userRole}
+${orgIdentity?.org_role ? `- Job Title: ${orgIdentity.org_role}` : ''}
+${orgIdentity?.organization ? `- Company: ${orgIdentity.organization}` : ''}
+${orgIdentity?.org_industry ? `- Industry: ${orgIdentity.org_industry}` : ''}
+${orgIdentity?.org_size ? `- Company Size: ${orgIdentity.org_size} employees` : ''}
 - Bio: ${userBio || 'Not provided'}
 ${pageContext ? `- Currently in: ${pageContext}` : ''}
 
@@ -218,6 +223,7 @@ YOUR CAPABILITIES:
 7. Break down goals into realistic timelines and actionable phases (multi-week plans)
 8. Schedule a call or group call with contacts
 9. Support escalation — prepare messages to management when users need help
+10. Suggest smart message drafts based on recipient's role and org context
 
 INLINE ACTION BLOCKS (embed in your reply only when performing an action):
 - Schedule task: [ACTION: {"type":"SCHEDULE_TASK","title":"...","startTime":"YYYY-MM-DDTHH:mm:ss","description":"..."}]
@@ -234,6 +240,7 @@ RULES:
 - When scheduling or goal planning, always confirm with a specific date/time and follow up
 - Use PLAN_PHASES for multi-week plans; it will create real calendar entries for each phase
 - When the user mentions a person's name and wants to call them, use SCHEDULE_GROUP_CALL with that name in participants
+- Tailor responses to the user's job title and industry if known
 - Be concise, warm, and action-oriented
 - Never make up company policies — use only what's in the knowledge base`;
 
@@ -357,7 +364,14 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
       : '';
 
     const systemPrompt = buildAidaSystemPrompt(
-      userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext, contactsContext
+      userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext, contactsContext,
+      undefined,
+      {
+        organization: (user as any)?.organization,
+        org_role: (user as any)?.org_role,
+        org_size: (user as any)?.org_size,
+        org_industry: (user as any)?.org_industry,
+      }
     );
     const fullUserMessage = historyText
       ? `Recent conversation:\n${historyText}\n\nUser: ${message}`
@@ -610,7 +624,13 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
 
     const systemPrompt = buildAidaSystemPrompt(
       userName, userRole, user?.bio || '', orgContext, fileContext, taskContext, upcomingContext, contactsContext,
-      context ? `${context} section` : undefined
+      context ? `${context} section` : undefined,
+      {
+        organization: (user as any)?.organization,
+        org_role: (user as any)?.org_role,
+        org_size: (user as any)?.org_size,
+        org_industry: (user as any)?.org_industry,
+      }
     );
 
     let finalMessage = message;
