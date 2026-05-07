@@ -15,7 +15,7 @@ export interface AuthRequest extends Request {
 export const sendMessageRequest = async (req: AuthRequest, res: Response): Promise<void> => {
     if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized.' }); return; }
 
-    const targetId = req.params.userId;
+    const targetId = req.params.userId as string;
     if (String(req.user._id) === targetId) {
         res.status(400).json({ message: 'You cannot send a message request to yourself.' });
         return;
@@ -84,7 +84,8 @@ export const respondToMessageRequest = async (req: AuthRequest, res: Response): 
     }
 
     try {
-        const request = await MessageRequest.findOne({ _id: req.params.requestId, to: req.user._id });
+        const { requestId } = req.params;
+        const request = await MessageRequest.findOne({ _id: requestId as string, to: req.user._id });
         if (!request) { res.status(404).json({ message: 'Message request not found.' }); return; }
         if (request.status !== 'pending') {
             res.status(400).json({ message: `Request is already ${request.status}.` });
@@ -129,7 +130,7 @@ export const getMessageRequests = async (req: AuthRequest, res: Response): Promi
 export const canMessageUser = async (req: AuthRequest, res: Response): Promise<void> => {
     if (!req.user?._id) { res.status(401).json({ message: 'Unauthorized.' }); return; }
 
-    const targetId = req.params.userId;
+    const targetId = req.params.userId as string;
 
     try {
         const [sender, target] = await Promise.all([

@@ -2,6 +2,34 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import * as api from "@/api";
 import {
+  fetchChats,
+  searchUsers as apiSearchUsers,
+  fetchMessages,
+  sendMessage,
+  markMessagesAsRead,
+  fetchUserProfile,
+  updateMessage,
+  deleteMessageForMe,
+  deleteMessageForEveryone,
+  reactToMessage,
+  createGroupChat,
+  toggleMessagePin,
+  addContact,
+} from "@/api";
+
+// New API functions for message requests
+const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1';
+const token = () => localStorage.getItem('access_token') || '';
+
+async function checkCanMessage(userId: string) {
+  const res = await fetch(`${BASE}/messages/can-message/${userId}`, { headers: { Authorization: `Bearer ${token()}` } });
+  return res.json();
+}
+async function sendRequest(userId: string) {
+  const res = await fetch(`${BASE}/messages/request/${userId}`, { method: 'POST', headers: { Authorization: `Bearer ${token()}` } });
+  return res.json();
+}
+import {
   initiateSocket,
   getSocket,
   emitSendMessage,
@@ -790,288 +818,6 @@ const StoryModal = ({
   );
 };
 
-const FABMenu = ({
-  onNewChat,
-  onNewStory,
-  onNewGroup,
-}: {
-  onNewChat: () => void;
-  onNewStory: () => void;
-  onNewGroup: () => void;
-}) => {
-  const [open, setOpen] = useState(false);
-
-  const opts = [
-    { icon: "chat", label: "New Chat", action: onNewChat, color: "#ffe792" },
-    { icon: "group_add", label: "New Group", action: onNewGroup, color: "#4ade80" },
-    { icon: "add_photo_alternate", label: "Post Story", action: onNewStory, color: "#a2c2fd" },
-  ];
-
-  return (
-    <div style={{ position: "relative" }}>
-      {/* Option pills */}
-      {open && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 56,
-            right: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            alignItems: "flex-end",
-          }}
-        >
-          {opts.map((o) => (
-            <button
-              key={o.label}
-              onClick={() => { setOpen(false); o.action(); }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                background: "#0b2440",
-                border: "1px solid rgba(255,231,146,0.15)",
-                borderRadius: 40,
-                padding: "10px 16px 10px 12px",
-                cursor: "pointer",
-                color: o.color,
-                fontSize: 13,
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-                animation: "fadeUp 0.15s ease",
-              }}
-            >
-              <Icon name={o.icon} size={18} style={{ color: o.color }} />
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Main FAB */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: "50%",
-          background: open
-            ? "rgba(255,231,146,0.15)"
-            : "linear-gradient(135deg, #ffe792, #ffc300)",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: open ? "none" : "0 0 24px rgba(255,215,9,0.4)",
-          transition: "all 0.2s ease",
-          transform: open ? "rotate(45deg)" : "rotate(0deg)",
-        }}
-      >
-        <Icon name="add" size={22} style={{ color: open ? "#ffe792" : "#1a0a00" }} />
-      </button>
-    </div>
-  );
-};
-
-/* ─── Story Viewer Modal ─────────────────────────────────────────────────── */
-const StoryViewerModal = ({
-  stories,
-  initialIndex,
-  onClose,
-  onReply
-}: {
-  stories: any[];
-  initialIndex: number;
-  onClose: () => void;
-  onReply?: (storyId: string, authorId: string, text: string) => Promise<void>;
-}) => {
-  const [replyText, setReplyText] = useState("");
-  const [idx, setIdx] = useState(initialIndex);
-  const [progress, setProgress] = useState(0);
-  const onCloseRef = useRef(onClose);
-  const storiesLenRef = useRef(stories.length);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-  useEffect(() => { storiesLenRef.current = stories.length; }, [stories.length]);
-
-  useEffect(() => {
-    setProgress(0);
-    const DURATION = 5000, TICK = 50;
-    const totalTicks = DURATION / TICK;
-    let tick = 0;
-    const timer = setInterval(() => {
-      tick++;
-      const pct = Math.min((tick / totalTicks) * 100, 100);
-      setProgress(pct);
-      if (tick >= totalTicks) {
-        clearInterval(timer);
-        setIdx((i) => {
-          if (i < storiesLenRef.current - 1) return i + 1;
-          onCloseRef.current();
-          return i;
-        });
-      }
-    }, TICK);
-    return () => clearInterval(timer);
-  }, [idx]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') setIdx((i) => Math.min(i + 1, storiesLenRef.current - 1));
-      else if (e.key === 'ArrowLeft') setIdx((i) => Math.max(i - 1, 0));
-      else if (e.key === 'Escape') onCloseRef.current();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  if (!stories[idx]) return null;
-  const story = stories[idx];
-  const mediaUrl = getSecureMediaUrl(story.mediaUrl, 'story');
-
-  const goNext = () => setIdx((i) => {
-    if (i < storiesLenRef.current - 1) return i + 1;
-    onCloseRef.current();
-    return i;
-  });
-  const goPrev = () => setIdx((i) => Math.max(i - 1, 0));
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-      {/* Progress bar segments */}
-      <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', gap: 4, zIndex: 20 }}>
-        {stories.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              background: 'rgba(255,255,255,0.9)',
-              width: i < idx ? '100%' : i === idx ? `${progress}%` : '0%',
-              transition: i === idx ? `width ${50}ms linear` : 'none',
-            }} />
-          </div>
-        ))}
-      </div>
-
-      {/* Header */}
-      <div style={{ position: 'absolute', top: 28, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: '50%', padding: 2, background: 'linear-gradient(135deg, #ffe792, #a2c2fd)', flexShrink: 0 }}>
-            <Avatar src={story.author?.avatar} name={story.author?.full_name} size={34} />
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Space Grotesk', sans-serif", textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>
-              {story.author?.full_name || 'User'}
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 1 }}>
-              {story.remainingSeconds != null
-                ? `${Math.floor(story.remainingSeconds / 3600)}h left`
-                : story.createdAt ? new Date(story.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Grotesk',sans-serif" }}>{idx + 1} / {stories.length}</span>
-          <button onClick={onCloseRef.current} style={{ background: 'rgba(0,0,0,0.45)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
-            <Icon name="close" size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Tap zones (left = prev, right = next) */}
-      <div style={{ position: 'absolute', left: 0, top: 0, width: '40%', height: '100%', zIndex: 10, cursor: 'pointer' }} onClick={goPrev} />
-      <div style={{ position: 'absolute', right: 0, top: 0, width: '40%', height: '100%', zIndex: 10, cursor: 'pointer' }} onClick={goNext} />
-
-      {/* Story content */}
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {story.mediaType === 'image' && mediaUrl && (
-          <img
-            src={mediaUrl}
-            style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }}
-            alt="Story"
-            onError={(e) => { (e.target as HTMLImageElement).alt = '⚠ Media unavailable'; }}
-          />
-        )}
-        {story.mediaType === 'video' && mediaUrl && (
-          <video src={mediaUrl} autoPlay loop playsInline style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }} />
-        )}
-        {story.mediaType === 'audio' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28, padding: 40, width: '100%' }}>
-            <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,231,146,0.08)', border: '2px solid rgba(255,231,146,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 2s infinite' }}>
-              <Icon name="mic" size={36} style={{ color: '#ffe792' }} />
-            </div>
-            {/* Animated waveform */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {Array.from({ length: 30 }).map((_, i) => (
-                <div key={i} style={{
-                  width: 3,
-                  height: Math.max(8, Math.abs(Math.sin(i * 0.65)) * 36 + 10),
-                  borderRadius: 2,
-                  background: '#ffe792',
-                  opacity: 0.75,
-                  animation: `audioWave ${0.45 + (i % 6) * 0.1}s ease-in-out infinite alternate`,
-                  animationDelay: `${i * 0.035}s`,
-                }} />
-              ))}
-            </div>
-            {mediaUrl && <CustomAudioPlayer src={mediaUrl} isMine={false} />}
-          </div>
-        )}
-        {story.mediaType === 'text' && (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: story.bg_gradient || 'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)', padding: 40, boxSizing: 'border-box' }}>
-            <p style={{ color: story.text_color || '#fff', fontSize: 'clamp(22px,4.5vw,40px)', fontWeight: 700, textAlign: 'center', fontFamily: "'Space Grotesk', sans-serif", lineHeight: 1.35, maxWidth: 560, margin: 0, textShadow: '0 2px 16px rgba(0,0,0,0.35)', wordBreak: 'break-word' }}>
-              {story.textContent}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Caption for media stories */}
-      {story.textContent && story.mediaType !== 'text' && (
-        <div style={{ position: 'absolute', bottom: 88, left: 24, right: 24, background: 'rgba(0,0,0,0.65)', borderRadius: 14, padding: '12px 16px', backdropFilter: 'blur(10px)', zIndex: 15 }}>
-          <p style={{ color: '#fff', fontSize: 14, margin: 0, lineHeight: 1.5 }}>{story.textContent}</p>
-        </div>
-      )}
-
-      {/* Quick reaction bar */}
-      <div style={{ position: 'absolute', bottom: 84, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 20, background: 'rgba(0,0,0,0.4)', borderRadius: 40, padding: '8px 16px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        {['❤️', '😂', '😮', '😢', '👏', '🔥'].map((e) => (
-          <button
-            key={e}
-            onClick={(ev) => { ev.stopPropagation(); toast.success(`You reacted ${e}`); }}
-            style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: '2px 4px', borderRadius: 8, transition: 'transform 0.12s' }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.transform = 'scale(1.3)'; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            {e}
-          </button>
-        ))}
-      </div>
-
-      {/* Reply input */}
-      {onReply && (story.author?._id || story.author?.id) && (
-        <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 25, background: 'rgba(0,0,0,0.6)', borderRadius: 40, padding: '8px 16px', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', width: '80%', maxWidth: 400 }}>
-          <input
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            placeholder="Reply to story..."
-            style={{ flex: 1, background: 'none', border: 'none', color: '#fff', fontSize: 14, outline: 'none', padding: '4px 8px' }}
-            onKeyDown={async (e) => {
-              if (e.key === "Enter" && replyText.trim()) {
-                e.preventDefault();
-                await onReply(story._id || story.id, story.author._id || story.author.id, replyText);
-                setReplyText("");
-              }
-            }}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
 /* ─── Voice Recorder Hook ─────────────────────────────────────────────────── */
 const useVoiceRecorder = () => {
   const [recording, setRecording] = useState(false);
@@ -1182,6 +928,9 @@ export default function BubbleMessages() {
   const [chatContextMenu, setChatContextMenu] = useState<{ x: number; y: number; chat: any } | null>(null);
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [messageRequestStatus, setMessageRequestStatus] = useState<any>(null);
+  const [requestSending, setRequestSending] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1769,6 +1518,27 @@ export default function BubbleMessages() {
     setChatContextMenu(null);
   };
 
+  const handleSelectChat = async (chat: any) => {
+    setActiveChat(chat);
+    setChatSearch("");
+    setMessageRequestStatus(null); // Reset on new chat
+
+    // If it's a DM, check messaging permission
+    if (!chat.isGroupChat) {
+      const other = getOtherUser(chat, myId);
+      if (other && (other.id || other._id)) {
+        try {
+          const status = await checkCanMessage(other.id || other._id);
+          if (!status.canMessage) {
+            setMessageRequestStatus(status);
+          }
+        } catch (err) {
+          console.error("Failed to check message permission", err);
+        }
+      }
+    }
+  };
+
   const loadSessionSummary = async () => {
     if (!activeChat) return;
     setSummaryLoading(true);
@@ -2245,7 +2015,7 @@ export default function BubbleMessages() {
                   return (
                     <div
                       key={c.id || c._id}
-                      onClick={() => setActiveChat(c)}
+                      onClick={() => handleSelectChat(c)}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setChatContextMenu({ x: e.clientX, y: e.clientY, chat: c });
@@ -2369,8 +2139,18 @@ export default function BubbleMessages() {
                         <h2 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)", margin: 0 }}>
                           {getChatDisplayName(activeChat, myId)}
                         </h2>
-                        <span style={{ fontSize: 11, color: "var(--th-accent)", letterSpacing: "0.08em" }}>
-                          {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording ? "recording audio..." : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing ? "transmitting..." : getOtherUser(activeChat, myId)?.isOnline ? "Online" : (getOtherUser(activeChat, myId) as any)?.lastSeen ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Offline"}
+                        <span style={{ fontSize: 11, color: "var(--th-accent)", letterSpacing: "0.08em", display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span>
+                            {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording ? "recording audio..." : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing ? "transmitting..." : getOtherUser(activeChat, myId)?.isOnline ? "Online" : (getOtherUser(activeChat, myId) as any)?.lastSeen ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Offline"}
+                          </span>
+                          {!activeChat?.isGroupChat && (getOtherUser(activeChat, myId) as any)?.org_role && (
+                            <>
+                              <span style={{ opacity: 0.5 }}>•</span>
+                              <span style={{ color: "var(--th-muted)", textTransform: 'none', letterSpacing: 'normal' }}>
+                                {(getOtherUser(activeChat, myId) as any).org_role} at {(getOtherUser(activeChat, myId) as any).organization}
+                              </span>
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -2780,136 +2560,177 @@ export default function BubbleMessages() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input bar */}
-                <footer style={{ padding: "0 20px 20px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                  {replyingToMsg && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 12, padding: "8px 12px", backdropFilter: "blur(4px)", marginLeft: 16, marginRight: 16 }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
-                        <span style={{ fontSize: 11, color: "#ffe792", fontWeight: 700 }}>Replying to {replyingToMsg.sender?.full_name || "Someone"}</span>
-                        <span style={{ fontSize: 13, color: "#d8e6ff", opacity: 0.8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 300 }}>
-                          {replyingToMsg.content || "Media Attachment"}
-                        </span>
+                {/* Message Request Locker */}
+                {messageRequestStatus && !activeChat?.isGroupChat && (
+                  <div style={{ padding: "0 28px 24px", display: "flex", justifyContent: "center" }}>
+                    <div style={{ background: "color-mix(in srgb, var(--th-surface-low) 80%, transparent)", border: "1px solid var(--th-border)", borderRadius: 16, padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%", maxWidth: 600, textAlign: "center", backdropFilter: "blur(10px)" }}>
+                      <Icon name={messageRequestStatus.reason === "request_pending" ? "hourglass_empty" : "lock"} size={32} style={{ color: "var(--th-accent)" }} />
+                      <div style={{ color: "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600 }}>Message Request Required</div>
+                      <div style={{ color: "var(--th-muted)", fontSize: 12 }}>
+                        {messageRequestStatus.reason === "request_pending"
+                          ? messageRequestStatus.requestDirection === "sent"
+                            ? "You have already sent a request. Waiting for them to accept."
+                            : "They sent you a request. Check your Pending Requests to accept."
+                          : "This user is outside your organization. You must send a message request and they must accept it before you can start chatting."}
                       </div>
-                      <button onClick={() => setReplyingToMsg(null)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }}>
-                        <Icon name="close" size={16} />
-                      </button>
+                      {messageRequestStatus.reason === "no_request" && (
+                        <button
+                          disabled={requestSending}
+                          onClick={async () => {
+                            const other = getOtherUser(activeChat, myId);
+                            if (!other) return;
+                            setRequestSending(true);
+                            try {
+                              await sendRequest(other.id || other._id);
+                              toast.success("Message request sent!");
+                              setMessageRequestStatus({ reason: "request_pending", requestDirection: "sent", requestStatus: "pending" });
+                            } catch (err: any) {
+                              toast.error("Failed to send request.");
+                            } finally {
+                              setRequestSending(false);
+                            }
+                          }}
+                          style={{ padding: "10px 24px", background: "var(--th-accent)", color: "var(--th-accent-text)", borderRadius: 12, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: requestSending ? 'not-allowed' : 'pointer', opacity: requestSending ? 0.7 : 1, border: "none", marginTop: 4 }}
+                        >
+                          {requestSending ? "Sending..." : "Send Request"}
+                        </button>
+                      )}
                     </div>
-                  )}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.2)", borderRadius: 20, padding: "8px 8px 8px 16px", backdropFilter: "blur(12px)" }}>
-                    {/* Emoji */}
-                    <div style={{ position: "relative" }}>
-                      <button
-                        onClick={() => setShowEmoji((v) => !v)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: showEmoji ? "#ffe792" : "#9eacc3", padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s" }}
-                        title="Emoji"
-                      >
-                        <Icon name="sentiment_satisfied" size={20} />
+                  </div>
+                )}
+
+                {/* Input bar */}
+                {(!messageRequestStatus) && (
+                  <footer style={{ padding: "0 20px 20px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {replyingToMsg && (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 12, padding: "8px 12px", backdropFilter: "blur(4px)", marginLeft: 16, marginRight: 16 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>
+                          <span style={{ fontSize: 11, color: "#ffe792", fontWeight: 700 }}>Replying to {replyingToMsg.sender?.full_name || "Someone"}</span>
+                          <span style={{ fontSize: 13, color: "#d8e6ff", opacity: 0.8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 300 }}>
+                            {replyingToMsg.content || "Media Attachment"}
+                          </span>
+                        </div>
+                        <button onClick={() => setReplyingToMsg(null)} style={{ background: "none", border: "none", color: "#9eacc3", cursor: "pointer", padding: 4 }}>
+                          <Icon name="close" size={16} />
+                        </button>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.2)", borderRadius: 20, padding: "8px 8px 8px 16px", backdropFilter: "blur(12px)" }}>
+                      {/* Emoji */}
+                      <div style={{ position: "relative" }}>
+                        <button
+                          onClick={() => setShowEmoji((v) => !v)}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: showEmoji ? "#ffe792" : "#9eacc3", padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s" }}
+                          title="Emoji"
+                        >
+                          <Icon name="sentiment_satisfied" size={20} />
+                        </button>
+                        {showEmoji && (
+                          <EmojiPicker
+                            onSelect={(emoji) => setInputText((prev) => prev + emoji)}
+                            onClose={() => setShowEmoji(false)}
+                          />
+                        )}
+                      </div>
+
+                      {/* Sticker */}
+                      <div style={{ position: "relative" }}>
+                        <button
+                          onClick={() => setShowSticker((v) => !v)}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: showSticker ? "#ffe792" : "#9eacc3", padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s" }}
+                          title="Sticker"
+                        >
+                          <Icon name="sticky_note_2" size={20} />
+                        </button>
+                        {showSticker && (
+                          <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12 }}>
+                            <StickerPicker
+                              onSelect={async (url) => {
+                                setShowSticker(false);
+                                setInputText("");
+                                const conv = activeChat;
+                                if (!conv) return;
+                                const tempObj = {
+                                  _id: Date.now().toString(),
+                                  id: Date.now().toString(),
+                                  message_type: 'image',
+                                  mediaType: 'image',
+                                  mediaUrl: url,
+                                  media_url: url,
+                                  content: "",
+                                  fromUserId: myId,
+                                  sender: { id: myId },
+                                  createdAt: new Date().toISOString(),
+                                  sentAt: new Date().toISOString(),
+                                };
+                                setMessages(prev => [...prev, tempObj]);
+                                try {
+                                  await api.sendTextMessage(conv.id || conv._id, "", {
+                                    message_type: "image",
+                                    mediaUrl: url
+                                  });
+                                } catch (err) { toast.error("Failed to send sticker"); }
+                              }}
+                              onClose={() => setShowSticker(false)}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Attach */}
+                      <button onClick={() => fileInputRef.current?.click()} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 6, borderRadius: 8, transition: "color 0.15s", flexShrink: 0 }} title="Attach file or image">
+                        <Icon name="attach_file" size={20} />
                       </button>
-                      {showEmoji && (
-                        <EmojiPicker
-                          onSelect={(emoji) => setInputText((prev) => prev + emoji)}
-                          onClose={() => setShowEmoji(false)}
+                      <input ref={fileInputRef} type="file" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleFileUpload} />
+
+                      {/* Text input or recording indicator */}
+                      {voice.recording ? (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", animation: "pulse 1s infinite" }} />
+                          <span style={{ fontSize: 14, color: "#d8e6ff", fontVariantNumeric: "tabular-nums" }}>{fmtTime(voice.duration)}</span>
+                          <span style={{ fontSize: 12, color: "#9eacc3" }}>Recording...</span>
+                        </div>
+                      ) : (
+                        <input
+                          value={inputText}
+                          onChange={(e) => handleTyping(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                          placeholder="Type a transmission..."
+                          style={{ flex: 1, background: "transparent", border: "none", color: "#d8e6ff", outline: "none", fontSize: 14, fontFamily: "'Manrope', sans-serif" }}
                         />
                       )}
-                    </div>
 
-                    {/* Sticker */}
-                    <div style={{ position: "relative" }}>
-                      <button
-                        onClick={() => setShowSticker((v) => !v)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: showSticker ? "#ffe792" : "#9eacc3", padding: 6, borderRadius: 8, flexShrink: 0, transition: "color 0.15s" }}
-                        title="Sticker"
-                      >
-                        <Icon name="sticky_note_2" size={20} />
-                      </button>
-                      {showSticker && (
-                        <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 12 }}>
-                          <StickerPicker
-                            onSelect={async (url) => {
-                              setShowSticker(false);
-                              setInputText("");
-                              const conv = activeChat;
-                              if (!conv) return;
-                              const tempObj = {
-                                _id: Date.now().toString(),
-                                id: Date.now().toString(),
-                                message_type: 'image',
-                                mediaType: 'image',
-                                mediaUrl: url,
-                                media_url: url,
-                                content: "",
-                                fromUserId: myId,
-                                sender: { id: myId },
-                                createdAt: new Date().toISOString(),
-                                sentAt: new Date().toISOString(),
-                              };
-                              setMessages(prev => [...prev, tempObj]);
-                              try {
-                                await api.sendTextMessage(conv.id || conv._id, "", {
-                                  message_type: "image",
-                                  mediaUrl: url
-                                });
-                              } catch (err) { toast.error("Failed to send sticker"); }
-                            }}
-                            onClose={() => setShowSticker(false)}
-                          />
-                        </div>
+                      {/* Voice button */}
+                      {!inputText.trim() && (
+                        <button
+                          onMouseDown={voice.start}
+                          onClick={voice.recording ? handleVoiceSend : undefined}
+                          title={voice.recording ? "Stop & send" : "Hold for voice note"}
+                          style={{ background: voice.recording ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)", border: voice.recording ? "1px solid rgba(239,68,68,0.4)" : "none", borderRadius: 12, padding: "8px 10px", cursor: "pointer", color: voice.recording ? "#ef4444" : "#9eacc3", flexShrink: 0, transition: "all 0.15s" }}
+                        >
+                          <Icon name={voice.recording ? "stop" : "mic"} size={20} />
+                        </button>
+                      )}
+
+                      {/* Cancel voice */}
+                      {voice.recording && (
+                        <button onClick={voice.cancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 6, flexShrink: 0 }}>
+                          <Icon name="delete" size={20} />
+                        </button>
+                      )}
+
+                      {/* Send */}
+                      {(inputText.trim() || voice.recording) && (
+                        <button
+                          onClick={voice.recording ? handleVoiceSend : handleSend}
+                          style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", border: "none", borderRadius: 14, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 16px rgba(255,215,9,0.3)" }}
+                        >
+                          <Icon name="send" size={18} style={{ color: "#1a0a00" }} />
+                        </button>
                       )}
                     </div>
-
-                    {/* Attach */}
-                    <button onClick={() => fileInputRef.current?.click()} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 6, borderRadius: 8, transition: "color 0.15s", flexShrink: 0 }} title="Attach file or image">
-                      <Icon name="attach_file" size={20} />
-                    </button>
-                    <input ref={fileInputRef} type="file" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onChange={handleFileUpload} />
-
-                    {/* Text input or recording indicator */}
-                    {voice.recording ? (
-                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", animation: "pulse 1s infinite" }} />
-                        <span style={{ fontSize: 14, color: "#d8e6ff", fontVariantNumeric: "tabular-nums" }}>{fmtTime(voice.duration)}</span>
-                        <span style={{ fontSize: 12, color: "#9eacc3" }}>Recording...</span>
-                      </div>
-                    ) : (
-                      <input
-                        value={inputText}
-                        onChange={(e) => handleTyping(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                        placeholder="Type a transmission..."
-                        style={{ flex: 1, background: "transparent", border: "none", color: "#d8e6ff", outline: "none", fontSize: 14, fontFamily: "'Manrope', sans-serif" }}
-                      />
-                    )}
-
-                    {/* Voice button */}
-                    {!inputText.trim() && (
-                      <button
-                        onMouseDown={voice.start}
-                        onClick={voice.recording ? handleVoiceSend : undefined}
-                        title={voice.recording ? "Stop & send" : "Hold for voice note"}
-                        style={{ background: voice.recording ? "rgba(239,68,68,0.2)" : "rgba(255,255,255,0.05)", border: voice.recording ? "1px solid rgba(239,68,68,0.4)" : "none", borderRadius: 12, padding: "8px 10px", cursor: "pointer", color: voice.recording ? "#ef4444" : "#9eacc3", flexShrink: 0, transition: "all 0.15s" }}
-                      >
-                        <Icon name={voice.recording ? "stop" : "mic"} size={20} />
-                      </button>
-                    )}
-
-                    {/* Cancel voice */}
-                    {voice.recording && (
-                      <button onClick={voice.cancel} style={{ background: "none", border: "none", cursor: "pointer", color: "#9eacc3", padding: 6, flexShrink: 0 }}>
-                        <Icon name="delete" size={20} />
-                      </button>
-                    )}
-
-                    {/* Send */}
-                    {(inputText.trim() || voice.recording) && (
-                      <button
-                        onClick={voice.recording ? handleVoiceSend : handleSend}
-                        style={{ background: "linear-gradient(135deg, #ffe792, #ffc300)", border: "none", borderRadius: 14, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 16px rgba(255,215,9,0.3)" }}
-                      >
-                        <Icon name="send" size={18} style={{ color: "#1a0a00" }} />
-                      </button>
-                    )}
-                  </div>
-                </footer>
+                  </footer>
+                )}
               </>
             )}
           </section>
@@ -2935,7 +2756,13 @@ export default function BubbleMessages() {
                       <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: "var(--th-text)", marginTop: 16, marginBottom: 4 }}>
                         {getChatDisplayName(activeChat, myId)}
                       </h2>
+                      {uploadProgress > 0 && <span style={{ fontSize: 10, color: "var(--th-accent)", fontWeight: 700 }}>{uploadProgress}%</span>}
                       {other?.uniqueTag && <span style={{ fontSize: 12, color: "var(--th-accent)", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
+                      {other?.org_role && (
+                        <div style={{ fontSize: 12, color: "var(--th-muted)", marginTop: 4 }}>
+                          {other.org_role} at {other.organization}
+                        </div>
+                      )}
                       {other?.bio && (
                         <div style={{ marginTop: 20, padding: "0 10px" }}>
                           <h3 style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Bio</h3>
