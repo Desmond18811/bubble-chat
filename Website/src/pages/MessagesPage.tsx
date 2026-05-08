@@ -15,6 +15,7 @@ import {
   createGroupChat,
   toggleMessagePin,
   addContact,
+  fetchConversationContext,
 } from "@/api";
 
 // New API functions for message requests
@@ -461,7 +462,7 @@ const NewChatModal = ({
               </div>
               <div style={{ height: 1, background: "var(--th-border)", margin: "16px 12px 16px" }} />
               <div style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12, fontWeight: 700 }}>
-                Network Results
+                Organization Network
               </div>
             </div>
           )}
@@ -478,7 +479,7 @@ const NewChatModal = ({
           )}
           {!loading && !query && recentContacts.length === 0 && results.length === 0 && (
             <div style={{ textAlign: "center", padding: 24, color: "var(--th-muted)", fontSize: 13 }}>
-              No explorers available on the network
+              No colleagues found in your organization
             </div>
           )}
           {results.map((u) => (
@@ -931,6 +932,7 @@ export default function BubbleMessages() {
   const [messageRequestStatus, setMessageRequestStatus] = useState<any>(null);
   const [requestSending, setRequestSending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [aidaContext, setAidaContext] = useState<{ summary: string | null; suggestions: string[]; loading: boolean; open: boolean } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1521,12 +1523,15 @@ export default function BubbleMessages() {
   const handleSelectChat = async (chat: any) => {
     setActiveChat(chat);
     setChatSearch("");
-    setMessageRequestStatus(null); // Reset on new chat
+    setMessageRequestStatus(null);
+    setAidaContext(null);
 
-    // If it's a DM, check messaging permission
-    if (!chat.isGroupChat) {
+    // If it's a DM, check messaging permission + load Aida context
+    if (!chat.isGroupChat && !chat.isAidaBot) {
       const other = getOtherUser(chat, myId);
+      const chatId = chat.id || chat._id;
       if (other && (other.id || other._id)) {
+        // Check can-message
         try {
           const status = await checkCanMessage(other.id || other._id);
           if (!status.canMessage) {
@@ -1535,6 +1540,18 @@ export default function BubbleMessages() {
         } catch (err) {
           console.error("Failed to check message permission", err);
         }
+        // Load Aida conversation context (non-blocking)
+        setAidaContext({ summary: null, suggestions: [], loading: true, open: true });
+        fetchConversationContext(chatId)
+          .then((res: any) => {
+            setAidaContext({
+              summary: res.summary || null,
+              suggestions: res.suggestions || [],
+              loading: false,
+              open: true,
+            });
+          })
+          .catch(() => setAidaContext(null));
       }
     }
   };
@@ -2602,6 +2619,59 @@ export default function BubbleMessages() {
                 {/* Input bar */}
                 {(!messageRequestStatus) && (
                   <footer style={{ padding: "0 20px 20px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {/* ── Aida Smart Suggestions Panel ── */}
+                    {aidaContext && !activeChat?.isGroupChat && !activeChat?.isAidaBot && (
+                      <div style={{ marginLeft: 8, marginRight: 8, borderRadius: 14, border: "1px solid rgba(255,231,146,0.18)", background: "rgba(255,231,146,0.04)", overflow: "hidden", transition: "all 0.3s" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", cursor: "pointer" }} onClick={() => setAidaContext(prev => prev ? { ...prev, open: !prev.open } : prev)}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#ffe792" }}>auto_awesome</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "#ffe792", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'Space Grotesk',sans-serif" }}>Aida Suggestions</span>
+                            {aidaContext.loading && <span style={{ fontSize: 10, color: "rgba(255,231,146,0.5)" }}>Analyzing…</span>}
+                          </div>
+                          <span className="material-symbols-outlined" style={{ fontSize: 16, color: "rgba(255,231,146,0.5)" }}>{aidaContext.open ? "expand_less" : "expand_more"}</span>
+                        </div>
+                        {aidaContext.open && (
+                          <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+                            {aidaContext.summary && (
+                              <div style={{ fontSize: 12, color: "rgba(216,230,255,0.65)", lineHeight: 1.6, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px", fontStyle: "italic" }}>
+                                {aidaContext.summary}
+                              </div>
+                            )}
+                            {aidaContext.loading && (
+                              <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 0" }}>
+                                {[0, 150, 300].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffe792", animation: "pulse 1s infinite", animationDelay: `${d}ms` }} />)}
+                              </div>
+                            )}
+                            {!aidaContext.loading && aidaContext.suggestions.length > 0 && (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {aidaContext.suggestions.map((s, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => setInputText(s)}
+                                    style={{
+                                      background: "rgba(255,231,146,0.08)",
+                                      border: "1px solid rgba(255,231,146,0.2)",
+                                      borderRadius: 20,
+                                      padding: "5px 12px",
+                                      fontSize: 12,
+                                      color: "#ffe792",
+                                      cursor: "pointer",
+                                      fontFamily: "'Manrope',sans-serif",
+                                      transition: "background 0.15s",
+                                      textAlign: "left",
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,231,146,0.16)")}
+                                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,231,146,0.08)")}
+                                  >
+                                    {s}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {replyingToMsg && (
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(11,36,64,0.6)", border: "1px solid rgba(59,73,92,0.3)", borderRadius: 12, padding: "8px 12px", backdropFilter: "blur(4px)", marginLeft: 16, marginRight: 16 }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: 2, overflow: "hidden" }}>

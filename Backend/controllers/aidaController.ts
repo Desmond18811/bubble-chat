@@ -1180,3 +1180,137 @@ export const deleteOrgDoc = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ error: 'Failed to delete org document.' });
   }
 };
+
+// ─── Conversation Context: Summary + Suggested Replies ───────────────────────
+/**
+ * GET /api/v1/aida/conversation-context/:conversationId
+ * Returns a short summary of the conversation and 3 AI-suggested replies
+ * tailored to the recipient's organizational role and industry.
+ */
+export const getConversationContext = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { conversationId } = req.params;
+    const userId = (req.user as any)?._id;
+
+    // Verify this user is in the conversation
+    const conv = await Conversation.findOne({ _id: conversationId, users: userId });
+    if (!conv) {
+      res.status(404).json({ error: 'Conversation not found.' });
+      return;
+    }
+
+    // Get caller + recipient profiles for context
+    const caller = await User.findById(userId).select('full_name organization org_role org_industry').lean();
+    const recipientId = (conv as any).users?.find((u: any) => String(u) !== String(userId));
+    const recipient = recipientId
+      ? await User.findById(recipientId).select('full_name organization org_role org_industry').lean()
+      : null;
+
+    // Fetch last 30 messages for summarization
+    const messages = await Message.find({ chat: conversationId })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .populate('sender', 'full_name username is_bot')
+      .lean();
+
+    if (messages.length === 0) {
+      res.status(200).json({
+        summary: null,
+        suggestions: [
+          'Hi! I wanted to reach out.',
+          'Hope you\'re having a great day!',
+          'Do you have a moment to connect?',
+        ],
+        messageCount: 0,
+      });
+      return;
+    }
+
+    const transcript = messages
+      .reverse()
+      .map((m: any) => {
+        const name = m.sender?.is_bot ? 'Aida' : (m.sender?.full_name || 'User');
+        return `${name}: ${m.content || '[media]'}`;
+      })
+      .join('\n');
+
+    const callerName = (caller as any)?.full_name || 'User';
+    const callerRole = (caller as any)?.org_role || '';
+    const callerOrg = (caller as any)?.organization || '';
+    const recipientName = (recipient as any)?.full_name || 'them';
+    const recipientRole = (recipient as any)?.org_role || '';
+    const recipientOrg = (recipient as any)?.organization || '';
+
+    const contextNote = [
+      callerRole && `You are ${callerRole}${callerOrg ? ` at ${callerOrg}` : ''}.`,
+      recipientRole && `You are messaging ${recipientName}${recipientRole ? `, ${recipientRole}` : ''}${recipientOrg ? ` at ${recipientOrg}` : ''}.`,
+    ].filter(Boolean).join(' ');
+
+    let summary = '';
+    let suggestions: string[] = [];
+
+    if (hasKey()) {
+      const [summaryRes, suggestRes] = await Promise.all([
+        callAIDA(
+          'You are Aida, a professional workspace AI. Summarize conversations in 1-2 concise sentences, focusing on key decisions and pending items.',
+          `${contextNote}\n\nConversation (last ${messages.length} messages):\n${transcript.substring(0, 2500)}\n\nSummarize this conversation in 1-2 sentences:`,
+          120,
+          0.4
+        ),
+        callAIDA(
+          `You are Aida, a professional workspace AI. Generate 3 short, contextually-appropriate reply suggestions for ${callerName}${callerRole ? ` (${callerRole})` : ''} to send next. ${contextNote} Keep each suggestion under 15 words. Return ONLY a JSON array of 3 strings, no markdown, no explanation.`,
+          `Conversation:\n${transcript.substring(0, 2000)}\n\nGenerate 3 reply suggestions as a JSON array:`,
+          200,
+          0.7
+        ),
+      ]);
+
+      summary = summaryRes;
+
+      // Parse suggestions JSON
+      try {
+        const cleaned = suggestRes.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(cleaned);
+        if (Array.isArray(parsed) && parsed.length >= 1) {
+          suggestions = parsed.slice(0, 3).map((s: any) => String(s));
+        }
+      } catch {
+        // Fallback: split by newline or numbered list
+        suggestions = suggestRes
+          .split(/\n/)
+          .map(l => l.replace(/^\d+\.\s*["']?|["']?$/, '').trim())
+          .filter(Boolean)
+          .slice(0, 3);
+      }
+    }
+
+    // Always return at least 3 suggestions
+    const rolePhrases: Record<string, string[]> = {
+      default: ['Got it, thanks!', 'Sounds good to me.', 'Can we schedule a quick sync?'],
+      engineering: ['Let me check the codebase and get back to you.', 'I\'ll open a ticket for this.', 'Can we schedule a quick review?'],
+      sales: ['I\'ll follow up with the client on this.', 'Let\'s loop in the team.', 'When works for a quick call?'],
+      hr: ['I\'ll update the records accordingly.', 'Let\'s schedule a check-in.', 'I will send the documentation shortly.'],
+      finance: ['I\'ll review the figures and revert.', 'Let me run the numbers and get back to you.', 'I\'ll process this by EOD.'],
+    };
+    const roleKey = callerRole?.toLowerCase();
+    const fallback = rolePhrases[roleKey] || rolePhrases[Object.keys(rolePhrases).find(k => roleKey?.includes(k)) || 'default'] || rolePhrases.default;
+
+    while (suggestions.length < 3) {
+      suggestions.push(fallback[suggestions.length] || 'Let me check on this and get back to you.');
+    }
+
+    res.status(200).json({
+      summary: summary || null,
+      suggestions,
+      messageCount: messages.length,
+      recipientContext: {
+        name: recipientName,
+        role: recipientRole,
+        organization: recipientOrg,
+      },
+    });
+  } catch (error: any) {
+    console.error('[Aida] Conversation context error:', error);
+    res.status(500).json({ error: 'Failed to generate conversation context.' });
+  }
+};

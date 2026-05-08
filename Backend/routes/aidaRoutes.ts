@@ -12,6 +12,7 @@ import {
   getAidaConversation,
   chatWithAidaInConversation,
   summarizeConversation,
+  getConversationContext,
   // Org Knowledge Base (RAG)
   listOrgDocs,
   getOrgDoc,
@@ -28,6 +29,7 @@ const requireAuth = passport.authenticate('jwt', { session: false });
 router.get('/conversation', requireAuth, getAidaConversation);
 router.post('/chat-message', requireAuth, chatWithAidaInConversation);
 router.get('/conversation-summary/:id', requireAuth, summarizeConversation);
+router.get('/conversation-context/:conversationId', requireAuth, getConversationContext);
 
 // ── Core conversational endpoints (AidaPage) ─────────────────────────────────
 router.post('/chat', requireAuth, chatWithAida);

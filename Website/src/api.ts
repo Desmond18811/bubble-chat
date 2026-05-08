@@ -836,6 +836,11 @@ export const fetchAidaConversationSummary = async (conversationId: string) => {
   return handleResponse(res);
 };
 
+export const fetchConversationContext = async (conversationId: string) => {
+  const res = await fetch(`${BASE_URL}/aida/conversation-context/${conversationId}`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+};
+
 export const chatWithAida = async (message: string, history: any[] = []) => {
   const res = await fetch(`${BASE_URL}/aida/chat`, {
     method: 'POST',

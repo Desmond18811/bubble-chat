@@ -303,18 +303,29 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<v
 export const searchUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const query = (req.query.search as string) || '';
-    const users = await User.find({
+    let filter: any = {
       _id: { $ne: req.user?._id },
       is_bot: { $ne: true },
-      $or: [
+    };
+
+    if (query) {
+      filter.$or = [
         { full_name: { $regex: query, $options: 'i' } },
         { username: { $regex: query, $options: 'i' } },
         { email: { $regex: query, $options: 'i' } },
         { uniqueTag: { $regex: query, $options: 'i' } },
-      ],
-    })
+      ];
+    } else {
+      // Show colleagues in the same organization by default
+      const currentUser = await User.findById(req.user?._id).select('organization');
+      if (currentUser?.organization) {
+        filter.organization = currentUser.organization;
+      }
+    }
+
+    const users = await User.find(filter)
       .select('full_name username email avatar uniqueTag isOnline verified_badge lastSeen organization org_role org_industry org_size')
-      .limit(20);
+      .limit(30);
 
     res.status(200).json({
       message: 'Users found.',

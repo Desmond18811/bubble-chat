@@ -182,8 +182,8 @@ export default function Sidebar() {
   }, []);
 
   const isActive = (path: string) => {
-    const cur = location.pathname === "/" ? "/feed" : location.pathname;
-    if (path === "/feed") return cur === "/feed" || cur === "/";
+    const cur = location.pathname === "/" ? "/messages" : location.pathname;
+    if (path === "/messages") return cur === "/messages" || cur === "/";
     return cur === path || cur.startsWith(path + "/");
   };
 

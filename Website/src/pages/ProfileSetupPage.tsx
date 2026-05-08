@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -93,8 +93,33 @@ const ProfileSetupPage: React.FC = () => {
     const token = localStorage.getItem('access_token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const firstName = (user?.full_name || 'there').split(' ')[0];
-
     const uniqueTag = user?.uniqueTag || '…';
+
+    // Aida role hint — updates 500ms after the user changes their role
+    const [aidaRoleHint, setAidaRoleHint] = useState('');
+    useEffect(() => {
+        if (!org_role) { setAidaRoleHint(''); return; }
+        const roleL = org_role.toLowerCase();
+        if (roleL.includes('engineer') || roleL.includes('developer') || roleL.includes('sre') || roleL.includes('devops')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you track PRs, debug issues, plan sprints, and draft technical proposals.`);
+        } else if (roleL.includes('product') || roleL.includes('pm')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you write PRDs, run prioritisation sessions, and surface stakeholder updates.`);
+        } else if (roleL.includes('sales') || roleL.includes('account')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you draft outreach messages, track deal notes, and prepare for client calls.`);
+        } else if (roleL.includes('marketing') || roleL.includes('content') || roleL.includes('brand')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you create campaign briefs, draft copy, and summarise performance data.`);
+        } else if (roleL.includes('hr') || roleL.includes('recruit') || roleL.includes('people')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you draft JDs, onboarding checklists, and policy documents efficiently.`);
+        } else if (roleL.includes('ceo') || roleL.includes('cto') || roleL.includes('coo') || roleL.includes('founder') || roleL.includes('director') || roleL.includes('vp') || roleL.includes('chief')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you synthesise team updates, prepare board-ready briefs, and stay on top of OKRs.`);
+        } else if (roleL.includes('design') || roleL.includes('ux') || roleL.includes('ui')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you document design decisions, write handoff notes, and draft user research summaries.`);
+        } else if (roleL.includes('finance') || roleL.includes('accountant') || roleL.includes('cfo')) {
+            setAidaRoleHint(`As a ${org_role}, Aida will help you flag invoice anomalies, summarise financial data, and draft expense reports.`);
+        } else {
+            setAidaRoleHint(`Aida will tailor its assistance to your role as ${org_role} — from drafting messages to managing your calendar.`);
+        }
+    }, [org_role]);
 
     const handleSubmit = async () => {
         if (!org_role || !organization) {
@@ -112,7 +137,7 @@ const ProfileSetupPage: React.FC = () => {
             if (!res.ok) throw new Error(data.message || 'Setup failed');
             localStorage.setItem('user', JSON.stringify({ ...user, ...data.data }));
             toast.success('Profile set up! Welcome to Bubble Space 🎉');
-            navigate('/feed');
+            navigate('/messages');
         } catch (err: any) {
             toast.error(err.message || 'Something went wrong');
         } finally {
@@ -181,6 +206,17 @@ const ProfileSetupPage: React.FC = () => {
                             onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'} onMouseLeave={e => e.currentTarget.style.filter = 'none'}>
                             Continue →
                         </button>
+
+                        {/* Aida contextual hint */}
+                        {aidaRoleHint && (
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: 'rgba(255,231,146,0.06)', border: '1px solid rgba(255,231,146,0.15)', borderRadius: 12, marginTop: 4 }}>
+                                <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1.2 }}>✨</span>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#ffe792', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 4 }}>Aida says</div>
+                                    <p style={{ margin: 0, fontSize: 12, color: '#9eacc3', lineHeight: 1.6 }}>{aidaRoleHint}</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -230,6 +266,19 @@ const ProfileSetupPage: React.FC = () => {
                                 <div>🏢 <strong style={{ color: '#d8e6ff' }}>{org_role}</strong> at <strong style={{ color: '#ffe792' }}>{organization}</strong></div>
                                 {org_industry && <div>🌐 {org_industry}</div>}
                                 {org_size && <div>👥 {ORG_SIZES.find(s => s.value === org_size)?.label} employees</div>}
+                            </div>
+                        </div>
+
+                        {/* Aida welcome message */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px', background: 'linear-gradient(135deg, rgba(255,231,146,0.07), rgba(162,194,253,0.05))', border: '1px solid rgba(255,231,146,0.18)', borderRadius: 14 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,231,146,0.12)', border: '1px solid rgba(255,231,146,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <span style={{ fontSize: 18 }}>✨</span>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#ffe792', fontFamily: "'Space Grotesk',sans-serif", marginBottom: 4 }}>Aida is ready for you, {firstName}!</div>
+                                <p style={{ margin: 0, fontSize: 12, color: '#9eacc3', lineHeight: 1.6 }}>
+                                    I know you're{org_role ? ` a ${org_role}` : ''}{organization ? ` at ${organization}` : ''}. I'll tailor every suggestion, template, and briefing to match your context. Open me from the sidebar anytime!
+                                </p>
                             </div>
                         </div>
 

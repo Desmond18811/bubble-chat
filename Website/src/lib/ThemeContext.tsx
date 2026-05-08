@@ -224,7 +224,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue>({
   themeId: "obsidian-gold",
-  theme: THEMES[0],
+  theme: THEMES[1],
   setTheme: () => { },
 });
 
@@ -248,7 +248,7 @@ function applyTheme(theme: ThemeDefinition) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const saved = (localStorage.getItem("bubble-theme") as ThemeId) || "void-black";
+  const saved = (localStorage.getItem("bubble-theme") as ThemeId) || "obsidian-gold";
   const [themeId, setThemeId] = useState<ThemeId>(saved);
 
   const theme = THEMES.find((t) => t.id === themeId) ?? THEMES[0];
