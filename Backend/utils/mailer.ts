@@ -160,3 +160,38 @@ export const sendTaskReminderEmail = async (to: string, name: string, taskTitle:
   `;
   return await sendMail(to, subject, html);
 };
+
+export const sendMessageRequestEmail = async (to: string, targetName: string, senderName: string, senderOrg: string) => {
+  const subject = `Message Request from ${senderName} at ${senderOrg}`;
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #000814; border-radius: 16px; overflow: hidden;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #001d3d 0%, #0a0a2e 50%, #1a0533 100%); padding: 40px 32px; text-align: center; border-bottom: 1px solid #7b2d8b33;">
+        <div style="font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #ffd60a; text-transform: uppercase;">BUBBLE</div>
+        <div style="font-size: 11px; color: #7b2d8b; letter-spacing: 4px; text-transform: uppercase; margin-top: 4px;">EXTERNAL TRANSMISSION</div>
+      </div>
+      <!-- Body -->
+      <div style="padding: 40px 32px; background-color: #000814;">
+        <h2 style="color: #d8e6ff; font-size: 20px; font-weight: 600; margin: 0 0 12px;">New Message Request 👋</h2>
+        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 12px;">Hello ${targetName},</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #8da4c4; margin: 0 0 28px;">
+          You have received a new cross-organization message request from <strong>${senderName}</strong> at <strong>${senderOrg}</strong>.
+        </p>
+        <div style="background: linear-gradient(135deg, #001d3d, #0a0a2e); border: 1px solid #ffd60a44; padding: 28px 20px; border-radius: 12px; text-align: center; margin: 0 0 28px;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/messages" style="display: inline-block; padding: 14px 28px; background-color: #ffd60a; color: #000814; font-weight: 800; font-size: 14px; text-decoration: none; border-radius: 8px; letter-spacing: 1px; box-shadow: 0 4px 14px rgba(255,214,10,0.4);">
+            VIEW REQUEST
+          </a>
+        </div>
+        <p style="font-size: 13px; color: #5a7a9a; line-height: 1.6; margin: 0;">
+          If you do not wish to connect with this sender, you can simply decline the request inside your Bubble workspace.
+        </p>
+      </div>
+      <!-- Footer -->
+      <div style="padding: 20px 32px; background-color: #000511; border-top: 1px solid #0a1628; text-align: center;">
+        <p style="font-size: 11px; color: #3a5a7a; margin: 0; letter-spacing: 1px;">BUBBLE CHAT · SECURE TRANSMISSIONS</p>
+      </div>
+    </div>
+  `;
+  return await sendMail(to, subject, html);
+};
+

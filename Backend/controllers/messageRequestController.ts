@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { User } from '../models/users';
 import { MessageRequest } from '../models/messageRequest';
 import { Conversation } from '../models/conversations';
+import { Notification } from '../models/notification';
+import { sendMessageRequestEmail } from '../utils/mailer';
 
 export interface AuthRequest extends Request {
     user?: any;
@@ -23,8 +25,8 @@ export const sendMessageRequest = async (req: AuthRequest, res: Response): Promi
 
     try {
         const [sender, target] = await Promise.all([
-            User.findById(req.user._id).select('organization'),
-            User.findById(targetId).select('organization full_name'),
+            User.findById(req.user._id).select('organization full_name'),
+            User.findById(targetId).select('organization full_name email'),
         ]);
 
         if (!target) { res.status(404).json({ message: 'User not found.' }); return; }
@@ -61,6 +63,21 @@ export const sendMessageRequest = async (req: AuthRequest, res: Response): Promi
             to: targetId,
             conversationId: conv._id,
             status: 'pending',
+        });
+
+        if (target?.email) {
+            sendMessageRequestEmail(target.email, target.full_name || 'User', sender?.full_name || 'A user', sender?.organization || 'Another Organization').catch(err => console.error("Email send error:", err));
+        }
+
+        // Add an in-app database notification
+        await Notification.create({
+            recipient: targetId,
+            sender: req.user._id,
+            type: 'message_request',
+            title: 'New Message Request',
+            body: `You received a message request from ${sender?.full_name || 'A user'} at ${sender?.organization || 'an external organization'}.`,
+            entityId: request._id.toString(),
+            entityType: 'MessageRequest',
         });
 
         res.status(201).json({ message: 'Message request sent.', request });

@@ -18,6 +18,7 @@ export type NotificationType =
   | 'feed_like'
   | 'feed_comment'
   | 'contact_added'
+  | 'message_request'
   | 'system';
 
 export interface INotification extends Document {
@@ -37,7 +38,7 @@ export interface INotification extends Document {
 const NotificationSchema = new Schema<INotification>(
   {
     recipient: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    sender:    { type: Schema.Types.ObjectId, ref: 'User' },
+    sender: { type: Schema.Types.ObjectId, ref: 'User' },
     type: {
       type: String,
       enum: [
@@ -45,16 +46,16 @@ const NotificationSchema = new Schema<INotification>(
         'meeting_started', 'meeting_ended', 'meeting_action_item', 'meeting_invite',
         'payment_received', 'payment_due', 'invoice_sent', 'file_shared',
         'community_post', 'feed_mention', 'feed_like', 'feed_comment',
-        'contact_added', 'system',
+        'contact_added', 'message_request', 'system',
       ],
       required: true,
     },
-    title:      { type: String, required: true },
-    body:       { type: String, required: true },
-    entityId:   { type: String },
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    entityId: { type: String },
     entityType: { type: String },
-    data:       { type: Schema.Types.Mixed },
-    read:       { type: Boolean, default: false, index: true },
+    data: { type: Schema.Types.Mixed },
+    read: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

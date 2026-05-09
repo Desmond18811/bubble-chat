@@ -527,7 +527,7 @@ function ShareToChatModal({ file, onClose }: { file: WFile; onClose: () => void 
 }
 
 /* ─── File Card ─────────────────────────────────────────────────────────────── */
-function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview, onShareToChat }: { file: WFile; onDelete: (id: string) => void; onAccessManage: (f: WFile) => void; onOpenFolder: (name: string) => void; onPreview?: (f: WFile) => void; onShareToChat?: (f: WFile) => void; }) {
+function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview, onShareToChat, onContextMenu }: { file: WFile; onDelete: (id: string) => void; onAccessManage: (f: WFile) => void; onOpenFolder: (name: string) => void; onPreview?: (f: WFile) => void; onShareToChat?: (f: WFile) => void; onContextMenu?: (e: React.MouseEvent, f: WFile) => void; }) {
   const [hovered, setHovered] = useState(false);
   const color = FILE_TYPE_COLORS[file.fileType] || FILE_TYPE_COLORS.other;
   const icon = FILE_TYPE_ICONS[file.fileType] || FILE_TYPE_ICONS.other;
@@ -542,6 +542,7 @@ function FileCard({ file, onDelete, onAccessManage, onOpenFolder, onPreview, onS
   return (
     <div
       onClick={() => { if (file.isFolder) onOpenFolder(file.name); else if (onPreview) onPreview(file); }}
+      onContextMenu={(e) => { if (onContextMenu) onContextMenu(e, file); }}
       className="col-span-12 md:col-span-4 rounded-xl overflow-hidden cursor-pointer border transition-all"
       style={{ background: "var(--th-surface)", borderColor: hovered ? "color-mix(in srgb, var(--th-accent) 0.3)" : "transparent", position: "relative" }}
       onMouseEnter={() => setHovered(true)}
@@ -768,8 +769,9 @@ export default function WorkspacesPage() {
   const [shareFile, setShareFile] = useState<WFile | null>(null);
   const [userData, setUserData] = useState<any>(null);
 
-  // Context Menu Sidebar logic
+  // Context Menu Sidebar & Cards logic
   const [sidebarMenu, setSidebarMenu] = useState<{ x: number, y: number, folderId: string } | null>(null);
+  const [cardContextMenu, setCardContextMenu] = useState<{ x: number, y: number, file: WFile } | null>(null);
 
   const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
   const [isShared, setIsShared] = useState(false);
@@ -873,6 +875,49 @@ export default function WorkspacesPage() {
       {accessFile && <AccessModal file={accessFile} onClose={() => setAccessFile(null)} onUpdated={handleFileUpdated} />}
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
       {shareFile && <ShareToChatModal file={shareFile} onClose={() => setShareFile(null)} />}
+
+      {/* File Card Context Menu */}
+      {cardContextMenu && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setCardContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCardContextMenu(null); }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: cardContextMenu.y, left: cardContextMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 180, display: "flex", flexDirection: "column", gap: 4, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+            {cardContextMenu.file.isFolder && (
+              <button
+                onClick={() => {
+                  setAccessFile(cardContextMenu.file);
+                  setCardContextMenu(null);
+                }}
+                style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              >
+                <MSIcon name="share" style={{ fontSize: 16 }} /> Share Link
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setAccessFile(cardContextMenu.file);
+                setCardContextMenu(null);
+              }}
+              style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="manage_accounts" style={{ fontSize: 16 }} /> Manage Access
+            </button>
+            <button
+              onClick={() => {
+                handleDelete(cardContextMenu.file.id);
+                setCardContextMenu(null);
+              }}
+              style={{ background: "transparent", color: "#ef4444", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="delete" style={{ fontSize: 16 }} /> Delete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Sidebar Folder Context Menu */}
       {sidebarMenu && (
@@ -1102,6 +1147,10 @@ export default function WorkspacesPage() {
                   onOpenFolder={(name) => setActiveWs(name)}
                   onPreview={(f) => setPreviewFile(f)}
                   onShareToChat={(f) => setShareFile(f)}
+                  onContextMenu={(e, file) => {
+                    e.preventDefault();
+                    setCardContextMenu({ x: e.clientX, y: e.clientY, file });
+                  }}
                 />
               ))}
             </div>

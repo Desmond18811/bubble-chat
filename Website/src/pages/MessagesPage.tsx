@@ -2058,15 +2058,22 @@ export default function BubbleMessages() {
                     >
                       <Avatar src={avatar} name={name} size={46} online={other?.isOnline} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                          <span style={{ fontWeight: 600, color: isActive ? "var(--th-accent)" : "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif" }}>
-                            {name}
-                          </span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 3 }}>
+                          <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, paddingRight: 8 }}>
+                            <span style={{ fontWeight: 600, color: isActive ? "var(--th-accent)" : "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk', sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {name}
+                            </span>
+                            {!c.isGroupChat && other?.organization && (
+                              <span style={{ fontSize: 10, color: "var(--th-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+                                {other.org_role ? `${other.org_role} at ${other.organization}` : other.organization}
+                              </span>
+                            )}
+                          </div>
                           {c.latestMessage?.sentAt ? (
-                            <span style={{ fontSize: 11, color: "#68768b" }}>
+                            <span style={{ fontSize: 11, color: "#68768b", flexShrink: 0, marginTop: 2 }}>
                               {new Date(c.latestMessage.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </span>
-                          ) : (isPinned && <Icon name="push_pin" size={12} style={{ color: "#ffe792" }} />)}
+                          ) : (isPinned && <Icon name="push_pin" size={12} style={{ color: "#ffe792", flexShrink: 0, marginTop: 2 }} />)}
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <p style={{ fontSize: 12, color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "var(--th-accent)" : "var(--th-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0, flex: 1 }}>
