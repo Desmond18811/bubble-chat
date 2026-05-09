@@ -48,16 +48,7 @@ import ReactEmojiPicker, { Theme } from "emoji-picker-react";
 import { generateKeyPair, exportPrivateKey, exportPublicKey } from "@/lib/crypto";
 import { useNavigate } from "react-router-dom";
 
-/* ─── Module-level secure media URL proxy helper ──────────────────────────── */
-const _BASE_API = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1';
-const getSecureMediaUrl = (url?: string | null, proxyType: 'message' | 'story' = 'message'): string | null => {
-  if (!url) return null;
-  if (url.includes('filebase.com')) {
-    const route = proxyType === 'story' ? 'story' : 'message';
-    return `${_BASE_API}/${route}/media/proxy?url=${encodeURIComponent(url)}`;
-  }
-  return url;
-};
+import { getSecureMediaUrl } from "@/lib/utils";
 
 /* ─── Icon helper ─────────────────────────────────────────────────────────── */
 const Icon = ({ name, fill = false, size = 24, style = {} }: any) => (
@@ -1192,6 +1183,24 @@ export default function BubbleMessages() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const aidaTimeoutRef = useRef<any>(null);
+  useEffect(() => {
+    if (activeChat && !activeChat.isGroupChat && !activeChat.isAidaBot) {
+      if (aidaTimeoutRef.current) clearTimeout(aidaTimeoutRef.current);
+      aidaTimeoutRef.current = setTimeout(() => {
+        const chatId = activeChat.id || activeChat._id;
+        fetchConversationContext(chatId).then((res: any) => {
+          setAidaContext(prev => ({
+            summary: res.summary || prev?.summary || null,
+            suggestions: res.suggestions || prev?.suggestions || [],
+            loading: false,
+            open: prev?.open !== undefined ? prev.open : true
+          }));
+        }).catch(() => { });
+      }, 1500); // Debounce to prevent flashing on rapid messaging
+    }
+  }, [messages.length, activeChat?.id, activeChat?._id]);
 
   const handleSend = async () => {
     if (!inputText.trim() || !activeChat) return;
@@ -2534,7 +2543,7 @@ export default function BubbleMessages() {
                                   {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {isMine && (
-                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#00f0ff" : "rgba(0,0,0,0.2)" }} />
+                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#ffe792" : "rgba(0,0,0,0.2)" }} />
                                 )}
                               </div>
                             </div>
@@ -2621,22 +2630,16 @@ export default function BubbleMessages() {
                   <footer style={{ padding: "0 20px 20px", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
                     {/* ── Aida Smart Suggestions Panel ── */}
                     {aidaContext && !activeChat?.isGroupChat && !activeChat?.isAidaBot && (
-                      <div style={{ marginLeft: 8, marginRight: 8, borderRadius: 14, border: "1px solid rgba(255,231,146,0.18)", background: "rgba(255,231,146,0.04)", overflow: "hidden", transition: "all 0.3s" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", cursor: "pointer" }} onClick={() => setAidaContext(prev => prev ? { ...prev, open: !prev.open } : prev)}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#ffe792" }}>auto_awesome</span>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#ffe792", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'Space Grotesk',sans-serif" }}>Aida Suggestions</span>
+                      <div style={{ marginLeft: 8, marginRight: 8, borderRadius: 14, overflow: "visible", transition: "all 0.3s" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 10px", marginBottom: 6, opacity: 0.8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }} title={aidaContext.summary || "Aida Context"}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#ffe792" }}>auto_awesome</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#ffe792", letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'Space Grotesk',sans-serif", cursor: "help" }}>Aida Suggestions</span>
                             {aidaContext.loading && <span style={{ fontSize: 10, color: "rgba(255,231,146,0.5)" }}>Analyzing…</span>}
                           </div>
-                          <span className="material-symbols-outlined" style={{ fontSize: 16, color: "rgba(255,231,146,0.5)" }}>{aidaContext.open ? "expand_less" : "expand_more"}</span>
                         </div>
                         {aidaContext.open && (
-                          <div style={{ padding: "0 14px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
-                            {aidaContext.summary && (
-                              <div style={{ fontSize: 12, color: "rgba(216,230,255,0.65)", lineHeight: 1.6, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px", fontStyle: "italic" }}>
-                                {aidaContext.summary}
-                              </div>
-                            )}
+                          <div style={{ padding: "0 10px", display: "flex", flexDirection: "column", gap: 8 }}>
                             {aidaContext.loading && (
                               <div style={{ display: "flex", gap: 6, alignItems: "center", padding: "4px 0" }}>
                                 {[0, 150, 300].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffe792", animation: "pulse 1s infinite", animationDelay: `${d}ms` }} />)}

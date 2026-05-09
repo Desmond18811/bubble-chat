@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
 import { useTheme, THEMES, ThemeId } from "@/lib/ThemeContext";
 import { uploadAvatar, getMyFollowers, getMyFollowing, followUser } from "@/api";
+import { getSecureMediaUrl } from "@/lib/utils";
 import * as api from "@/api";
 
 const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
@@ -251,7 +252,7 @@ function ProfileSection() {
           >
             <img
               src={
-                user.avatar ||
+                getSecureMediaUrl(user.avatar) ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username || "user"}`
               }
               alt="Profile"
@@ -542,7 +543,7 @@ function SocialSection() {
             >
               <img
                 src={
-                  user.avatar ||
+                  getSecureMediaUrl(user.avatar) ||
                   `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username || i}`
                 }
                 alt={user.username}

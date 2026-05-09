@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getSecureMediaUrl } from "@/lib/utils";
 
 interface AvatarInitialsProps {
   name: string;
@@ -42,7 +43,7 @@ function Initials({ name, className }: { name: string; className?: string }) {
 export function AvatarInitials({ name, url, className }: AvatarInitialsProps) {
   const [imgError, setImgError] = useState(false);
 
-  let finalUrl = url;
+  let finalUrl = getSecureMediaUrl(url);
   if (finalUrl && finalUrl.startsWith('/') && !finalUrl.startsWith('//')) {
     const baseUrl = ((import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1').replace(/\/api\/v1\/?$/, '');
     finalUrl = `${baseUrl}${finalUrl}`;
