@@ -106,16 +106,64 @@ export default function SharedWorkspacePage() {
 
       <main className="max-w-6xl mx-auto py-12 px-8">
         <header className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(162,194,253,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: "#a2c2fd" }}>
-              {(folder.uploadedBy?.full_name || "?")[0].toUpperCase()}
+          {/* ── Folder Title ── */}
+          <h1 className="text-4xl font-bold tracking-tight mb-2" style={{ ...SG, color: "#d8e6ff" }}>{folder.name}</h1>
+          {folder.description && <p style={{ color: "#9eacc3", fontSize: 15, maxWidth: "600px", marginBottom: 24 }}>{folder.description}</p>}
+
+          {/* ── Sharer Contact Card ── */}
+          {folder.uploadedBy && (
+            <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(162,194,253,0.06)", border: "1px solid rgba(162,194,253,0.15)", borderRadius: 16, padding: "16px 20px", maxWidth: 520, marginTop: 16 }}>
+              {/* Avatar */}
+              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(162,194,253,0.2)", border: "2px solid rgba(162,194,253,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, color: "#a2c2fd", flexShrink: 0, overflow: "hidden" }}>
+                {folder.uploadedBy.avatar
+                  ? <img src={folder.uploadedBy.avatar} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="avatar" />
+                  : (folder.uploadedBy.full_name || "?")[0].toUpperCase()
+                }
+              </div>
+
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ ...SG, fontSize: 14, fontWeight: 700, color: "#d8e6ff" }}>{folder.uploadedBy.full_name || folder.uploadedBy.username}</span>
+                  {folder.uploadedBy.username && (
+                    <span style={{ fontSize: 11, color: "#68768b", fontFamily: "monospace" }}>@{folder.uploadedBy.username}</span>
+                  )}
+                </div>
+
+                {(folder.uploadedBy.org_role || folder.uploadedBy.organization) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                    <MSIcon name="business" style={{ fontSize: 13, color: "#9eacc3" }} />
+                    <span style={{ fontSize: 12, color: "#9eacc3" }}>
+                      {folder.uploadedBy.org_role ? `${folder.uploadedBy.org_role} at ` : ""}{folder.uploadedBy.organization}
+                    </span>
+                  </div>
+                )}
+
+                {folder.uploadedBy.email && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                    <MSIcon name="mail" style={{ fontSize: 13, color: "#9eacc3" }} />
+                    <a href={`mailto:${folder.uploadedBy.email}`} style={{ fontSize: 12, color: "#a2c2fd", textDecoration: "none" }}>{folder.uploadedBy.email}</a>
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Button */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
+                {localStorage.getItem("access_token") && (
+                  <button
+                    onClick={() => navigate("/messages")}
+                    style={{ ...SG, background: "rgba(162,194,253,0.15)", border: "1px solid rgba(162,194,253,0.3)", color: "#a2c2fd", borderRadius: 10, padding: "7px 14px", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+                  >
+                    <MSIcon name="chat" style={{ fontSize: 14 }} /> Message
+                  </button>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <MSIcon name="folder_shared" style={{ fontSize: 12, color: "#68768b" }} />
+                  <span style={{ ...SG, fontSize: 10, color: "#68768b", textTransform: "uppercase", letterSpacing: "0.1em" }}>Shared Folder</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <p style={{ ...SG, fontSize: 11, color: "#9eacc3", textTransform: "uppercase", letterSpacing: "0.1em" }}>Shared by {folder.uploadedBy?.full_name}</p>
-              <h1 className="text-4xl font-bold tracking-tight mt-1" style={{ ...SG, color: "#d8e6ff" }}>{folder.name}</h1>
-            </div>
-          </div>
-          {folder.description && <p style={{ color: "#9eacc3", fontSize: 15, maxWidth: "600px" }}>{folder.description}</p>}
+          )}
         </header>
 
         {files.length === 0 ? (

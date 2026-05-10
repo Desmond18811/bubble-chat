@@ -752,6 +752,107 @@ function FilePreviewModal({ file, onClose }: { file: WFile; onClose: () => void 
   );
 }
 
+/* ─── Folder Share Link Access Modal ───────────────────────────────────────── */
+function FolderShareModal({ file, onClose, onUpdated }: { file: WFile; onClose: () => void; onUpdated: (f: WFile) => void }) {
+  const shareLink = `${window.location.origin}/workspace/shared/${file.id}`;
+  const [isPublic, setIsPublic] = useState(file.isPublic);
+  const [toggling, setToggling] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleToggle = async (newVal: boolean) => {
+    setToggling(true);
+    try {
+      const r = await api.manageWorkspaceFileAccess(file.id, { isPublic: newVal });
+      setIsPublic(newVal);
+      if (r.file) onUpdated(r.file);
+      toast.success(newVal ? "Folder is now public — anyone with the link can view it." : "Folder is now private.");
+    } catch {
+      toast.error("Failed to update access settings");
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareLink);
+    setCopied(true);
+    toast.success("Link copied!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 440, background: "var(--th-surface-high)", border: "1px solid var(--th-border)", borderRadius: 24, overflow: "hidden", boxShadow: "0 40px 100px rgba(0,0,0,0.9)" }}>
+        {/* Header */}
+        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid var(--th-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <MSIcon name="folder_shared" style={{ fontSize: 22, color: "var(--th-accent)" }} />
+            <h2 style={{ ...SG, fontSize: 16, fontWeight: 700, color: "var(--th-text)", margin: 0 }}>Share Link Access</h2>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--th-muted)", cursor: "pointer" }}><MSIcon name="close" style={{ fontSize: 20 }} /></button>
+        </div>
+
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Folder name */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--th-surface-low)", borderRadius: 12, padding: "12px 14px" }}>
+            <MSIcon name="folder" style={{ fontSize: 20, color: "var(--th-accent)" }} filled />
+            <span style={{ ...SG, fontSize: 14, fontWeight: 600, color: "var(--th-text)" }}>{file.name}</span>
+          </div>
+
+          {/* Public toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--th-surface-low)", borderRadius: 14, padding: "14px 16px" }}>
+            <div>
+              <div style={{ ...SG, fontSize: 13, fontWeight: 600, color: "var(--th-text)" }}>Public Access</div>
+              <div style={{ fontSize: 11, color: "var(--th-muted)", marginTop: 3 }}>
+                {isPublic ? "Anyone with the link can view this folder" : "Only people you give access to can view this folder"}
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle(!isPublic)}
+              disabled={toggling}
+              style={{
+                width: 48, height: 26, borderRadius: 13, border: "none", cursor: toggling ? "not-allowed" : "pointer",
+                background: isPublic ? "var(--th-accent)" : "rgba(255,255,255,0.15)",
+                position: "relative", transition: "background 0.25s", flexShrink: 0,
+              }}
+            >
+              <span style={{
+                position: "absolute", top: 3, left: isPublic ? 25 : 3,
+                width: 20, height: 20, borderRadius: "50%", background: "#fff",
+                transition: "left 0.25s", boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+
+          {/* Shareable link */}
+          <div>
+            <label style={{ ...SG, fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.12em", display: "block", marginBottom: 8 }}>Shareable Link</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                readOnly
+                value={shareLink}
+                style={{ flex: 1, background: "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "var(--th-muted)", outline: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+              />
+              <button
+                onClick={copyLink}
+                style={{ background: copied ? "color-mix(in srgb, var(--th-accent) 20%, transparent)" : "var(--th-surface-low)", border: "1px solid var(--th-border)", borderRadius: 10, padding: "10px 14px", cursor: "pointer", color: copied ? "var(--th-accent)" : "var(--th-muted)", fontSize: 12, fontWeight: 700, ...SG, display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s", flexShrink: 0 }}
+              >
+                <MSIcon name={copied ? "check" : "content_copy"} style={{ fontSize: 16 }} />
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: "var(--th-muted)", background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "10px 14px", lineHeight: 1.6 }}>
+            <MSIcon name="info" style={{ fontSize: 14, verticalAlign: "middle", marginRight: 6 }} />
+            When public, shared users can view and download all files inside this folder. Private folders require explicit user access grants via Manage Access.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Root ──────────────────────────────────────────────────────────────────── */
 export default function WorkspacesPage() {
   const [files, setFiles] = useState<WFile[]>([]);
@@ -772,6 +873,7 @@ export default function WorkspacesPage() {
   // Context Menu Sidebar & Cards logic
   const [sidebarMenu, setSidebarMenu] = useState<{ x: number, y: number, folderId: string } | null>(null);
   const [cardContextMenu, setCardContextMenu] = useState<{ x: number, y: number, file: WFile } | null>(null);
+  const [folderShareModal, setFolderShareModal] = useState<WFile | null>(null);
 
   const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
   const [isShared, setIsShared] = useState(false);
@@ -875,24 +977,55 @@ export default function WorkspacesPage() {
       {accessFile && <AccessModal file={accessFile} onClose={() => setAccessFile(null)} onUpdated={handleFileUpdated} />}
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
       {shareFile && <ShareToChatModal file={shareFile} onClose={() => setShareFile(null)} />}
+      {folderShareModal && <FolderShareModal file={folderShareModal} onClose={() => setFolderShareModal(null)} onUpdated={(f) => { handleFileUpdated(f); setFolderShareModal(f); }} />}
 
       {/* File Card Context Menu */}
       {cardContextMenu && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setCardContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCardContextMenu(null); }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: cardContextMenu.y, left: cardContextMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 180, display: "flex", flexDirection: "column", gap: 4, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: cardContextMenu.y, left: cardContextMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 210, display: "flex", flexDirection: "column", gap: 2, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
             {cardContextMenu.file.isFolder && (
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${cardContextMenu.file.id}`);
-                  toast.success("Folder link copied!");
-                  setCardContextMenu(null);
-                }}
-                style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-              >
-                <MSIcon name="share" style={{ fontSize: 16 }} /> Share Folder Link
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${cardContextMenu.file.id}`);
+                    toast.success("Folder link copied!");
+                    setCardContextMenu(null);
+                  }}
+                  style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                >
+                  <MSIcon name="link" style={{ fontSize: 16 }} /> Copy Folder Link
+                </button>
+                <button
+                  onClick={() => {
+                    setFolderShareModal(cardContextMenu.file);
+                    setCardContextMenu(null);
+                  }}
+                  style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                >
+                  <MSIcon name="folder_shared" style={{ fontSize: 16 }} /> Share Link Access
+                </button>
+                <button
+                  onClick={async () => {
+                    const newName = prompt("Rename folder:", cardContextMenu.file.name);
+                    if (!newName || newName === cardContextMenu.file.name) { setCardContextMenu(null); return; }
+                    try {
+                      const r = await api.updateWorkspaceFileMeta(cardContextMenu.file.id, { name: newName });
+                      if (r.file) handleFileUpdated(r.file);
+                      toast.success("Folder renamed!");
+                    } catch { toast.error("Failed to rename folder"); }
+                    setCardContextMenu(null);
+                  }}
+                  style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                >
+                  <MSIcon name="edit" style={{ fontSize: 16 }} /> Rename Folder
+                </button>
+              </>
             )}
             <button
               onClick={() => {
@@ -905,6 +1038,7 @@ export default function WorkspacesPage() {
             >
               <MSIcon name="manage_accounts" style={{ fontSize: 16 }} /> Manage Access
             </button>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 8px" }} />
             <button
               onClick={() => {
                 handleDelete(cardContextMenu.file.id);
@@ -923,7 +1057,7 @@ export default function WorkspacesPage() {
       {/* Sidebar Folder Context Menu */}
       {sidebarMenu && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setSidebarMenu(null)} onContextMenu={(e) => { e.preventDefault(); setSidebarMenu(null); }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: sidebarMenu.y, left: sidebarMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 180, display: "flex", flexDirection: "column", gap: 4, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: sidebarMenu.y, left: sidebarMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 210, display: "flex", flexDirection: "column", gap: 2, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${sidebarMenu.folderId}`);
@@ -934,12 +1068,24 @@ export default function WorkspacesPage() {
               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
               onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
             >
-              <MSIcon name="share" style={{ fontSize: 16 }} /> Share Folder Link
+              <MSIcon name="link" style={{ fontSize: 16 }} /> Copy Folder Link
             </button>
             <button
               onClick={() => {
                 const doc = folderDocs.find(f => f.id === sidebarMenu.folderId);
-                if (doc) setAccessFile({ ...doc, isFolder: true, sharedWith: [], blockedUsers: [] } as any);
+                if (doc) setFolderShareModal(doc as any);
+                setSidebarMenu(null);
+              }}
+              style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="folder_shared" style={{ fontSize: 16 }} /> Share Link Access
+            </button>
+            <button
+              onClick={() => {
+                const doc = folderDocs.find(f => f.id === sidebarMenu.folderId);
+                if (doc) setAccessFile({ ...doc, isFolder: true, sharedWith: doc.sharedWith || [], blockedUsers: doc.blockedUsers || [] } as any);
                 setSidebarMenu(null);
               }}
               style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
@@ -948,6 +1094,25 @@ export default function WorkspacesPage() {
             >
               <MSIcon name="manage_accounts" style={{ fontSize: 16 }} /> Manage Access
             </button>
+            <button
+              onClick={async () => {
+                const doc = folderDocs.find(f => f.id === sidebarMenu.folderId);
+                const newName = prompt("Rename folder:", doc?.name || "");
+                if (!newName || newName === doc?.name) { setSidebarMenu(null); return; }
+                try {
+                  const r = await api.updateWorkspaceFileMeta(sidebarMenu.folderId, { name: newName });
+                  if (r.file) handleFileUpdated(r.file);
+                  toast.success("Folder renamed!");
+                } catch { toast.error("Failed to rename folder"); }
+                setSidebarMenu(null);
+              }}
+              style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="edit" style={{ fontSize: 16 }} /> Rename Folder
+            </button>
+            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 8px" }} />
             <button
               onClick={() => {
                 handleDelete(sidebarMenu.folderId);

@@ -2597,15 +2597,62 @@ export default function BubbleMessages() {
                 {messageRequestStatus && !activeChat?.isGroupChat && (
                   <div style={{ padding: "0 28px 24px", display: "flex", justifyContent: "center" }}>
                     <div style={{ background: "color-mix(in srgb, var(--th-surface-low) 80%, transparent)", border: "1px solid var(--th-border)", borderRadius: 16, padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, width: "100%", maxWidth: 600, textAlign: "center", backdropFilter: "blur(10px)" }}>
-                      <Icon name={messageRequestStatus.reason === "request_pending" ? "hourglass_empty" : "lock"} size={32} style={{ color: "var(--th-accent)" }} />
-                      <div style={{ color: "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600 }}>Message Request Required</div>
+                      <Icon name={messageRequestStatus.reason === "request_pending" && messageRequestStatus.requestDirection === "received" ? "mark_email_unread" : messageRequestStatus.reason === "request_pending" ? "hourglass_empty" : "lock"} size={32} style={{ color: messageRequestStatus.requestDirection === "received" ? "#ffe792" : "var(--th-accent)" }} />
+                      <div style={{ color: "var(--th-text)", fontSize: 14, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600 }}>
+                        {messageRequestStatus.reason === "request_pending" && messageRequestStatus.requestDirection === "received" ? "Message Request Received" : "Message Request Required"}
+                      </div>
                       <div style={{ color: "var(--th-muted)", fontSize: 12 }}>
                         {messageRequestStatus.reason === "request_pending"
                           ? messageRequestStatus.requestDirection === "sent"
                             ? "You have already sent a request. Waiting for them to accept."
-                            : "They sent you a request. Check your Pending Requests to accept."
+                            : `${getChatDisplayName(activeChat, myId)} wants to message you. Accept to start chatting.`
                           : "This user is outside your organization. You must send a message request and they must accept it before you can start chatting."}
                       </div>
+                      {/* Inbound request — show Accept / Decline inline */}
+                      {messageRequestStatus.reason === "request_pending" && messageRequestStatus.requestDirection === "received" && (
+                        <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+                          <button
+                            disabled={requestSending}
+                            onClick={async () => {
+                              setRequestSending(true);
+                              try {
+                                const { respondToMessageRequest } = await import("@/api");
+                                await respondToMessageRequest(messageRequestStatus.entityId || messageRequestStatus.requestId, "accept");
+                                toast.success("Message request accepted! You can now chat.");
+                                setMessageRequestStatus(null);
+                              } catch (err: any) {
+                                toast.error(err.message || "Failed to accept request.");
+                              } finally {
+                                setRequestSending(false);
+                              }
+                            }}
+                            style={{ padding: "10px 24px", background: "var(--th-accent)", color: "var(--th-accent-text)", borderRadius: 12, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: requestSending ? 'not-allowed' : 'pointer', opacity: requestSending ? 0.7 : 1, border: "none" }}
+                          >
+                            {requestSending ? "Processing..." : "✓ Accept"}
+                          </button>
+                          <button
+                            disabled={requestSending}
+                            onClick={async () => {
+                              setRequestSending(true);
+                              try {
+                                const { respondToMessageRequest } = await import("@/api");
+                                await respondToMessageRequest(messageRequestStatus.entityId || messageRequestStatus.requestId, "decline");
+                                toast.success("Message request declined.");
+                                setMessageRequestStatus(null);
+                                setActiveChat(null);
+                              } catch (err: any) {
+                                toast.error(err.message || "Failed to decline request.");
+                              } finally {
+                                setRequestSending(false);
+                              }
+                            }}
+                            style={{ padding: "10px 24px", background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: requestSending ? 'not-allowed' : 'pointer', opacity: requestSending ? 0.7 : 1 }}
+                          >
+                            ✕ Decline
+                          </button>
+                        </div>
+                      )}
+                      {/* Outbound no-request — show Send Request button */}
                       {messageRequestStatus.reason === "no_request" && (
                         <button
                           disabled={requestSending}
@@ -2838,15 +2885,36 @@ export default function BubbleMessages() {
                       </h2>
                       {uploadProgress > 0 && <span style={{ fontSize: 10, color: "var(--th-accent)", fontWeight: 700 }}>{uploadProgress}%</span>}
                       {other?.uniqueTag && <span style={{ fontSize: 12, color: "var(--th-accent)", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
-                      {(other?.org_role || other?.organization) && (
-                        <div style={{ fontSize: 12, color: "var(--th-muted)", marginTop: 4 }}>
-                          {other.org_role ? `${other.org_role} at ${other.organization}` : other.organization}
+
+                      {/* ── Professional Info Card ── */}
+                      {(other?.org_role || other?.organization || other?.email) && (
+                        <div style={{ marginTop: 14, width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid var(--th-border)", borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
+                          <div style={{ fontSize: 9, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 8, fontFamily: "'Space Grotesk',sans-serif" }}>Professional Info</div>
+                          {other?.org_role && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                              <Icon name="badge" size={14} style={{ color: "var(--th-accent)", flexShrink: 0 }} />
+                              <span style={{ fontSize: 12, color: "var(--th-text)", fontWeight: 600 }}>{other.org_role}</span>
+                            </div>
+                          )}
+                          {other?.organization && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                              <Icon name="business" size={14} style={{ color: "var(--th-muted)", flexShrink: 0 }} />
+                              <span style={{ fontSize: 12, color: "var(--th-muted)" }}>{other.organization}</span>
+                            </div>
+                          )}
+                          {other?.email && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <Icon name="mail" size={14} style={{ color: "var(--th-muted)", flexShrink: 0 }} />
+                              <a href={`mailto:${other.email}`} style={{ fontSize: 12, color: "var(--th-accent)", textDecoration: "none", wordBreak: "break-all" }}>{other.email}</a>
+                            </div>
+                          )}
                         </div>
                       )}
+
                       {other?.bio && (
-                        <div style={{ marginTop: 20, padding: "0 10px" }}>
-                          <h3 style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Bio</h3>
-                          <p style={{ fontSize: 13, color: "var(--th-muted)", lineHeight: 1.6, margin: 0 }}>{other.bio}</p>
+                        <div style={{ marginTop: 14, padding: "0 2px", width: "100%", textAlign: "left" }}>
+                          <h3 style={{ fontSize: 9, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 6, fontFamily: "'Space Grotesk',sans-serif" }}>Bio</h3>
+                          <p style={{ fontSize: 12, color: "var(--th-muted)", lineHeight: 1.6, margin: 0 }}>{other.bio}</p>
                         </div>
                       )}
                     </div>
