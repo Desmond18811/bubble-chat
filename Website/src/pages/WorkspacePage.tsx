@@ -1207,10 +1207,9 @@ export default function WorkspacesPage() {
                       <a href="#"
                         onClick={(e) => { e.preventDefault(); setIsShared(false); setActiveWs(ws === activeWs ? null : ws); }}
                         onContextMenu={(e) => {
-                          if (doc) {
-                            e.preventDefault();
-                            setSidebarMenu({ x: e.clientX, y: e.clientY, folderId: doc.id });
-                          }
+                          e.preventDefault();
+                          const targetId = doc ? doc.id : ws;
+                          setSidebarMenu({ x: e.clientX, y: e.clientY, folderId: targetId });
                         }}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
                         style={activeWs === ws ? { background: "var(--th-surface-top)", color: "var(--th-accent)", fontWeight: 500 } : { color: "var(--th-muted)" }}>

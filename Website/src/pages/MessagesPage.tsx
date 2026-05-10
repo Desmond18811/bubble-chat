@@ -1209,6 +1209,21 @@ export default function BubbleMessages() {
     const parentMsgId = replyingToMsg ? replyingToMsg.id || replyingToMsg._id : undefined;
     setReplyingToMsg(null);
     try {
+      if (messageRequestStatus?.reason === "no_request") {
+        const other = getOtherUser(activeChat, myId);
+        if (other) {
+          try {
+            const { sendMessageRequest: sendReqApi } = await import("@/api");
+            await sendReqApi(other.id || other._id);
+            toast.success("Message request sent!");
+            setMessageRequestStatus({ reason: "request_pending", requestDirection: "sent", requestStatus: "pending" });
+          } catch (err: any) {
+            toast.error("Failed to send request.");
+          }
+        }
+        return; // Don't try to send the actual text message yet
+      }
+
       if (activeChat.isAidaBot) {
         // Optimistic UI update for user message
         const targetChatId = activeChat.id || activeChat._id;
@@ -2550,7 +2565,7 @@ export default function BubbleMessages() {
                                   {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {isMine && (
-                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#ffe792" : "rgba(0,0,0,0.2)" }} />
+                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#4ade80" : "rgba(255,255,255,0.5)" }} />
                                 )}
                               </div>
                             </div>
@@ -2887,9 +2902,8 @@ export default function BubbleMessages() {
                       {other?.uniqueTag && <span style={{ fontSize: 12, color: "var(--th-accent)", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
 
                       {/* ── Professional Info Card ── */}
-                      {(other?.org_role || other?.organization || other?.email) && (
+                      {(other?.org_role || other?.organization) && (
                         <div style={{ marginTop: 14, width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid var(--th-border)", borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
-                          <div style={{ fontSize: 9, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: 8, fontFamily: "'Space Grotesk',sans-serif" }}>Professional Info</div>
                           {other?.org_role && (
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                               <Icon name="badge" size={14} style={{ color: "var(--th-accent)", flexShrink: 0 }} />
@@ -2897,15 +2911,9 @@ export default function BubbleMessages() {
                             </div>
                           )}
                           {other?.organization && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <Icon name="business" size={14} style={{ color: "var(--th-muted)", flexShrink: 0 }} />
                               <span style={{ fontSize: 12, color: "var(--th-muted)" }}>{other.organization}</span>
-                            </div>
-                          )}
-                          {other?.email && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <Icon name="mail" size={14} style={{ color: "var(--th-muted)", flexShrink: 0 }} />
-                              <a href={`mailto:${other.email}`} style={{ fontSize: 12, color: "var(--th-accent)", textDecoration: "none", wordBreak: "break-all" }}>{other.email}</a>
                             </div>
                           )}
                         </div>

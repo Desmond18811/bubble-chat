@@ -16,24 +16,24 @@ const formatUser = (u: any) => ({
   email: u.email || null,
   phone_number: u.phone_number || null,
   avatar: u.avatar || null,
-  
+
   // Status & Identity
   status_message: u.status_message || null,
   mood_emoji: u.mood_emoji || null,
   isOnline: u.isOnline ?? false,
   lastSeen: u.lastSeen || null,
   last_active_at: u.last_active_at || null,
-  
+
   // Metadata
   uniqueTag: u.uniqueTag || null,
   bio: u.bio || null,
   isVerified: u.isVerified ?? false,
   isPremium: u.isPremium ?? false,
   verified_badge: u.verified_badge ?? false,
-  
+
   // Encryption
   publicKey: u.publicKey || null,
-  
+
   createdAt: u.createdAt || null,
   updatedAt: u.updatedAt || null,
 });
@@ -44,12 +44,12 @@ const formatConversation = (c: any) => ({
   isGroupChat: c.isGroupChat ?? false,
   users: Array.isArray(c.users) ? c.users.map(formatUser) : [],
   groupAdmin: c.groupAdmin ? formatUser(c.groupAdmin) : null,
-  
+
   // Group Metadata
   groupIcon: c.groupIcon || null,
   groupDescription: c.groupDescription || null,
   pinnedMessages: c.pinnedMessages || [],
-  
+
   // Features
   ephemeralSettings: {
     isEnabled: c.ephemeralSettings?.isEnabled ?? false,
@@ -57,29 +57,29 @@ const formatConversation = (c: any) => ({
   },
   theme: c.theme || 'default',
   is_broadcast: c.is_broadcast ?? false,
-  
+
   // User context (usually checked against current user in frontend, but here for completeness)
   mutedBy: c.mutedBy || [],
   archivedBy: c.archivedBy || [],
-  
+
   latestMessage: c.latestMessage
     ? {
-        id: c.latestMessage._id,
-        content: c.latestMessage.content || null,
-        mediaUrl: c.latestMessage.mediaUrl || null,
-        mediaType: c.latestMessage.mediaType || null,
-        message_type: c.latestMessage.message_type || 'text',
-        sender: c.latestMessage.sender
-          ? {
-              id: c.latestMessage.sender._id,
-              full_name: c.latestMessage.sender.full_name || null,
-              username: c.latestMessage.sender.username || null,
-              avatar: c.latestMessage.sender.avatar || null,
-              uniqueTag: c.latestMessage.sender.uniqueTag || null,
-            }
-          : null,
-        sentAt: c.latestMessage.createdAt || null,
-      }
+      id: c.latestMessage._id,
+      content: c.latestMessage.content || null,
+      mediaUrl: c.latestMessage.mediaUrl || null,
+      mediaType: c.latestMessage.mediaType || null,
+      message_type: c.latestMessage.message_type || 'text',
+      sender: c.latestMessage.sender
+        ? {
+          id: c.latestMessage.sender._id,
+          full_name: c.latestMessage.sender.full_name || null,
+          username: c.latestMessage.sender.username || null,
+          avatar: c.latestMessage.sender.avatar || null,
+          uniqueTag: c.latestMessage.sender.uniqueTag || null,
+        }
+        : null,
+      sentAt: c.latestMessage.createdAt || null,
+    }
     : null,
   totalMembers: Array.isArray(c.users) ? c.users.length : 0,
   createdAt: c.createdAt || null,
@@ -448,9 +448,20 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
  */
 export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    // Just a stub for now so it doesn't 404, returning 0 unread messages globally.
-    // In a real scenario, this would count messages where readBy does not contain req.user._id
-    res.status(200).json({ count: 0 });
+    const userId = req.user?._id;
+    if (!userId) { res.status(401).json({ message: 'Unauthorized' }); return; }
+
+    const conversations = await Conversation.find({ users: userId }).select('_id');
+    const chatIds = conversations.map(c => c._id);
+
+    const count = await Message.countDocuments({
+      chat: { $in: chatIds },
+      sender: { $ne: userId },
+      readBy: { $ne: userId },
+      deletedFor: { $ne: userId }
+    });
+
+    res.status(200).json({ count });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
