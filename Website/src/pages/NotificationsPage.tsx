@@ -7,9 +7,12 @@ import {
   markAllNotificationsRead,
   deleteNotification,
   clearAllNotifications,
+  respondToMessageRequest,
 } from "@/api";
+import { toast } from "sonner";
 
 const TYPE_ICONS: Record<string, string> = {
+  message_request: "person_add",
   new_message: "chat",
   new_group_message: "group",
   task_assigned: "task_alt",
@@ -47,6 +50,7 @@ const TYPE_COLORS: Record<string, string> = {
   feed_like: "#ef4444",
   feed_comment: "#6366f1",
   contact_added: "#10b981",
+  message_request: "#f59e0b",
   system: "#6b7280",
 };
 
@@ -126,6 +130,17 @@ export default function NotificationsPage() {
   const handleDelete = async (id: string) => {
     await deleteNotification(id);
     setNotifications(prev => prev.filter(n => n._id !== id));
+  };
+
+  const handleMessageRequest = async (e: React.MouseEvent, n: any, action: 'accept' | 'decline') => {
+    e.stopPropagation();
+    try {
+      await respondToMessageRequest(n.entityId, action);
+      toast.success(action === 'accept' ? 'Message request accepted' : 'Message request declined');
+      await handleDelete(n._id);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to process request');
+    }
   };
 
   const handleClearAll = async () => {
@@ -250,6 +265,24 @@ export default function NotificationsPage() {
                             <p className="text-sm mt-0.5 leading-relaxed" style={{ color: "var(--th-muted)" }}>
                               {n.body}
                             </p>
+                            {n.type === "message_request" && (
+                              <div className="flex gap-3 mt-3">
+                                <button
+                                  onClick={(e) => handleMessageRequest(e, n, "accept")}
+                                  className="px-4 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
+                                  style={{ background: "var(--th-accent)", color: "var(--th-accent-text)" }}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={(e) => handleMessageRequest(e, n, "decline")}
+                                  className="px-4 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
+                                  style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444" }}
+                                >
+                                  Decline
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           {/* Meta */}

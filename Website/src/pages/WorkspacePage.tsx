@@ -883,14 +883,15 @@ export default function WorkspacesPage() {
             {cardContextMenu.file.isFolder && (
               <button
                 onClick={() => {
-                  setAccessFile(cardContextMenu.file);
+                  navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${cardContextMenu.file.id}`);
+                  toast.success("Folder link copied!");
                   setCardContextMenu(null);
                 }}
                 style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
                 onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
                 onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
-                <MSIcon name="share" style={{ fontSize: 16 }} /> Share Link
+                <MSIcon name="share" style={{ fontSize: 16 }} /> Share Folder Link
               </button>
             )}
             <button
@@ -925,15 +926,27 @@ export default function WorkspacesPage() {
           <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: sidebarMenu.y, left: sidebarMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 180, display: "flex", flexDirection: "column", gap: 4, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
             <button
               onClick={() => {
-                const doc = folderDocs.find(f => f.id === sidebarMenu.folderId);
-                if (doc) setAccessFile({ ...doc, isFolder: true, sharedWith: [], blockedUsers: [] } as any); // Partial fill placeholder for fetching true details or passing ID
+                navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${sidebarMenu.folderId}`);
+                toast.success("Folder link copied!");
                 setSidebarMenu(null);
               }}
               style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
               onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
             >
-              <MSIcon name="share" style={{ fontSize: 16 }} /> Share Link
+              <MSIcon name="share" style={{ fontSize: 16 }} /> Share Folder Link
+            </button>
+            <button
+              onClick={() => {
+                const doc = folderDocs.find(f => f.id === sidebarMenu.folderId);
+                if (doc) setAccessFile({ ...doc, isFolder: true, sharedWith: [], blockedUsers: [] } as any);
+                setSidebarMenu(null);
+              }}
+              style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+              onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+            >
+              <MSIcon name="manage_accounts" style={{ fontSize: 16 }} /> Manage Access
             </button>
             <button
               onClick={() => {

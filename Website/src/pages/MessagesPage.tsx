@@ -2838,9 +2838,9 @@ export default function BubbleMessages() {
                       </h2>
                       {uploadProgress > 0 && <span style={{ fontSize: 10, color: "var(--th-accent)", fontWeight: 700 }}>{uploadProgress}%</span>}
                       {other?.uniqueTag && <span style={{ fontSize: 12, color: "var(--th-accent)", fontFamily: "monospace" }}>{other.uniqueTag}</span>}
-                      {other?.org_role && (
+                      {(other?.org_role || other?.organization) && (
                         <div style={{ fontSize: 12, color: "var(--th-muted)", marginTop: 4 }}>
-                          {other.org_role} at {other.organization}
+                          {other.org_role ? `${other.org_role} at ${other.organization}` : other.organization}
                         </div>
                       )}
                       {other?.bio && (

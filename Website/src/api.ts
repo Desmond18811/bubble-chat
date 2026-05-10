@@ -1436,3 +1436,22 @@ export const fetchUnreadMessageCount = async () => {
   });
   return handleResponse(res);
 };
+
+// ─── Messages: Request System ─────────────────────────────────────────────────
+
+export const sendMessageRequest = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/message/request/${userId}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const respondToMessageRequest = async (requestId: string, action: 'accept' | 'decline') => {
+  const res = await fetch(`${BASE_URL}/message/request/${requestId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ action }),
+  });
+  return handleResponse(res);
+};
