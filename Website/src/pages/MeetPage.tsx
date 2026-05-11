@@ -894,19 +894,13 @@ function MeetRoom() {
           console.warn("Could not create meeting record:", err);
         }
 
-        // const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-        //   ZEGO_APP_ID,
-        //   ZEGO_SERVER_SECRET,
-        //   roomId,
-        //   currentUser.id,
-        //   currentUser.name
-        // );
-
-        const tokenRes = await fetch(`${BASE_URL}/meet/token?roomId=${encodeURIComponent(roomId)}`, {
-          headers: getAuthHeaders(),
-        });
-
-        const { token: kitToken } = await tokenRes.json();
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+          ZEGO_APP_ID,
+          ZEGO_SERVER_SECRET,
+          roomId,
+          currentUser.id,
+          currentUser.name
+        );
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zpRef.current = zp;
@@ -935,10 +929,15 @@ function MeetRoom() {
         setIsInitializing(false);
       } catch (err: any) {
         console.error("Zego Initialization Error:", err);
-        setInitError(
-          "Service Plan Expired (Error 20021). Our communication backend (ZegoCloud) free tier has run out. " +
-          "Please restore video/voice capabilities by upgrading the billing plan."
-        );
+        const errMsg = err?.message || String(err) || "";
+        if (errMsg.includes("20021")) {
+          setInitError(
+            "Service Plan Expired (Error 20021). Our communication backend (ZegoCloud) free tier has run out. " +
+            "Please restore video/voice capabilities by upgrading the billing plan."
+          );
+        } else {
+          setInitError(`Connection Failure: ${errMsg || "Unknown initialization error"}. Check your network and try again.`);
+        }
         setIsInitializing(false);
       }
     };
