@@ -4,7 +4,7 @@
 
 const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
-const getAuthHeaders = () => {
+export const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token');
   return {
     'Content-Type': 'application/json',

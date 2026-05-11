@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import { getCallLogs, createCallLog, clearCallLogs, deleteCallLog, getRoomTranscript, saveTranscriptChunk } from '../controllers/meetController';
+import { getZegoToken } from '../utils/zego';
 
 const router = express.Router();
 router.use(passport.authenticate('jwt', { session: false }));
@@ -69,5 +70,15 @@ router.delete('/logs', clearCallLogs);
 router.delete('/logs/:id', deleteCallLog);
 router.get('/logs/:roomId/transcript', getRoomTranscript);
 router.post('/logs/:roomId/transcript/chunks', saveTranscriptChunk);
+router.get('/token', (req, res) => {
+    try {
+        const userId = (req as any).user?._id?.toString();
+        const roomId = req.query.roomId as string || '';
+        const token = getZegoToken(userId, roomId, 3600);
+        res.json({ token });
+    } catch (err: any) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 export default router;

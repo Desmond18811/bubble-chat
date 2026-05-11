@@ -1,29 +1,57 @@
 import crypto from 'crypto';
 
-// Replace with your actual App ID and Server Secret from ZegoCloud console
-const appId = process.env.ZEGO_APP_ID;
-const serverSecret = process.env.ZEGO_SERVER_SECRET;
+const appId = Number(process.env.ZEGO_APP_ID);
+const serverSecret = process.env.ZEGO_SERVER_SECRET || '';
 
-/**
- * Generate a ZegoCloud Token for Audio/Video calls.
- * 
- * Note: ZegoCloud provides an official server SDK for token generation,
- * e.g., using `zegocloud-server-sdk` or standard `generateToken04` algorithms.
- * 
- * Install the library using: npm install zego-express-engine-webrtc (client)
- * and generate tokens securely on the server utilizing their provided Node.js code snippets
- * or a library like `zego-server-assistant`.
- */
-export const getZegoToken = (userId: string, roomId: string, expireSeconds: number = 3600) => {
-  if (!appId || !serverSecret) {
-    throw new Error('ZEGO_APP_ID or ZEGO_SERVER_SECRET is undefined in your environment.');
+function generateToken04(
+  appId: number,
+  userId: string,
+  secret: string,
+  effectiveTimeInSeconds: number,
+  payload: string = ''
+): string {
+  if (!appId || !secret) {
+    throw new Error('ZEGO_APP_ID or ZEGO_SERVER_SECRET is not configured.');
   }
 
-  // Placeholder indicating where the token generation logic should sit. 
-  // You can drop in the `generateToken04` implementation from ZegoCloud Docs here.
-  
-  // Example dummy return:
-  // const token = generateToken04(Number(appId), userId, serverSecret, expireSeconds, '');
-  
-  return 'DUMMY_ZEGO_TOKEN_FOR_' + userId + '_ROOM_' + roomId;
+  const createTime = Math.floor(Date.now() / 1000);
+  const tokenInfo = {
+    app_id: appId,
+    user_id: userId,
+    nonce: Math.floor(Math.random() * 2147483647),
+    ctime: createTime,
+    expire: createTime + effectiveTimeInSeconds,
+    payload,
+  };
+
+  const plaintextJson = JSON.stringify(tokenInfo);
+  const plaintextBuffer = Buffer.from(plaintextJson, 'utf8');
+
+  // AES-128-CBC encryption with PKCS7 padding
+  const keyBuffer = Buffer.from(secret, 'utf8').slice(0, 16);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-128-cbc', keyBuffer, iv);
+  const encryptedBuffer = Buffer.concat([
+    cipher.update(plaintextBuffer),
+    cipher.final(),
+  ]);
+
+  // Pack: [8-byte expire][2-byte iv length][iv][2-byte ciphertext length][ciphertext]
+  const expireBuf = Buffer.alloc(8);
+  expireBuf.writeBigInt64BE(BigInt(tokenInfo.expire), 0);
+  const ivLenBuf = Buffer.alloc(2);
+  ivLenBuf.writeUInt16BE(iv.length, 0);
+  const cipherLenBuf = Buffer.alloc(2);
+  cipherLenBuf.writeUInt16BE(encryptedBuffer.length, 0);
+
+  const packed = Buffer.concat([expireBuf, ivLenBuf, iv, cipherLenBuf, encryptedBuffer]);
+  return '04' + packed.toString('base64');
+}
+
+export const getZegoToken = (
+  userId: string,
+  _roomId: string,
+  expireSeconds: number = 3600
+): string => {
+  return generateToken04(appId, userId, serverSecret, expireSeconds);
 };

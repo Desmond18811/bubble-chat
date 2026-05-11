@@ -15,13 +15,14 @@ import {
   logMeetingFile,
   startMeetingScreenShare,
   endMeetingScreenShare,
+  getAuthHeaders
 } from "@/api";
 import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 import { TranscriptDrawer } from "@/components/TranscriptDrawer";
 import { toast } from "sonner";
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
-
+const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
 const ZEGO_APP_ID = Number(import.meta.env.VITE_ZEGO_APP_ID || 0);
 const ZEGO_SERVER_SECRET = import.meta.env.VITE_ZEGO_SERVER_SECRET || "";
 
@@ -893,13 +894,19 @@ function MeetRoom() {
           console.warn("Could not create meeting record:", err);
         }
 
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-          ZEGO_APP_ID,
-          ZEGO_SERVER_SECRET,
-          roomId,
-          currentUser.id,
-          currentUser.name
-        );
+        // const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+        //   ZEGO_APP_ID,
+        //   ZEGO_SERVER_SECRET,
+        //   roomId,
+        //   currentUser.id,
+        //   currentUser.name
+        // );
+
+        const tokenRes = await fetch(`${BASE_URL}/meet/token?roomId=${encodeURIComponent(roomId)}`, {
+          headers: getAuthHeaders(),
+        });
+
+        const { token: kitToken } = await tokenRes.json();
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
         zpRef.current = zp;
