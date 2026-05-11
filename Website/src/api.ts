@@ -139,6 +139,15 @@ export const addContact = async (identifier: string) => {
   return handleResponse(res);
 };
 
+export const updatePrivacy = async (privacySettings: any) => {
+  const res = await fetch(`${BASE_URL}/profile/me`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ privacy_settings: privacySettings }),
+  });
+  return handleResponse(res);
+};
+
 export const getUserStatus = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/user/status/${userId}`, {
     headers: getAuthHeaders(),

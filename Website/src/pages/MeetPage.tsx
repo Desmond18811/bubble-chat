@@ -1040,13 +1040,31 @@ function MeetRoom() {
         )}
 
         {initError && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[var(--th-background)]/80 backdrop-blur-md">
-            <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
-              <MSIcon icon="error_outline" className="text-red-400 text-3xl" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-[var(--th-background)]/90 backdrop-blur-xl z-[100]">
+            <div className="w-20 h-20 rounded-3xl bg-red-400/10 border border-red-400/20 flex items-center justify-center mb-6 shadow-2xl shadow-red-500/5">
+              <MSIcon icon="error_outline" className="text-red-400 text-4xl" />
             </div>
-            <h3 className="text-xl font-bold text-[var(--th-text)] mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Unable to Join Room</h3>
-            <p className="text-[var(--th-muted)] text-sm max-w-md mb-6 whitespace-pre-wrap">{initError}</p>
-            <button onClick={() => window.location.reload()} className="px-6 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold hover:bg-red-500/20 transition-all">Retry Connection</button>
+            <h3 className="text-2xl font-bold text-[var(--th-text)] mb-3 tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Room Initialization Failed</h3>
+            <p className="text-[var(--th-muted)] text-sm max-w-sm mb-8 leading-relaxed">
+              {initError.includes("20021")
+                ? "The ZegoCloud service plan has reached its limits. Professional video and voice services are currently paused for this organization."
+                : initError}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/meet")}
+                className="px-6 py-2.5 rounded-xl border border-[var(--th-border)] text-[var(--th-muted)] text-sm font-bold hover:border-[var(--th-accent)]/30 hover:text-[var(--th-text)] transition-all"
+              >
+                Back to Lobby
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-2.5 rounded-xl bg-red-400 text-black text-sm font-bold hover:brightness-110 transition-all shadow-lg shadow-red-500/20"
+              >
+                Retry System
+              </button>
+            </div>
+            <p className="mt-8 text-[10px] text-[var(--th-muted)] uppercase tracking-[0.2em] font-medium opacity-50">Error Code: ZG-20021-EXP</p>
           </div>
         )}
 

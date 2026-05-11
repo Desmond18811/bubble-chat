@@ -2568,7 +2568,7 @@ export default function BubbleMessages() {
                                   {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {isMine && (
-                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#4ade80" : "rgba(255,255,255,0.25)" }} />
+                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#16a34a" : "rgba(255,255,255,0.45)" }} />
                                 )}
                               </div>
                             </div>

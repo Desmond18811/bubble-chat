@@ -76,6 +76,8 @@ export interface IUser extends Document {
     profile_photo?: 'everyone' | 'contacts' | 'nobody';
     last_seen?: 'everyone' | 'contacts' | 'nobody';
     read_receipts?: boolean;
+    show_online_status?: boolean;
+    email_notifications?: boolean;
   };
 
   createdAt: Date;
@@ -135,6 +137,8 @@ const UserSchema: Schema<IUser> = new Schema(
       profile_photo: { type: String, enum: ['everyone', 'contacts', 'nobody'], default: 'everyone' },
       last_seen: { type: String, enum: ['everyone', 'contacts', 'nobody'], default: 'everyone' },
       read_receipts: { type: Boolean, default: true },
+      show_online_status: { type: Boolean, default: true },
+      email_notifications: { type: Boolean, default: true },
     },
 
     socketId: { type: String, default: '' },

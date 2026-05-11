@@ -211,6 +211,40 @@ export default function NotificationsPage() {
           </div>
         </div>
 
+        {/* Quick Settings Bar */}
+        <div className="px-8 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--th-border)", background: "color-mix(in srgb, var(--th-surface) 60%, transparent)" }}>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${userData?.privacy_settings?.email_notifications !== false ? 'bg-indigo-500/10 text-indigo-400' : 'bg-gray-500/10 text-gray-400'}`}>
+                <MSIcon icon={userData?.privacy_settings?.email_notifications !== false ? "mail" : "mail_off"} className="text-lg" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--th-text)" }}>Email Alerts</p>
+                <p className="text-[10px]" style={{ color: "var(--th-muted)" }}>{userData?.privacy_settings?.email_notifications !== false ? 'Enabled' : 'Disabled'}</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const { updatePrivacy } = await import("@/api");
+                    const current = userData?.privacy_settings || {};
+                    const newValue = !(current.email_notifications !== false);
+                    await updatePrivacy({ ...current, email_notifications: newValue });
+                    setUserData({ ...userData, privacy_settings: { ...current, email_notifications: newValue } });
+                    toast.success(`Email notifications ${newValue ? 'enabled' : 'disabled'}`);
+                  } catch (err) {
+                    toast.error("Failed to update preference");
+                  }
+                }}
+                className="ml-2 w-10 h-5 rounded-full relative p-0.5 transition-colors duration-300 shrink-0"
+                style={{ background: (userData?.privacy_settings?.email_notifications !== false) ? "var(--th-accent)" : "rgba(100,116,139,0.3)" }}
+              >
+                <div className="w-4 h-4 rounded-full bg-white transition-all duration-300" style={{ marginLeft: (userData?.privacy_settings?.email_notifications !== false) ? "auto" : "0" }} />
+              </button>
+            </div>
+          </div>
+          <p className="text-[10px] italic" style={{ color: "var(--th-muted)" }}>Control how you receive alerts from outside your organization</p>
+        </div>
+
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-8 py-4">
           {loading ? (

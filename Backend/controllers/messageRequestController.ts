@@ -26,7 +26,7 @@ export const sendMessageRequest = async (req: AuthRequest, res: Response): Promi
     try {
         const [sender, target] = await Promise.all([
             User.findById(req.user._id).select('organization full_name'),
-            User.findById(targetId).select('organization full_name email'),
+            User.findById(targetId).select('organization full_name email privacy_settings'),
         ]);
 
         if (!target) { res.status(404).json({ message: 'User not found.' }); return; }
@@ -65,7 +65,9 @@ export const sendMessageRequest = async (req: AuthRequest, res: Response): Promi
             status: 'pending',
         });
 
-        if (target?.email) {
+        // Send email only if the target user allows email notifications
+        const emailNotifEnabled = target?.privacy_settings?.email_notifications !== false;
+        if (target?.email && emailNotifEnabled) {
             sendMessageRequestEmail(target.email, target.full_name || 'User', sender?.full_name || 'A user', sender?.organization || 'Another Organization').catch(err => console.error("Email send error:", err));
         }
 
