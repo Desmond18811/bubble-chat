@@ -480,7 +480,10 @@ export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promi
     const userId = req.user?._id;
     if (!userId) { res.status(401).json({ message: 'Unauthorized' }); return; }
 
-    const conversations = await Conversation.find({ users: userId }).select('_id');
+    const conversations = await Conversation.find({
+      users: userId,
+      deletedBy: { $ne: userId }
+    }).select('_id');
     const chatIds = conversations.map(c => c._id);
 
     const count = await Message.countDocuments({

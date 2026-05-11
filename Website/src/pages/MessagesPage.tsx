@@ -130,6 +130,7 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    audio.volume = 1.0;
     const onTimeUpdate = () => {
       setProgress((audio.currentTime / (audio.duration || duration || 1)) * 100);
     };
@@ -1018,6 +1019,10 @@ export default function BubbleMessages() {
     if (!socket) return;
 
     const onNewMessage = (msg: any) => {
+      if (Notification.permission === 'granted' && localStorage.getItem('desktop_notifications') === 'true') {
+        const senderName = msg.sender?.full_name || msg.sender?.username || 'Someone';
+        new Notification(`New message from ${senderName}`, { body: msg.content || 'You received a new message' });
+      }
       const chat = activeChatRef.current;
       const msgChatId = msg.chat?.id || msg.chat?._id || msg.chatId;
       const activeChatId = chat?.id || chat?._id;
@@ -2608,7 +2613,7 @@ export default function BubbleMessages() {
                                   {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {isMine && (
-                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#16a34a" : "rgba(255,255,255,0.45)" }} />
+                                  <Icon name={msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "done_all" : "check"} size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#D4AF37" : "rgba(255,255,255,0.45)" }} />
                                 )}
                               </div>
                             </div>

@@ -609,8 +609,11 @@ function MeetRoom() {
     setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, 50);
   };
 
+  const [transcriptRoom, setTranscriptRoom] = useState<{ roomId: string; label: string } | null>(null);
+
   // ── Live transcript state ────────────────────────────────────────────────
   const [liveTranscript, setLiveTranscript] = useState<{ speaker: string; text: string; id: string }[]>([]);
+  const [transcriptError, setTranscriptError] = useState<string | null>(null);
   const [showLiveTranscript, setShowLiveTranscript] = useState(false);
   const [showTranscriptMenu, setShowTranscriptMenu] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -922,7 +925,13 @@ function MeetRoom() {
           onJoinRoom: () => {
             console.log("Joined room, starting transcript...");
             if (recognitionRef.current) {
-              try { recognitionRef.current.start(); } catch (e) { console.warn("Failed to start recognition on join", e); }
+              try {
+                recognitionRef.current.start();
+                setTranscriptError(null);
+              } catch (e: any) {
+                console.warn("Failed to start recognition on join", e);
+                setTranscriptError(e.message || "Auto-start blocked. Click to enable.");
+              }
             }
           },
           onLeaveRoom: () => {
@@ -1103,7 +1112,18 @@ function MeetRoom() {
               <div className="flex flex-col items-center justify-center py-6 gap-2 opacity-50">
                 <MSIcon icon="mic" className="text-white text-2xl animate-pulse" />
                 <p className="text-xs text-white/70 italic">Listening for speech...</p>
-                <p className="text-[10px] text-white/40 text-center px-4">Speak clearly into your microphone</p>
+                {transcriptError ? (
+                  <div className="flex flex-col items-center gap-2 mt-2">
+                    <p className="text-[10px] text-red-300 text-center px-4">{transcriptError}</p>
+                    <button onClick={() => {
+                      if (recognitionRef.current) {
+                        try { recognitionRef.current.start(); setTranscriptError(null); } catch (e: any) { setTranscriptError(e.message || "Failed again"); }
+                      }
+                    }} className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-md text-[10px] text-white">Retry Live Captions</button>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-white/40 text-center px-4">Speak clearly into your microphone</p>
+                )}
               </div>
             ) : (
               liveTranscript.slice(-20).map(t => (

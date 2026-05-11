@@ -320,6 +320,13 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
       const currentUser = await User.findById(req.user?._id).select('organization');
       if (currentUser?.organization) {
         filter.organization = currentUser.organization;
+      } else {
+        res.status(200).json({
+          message: 'No organization set. Cannot fetch default contacts.',
+          total: 0,
+          users: [],
+        });
+        return;
       }
     }
 

@@ -427,6 +427,75 @@ function SecuritySection() {
   );
 }
 
+// ─── Notifications Section ───────────────────────────────────────────────────────
+
+function NotificationsSection() {
+  const [notifsEnabled, setNotifsEnabled] = useState(false);
+
+  useEffect(() => {
+    setNotifsEnabled(localStorage.getItem('desktop_notifications') === 'true');
+  }, []);
+
+  const toggleNotifs = async () => {
+    if (!notifsEnabled) {
+      if (Notification.permission === 'default') {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          localStorage.setItem('desktop_notifications', 'true');
+          setNotifsEnabled(true);
+          toast.success("Desktop notifications enabled.");
+        } else {
+          toast.error("Permission denied for notifications.");
+        }
+      } else if (Notification.permission === 'granted') {
+        localStorage.setItem('desktop_notifications', 'true');
+        setNotifsEnabled(true);
+        toast.success("Desktop notifications enabled.");
+      } else {
+        toast.error("Notifications are blocked in your browser settings.");
+      }
+    } else {
+      localStorage.removeItem('desktop_notifications');
+      setNotifsEnabled(false);
+      toast("Desktop notifications disabled.");
+    }
+  };
+
+  return (
+    <section
+      className="p-8 rounded-2xl border transition-colors mt-8"
+      style={{
+        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
+        backdropFilter: "blur(20px)",
+        borderColor: "var(--th-border)",
+      }}
+    >
+      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
+        Notifications
+      </h3>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer border"
+          style={{ background: "var(--th-surface)", borderColor: "transparent" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--th-border)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "transparent")}
+          onClick={toggleNotifs}>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
+              style={{ background: "color-mix(in srgb, var(--th-accent) 20%, transparent)", color: "var(--th-accent)" }}>
+              <MSIcon name="notifications" />
+            </div>
+            <div>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Desktop Notifications</p>
+              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>Receive alerts when someone sends you a message.</p>
+            </div>
+          </div>
+          <Toggle enabled={notifsEnabled} onToggle={toggleNotifs} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Social Section — FIXED ───────────────────────────────────────────────────
 
 function SocialSection() {
@@ -1003,6 +1072,7 @@ export default function SettingsPage() {
             <ProfileSection />
             <PrivacySection />
             <SecuritySection />
+            <NotificationsSection />
             <BillingSection />
             <EcosystemSection />
           </div>
