@@ -333,6 +333,12 @@ export const muteChat = async (req: AuthRequest, res: Response): Promise<void> =
     const convo = await Conversation.findById(chatId);
     if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
 
+    // Security Fix: Verify user is a participant in the chat
+    if (!convo.users.includes(userId as any)) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
+
     const isMuted = convo.mutedBy.includes(userId as any);
     if (isMuted) {
       convo.mutedBy = convo.mutedBy.filter((id) => String(id) !== String(userId));
@@ -359,6 +365,13 @@ export const clearChat = async (req: AuthRequest, res: Response): Promise<void> 
   const userId = req.user?._id;
 
   try {
+    // Security Fix: Verify user is a participant in the chat
+    const convo = await Conversation.findById(chatId);
+    if (!convo || !convo.users.includes(userId as any)) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
+
     // 1. Mark conversation as deleted for this user (so it might disappear from list)
     await Conversation.findByIdAndUpdate(chatId, {
       $addToSet: { deletedBy: userId },
@@ -387,6 +400,12 @@ export const toggleChatPin = async (req: AuthRequest, res: Response): Promise<vo
   try {
     const convo = await Conversation.findById(chatId);
     if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    // Security Fix: Verify user is a participant in the chat
+    if (!convo.users.includes(userId as any)) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
 
     const isPinned = convo.pinnedBy.includes(userId as any);
     if (isPinned) {
@@ -420,6 +439,12 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
   try {
     const convo = await Conversation.findById(chatId);
     if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    // Security Fix: Verify user is a participant in the chat
+    if (!convo.users.includes(userId as any)) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
 
     // Add user to deletedBy so the chat is hidden for them
     await Conversation.findByIdAndUpdate(chatId, {

@@ -15,23 +15,29 @@ const FROM_NAME = process.env.SMTP_FROM_NAME || 'Bubble Chat';
 
 export const sendMail = async (to: string, subject: string, html: string) => {
   if (!process.env.RESEND_API_KEY) {
+    console.error(`❌ Mailer: RESEND_API_KEY is missing from environment variables.`);
     throw new Error('RESEND_API_KEY is not configured');
   }
 
-  const { data, error } = await resend.emails.send({
-    from: `${FROM_NAME} <${FROM_ADDRESS}>`,
-    to,
-    subject,
-    html,
-  });
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_ADDRESS}>`,
+      to,
+      subject,
+      html,
+    });
 
-  if (error) {
-    console.error(`❌ Resend error:`, error);
-    throw new Error(error.message);
+    if (error) {
+      console.error(`❌ Resend API Error for ${to}:`, error);
+      throw new Error(error.message);
+    }
+
+    console.log(`✅ Email successfully queued for transmission to ${to}. Tracking ID: ${data?.id}`);
+    return data;
+  } catch (err: any) {
+    console.error(`❌ Mailer critical failure for ${to}:`, err.message);
+    throw err;
   }
-
-  console.log(`✅ Email sent to ${to}: ${data?.id}`);
-  return data;
 };
 
 /**

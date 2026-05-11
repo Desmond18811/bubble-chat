@@ -93,6 +93,13 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
     return;
   }
 
+  // Security Fix: Verify user is a participant in the chat
+  const chat = await Conversation.findById(chatId);
+  if (!chat || !chat.users.includes(req.user._id)) {
+    res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+    return;
+  }
+
   let mediaUrl: string | undefined;
   let mediaType: string | undefined;
   let fileSize: number | undefined;
@@ -288,6 +295,18 @@ export const proxyMedia = async (req: Request, res: Response): Promise<void> => 
 export const allMessages = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?._id;
+    if (!userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    // Security Fix: Verify user is a participant in the chat
+    const chat = await Conversation.findById(req.params.chatId);
+    if (!chat || !chat.users.includes(userId)) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
+
     // Exclude messages the requesting user has soft-deleted ("delete for me")
     const messages = await Message.find({
       chat: req.params.chatId,

@@ -847,12 +847,9 @@ function MeetRoom() {
       }
     };
 
-    try {
-      recognition.start();
-      recognitionRef.current = recognition;
-    } catch (e) {
-      console.warn("Speech recognition start failed", e);
-    }
+    // Note: We no longer auto-start here. 
+    // We will call recognition.start() inside Zego's onJoinRoom.
+    recognitionRef.current = recognition;
 
     return () => {
       if (recognitionRef.current) {
@@ -909,7 +906,7 @@ function MeetRoom() {
           container: containerRef.current,
           scenario: {
             mode: isVoice
-              ? ZegoUIKitPrebuilt.GroupCall
+              ? ZegoUIKitPrebuilt.OneONoneCall // Optimized for 2-user voice
               : ZegoUIKitPrebuilt.VideoConference,
           },
           showPreJoinView: true,
@@ -922,7 +919,18 @@ function MeetRoom() {
           showUserList: true,
           maxUsers: 1000,
           layout: "Sidebar",
-          onLeaveRoom: handleLeave,
+          onJoinRoom: () => {
+            console.log("Joined room, starting transcript...");
+            if (recognitionRef.current) {
+              try { recognitionRef.current.start(); } catch (e) { console.warn("Failed to start recognition on join", e); }
+            }
+          },
+          onLeaveRoom: () => {
+            if (recognitionRef.current) {
+              try { recognitionRef.current.stop(); } catch (_) { }
+            }
+            handleLeave();
+          },
           ...(userAvatar ? { userAvatar } : {}),
         });
 
