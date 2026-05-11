@@ -1213,12 +1213,15 @@ export default function BubbleMessages() {
         const other = getOtherUser(activeChat, myId);
         if (other) {
           try {
+            setRequestSending(true);
             const { sendMessageRequest: sendReqApi } = await import("@/api");
             await sendReqApi(other.id || other._id);
             toast.success("Message request sent!");
             setMessageRequestStatus({ reason: "request_pending", requestDirection: "sent", requestStatus: "pending" });
           } catch (err: any) {
             toast.error("Failed to send request.");
+          } finally {
+            setRequestSending(false);
           }
         }
         return; // Don't try to send the actual text message yet
@@ -2565,7 +2568,7 @@ export default function BubbleMessages() {
                                   {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {isMine && (
-                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#4ade80" : "rgba(255,255,255,0.5)" }} />
+                                  <Icon name="done_all" size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#4ade80" : "rgba(255,255,255,0.25)" }} />
                                 )}
                               </div>
                             </div>
@@ -2907,13 +2910,19 @@ export default function BubbleMessages() {
                           {other?.org_role && (
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                               <Icon name="badge" size={14} style={{ color: "var(--th-accent)", flexShrink: 0 }} />
-                              <span style={{ fontSize: 12, color: "var(--th-text)", fontWeight: 600 }}>{other.org_role}</span>
+                              <div style={{ display: "flex", flexDirection: "column" }}>
+                                <span style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Professional Role</span>
+                                <span style={{ fontSize: 13, color: "var(--th-text)", fontWeight: 700 }}>{other.org_role}</span>
+                              </div>
                             </div>
                           )}
                           {other?.organization && (
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <Icon name="business" size={14} style={{ color: "var(--th-muted)", flexShrink: 0 }} />
-                              <span style={{ fontSize: 12, color: "var(--th-muted)" }}>{other.organization}</span>
+                              <div style={{ display: "flex", flexDirection: "column" }}>
+                                <span style={{ fontSize: 10, color: "var(--th-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Organization</span>
+                                <span style={{ fontSize: 12, color: "var(--th-muted)", fontWeight: 500 }}>{other.organization}</span>
+                              </div>
                             </div>
                           )}
                         </div>

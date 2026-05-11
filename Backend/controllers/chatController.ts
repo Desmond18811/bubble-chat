@@ -31,6 +31,10 @@ const formatUser = (u: any) => ({
   isPremium: u.isPremium ?? false,
   verified_badge: u.verified_badge ?? false,
 
+  // Organizational Identity
+  organization: u.organization || null,
+  org_role: u.org_role || null,
+
   // Encryption
   publicKey: u.publicKey || null,
 
