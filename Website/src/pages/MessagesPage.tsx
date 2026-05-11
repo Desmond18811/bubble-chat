@@ -1462,6 +1462,27 @@ export default function BubbleMessages() {
     }
   };
 
+  const handleStartCall = (type: 'voice' | 'video') => {
+    if (!activeChat) return;
+
+    let roomId = "";
+    if (activeChat.isGroupChat) {
+      roomId = activeChat._id || activeChat.id;
+    } else {
+      const other = getOtherUser(activeChat, myId);
+      if (!other) {
+        toast.error("No participant found for call");
+        return;
+      }
+      const otherId = other.id || other._id;
+      // Deterministic ID: sort IDs alphabetically
+      const ids = [myId, otherId].sort();
+      roomId = `direct-${ids[0]}-${ids[1]}`;
+    }
+
+    navigate(`/meet/room/${roomId}?type=${type}`);
+  };
+
   const handleClearChat = async (chatId: string) => {
     if (!window.confirm("Are you sure? This will remove all local transmission artifacts.")) return;
     try {
@@ -2218,15 +2239,34 @@ export default function BubbleMessages() {
                         <Icon name="search" size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--th-muted)" }} />
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
-                        {[{ name: "call" }, { name: "videocam" }, { name: "info" }].map((btn) => (
-                          <button key={btn.name} style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "var(--th-muted)" }}>
-                            <Icon name={btn.name} size={20} />
-                          </button>
-                        ))}
-                        <button title="Summarize conversation" onClick={loadSessionSummary} disabled={summaryLoading} style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: "8px 10px", cursor: summaryLoading ? "not-allowed" : "pointer", color: "#ffe792", opacity: summaryLoading ? 0.5 : 1, transition: "background 0.2s" }} onMouseEnter={e => !summaryLoading && (e.currentTarget.style.background = "rgba(255,231,146,0.2)")} onMouseLeave={e => !summaryLoading && (e.currentTarget.style.background = "rgba(255,231,146,0.1)")}>
-                          <Icon name={summaryLoading ? "hourglass_empty" : "auto_awesome"} size={20} />
+                        <button
+                          title="Voice Call"
+                          onClick={() => handleStartCall('voice')}
+                          style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "var(--th-muted)", transition: 'color 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--th-muted)"}
+                        >
+                          <Icon name="call" size={20} />
+                        </button>
+                        <button
+                          title="Video Call"
+                          onClick={() => handleStartCall('video')}
+                          style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "var(--th-muted)", transition: 'color 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.color = "var(--th-secondary)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--th-muted)"}
+                        >
+                          <Icon name="videocam" size={20} />
+                        </button>
+                        <button
+                          title="Conversation Details"
+                          style={{ background: "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "8px 10px", cursor: "pointer", color: "var(--th-muted)" }}
+                        >
+                          <Icon name="info" size={20} />
                         </button>
                       </div>
+                      <button title="Summarize conversation" onClick={loadSessionSummary} disabled={summaryLoading} style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.2)", borderRadius: 10, padding: "8px 10px", cursor: summaryLoading ? "not-allowed" : "pointer", color: "#ffe792", opacity: summaryLoading ? 0.5 : 1, transition: "background 0.2s" }} onMouseEnter={e => !summaryLoading && (e.currentTarget.style.background = "rgba(255,231,146,0.2)")} onMouseLeave={e => !summaryLoading && (e.currentTarget.style.background = "rgba(255,231,146,0.1)")}>
+                        <Icon name={summaryLoading ? "hourglass_empty" : "auto_awesome"} size={20} />
+                      </button>
                     </div>
                   </header>
                 )}
