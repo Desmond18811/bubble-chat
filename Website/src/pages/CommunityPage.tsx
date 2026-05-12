@@ -279,7 +279,7 @@ export default function BubbleCommunity() {
       ]);
       setNetworks(nets.networks || []);
       setTrending(trendRes.networks || []);
-      setCategories(["Trending", ...(cats.categories || [])]);
+      setCategories(["Trending", ...(cats.categories || []).filter((c: string) => c !== "Trending")]);
     } catch (err) {
       console.error(err);
     } finally {

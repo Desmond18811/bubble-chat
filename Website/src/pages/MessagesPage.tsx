@@ -168,7 +168,7 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, background: "transparent", padding: "4px 0", minWidth: 220, maxWidth: 320 }}>
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio ref={audioRef} src={src} preload="metadata" crossOrigin="anonymous" />
       <button onClick={toggle} style={{ width: 36, height: 36, borderRadius: "50%", background: isMine ? "#ffe792" : "rgba(255,255,255,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
         <Icon name={playing ? "pause" : "play_arrow"} size={20} style={{ color: isMine ? "#1a0a00" : "#d8e6ff" }} />
       </button>
@@ -2121,8 +2121,8 @@ export default function BubbleMessages() {
                       style={{
                         display: "flex", gap: 14, alignItems: "center", padding: "14px 12px",
                         borderRadius: 14, cursor: "pointer", marginBottom: 2,
-                        background: isActive ? "color-mix(in srgb, var(--th-accent) 7%, transparent)" : (c.unreadCount > 0 ? "rgba(212, 175, 55, 0.15)" : "transparent"),
-                        borderLeft: isActive ? "2px solid color-mix(in srgb, var(--th-accent) 50%, transparent)" : (c.unreadCount > 0 ? "2px solid rgba(212, 175, 55, 0.5)" : "2px solid transparent"),
+                        background: isActive ? "color-mix(in srgb, var(--th-accent) 7%, transparent)" : "transparent",
+                        borderLeft: isActive ? "2px solid color-mix(in srgb, var(--th-accent) 50%, transparent)" : "2px solid transparent",
                         transition: "all 0.15s", position: "relative"
                       }}
                       onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
@@ -2255,14 +2255,6 @@ export default function BubbleMessages() {
                           <span>
                             {transmittingRegistry[activeChat?.id || activeChat?._id]?.recording ? "recording audio..." : transmittingRegistry[activeChat?.id || activeChat?._id]?.typing ? "transmitting..." : getOtherUser(activeChat, myId)?.isOnline ? "Online" : (getOtherUser(activeChat, myId) as any)?.lastSeen ? `Last seen ${new Date((getOtherUser(activeChat, myId) as any).lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Offline"}
                           </span>
-                          {!activeChat?.isGroupChat && (getOtherUser(activeChat, myId) as any)?.org_role && (
-                            <>
-                              <span style={{ opacity: 0.5 }}>•</span>
-                              <span style={{ color: "var(--th-muted)", textTransform: 'none', letterSpacing: 'normal' }}>
-                                {(getOtherUser(activeChat, myId) as any).org_role} at {(getOtherUser(activeChat, myId) as any).organization}
-                              </span>
-                            </>
-                          )}
                         </span>
                       </div>
                     </div>

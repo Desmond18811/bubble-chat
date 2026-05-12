@@ -6,6 +6,7 @@ import BubbleIcon from "@/components/BubbleIcon";
 import { fetchNotifications, fetchUnreadCount, markAllNotificationsRead, markNotificationRead } from "@/api";
 import { formatDistanceToNow } from "date-fns";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { onEvent, offEvent } from "@/lib/socket-client";
 
 // ─── Static nav ──────────────────────────────────────────────────────────────
 const NAV_ICONS = [
@@ -180,6 +181,24 @@ export default function Sidebar() {
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
+
+  // Real-time: bump chat badge when new message comes in while not on /messages
+  useEffect(() => {
+    const onNewMsg = () => {
+      if (!location.pathname.startsWith("/messages")) {
+        setUnreadChatsCount(prev => prev + 1);
+      }
+    };
+    onEvent("new_message", onNewMsg);
+    return () => offEvent("new_message", onNewMsg);
+  }, [location.pathname]);
+
+  // Reset badge when user navigates to /messages
+  useEffect(() => {
+    if (location.pathname.startsWith("/messages")) {
+      setUnreadChatsCount(0);
+    }
+  }, [location.pathname]);
 
   const isActive = (path: string) => {
     const cur = location.pathname === "/" ? "/messages" : location.pathname;
