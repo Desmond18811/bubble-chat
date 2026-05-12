@@ -854,7 +854,18 @@ function MeetRoom() {
     // We will call recognition.start() inside Zego's onJoinRoom.
     recognitionRef.current = recognition;
 
+    const handleGlobalClick = () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          setTranscriptError(null);
+        } catch (_) { }
+      }
+    };
+    document.addEventListener("click", handleGlobalClick, { capture: true });
+
     return () => {
+      document.removeEventListener("click", handleGlobalClick, { capture: true });
       if (recognitionRef.current) {
         try { recognitionRef.current.stop(); } catch (_) { }
         recognitionRef.current.onend = null;

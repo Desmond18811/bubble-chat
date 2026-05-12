@@ -172,10 +172,33 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
       })
       .sort({ updatedAt: -1 });
 
+    const chatIds = results.map(c => c._id);
+
+    // Group all unread messages for the user by chat ID
+    const unreadAgg = await Message.aggregate([
+      {
+        $match: {
+          chat: { $in: chatIds },
+          sender: { $ne: req.user._id },
+          readBy: { $ne: req.user._id },
+          deletedFor: { $ne: req.user._id }
+        }
+      },
+      { $group: { _id: '$chat', count: { $sum: 1 } } }
+    ]);
+
+    const unreadMap = new Map();
+    unreadAgg.forEach(item => {
+      unreadMap.set(item._id.toString(), item.count);
+    });
+
     res.status(200).json({
       message: 'Conversations retrieved successfully.',
       total: results.length,
-      conversations: results.map(formatConversation),
+      conversations: results.map((c) => ({
+        ...formatConversation(c),
+        unreadCount: unreadMap.get(c._id.toString()) || 0
+      })),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -486,12 +509,14 @@ export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promi
     }).select('_id');
     const chatIds = conversations.map(c => c._id);
 
-    const count = await Message.countDocuments({
+    const unreadChats = await Message.distinct('chat', {
       chat: { $in: chatIds },
       sender: { $ne: userId },
       readBy: { $ne: userId },
       deletedFor: { $ne: userId }
     });
+
+    const count = unreadChats.length;
 
     res.status(200).json({ count });
   } catch (error: any) {

@@ -150,8 +150,12 @@ const CustomAudioPlayer = ({ src, duration, isMine }: { src: string; duration?: 
       audio.pause();
       setPlaying(false);
     } else {
-      audio.play();
-      setPlaying(true);
+      audio.play().then(() => {
+        setPlaying(true);
+      }).catch((e) => {
+        console.error("Audio playback error:", e);
+        setPlaying(false);
+      });
     }
   };
 
@@ -2093,8 +2097,8 @@ export default function BubbleMessages() {
                       style={{
                         display: "flex", gap: 14, alignItems: "center", padding: "14px 12px",
                         borderRadius: 14, cursor: "pointer", marginBottom: 2,
-                        background: isActive ? "color-mix(in srgb, var(--th-accent) 7%, transparent)" : "transparent",
-                        borderLeft: isActive ? "2px solid color-mix(in srgb, var(--th-accent) 50%, transparent)" : "2px solid transparent",
+                        background: isActive ? "color-mix(in srgb, var(--th-accent) 7%, transparent)" : (c.unreadCount > 0 ? "rgba(212, 175, 55, 0.15)" : "transparent"),
+                        borderLeft: isActive ? "2px solid color-mix(in srgb, var(--th-accent) 50%, transparent)" : (c.unreadCount > 0 ? "2px solid rgba(212, 175, 55, 0.5)" : "2px solid transparent"),
                         transition: "all 0.15s", position: "relative"
                       }}
                       onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
@@ -2113,11 +2117,18 @@ export default function BubbleMessages() {
                               </span>
                             )}
                           </div>
-                          {c.latestMessage?.sentAt ? (
-                            <span style={{ fontSize: 11, color: "#68768b", flexShrink: 0, marginTop: 2 }}>
-                              {new Date(c.latestMessage.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          ) : (isPinned && <Icon name="push_pin" size={12} style={{ color: "#ffe792", flexShrink: 0, marginTop: 2 }} />)}
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, marginTop: 2 }}>
+                            {c.unreadCount > 0 && (
+                              <span style={{ background: "var(--th-accent)", color: "var(--th-bg)", fontSize: 10, padding: "2px 6px", borderRadius: 10, fontWeight: "bold" }}>
+                                {c.unreadCount}
+                              </span>
+                            )}
+                            {c.latestMessage?.sentAt ? (
+                              <span style={{ fontSize: 11, color: "#68768b" }}>
+                                {new Date(c.latestMessage.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            ) : (isPinned && <Icon name="push_pin" size={12} style={{ color: "var(--th-accent)" }} />)}
+                          </div>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <p style={{ fontSize: 12, color: (transmittingRegistry[c.id || c._id]?.typing || transmittingRegistry[c.id || c._id]?.recording) ? "var(--th-accent)" : "var(--th-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0, flex: 1 }}>
@@ -2613,7 +2624,11 @@ export default function BubbleMessages() {
                                   {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {isMine && (
-                                  <Icon name={msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "done_all" : "check"} size={14} style={{ color: msg.readBy?.length > 1 || (msg.readBy?.length > 0 && !activeChat.isGroupChat) ? "#D4AF37" : "rgba(255,255,255,0.45)" }} />
+                                  <Icon
+                                    name={msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "done_all" : "check"}
+                                    size={14}
+                                    style={{ color: msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "var(--th-accent)" : "rgba(255,255,255,0.45)" }}
+                                  />
                                 )}
                               </div>
                             </div>

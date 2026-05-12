@@ -1058,85 +1058,88 @@ export default function WorkspacesPage() {
       {sidebarMenu && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000 }} onClick={() => setSidebarMenu(null)} onContextMenu={(e) => { e.preventDefault(); setSidebarMenu(null); }}>
           <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", top: sidebarMenu.y, left: sidebarMenu.x, background: "#0c2037", border: "1px solid rgba(59,73,92,0.4)", borderRadius: 12, padding: "8px", width: 210, display: "flex", flexDirection: "column", gap: 2, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }}>
-            {doc ? (
-              <>
+            {(() => {
+              const docForSidebar = folderDocs.find(f => f.id === sidebarMenu.folderId || f.name === sidebarMenu.folderId);
+              return docForSidebar ? (
+                <>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${sidebarMenu.folderId}`);
+                      toast.success("Folder link copied!");
+                      setSidebarMenu(null);
+                    }}
+                    style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <MSIcon name="link" style={{ fontSize: 16 }} /> Copy Folder Link
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFolderShareModal(docForSidebar as any);
+                      setSidebarMenu(null);
+                    }}
+                    style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <MSIcon name="folder_shared" style={{ fontSize: 16 }} /> Share Link Access
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAccessFile({ ...docForSidebar, isFolder: true, sharedWith: docForSidebar.sharedWith || [], blockedUsers: docForSidebar.blockedUsers || [] } as any);
+                      setSidebarMenu(null);
+                    }}
+                    style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <MSIcon name="manage_accounts" style={{ fontSize: 16 }} /> Manage Access
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const newName = prompt("Rename folder:", docForSidebar?.name || "");
+                      if (!newName || newName === docForSidebar?.name) { setSidebarMenu(null); return; }
+                      try {
+                        const r = await api.updateWorkspaceFileMeta(sidebarMenu.folderId, { name: newName });
+                        if (r.file) handleFileUpdated(r.file);
+                        toast.success("Folder renamed!");
+                      } catch { toast.error("Failed to rename folder"); }
+                      setSidebarMenu(null);
+                    }}
+                    style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <MSIcon name="edit" style={{ fontSize: 16 }} /> Rename Folder
+                  </button>
+                  <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 8px" }} />
+                  <button
+                    onClick={() => {
+                      handleDelete(sidebarMenu.folderId);
+                      setSidebarMenu(null);
+                    }}
+                    style={{ background: "transparent", color: "#ef4444", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                  >
+                    <MSIcon name="delete" style={{ fontSize: 16 }} /> Delete Folder
+                  </button>
+                </>
+              ) : (
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/workspace/shared/${sidebarMenu.folderId}`);
-                    toast.success("Folder link copied!");
+                    setShowFolderModal(true);
                     setSidebarMenu(null);
                   }}
                   style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
                   onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
                   onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                 >
-                  <MSIcon name="link" style={{ fontSize: 16 }} /> Copy Folder Link
+                  <MSIcon name="create_new_folder" style={{ fontSize: 16 }} /> Create Folder in {sidebarMenu.folderId}
                 </button>
-                <button
-                  onClick={() => {
-                    setFolderShareModal(doc as any);
-                    setSidebarMenu(null);
-                  }}
-                  style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  <MSIcon name="folder_shared" style={{ fontSize: 16 }} /> Share Link Access
-                </button>
-                <button
-                  onClick={() => {
-                    setAccessFile({ ...doc, isFolder: true, sharedWith: doc.sharedWith || [], blockedUsers: doc.blockedUsers || [] } as any);
-                    setSidebarMenu(null);
-                  }}
-                  style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  <MSIcon name="manage_accounts" style={{ fontSize: 16 }} /> Manage Access
-                </button>
-                <button
-                  onClick={async () => {
-                    const newName = prompt("Rename folder:", doc?.name || "");
-                    if (!newName || newName === doc?.name) { setSidebarMenu(null); return; }
-                    try {
-                      const r = await api.updateWorkspaceFileMeta(sidebarMenu.folderId, { name: newName });
-                      if (r.file) handleFileUpdated(r.file);
-                      toast.success("Folder renamed!");
-                    } catch { toast.error("Failed to rename folder"); }
-                    setSidebarMenu(null);
-                  }}
-                  style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  <MSIcon name="edit" style={{ fontSize: 16 }} /> Rename Folder
-                </button>
-                <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 8px" }} />
-                <button
-                  onClick={() => {
-                    handleDelete(sidebarMenu.folderId);
-                    setSidebarMenu(null);
-                  }}
-                  style={{ background: "transparent", color: "#ef4444", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  <MSIcon name="delete" style={{ fontSize: 16 }} /> Delete Folder
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => {
-                  setShowFolderModal(true);
-                  setSidebarMenu(null);
-                }}
-                style={{ background: "transparent", color: "var(--th-text)", border: "none", padding: "10px 12px", textAlign: "left", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontSize: 13, transition: "background 0.2s" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(162,194,253,0.15)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-              >
-                <MSIcon name="create_new_folder" style={{ fontSize: 16 }} /> Create Folder in {sidebarMenu.folderId}
-              </button>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}
