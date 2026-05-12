@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Conversation } from '../models/conversations';
 import { User } from '../models/users';
 import { Message } from '../models/messages';
+import mongoose from 'mongoose';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -174,7 +175,6 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
 
     const chatIds = results.map(c => c._id);
 
-    import mongoose from 'mongoose';
     const objectUserId = new mongoose.Types.ObjectId(req.user._id);
 
     // Group all unread messages for the user by chat ID
