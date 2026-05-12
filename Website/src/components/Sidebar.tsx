@@ -253,6 +253,9 @@ export default function Sidebar() {
                 key={label}
                 to={path}
                 title={isExpanded ? undefined : label}
+                onClick={() => {
+                  if (path === "/messages") window.dispatchEvent(new CustomEvent('reset_active_chat'));
+                }}
                 className={cn("flex items-center h-12 mx-2 mb-1 rounded-xl shrink-0 border-l-[3px] transition-all duration-200 overflow-hidden")}
                 style={{
                   color: active ? "var(--th-accent)" : "var(--th-muted)",

@@ -1193,6 +1193,12 @@ export default function BubbleMessages() {
   }, []);
 
   useEffect(() => {
+    const handleReset = () => setActiveChat(null);
+    window.addEventListener('reset_active_chat', handleReset);
+    return () => window.removeEventListener('reset_active_chat', handleReset);
+  }, []);
+
+  useEffect(() => {
     if (!activeChat) return;
     (async () => {
       try {

@@ -284,10 +284,12 @@ export const proxyMedia = async (req: Request, res: Response): Promise<void> => 
     const signedUrl = await getSignedMediaUrl(key);
 
     // ── Pipe through backend so browser CORS is satisfied ─────────────────────
-    // res.redirect() sends the browser to the S3 presigned URL directly, which
-    // doesn't include Access-Control-Allow-Origin and is blocked by Brave/Chrome.
-    // Instead, we fetch the file server-side and stream it through our response.
-    const upstream = await fetch(signedUrl);
+    const upstreamHeaders: HeadersInit = {};
+    if (req.headers.range) {
+      upstreamHeaders['Range'] = req.headers.range;
+    }
+
+    const upstream = await fetch(signedUrl, { headers: upstreamHeaders });
     if (!upstream.ok) {
       res.status(upstream.status).json({ message: `Upstream error: ${upstream.status}` });
       return;
@@ -295,12 +297,16 @@ export const proxyMedia = async (req: Request, res: Response): Promise<void> => 
 
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
     const contentLength = upstream.headers.get('content-length');
+    const contentRange = upstream.headers.get('content-range');
 
+    res.status(upstream.status);
     res.setHeader('Content-Type', contentType);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Accept-Ranges', 'bytes');
     if (contentLength) res.setHeader('Content-Length', contentLength);
+    if (contentRange) res.setHeader('Content-Range', contentRange);
 
     if (upstream.body) {
       const { Readable } = await import('stream');
@@ -503,13 +509,21 @@ export const markMessagesRead = async (req: AuthRequest, res: Response): Promise
       { $addToSet: { readBy: userId }, $set: { isRead: true } }
     );
 
-    // Emit read receipt to all members of the chat via socket
+    // Emit read receipt to all members of the chat via socket (personal rooms)
     const io = (req as any).io;
     if (io) {
-      io.to(chatId).emit('read_receipt', {
-        chatId,
-        readerId: String(userId),
-      });
+      const payload = { chatId, readerId: String(userId) };
+      // Broadcast to room
+      io.to(chatId).emit('read_receipt', payload);
+
+      // Broadcast to individual members' personal socket rooms to ensure
+      // delivery even if they don't currently have the chat actively opened.
+      const chatDoc = await Conversation.findById(chatId);
+      if (chatDoc && chatDoc.users) {
+        chatDoc.users.forEach((u: any) => {
+          io.to(u.toString()).emit('read_receipt', payload);
+        });
+      }
     }
 
     res.status(200).json({ message: 'Messages marked as read.', chat_id: chatId });
