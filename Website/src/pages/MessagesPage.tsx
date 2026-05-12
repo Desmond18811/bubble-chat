@@ -1123,6 +1123,22 @@ export default function BubbleMessages() {
     onEvent("recording_stop", onRecordingStop);
     onEvent("user_status_change", onStatus);
 
+    const onReadReceipt = (data: any) => {
+      const chat = activeChatRef.current;
+      const msgChatId = data.chatId || data.chat?.id || data.chat?._id;
+      if (chat && msgChatId === (chat.id || chat._id)) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            data.messageIds?.includes(m._id || m.id)
+              ? { ...m, readBy: [...(m.readBy || []), data.readBy] }
+              : m
+          )
+        );
+      }
+    };
+    onEvent("read_receipt", onReadReceipt);
+    onEvent("message_read_receipt", onReadReceipt);
+
     return () => {
       offEvent("new_message", onNewMessage);
       offEvent("receive_message", onReceive);
@@ -1134,6 +1150,8 @@ export default function BubbleMessages() {
       offEvent("recording_start", onRecordingStart);
       offEvent("recording_stop", onRecordingStop);
       offEvent("user_status_change", onStatus);
+      offEvent("read_receipt", onReadReceipt);
+      offEvent("message_read_receipt", onReadReceipt);
     };
   }, [myId]);
 
@@ -1582,6 +1600,9 @@ export default function BubbleMessages() {
     setChatSearch("");
     setMessageRequestStatus(null);
     setAidaContext(null);
+
+    // Clear unreadCount locally immediately
+    setChats(prev => prev.map(c => (c.id || c._id) === (chat.id || chat._id) ? { ...c, unreadCount: 0 } : c));
 
     // If it's a DM, check messaging permission + load Aida context
     if (!chat.isGroupChat && !chat.isAidaBot) {
@@ -2318,341 +2339,353 @@ export default function BubbleMessages() {
                       const isImage = resolvedUrl && !isVideo && !isVoice && (resolvedType === "image" || msg.mimeType?.startsWith("image/") || rawUrl?.match(/\.(jpeg|jpg|gif|png|webp|svg)/i));
                       const isFile = resolvedUrl && !isImage && !isVideo && !isVoice;
 
+                      const firstUnreadMsg = messages.find((m: any) => (m.sender?.id || m.sender?._id || m.sender) !== myId && !m.readBy?.some((r: any) => (r.id || r._id || r).toString() === myId));
+
                       return (
-                        <div
-                          key={msgId || i}
-                          onMouseEnter={() => setHoveredMsg(msgId)}
-                          onMouseLeave={() => setHoveredMsg(null)}
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: isMine ? "flex-end" : "flex-start",
-                            marginBottom: 8,
-                            position: "relative",
-                            background: isSelected ? "rgba(255,231,146,0.05)" : "transparent",
-                            transition: "background 0.2s",
-                            padding: isSelected ? "8px" : "4px 8px",
-                            borderRadius: 12,
-                          }}
-                        >
-                          {/* Pin indicator */}
-                          {isPinned && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4, alignSelf: isMine ? "flex-end" : "flex-start", marginRight: isMine ? 12 : 0, marginLeft: !isMine ? 12 : 0 }}>
-                              <Icon name="push_pin" size={10} style={{ color: "#ffe792" }} />
-                              <span style={{ fontSize: 9, color: "rgba(255,231,146,0.6)", fontWeight: 700, letterSpacing: "0.05em" }}>PINNED TRANSMISSION</span>
+                        <div key={msgId || i} style={{ display: "flex", flexDirection: "column" }}>
+                          {firstUnreadMsg && (msg.id || msg._id) === (firstUnreadMsg.id || firstUnreadMsg._id) && (
+                            <div style={{ display: "flex", alignItems: "center", margin: "16px 0", gap: 12 }}>
+                              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+                              <span style={{ background: "rgba(212, 175, 55, 0.15)", color: "var(--th-accent)", fontSize: 10, padding: "5px 14px", borderRadius: 12, fontWeight: 700, letterSpacing: "0.05em" }}>
+                                UNREAD MESSAGES
+                              </span>
+                              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
                             </div>
                           )}
-
-                          <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", width: "100%", position: "relative" }}>
-                            {!isMine && (
-                              <Avatar src={msg.sender?.avatar} name={msg.sender?.full_name} size={32} style={{ marginRight: 10, alignSelf: "flex-end" }} />
+                          <div
+                            onMouseEnter={() => setHoveredMsg(msgId)}
+                            onMouseLeave={() => setHoveredMsg(null)}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: isMine ? "flex-end" : "flex-start",
+                              marginBottom: 8,
+                              position: "relative",
+                              background: isSelected ? "rgba(255,231,146,0.05)" : "transparent",
+                              transition: "background 0.2s",
+                              padding: isSelected ? "8px" : "4px 8px",
+                              borderRadius: 12,
+                            }}
+                          >
+                            {/* Pin indicator */}
+                            {isPinned && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4, alignSelf: isMine ? "flex-end" : "flex-start", marginRight: isMine ? 12 : 0, marginLeft: !isMine ? 12 : 0 }}>
+                                <Icon name="push_pin" size={10} style={{ color: "#ffe792" }} />
+                                <span style={{ fontSize: 9, color: "rgba(255,231,146,0.6)", fontWeight: 700, letterSpacing: "0.05em" }}>PINNED TRANSMISSION</span>
+                              </div>
                             )}
 
-                            <div
-                              style={{
-                                maxWidth: "70%",
-                                background: isMine ? "linear-gradient(135deg, var(--th-accent), var(--th-accent))" : "var(--th-surface-low)",
-                                padding: "12px 16px",
-                                borderRadius: isMine ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
-                                border: isMine ? "none" : "1px solid var(--th-border)",
-                                position: "relative",
-                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                              }}
-                            >
-                              {/* ── 3-dots trigger (FIXED) ── */}
-                              {(hoveredMsg === msgId && !isSelected && actionMenuMsgId !== msgId) && (
-                                <button
-                                  className="msg-action-trigger"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActionMenuMsgId(msgId);
-                                  }}
-                                  style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    ...(isMine ? { left: -36 } : { right: -36 }),
-                                    background: "var(--th-surface-high)",
-                                    border: "1px solid var(--th-border)",
-                                    borderRadius: "50%",
-                                    width: 32,
-                                    height: 32,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "var(--th-accent)",
-                                    cursor: "pointer",
-                                    zIndex: 10,
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
-                                  }}
-                                >
-                                  <Icon name="more_horiz" size={18} />
-                                </button>
+                            <div style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", width: "100%", position: "relative" }}>
+                              {!isMine && (
+                                <Avatar src={msg.sender?.avatar} name={msg.sender?.full_name} size={32} style={{ marginRight: 10, alignSelf: "flex-end" }} />
                               )}
 
-                              {/* ── Hover actions bar (FIXED) ── */}
-                              {(actionMenuMsgId === msgId || isSelected) && (
-                                <>
-                                  {actionMenuMsgId === msgId && !isSelected && (
-                                    <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={(e) => { e.stopPropagation(); setActionMenuMsgId(null); }} />
-                                  )}
-                                  <div
-                                    className="msg-action-bar"
+                              <div
+                                style={{
+                                  maxWidth: "70%",
+                                  background: isMine ? "linear-gradient(135deg, var(--th-accent), var(--th-accent))" : "var(--th-surface-low)",
+                                  padding: "12px 16px",
+                                  borderRadius: isMine ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+                                  border: isMine ? "none" : "1px solid var(--th-border)",
+                                  position: "relative",
+                                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                {/* ── 3-dots trigger (FIXED) ── */}
+                                {(hoveredMsg === msgId && !isSelected && actionMenuMsgId !== msgId) && (
+                                  <button
+                                    className="msg-action-trigger"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActionMenuMsgId(msgId);
+                                    }}
                                     style={{
                                       position: "absolute",
-                                      top: "calc(100% + 8px)",
-                                      ...(isMine ? { right: 0 } : { left: 0 }),
-                                      zIndex: 50,
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      ...(isMine ? { left: -36 } : { right: -36 }),
+                                      background: "var(--th-surface-high)",
+                                      border: "1px solid var(--th-border)",
+                                      borderRadius: "50%",
+                                      width: 32,
+                                      height: 32,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      color: "var(--th-accent)",
+                                      cursor: "pointer",
+                                      zIndex: 10,
+                                      boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
                                     }}
                                   >
-                                    {/* React */}
-                                    <button
-                                      className="msg-action-btn"
-                                      title="React"
-                                      onClick={() => setReactionPickerMsgId(msgId)}
-                                    >
-                                      <Icon name="add_reaction" size={18} />
-                                    </button>
+                                    <Icon name="more_horiz" size={18} />
+                                  </button>
+                                )}
 
-                                    {/* Reply */}
-                                    <button
-                                      className="msg-action-btn"
-                                      title="Reply"
-                                      onClick={() => setReplyingToMsg(msg)}
-                                    >
-                                      <Icon name="reply" size={18} />
-                                    </button>
-
-                                    {/* Forward */}
-                                    <button
-                                      className="msg-action-btn"
-                                      title="Forward"
-                                      onClick={() => setForwardingMsg(msg)}
-                                    >
-                                      <Icon name="forward" size={18} />
-                                    </button>
-
-                                    {/* Copy */}
-                                    <button
-                                      className="msg-action-btn"
-                                      title="Copy Text"
-                                      onClick={() => {
-                                        if (msg.content) {
-                                          navigator.clipboard.writeText(msg.content);
-                                          toast.success("Text copied");
-                                        } else {
-                                          toast.error("No text to copy");
-                                        }
-                                        setActionMenuMsgId(null);
+                                {/* ── Hover actions bar (FIXED) ── */}
+                                {(actionMenuMsgId === msgId || isSelected) && (
+                                  <>
+                                    {actionMenuMsgId === msgId && !isSelected && (
+                                      <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={(e) => { e.stopPropagation(); setActionMenuMsgId(null); }} />
+                                    )}
+                                    <div
+                                      className="msg-action-bar"
+                                      style={{
+                                        position: "absolute",
+                                        top: "calc(100% + 8px)",
+                                        ...(isMine ? { right: 0 } : { left: 0 }),
+                                        zIndex: 50,
                                       }}
                                     >
-                                      <Icon name="content_copy" size={18} />
-                                    </button>
-
-                                    {/* Pin */}
-
-                                    <button
-                                      className={`msg-action-btn${isPinned ? " active" : ""}`}
-                                      title={isPinned ? "Unpin" : "Pin"}
-                                      onClick={() => handlePinMessage(msgId)}
-                                    >
-                                      <Icon name="push_pin" size={18} />
-                                    </button>
-
-                                    {/* Select */}
-                                    <button
-                                      className={`msg-action-btn${isSelected ? " active" : ""}`}
-                                      title="Select"
-                                      onClick={() => toggleMessageSelection(msgId)}
-                                    >
-                                      <Icon name={isSelected ? "check_circle" : "check_box_outline_blank"} size={18} />
-                                    </button>
-
-                                    {/* Info */}
-                                    <button
-                                      className="msg-action-btn"
-                                      title="Message info"
-                                      onClick={() => handleMessageInfo(msg)}
-                                    >
-                                      <Icon name="info" size={18} />
-                                    </button>
-
-                                    {/* Edit */}
-                                    {isMine && !isVideo && !isVoice && !isFile && (
+                                      {/* React */}
                                       <button
                                         className="msg-action-btn"
-                                        title="Edit Transmission"
+                                        title="React"
+                                        onClick={() => setReactionPickerMsgId(msgId)}
+                                      >
+                                        <Icon name="add_reaction" size={18} />
+                                      </button>
+
+                                      {/* Reply */}
+                                      <button
+                                        className="msg-action-btn"
+                                        title="Reply"
+                                        onClick={() => setReplyingToMsg(msg)}
+                                      >
+                                        <Icon name="reply" size={18} />
+                                      </button>
+
+                                      {/* Forward */}
+                                      <button
+                                        className="msg-action-btn"
+                                        title="Forward"
+                                        onClick={() => setForwardingMsg(msg)}
+                                      >
+                                        <Icon name="forward" size={18} />
+                                      </button>
+
+                                      {/* Copy */}
+                                      <button
+                                        className="msg-action-btn"
+                                        title="Copy Text"
                                         onClick={() => {
-                                          setEditingMsgId(msgId);
-                                          setEditContent(msg.content || "");
+                                          if (msg.content) {
+                                            navigator.clipboard.writeText(msg.content);
+                                            toast.success("Text copied");
+                                          } else {
+                                            toast.error("No text to copy");
+                                          }
                                           setActionMenuMsgId(null);
                                         }}
                                       >
-                                        <Icon name="edit" size={18} />
+                                        <Icon name="content_copy" size={18} />
                                       </button>
-                                    )}
 
-                                    <div className="msg-action-divider" />
+                                      {/* Pin */}
 
-                                    {/* Delete */}
-                                    <button
-                                      className="msg-action-btn danger"
-                                      title="Delete"
-                                      onClick={() => setDeleteModal({ msgId, isMine, sentAt: msg.sentAt || msg.createdAt })}
-                                    >
-                                      <Icon name="delete" size={18} />
-                                    </button>
-                                  </div>
-                                </>
-                              )}
+                                      <button
+                                        className={`msg-action-btn${isPinned ? " active" : ""}`}
+                                        title={isPinned ? "Unpin" : "Pin"}
+                                        onClick={() => handlePinMessage(msgId)}
+                                      >
+                                        <Icon name="push_pin" size={18} />
+                                      </button>
 
-                              {/* Reaction picker popover */}
-                              {reactionPickerMsgId === msgId && (
-                                <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} onClick={(e) => { e.stopPropagation(); setReactionPickerMsgId(null); }} />
-                                  <div style={{ position: "relative", zIndex: 10000, boxShadow: "0 20px 60px rgba(0,0,0,0.8)", borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
-                                    <EmojiPicker
-                                      direction="up"
-                                      onSelect={(emoji) => {
-                                        handleReactMessage(msgId, emoji);
-                                        setReactionPickerMsgId(null);
-                                      }}
-                                      onClose={() => setReactionPickerMsgId(null)}
-                                    />
-                                  </div>
-                                </div>
-                              )}
+                                      {/* Select */}
+                                      <button
+                                        className={`msg-action-btn${isSelected ? " active" : ""}`}
+                                        title="Select"
+                                        onClick={() => toggleMessageSelection(msgId)}
+                                      >
+                                        <Icon name={isSelected ? "check_circle" : "check_box_outline_blank"} size={18} />
+                                      </button>
 
-                              {/* Reply preview */}
-                              {msg.parent_message && (
-                                <div style={{ background: isMine ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)", borderLeft: `3px solid ${isMine ? "rgba(0,0,0,0.3)" : "#ffe792"}`, padding: "6px 10px", borderRadius: "8px 8px 8px 2px", marginBottom: 10, fontSize: 12, display: "flex", flexDirection: "column", gap: 2, cursor: "pointer" }}>
-                                  <span style={{ fontWeight: 800, color: isMine ? "rgba(0,0,0,0.7)" : "#ffe792", fontSize: 11 }}>{msg.parent_message.sender?.full_name || "Unknown Transporter"}</span>
-                                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220, color: isMine ? "rgba(0,0,0,0.6)" : "#9eacc3" }}>
-                                    {msg.parent_message.content || (msg.parent_message.mediaUrl ? "📎 Attachment" : "Transmission...")}
-                                  </span>
-                                </div>
-                              )}
+                                      {/* Info */}
+                                      <button
+                                        className="msg-action-btn"
+                                        title="Message info"
+                                        onClick={() => handleMessageInfo(msg)}
+                                      >
+                                        <Icon name="info" size={18} />
+                                      </button>
 
-                              {/* Group sender name */}
-                              {activeChat.isGroupChat && !isMine && (
-                                <div style={{ fontSize: 11, fontWeight: 800, color: "#ffe792", marginBottom: 4, letterSpacing: "0.02em" }}>
-                                  {msg.sender?.full_name || "Unknown"}
-                                </div>
-                              )}
+                                      {/* Edit */}
+                                      {isMine && !isVideo && !isVoice && !isFile && (
+                                        <button
+                                          className="msg-action-btn"
+                                          title="Edit Transmission"
+                                          onClick={() => {
+                                            setEditingMsgId(msgId);
+                                            setEditContent(msg.content || "");
+                                            setActionMenuMsgId(null);
+                                          }}
+                                        >
+                                          <Icon name="edit" size={18} />
+                                        </button>
+                                      )}
 
-                              {/* Image */}
-                              {isImage && (
-                                <div style={{ position: "relative", marginBottom: msg.content ? 8 : 0 }}>
-                                  <img src={resolvedUrl!} onClick={() => setLightboxImg(resolvedUrl!)} style={{ maxWidth: "100%", borderRadius: 12, display: "block", cursor: "pointer" }} alt="Transmission asset" />
-                                  {msg.media_metadata?.quality === 'hd' && (
-                                    <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", padding: "2px 6px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                                      <Icon name="high_quality" size={12} style={{ color: "#4ade80" }} />
-                                      <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80" }}>HD</span>
+                                      <div className="msg-action-divider" />
+
+                                      {/* Delete */}
+                                      <button
+                                        className="msg-action-btn danger"
+                                        title="Delete"
+                                        onClick={() => setDeleteModal({ msgId, isMine, sentAt: msg.sentAt || msg.createdAt })}
+                                      >
+                                        <Icon name="delete" size={18} />
+                                      </button>
                                     </div>
+                                  </>
+                                )}
+
+                                {/* Reaction picker popover */}
+                                {reactionPickerMsgId === msgId && (
+                                  <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(2px)" }} onClick={(e) => { e.stopPropagation(); setReactionPickerMsgId(null); }} />
+                                    <div style={{ position: "relative", zIndex: 10000, boxShadow: "0 20px 60px rgba(0,0,0,0.8)", borderRadius: 16 }} onClick={(e) => e.stopPropagation()}>
+                                      <EmojiPicker
+                                        direction="up"
+                                        onSelect={(emoji) => {
+                                          handleReactMessage(msgId, emoji);
+                                          setReactionPickerMsgId(null);
+                                        }}
+                                        onClose={() => setReactionPickerMsgId(null)}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Reply preview */}
+                                {msg.parent_message && (
+                                  <div style={{ background: isMine ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.05)", borderLeft: `3px solid ${isMine ? "rgba(0,0,0,0.3)" : "#ffe792"}`, padding: "6px 10px", borderRadius: "8px 8px 8px 2px", marginBottom: 10, fontSize: 12, display: "flex", flexDirection: "column", gap: 2, cursor: "pointer" }}>
+                                    <span style={{ fontWeight: 800, color: isMine ? "rgba(0,0,0,0.7)" : "#ffe792", fontSize: 11 }}>{msg.parent_message.sender?.full_name || "Unknown Transporter"}</span>
+                                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 220, color: isMine ? "rgba(0,0,0,0.6)" : "#9eacc3" }}>
+                                      {msg.parent_message.content || (msg.parent_message.mediaUrl ? "📎 Attachment" : "Transmission...")}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Group sender name */}
+                                {activeChat.isGroupChat && !isMine && (
+                                  <div style={{ fontSize: 11, fontWeight: 800, color: "#ffe792", marginBottom: 4, letterSpacing: "0.02em" }}>
+                                    {msg.sender?.full_name || "Unknown"}
+                                  </div>
+                                )}
+
+                                {/* Image */}
+                                {isImage && (
+                                  <div style={{ position: "relative", marginBottom: msg.content ? 8 : 0 }}>
+                                    <img src={resolvedUrl!} onClick={() => setLightboxImg(resolvedUrl!)} style={{ maxWidth: "100%", borderRadius: 12, display: "block", cursor: "pointer" }} alt="Transmission asset" />
+                                    {msg.media_metadata?.quality === 'hd' && (
+                                      <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", padding: "2px 6px", borderRadius: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                                        <Icon name="high_quality" size={12} style={{ color: "#4ade80" }} />
+                                        <span style={{ fontSize: 9, fontWeight: 900, color: "#4ade80" }}>HD</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Video */}
+                                {isVideo && (
+                                  <video src={resolvedUrl!} controls style={{ maxWidth: "100%", borderRadius: 12, marginBottom: msg.content ? 8 : 0 }} />
+                                )}
+
+                                {/* Voice */}
+                                {isVoice && (
+                                  <CustomAudioPlayer src={resolvedUrl!} duration={msg.media_metadata?.duration} isMine={isMine} />
+                                )}
+
+                                {/* File */}
+                                {isFile && (
+                                  <a href={resolvedUrl!} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.05)", borderRadius: 12, textDecoration: "none", marginBottom: msg.content ? 8 : 0, border: "1px solid rgba(255,255,255,0.1)" }}>
+                                    <div style={{ width: 36, height: 36, background: "#ffe792", borderRadius: 10, display: "flex", alignItems: "center", justifyItems: "center", color: "#031427" }}>
+                                      <Icon name="description" size={20} style={{ margin: "auto" }} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <p style={{ margin: 0, fontSize: 13, color: isMine ? "#1a0a00" : "#d8e6ff", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {msg.mediaUrl?.split('/').pop() || "File Asset"}
+                                      </p>
+                                      <p style={{ margin: 0, fontSize: 10, color: isMine ? "rgba(0,0,0,0.5)" : "#68768b" }}>
+                                        {msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : "Download Artifact"}
+                                      </p>
+                                    </div>
+                                  </a>
+                                )}
+
+                                {/* Text */}
+                                {editingMsgId === msgId ? (
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 200 }}>
+                                    <textarea
+                                      value={editContent}
+                                      onChange={(e) => setEditContent(e.target.value)}
+                                      autoFocus
+                                      style={{
+                                        width: "100%",
+                                        background: "rgba(0,0,0,0.1)",
+                                        border: "1px solid var(--th-border)",
+                                        borderRadius: 8,
+                                        padding: 8,
+                                        color: isMine ? "inherit" : "var(--th-text)",
+                                        fontSize: 14,
+                                        outline: "none",
+                                        minHeight: 60,
+                                        resize: "none"
+                                      }}
+                                    />
+                                    <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                                      <button onClick={() => setEditingMsgId(null)} style={{ background: "none", border: "none", color: isMine ? "rgba(0,0,0,0.5)" : "var(--th-muted)", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>CANCEL</button>
+                                      <button
+                                        onClick={() => handleUpdateMessage(msgId, editContent, msg.sentAt || msg.createdAt)}
+                                        style={{ background: isMine ? "rgba(0,0,0,0.1)" : "var(--th-accent)", border: "none", color: isMine ? "inherit" : "var(--th-accent-text)", borderRadius: 4, padding: "2px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}
+                                      >
+                                        SAVE
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  msg.content && (
+                                    <div style={{ fontSize: 14, color: isMine ? "#2a1e00" : "var(--th-text)", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                                      {renderMessageText(msg.content)}
+                                    </div>
+                                  )
+                                )}
+
+                                {/* Timestamp + receipts */}
+                                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 4, opacity: 0.8 }}>
+                                  <span style={{ fontSize: 10, color: isMine ? "rgba(0,0,0,0.5)" : "#68768b", fontWeight: 600 }}>
+                                    {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  {isMine && (
+                                    <Icon
+                                      name={msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "done_all" : "check"}
+                                      size={14}
+                                      style={{ color: msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "var(--th-accent)" : "rgba(255,255,255,0.45)" }}
+                                    />
                                   )}
                                 </div>
-                              )}
-
-                              {/* Video */}
-                              {isVideo && (
-                                <video src={resolvedUrl!} controls style={{ maxWidth: "100%", borderRadius: 12, marginBottom: msg.content ? 8 : 0 }} />
-                              )}
-
-                              {/* Voice */}
-                              {isVoice && (
-                                <CustomAudioPlayer src={resolvedUrl!} duration={msg.media_metadata?.duration} isMine={isMine} />
-                              )}
-
-                              {/* File */}
-                              {isFile && (
-                                <a href={resolvedUrl!} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.05)", borderRadius: 12, textDecoration: "none", marginBottom: msg.content ? 8 : 0, border: "1px solid rgba(255,255,255,0.1)" }}>
-                                  <div style={{ width: 36, height: 36, background: "#ffe792", borderRadius: 10, display: "flex", alignItems: "center", justifyItems: "center", color: "#031427" }}>
-                                    <Icon name="description" size={20} style={{ margin: "auto" }} />
-                                  </div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ margin: 0, fontSize: 13, color: isMine ? "#1a0a00" : "#d8e6ff", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                      {msg.mediaUrl?.split('/').pop() || "File Asset"}
-                                    </p>
-                                    <p style={{ margin: 0, fontSize: 10, color: isMine ? "rgba(0,0,0,0.5)" : "#68768b" }}>
-                                      {msg.fileSize ? `${(msg.fileSize / 1024 / 1024).toFixed(2)} MB` : "Download Artifact"}
-                                    </p>
-                                  </div>
-                                </a>
-                              )}
-
-                              {/* Text */}
-                              {editingMsgId === msgId ? (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 200 }}>
-                                  <textarea
-                                    value={editContent}
-                                    onChange={(e) => setEditContent(e.target.value)}
-                                    autoFocus
-                                    style={{
-                                      width: "100%",
-                                      background: "rgba(0,0,0,0.1)",
-                                      border: "1px solid var(--th-border)",
-                                      borderRadius: 8,
-                                      padding: 8,
-                                      color: isMine ? "inherit" : "var(--th-text)",
-                                      fontSize: 14,
-                                      outline: "none",
-                                      minHeight: 60,
-                                      resize: "none"
-                                    }}
-                                  />
-                                  <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                                    <button onClick={() => setEditingMsgId(null)} style={{ background: "none", border: "none", color: isMine ? "rgba(0,0,0,0.5)" : "var(--th-muted)", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>CANCEL</button>
-                                    <button
-                                      onClick={() => handleUpdateMessage(msgId, editContent, msg.sentAt || msg.createdAt)}
-                                      style={{ background: isMine ? "rgba(0,0,0,0.1)" : "var(--th-accent)", border: "none", color: isMine ? "inherit" : "var(--th-accent-text)", borderRadius: 4, padding: "2px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}
-                                    >
-                                      SAVE
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                msg.content && (
-                                  <div style={{ fontSize: 14, color: isMine ? "#2a1e00" : "var(--th-text)", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                                    {renderMessageText(msg.content)}
-                                  </div>
-                                )
-                              )}
-
-                              {/* Timestamp + receipts */}
-                              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 4, opacity: 0.8 }}>
-                                <span style={{ fontSize: 10, color: isMine ? "rgba(0,0,0,0.5)" : "#68768b", fontWeight: 600 }}>
-                                  {new Date(msg.sentAt || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                                {isMine && (
-                                  <Icon
-                                    name={msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "done_all" : "check"}
-                                    size={14}
-                                    style={{ color: msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "var(--th-accent)" : "rgba(255,255,255,0.45)" }}
-                                  />
-                                )}
                               </div>
                             </div>
-                          </div>
 
-                          {/* Reactions display */}
-                          {msg.reactions?.length > 0 && (
-                            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6, alignSelf: isMine ? "flex-end" : "flex-start", marginLeft: isMine ? 0 : 42 }}>
-                              {Array.from(new Set(msg.reactions.map((r: any) => r.emoji))).map((emoji: any) => {
-                                const count = msg.reactions.filter((r: any) => r.emoji === emoji).length;
-                                const hasReacted = msg.reactions.some((r: any) => (r.user?.id || r.user?._id || r.user) === myId && r.emoji === emoji);
-                                return (
-                                  <div
-                                    key={emoji}
-                                    onClick={() => handleReactMessage(msgId, emoji)}
-                                    style={{ background: hasReacted ? "rgba(255,231,146,0.15)" : "rgba(11,36,64,0.6)", border: `1px solid ${hasReacted ? "#ffe792" : "rgba(255,255,255,0.05)"}`, borderRadius: 10, padding: "2px 8px", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", transition: "all 0.2s" }}
-                                  >
-                                    <span style={{ fontSize: 13 }}>{emoji}</span>
-                                    {count > 1 && <span style={{ fontSize: 10, fontWeight: 800, color: hasReacted ? "#ffe792" : "#9eacc3" }}>{count}</span>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                            {/* Reactions display */}
+                            {msg.reactions?.length > 0 && (
+                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6, alignSelf: isMine ? "flex-end" : "flex-start", marginLeft: isMine ? 0 : 42 }}>
+                                {Array.from(new Set(msg.reactions.map((r: any) => r.emoji))).map((emoji: any) => {
+                                  const count = msg.reactions.filter((r: any) => r.emoji === emoji).length;
+                                  const hasReacted = msg.reactions.some((r: any) => (r.user?.id || r.user?._id || r.user) === myId && r.emoji === emoji);
+                                  return (
+                                    <div
+                                      key={emoji}
+                                      onClick={() => handleReactMessage(msgId, emoji)}
+                                      style={{ background: hasReacted ? "rgba(255,231,146,0.15)" : "rgba(11,36,64,0.6)", border: `1px solid ${hasReacted ? "#ffe792" : "rgba(255,255,255,0.05)"}`, borderRadius: 10, padding: "2px 8px", display: "flex", alignItems: "center", gap: 4, cursor: "pointer", transition: "all 0.2s" }}
+                                    >
+                                      <span style={{ fontSize: 13 }}>{emoji}</span>
+                                      {count > 1 && <span style={{ fontSize: 10, fontWeight: 800, color: hasReacted ? "#ffe792" : "#9eacc3" }}>{count}</span>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}

@@ -14,5 +14,10 @@ export const getSecureMediaUrl = (url?: string | null, proxyType: 'message' | 's
     const route = proxyType === 'story' ? 'story' : 'message';
     return `${_BASE_API}/${route}/media/proxy?url=${encodeURIComponent(url)}`;
   }
+  // Ensure local relative URLs route to the backend server instead of Vite frontend
+  if (!url.startsWith('http') && !url.startsWith('blob:') && !url.startsWith('data:')) {
+    const backendRoot = _BASE_API.replace('/api/v1', '');
+    return `${backendRoot}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
   return url;
 };
