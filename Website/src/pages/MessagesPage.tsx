@@ -1124,15 +1124,18 @@ export default function BubbleMessages() {
     onEvent("user_status_change", onStatus);
 
     const onReadReceipt = (data: any) => {
-      const chat = activeChatRef.current;
       const msgChatId = data.chatId || data.chat?.id || data.chat?._id;
-      if (chat && msgChatId === (chat.id || chat._id)) {
+      if (activeChatRef.current && (activeChatRef.current.id || activeChatRef.current._id) === msgChatId) {
         setMessages((prev) =>
-          prev.map((m) =>
-            data.messageIds?.includes(m._id || m.id)
-              ? { ...m, readBy: [...(m.readBy || []), data.readBy] }
-              : m
-          )
+          prev.map((m) => {
+            if ((m.sender?.id || m.sender?._id || m.sender) !== data.readerId) {
+              const alreadyRead = m.readBy?.some((r: any) => (r.id || r._id || r) === data.readerId);
+              if (!alreadyRead) {
+                return { ...m, readBy: [...(m.readBy || []), { id: data.readerId }] };
+              }
+            }
+            return m;
+          })
         );
       }
     };
@@ -2339,7 +2342,17 @@ export default function BubbleMessages() {
                       const isImage = resolvedUrl && !isVideo && !isVoice && (resolvedType === "image" || msg.mimeType?.startsWith("image/") || rawUrl?.match(/\.(jpeg|jpg|gif|png|webp|svg)/i));
                       const isFile = resolvedUrl && !isImage && !isVideo && !isVoice;
 
-                      const firstUnreadMsg = messages.find((m: any) => (m.sender?.id || m.sender?._id || m.sender) !== myId && !m.readBy?.some((r: any) => (r.id || r._id || r).toString() === myId));
+                      const firstUnreadMsg = useMemo(() => {
+                        let unreadStart = null;
+                        for (let k = messages.length - 1; k >= 0; k--) {
+                          const mCurrent = messages[k];
+                          const isSendr = (mCurrent.sender?.id || mCurrent.sender?._id || mCurrent.sender) === myId;
+                          const isRd = mCurrent.readBy?.some((r: any) => (r.id || r._id || r).toString() === myId);
+                          if (isSendr || isRd) break;
+                          unreadStart = mCurrent;
+                        }
+                        return unreadStart;
+                      }, [messages, myId]);
 
                       return (
                         <div key={msgId || i} style={{ display: "flex", flexDirection: "column" }}>
@@ -2659,7 +2672,7 @@ export default function BubbleMessages() {
                                     <Icon
                                       name={msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "done_all" : "check"}
                                       size={14}
-                                      style={{ color: msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "var(--th-accent)" : "rgba(255,255,255,0.45)" }}
+                                      style={{ color: msg.readBy?.some((r: any) => (r.id || r._id || r).toString() !== myId.toString()) ? "#3b82f6" : "#9ca3af" }}
                                     />
                                   )}
                                 </div>

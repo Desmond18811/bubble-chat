@@ -174,14 +174,17 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
 
     const chatIds = results.map(c => c._id);
 
+    import mongoose from 'mongoose';
+    const objectUserId = new mongoose.Types.ObjectId(req.user._id);
+
     // Group all unread messages for the user by chat ID
     const unreadAgg = await Message.aggregate([
       {
         $match: {
           chat: { $in: chatIds },
-          sender: { $ne: req.user._id },
-          readBy: { $ne: req.user._id },
-          deletedFor: { $ne: req.user._id }
+          sender: { $ne: objectUserId },
+          readBy: { $ne: objectUserId },
+          deletedFor: { $ne: objectUserId }
         }
       },
       { $group: { _id: '$chat', count: { $sum: 1 } } }
