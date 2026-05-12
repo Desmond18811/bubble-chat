@@ -275,18 +275,46 @@ export const proxyMedia = async (req: Request, res: Response): Promise<void> => 
     // Remove leading slash
     if (key.startsWith('/')) key = key.slice(1);
 
-    // Check if path-style
+    // Strip bucket prefix if path-style URL
     const bucket = process.env.FILEBASE_BUCKET || '';
     if (bucket && key.startsWith(`${bucket}/`)) {
       key = key.slice(bucket.length + 1);
     }
 
     const signedUrl = await getSignedMediaUrl(key);
-    res.redirect(signedUrl);
+
+    // ── Pipe through backend so browser CORS is satisfied ─────────────────────
+    // res.redirect() sends the browser to the S3 presigned URL directly, which
+    // doesn't include Access-Control-Allow-Origin and is blocked by Brave/Chrome.
+    // Instead, we fetch the file server-side and stream it through our response.
+    const upstream = await fetch(signedUrl);
+    if (!upstream.ok) {
+      res.status(upstream.status).json({ message: `Upstream error: ${upstream.status}` });
+      return;
+    }
+
+    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+    const contentLength = upstream.headers.get('content-length');
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    if (contentLength) res.setHeader('Content-Length', contentLength);
+
+    if (upstream.body) {
+      const { Readable } = await import('stream');
+      const nodeStream = Readable.fromWeb(upstream.body as any);
+      nodeStream.pipe(res);
+    } else {
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      res.send(buffer);
+    }
   } catch (error: any) {
-    res.status(500).json({ message: 'Failed to generate signed URL: ' + error.message });
+    res.status(500).json({ message: 'Failed to proxy media: ' + error.message });
   }
 };
+
 
 /**
  * Get all messages for a chat

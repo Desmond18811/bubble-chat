@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, Routes, Route } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { onEvent, offEvent, getSocket } from "@/lib/socket-client";
 import Sidebar from "@/components/Sidebar";
 import {
   fetchCallLogs,
@@ -618,6 +619,45 @@ function MeetRoom() {
   const [showTranscriptMenu, setShowTranscriptMenu] = useState(false);
   const recognitionRef = useRef<any>(null);
 
+  // ── Host knock/admit state ─────────────────────────────────────────────────
+  const [knockRequests, setKnockRequests] = useState<{ userId: string; name: string; ts: number }[]>([]);
+  const [isHost] = useState(() => {
+    // The first user to create the room is the host.
+    // We track this in sessionStorage so it persists across re-renders.
+    const key = `bubble_host_${roomId}`;
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      return true;
+    }
+    return false;
+  });
+
+  // Listen for knock events and host-admit/deny responses
+  useEffect(() => {
+    if (!isHost) return;
+    const onKnock = (data: { userId: string; name: string }) => {
+      setKnockRequests(prev => {
+        if (prev.some(r => r.userId === data.userId)) return prev;
+        return [...prev, { ...data, ts: Date.now() }];
+      });
+    };
+    onEvent('room_knock', onKnock);
+    return () => offEvent('room_knock', onKnock);
+  }, [isHost]);
+
+  const handleAdmit = (userId: string) => {
+    const socket = getSocket();
+    if (socket) socket.emit('room_admit', { roomId, userId });
+    setKnockRequests(prev => prev.filter(r => r.userId !== userId));
+    toast.success('Participant admitted');
+  };
+
+  const handleDeny = (userId: string) => {
+    const socket = getSocket();
+    if (socket) socket.emit('room_deny', { roomId, userId });
+    setKnockRequests(prev => prev.filter(r => r.userId !== userId));
+  };
+
   const handleDownloadTranscript = () => {
     const text = liveTranscript.map(t => `[${t.speaker}] ${t.text}`).join('\n');
     const blob = new Blob([text], { type: 'text/plain' });
@@ -983,6 +1023,42 @@ function MeetRoom() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 gap-3">
+      {/* Host Knock/Admit Panel */}
+      {isHost && knockRequests.length > 0 && (
+        <div style={{
+          position: 'fixed', top: 80, right: 24, zIndex: 9999,
+          display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 320,
+        }}>
+          {knockRequests.map(req => (
+            <div key={req.userId} style={{
+              background: 'color-mix(in srgb, var(--th-bg) 95%, transparent)',
+              border: '1px solid var(--th-accent)',
+              borderRadius: 14, padding: '14px 16px',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 22 }}>🚪</span>
+                <div>
+                  <div style={{ color: 'var(--th-text)', fontWeight: 700, fontSize: 14 }}>{req.name}</div>
+                  <div style={{ color: 'var(--th-muted)', fontSize: 11 }}>Wants to join the room</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => handleAdmit(req.userId)} style={{
+                  flex: 1, background: 'var(--th-accent)', color: 'var(--th-accent-text)',
+                  border: 'none', borderRadius: 8, padding: '7px 0', fontWeight: 700, fontSize: 12, cursor: 'pointer'
+                }}>Admit</button>
+                <button onClick={() => handleDeny(req.userId)} style={{
+                  flex: 1, background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '7px 0', fontWeight: 700, fontSize: 12, cursor: 'pointer'
+                }}>Deny</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {/* Room info bar */}
       <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">

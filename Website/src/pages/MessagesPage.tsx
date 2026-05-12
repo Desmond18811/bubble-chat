@@ -23,11 +23,12 @@ const BASE = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'http
 const token = () => localStorage.getItem('access_token') || '';
 
 async function checkCanMessage(userId: string) {
-  const res = await fetch(`${BASE}/messages/can-message/${userId}`, { headers: { Authorization: `Bearer ${token()}` } });
+  const res = await fetch(`${BASE}/message/can-message/${userId}`, { headers: { Authorization: `Bearer ${token()}` } });
+  if (!res.ok) return { canMessage: true }; // fallback: assume allowed on error
   return res.json();
 }
 async function sendRequest(userId: string) {
-  const res = await fetch(`${BASE}/messages/request/${userId}`, { method: 'POST', headers: { Authorization: `Bearer ${token()}` } });
+  const res = await fetch(`${BASE}/message/request/${userId}`, { method: 'POST', headers: { Authorization: `Bearer ${token()}` } });
   return res.json();
 }
 import {
@@ -1604,8 +1605,12 @@ export default function BubbleMessages() {
     setMessageRequestStatus(null);
     setAidaContext(null);
 
-    // Clear unreadCount locally immediately
-    setChats(prev => prev.map(c => (c.id || c._id) === (chat.id || chat._id) ? { ...c, unreadCount: 0 } : c));
+    // Clear unread badge locally and mark all messages read on the backend
+    const chatIdToRead = chat.id || chat._id;
+    setChats(prev => prev.map(c => (c.id || c._id) === chatIdToRead ? { ...c, unreadCount: 0 } : c));
+    try {
+      await import("@/api").then(({ markMessagesRead }) => markMessagesRead(chatIdToRead));
+    } catch { /* non-fatal */ }
 
     // If it's a DM, check messaging permission + load Aida context
     if (!chat.isGroupChat && !chat.isAidaBot) {
