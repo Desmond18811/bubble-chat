@@ -589,16 +589,45 @@ export const getMe = async (req: any, res: Response): Promise<void> => {
   }
 };
 
-// ─── GOOGLE AUTH PLACEHOLDERS ────────────────────────────────────────────────
+// ─── GOOGLE AUTH ─────────────────────────────────────────────────────────────
 /**
- * Passport Google login flow
+ * Initiates the Google OAuth flow.
+ * Note: This is typically handled directly in the routes with passport.authenticate.
  */
 export const googleLogin = (req: Request, res: Response): void => {
-  res.status(501).json({ message: 'Google login not implemented in this flow.' });
+  // Logic is in the routes
 };
 
-export const googleCallback = (req: Request, res: Response): void => {
-  res.status(501).json({ message: 'Google callback not implemented in this flow.' });
+/**
+ * Handles the Google OAuth callback.
+ * Passport has already authenticated the user and attached it to req.user.
+ */
+export const googleCallback = async (req: any, res: Response): Promise<void> => {
+  try {
+    const user = req.user;
+    if (!user) {
+      res.redirect(`${process.env.ORIGIN || 'http://localhost:5173'}/login?error=auth_failed`);
+      return;
+    }
+
+    const accessToken = generateAccessToken(String(user._id));
+    const refreshToken = generateRefreshToken(String(user._id));
+
+    // Update user's refresh token and online status
+    await User.findByIdAndUpdate(user._id, {
+      refreshToken,
+      isOnline: true,
+      lastSeen: new Date(),
+    });
+
+    const userJson = encodeURIComponent(JSON.stringify(formatUser(user)));
+
+    // Redirect back to frontend callback page with tokens
+    res.redirect(`${process.env.ORIGIN || 'http://localhost:5173'}/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`);
+  } catch (err: any) {
+    console.error('Google callback error:', err);
+    res.redirect(`${process.env.ORIGIN || 'http://localhost:5173'}/login?error=server_error`);
+  }
 };
 
 // ─── 2FA INTEGRATION ─────────────────────────────────────────────────────────

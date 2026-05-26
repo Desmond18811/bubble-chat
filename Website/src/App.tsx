@@ -20,6 +20,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import VerifyOTPPage from "./pages/auth/VerifyOTPPage";
+import GoogleCallbackPage from "./pages/auth/GoogleCallbackPage";
 import ProfileSetupPage from "./pages/ProfileSetupPage";
 import AidaPage from "./pages/AidaPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
+            <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
             {/* Onboarding — needs token but skips onboarding check */}
             <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetupPage /></ProtectedRoute>} />
 
