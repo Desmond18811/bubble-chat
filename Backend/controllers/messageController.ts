@@ -3,6 +3,7 @@ import { Message } from '../models/messages';
 import { Conversation } from '../models/conversations';
 import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
 import * as fs from 'fs';
+import { enqueueMessage } from '../utils/queue';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -19,6 +20,7 @@ const formatSender = (u: any) => ({
   uniqueTag: u.uniqueTag || null,
   isOnline: u.isOnline ?? false,
   status_message: u.status_message || null,
+  publicKey: u.publicKey || null,
 });
 
 const formatMessage = (m: any) => ({
@@ -168,18 +170,12 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 
     const formatted = formatMessage(message);
 
-    // Emit to everyone in the chat room for real-time delivery
-    const io = (req as any).io;
-    if (io) {
-      io.to(chatId).emit('new_message', formatted);
-      // Fallback: Emit to all users physically in their personal rooms
-      const chatDoc = await Conversation.findById(chatId);
-      if (chatDoc && chatDoc.users) {
-        chatDoc.users.forEach((u: any) => {
-          io.to(u.toString()).emit('new_message', formatted);
-        });
-      }
-    }
+    // Offload delivery to Redis queue for background processing
+    await enqueueMessage({
+      type: 'new_message',
+      chatId,
+      message: formatted,
+    });
 
     res.status(201).json({
       message: 'Message sent successfully.',
@@ -236,16 +232,12 @@ export const shareWorkspaceFile = async (req: AuthRequest, res: Response): Promi
 
     const formatted = formatMessage(message);
 
-    const io = (req as any).io;
-    if (io) {
-      io.to(chatId).emit('new_message', formatted);
-      const chatDoc = await Conversation.findById(chatId);
-      if (chatDoc && chatDoc.users) {
-        chatDoc.users.forEach((u: any) => {
-          io.to(u.toString()).emit('new_message', formatted);
-        });
-      }
-    }
+    // Offload shared file delivery to Redis queue
+    await enqueueMessage({
+      type: 'new_message',
+      chatId,
+      message: formatted,
+    });
 
     res.status(201).json({
       message: 'Workspace file shared to chat successfully.',

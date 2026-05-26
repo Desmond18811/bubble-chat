@@ -14,6 +14,7 @@ import { useTheme, THEMES, ThemeId } from "@/lib/ThemeContext";
 import { uploadAvatar, getMyFollowers, getMyFollowing, followUser } from "@/api";
 import { getSecureMediaUrl } from "@/lib/utils";
 import * as api from "@/api";
+import { exportKeyBackup, importKeyBackup, getPrivateKey } from "@/lib/key-storage";
 
 const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
 
@@ -423,6 +424,101 @@ function SecuritySection() {
           <Toggle enabled={twoFA} onToggle={toggle2FA} />
         </div>
       </div>
+    </section>
+  );
+}
+
+// ─── Encryption Section ────────────────────────────────────────────────────────
+function EncryptionSection() {
+  const [hasKey, setHasKey] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getPrivateKey().then(sk => setHasKey(!!sk));
+  }, []);
+
+  const handleBackup = async () => {
+    try {
+      const blob = await exportKeyBackup();
+      if (!blob) throw new Error("No encryption key found on this device.");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bubble-chat-${JSON.parse(localStorage.getItem("user") || "{}").username || "user"}.bubblekey`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Identity backup downloaded successfully.");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setLoading(true);
+      const text = await file.text();
+      await importKeyBackup(text.trim());
+      setHasKey(true);
+      toast.success("Identity key imported successfully.");
+    } catch (err: any) {
+      toast.error("Failed to import key: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section className="p-8 rounded-2xl border transition-colors mb-8" style={{ background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)", backdropFilter: "blur(20px)", borderColor: "var(--th-border)" }}>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-xl font-semibold mb-1 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>End-to-End Encryption</h3>
+          <p className="text-[10px] uppercase tracking-widest transition-colors" style={{ ...SG, color: "var(--th-muted)" }}>Privacy Protection & Identity Backup</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: hasKey ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: hasKey ? "#10b981" : "#ef4444", border: `1px solid ${hasKey ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+            {hasKey ? "E2EE ACTIVE" : "E2EE INACTIVE"}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 rounded-xl border transition-colors group cursor-pointer" style={{ background: "var(--th-surface)", borderColor: "transparent" }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--th-border)")}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = "transparent")}
+          onClick={handleBackup}>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: "color-mix(in srgb, var(--th-accent) 20%, transparent)", color: "var(--th-accent)" }}>
+              <MSIcon name="download" />
+            </div>
+            <div>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Backup Identity Key</p>
+              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>Download your .bubblekey file</p>
+            </div>
+          </div>
+        </div>
+
+        <label className="p-4 rounded-xl border transition-colors group cursor-pointer" style={{ background: "var(--th-surface)", borderColor: "transparent" }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--th-border)")}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = "transparent")}>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: "color-mix(in srgb, var(--th-secondary) 20%, transparent)", color: "var(--th-secondary)" }}>
+              <MSIcon name="upload" />
+            </div>
+            <div>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Restore Identity</p>
+              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>Import from .bubblekey backup</p>
+            </div>
+          </div>
+          <input type="file" hidden accept=".bubblekey,.txt" onChange={handleImport} disabled={loading} />
+        </label>
+      </div>
+
+      <p className="mt-6 text-[11px] leading-relaxed transition-colors flex items-start gap-2" style={{ color: "var(--th-muted)" }}>
+        <span>ℹ️</span>
+        <span>End-to-End Encryption ensures that only you and your recipients can read your transmissions. Your private key is stored locally and encrypted on this device. <strong>Bubble Space</strong> never has access to your private key. <strong>Always keep a backup file in a safe place.</strong></span>
+      </p>
     </section>
   );
 }
@@ -1070,6 +1166,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-12 gap-8 items-start">
           <div className="col-span-12 lg:col-span-7 space-y-8">
             <ProfileSection />
+            <EncryptionSection />
             <PrivacySection />
             <SecuritySection />
             <NotificationsSection />

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '@/api';
 import { generateKeyPair } from '@/lib/crypto-utils';
+import { storePrivateKey } from '@/lib/key-storage';
 import { toast } from 'sonner';
 
 const SignupPage: React.FC = () => {
@@ -36,7 +37,7 @@ const SignupPage: React.FC = () => {
     setLoading(true);
     try {
       const { publicKey, secretKey } = generateKeyPair();
-      localStorage.setItem('bubble_sk', secretKey);
+      await storePrivateKey(secretKey);
       const response = await register({ email, password, confirm_password, full_name, phone_number, publicKey });
       toast.success('Account created! Check your email for a verification code.');
       navigate('/verify-otp', { state: { email: response.data.email || email } });

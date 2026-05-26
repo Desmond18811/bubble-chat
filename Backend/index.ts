@@ -7,8 +7,11 @@ import http from 'http';
 import cors from 'cors';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import { initSocket, getIO } from './utils/socket';
 import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler } from './utils/scheduler';
+import { processQueue } from './utils/queue';
+import { Conversation } from './models/conversations';
 import './middleware/passport';
 
 import chatRoutes from './routes/chatRoutes';
@@ -98,6 +101,18 @@ const limiter = rateLimit({
 });
 app.use('/api', limiter);
 
+// Strict limiter for public key discovery and authentication endpoints
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per 15 mins
+  message: 'Security policy: Too many requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/v1/auth', strictLimiter);
+app.use('/api/v1/user/search', strictLimiter); // Prevent bulk scraping of identities
+
+app.use(helmet());
 app.use(express.json());
 
 // JSON Parsing Error Handler
@@ -332,6 +347,26 @@ mongoose.connect(mongoURI, { family: 4 })
     server.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📄 Swagger docs available at /api-docs`);
+
+      // Start Message Queue Worker
+      processQueue(async (payload) => {
+        try {
+          const io = getIO();
+          if (payload.type === 'new_message') {
+            const { chatId, message } = payload;
+            io.to(chatId).emit('new_message', message);
+
+            const chatDoc = await Conversation.findById(chatId);
+            if (chatDoc && chatDoc.users) {
+              chatDoc.users.forEach((u: any) => {
+                io.to(u.toString()).emit('new_message', message);
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Queue Worker Processing Error:', err);
+        }
+      });
     });
   })
   .catch((err) => {

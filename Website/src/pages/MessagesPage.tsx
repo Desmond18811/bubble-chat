@@ -46,7 +46,7 @@ import {
 } from "@/lib/socket-client";
 import { toast } from "sonner";
 import ReactEmojiPicker, { Theme } from "emoji-picker-react";
-import { generateKeyPair, exportPrivateKey, exportPublicKey } from "@/lib/crypto";
+import { encryptForRecipient, decryptFromSender } from "@/lib/crypto-utils";
 import { useNavigate } from "react-router-dom";
 
 import { getSecureMediaUrl } from "@/lib/utils";
@@ -998,23 +998,7 @@ export default function BubbleMessages() {
   }, []);
 
   useEffect(() => {
-    const initE2E = async () => {
-      try {
-        if (!localStorage.getItem("e2ee_private")) {
-          const keys = await generateKeyPair();
-          const priv = await exportPrivateKey(keys.privateKey);
-          const pub = await exportPublicKey(keys.publicKey);
-          localStorage.setItem("e2ee_private", priv);
-          localStorage.setItem("e2ee_public", pub);
-          console.log("[E2EE] Initialized new WebCrypto KeyPair");
-        } else {
-          console.log("[E2EE] Loaded existing WebCrypto KeyPair");
-        }
-      } catch (e) {
-        console.error("[E2EE] Failed to init encryption keys", e);
-      }
-    };
-    initE2E();
+    // E2EE logic updated to use IndexedDB in crypto-utils and key-storage
 
     const token = localStorage.getItem("access_token");
     if (!token) return;
@@ -1032,10 +1016,17 @@ export default function BubbleMessages() {
       const msgChatId = msg.chat?.id || msg.chat?._id || msg.chatId;
       const activeChatId = chat?.id || chat?._id;
       if (chat && msgChatId && msgChatId === activeChatId) {
-        setMessages((prev) => {
-          if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;
-          return [...prev, msg];
-        });
+        (async () => {
+          let content = msg.content;
+          if (msg.is_encrypted && msg.sender?.publicKey) {
+            content = await decryptFromSender(msg.content, msg.sender.publicKey);
+          }
+          const decryptedMsg = { ...msg, content };
+          setMessages((prev) => {
+            if (prev.some((m) => (m.id || m._id) === (decryptedMsg.id || decryptedMsg._id))) return prev;
+            return [...prev, decryptedMsg];
+          });
+        })();
       }
       setChats((prev) =>
         prev.map((c) =>
@@ -1206,11 +1197,17 @@ export default function BubbleMessages() {
         setMessages([]); // Clear previous messages to prevent UI bleeding
         const res = await api.fetchMessages(activeChat.id || activeChat._id);
         const msgs = res.messages || [];
-        const mediaMsgs = msgs.filter((m: any) => m.mediaUrl || m.media_url);
-        if (mediaMsgs.length > 0) {
-          console.log('[Bubble] Media messages sample:', JSON.stringify(mediaMsgs[0], null, 2));
-        }
-        setMessages(msgs);
+
+        // Decrypt messages as they are loaded
+        const decryptedMsgs = await Promise.all(msgs.map(async (m: any) => {
+          if (m.is_encrypted && m.sender?.publicKey) {
+            const content = await decryptFromSender(m.content, m.sender.publicKey);
+            return { ...m, content };
+          }
+          return m;
+        }));
+
+        setMessages(decryptedMsgs);
       } catch {
         toast.error("Could not load messages");
       }
@@ -1287,7 +1284,23 @@ export default function BubbleMessages() {
         }
       }
 
-      const res = await api.sendTextMessage(activeChat.id || activeChat._id, text, { parent_message: parentMsgId });
+      const otherUser = getOtherUser(activeChat, myId);
+      let encryptedContent = text;
+      let is_encrypted = false;
+
+      if (otherUser?.publicKey) {
+        try {
+          encryptedContent = await encryptForRecipient(text, otherUser.publicKey);
+          is_encrypted = true;
+        } catch (e) {
+          console.warn("[E2EE] Encryption failed, sending plaintext", e);
+        }
+      }
+
+      const res = await api.sendTextMessage(activeChat.id || activeChat._id, encryptedContent, {
+        parent_message: parentMsgId,
+        is_encrypted
+      });
       const msg = res.data || res;
       setMessages((prev) => {
         if (prev.some((m) => (m.id || m._id) === (msg.id || msg._id))) return prev;

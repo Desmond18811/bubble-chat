@@ -39,6 +39,7 @@ const formatUser = (u: any) => ({
   is_bot: u.is_bot ?? false,
   verified_badge: u.verified_badge ?? false,
   isOnline: u.isOnline ?? false,
+  publicKey: u.publicKey || null,
   createdAt: u.createdAt,
   updatedAt: u.updatedAt,
 });
@@ -77,7 +78,7 @@ const validatePassword = (password: string): string | null => {
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { full_name, email, phone_number, password } = req.body;
+    const { full_name, email, phone_number, password, publicKey } = req.body;
 
     if (!email && !phone_number) {
       res.status(400).json({ message: 'Email or phone number is required.' });
@@ -117,6 +118,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       isVerified: false,
       uniqueTag,
       onboardingComplete: false,
+      publicKey,
     });
 
     await Otp.create({
