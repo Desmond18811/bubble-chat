@@ -60,6 +60,16 @@ const generateUniqueTag = async (base: string): Promise<string> => {
   return tag;
 };
 
+// ─── Password Validator ────────────────────────────────────────────────────────
+const validatePassword = (password: string): string | null => {
+  if (password.length < 8) return 'Password must be at least 8 characters long.';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
+  if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter.';
+  if (!/\d/.test(password)) return 'Password must contain at least one number.';
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return 'Password must contain at least one special character.';
+  return null;
+};
+
 // ─── REGISTER ─────────────────────────────────────────────────────────────────
 /**
  * POST /api/v1/auth/register
@@ -76,6 +86,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     if (!password) {
       res.status(400).json({ message: 'Password is required.' });
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      res.status(400).json({ message: passwordError });
       return;
     }
 
@@ -275,6 +291,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      res.status(400).json({ message: passwordError });
+      return;
+    }
+
     const query = email
       ? { email: email.toLowerCase() }
       : { phone_number };
@@ -434,8 +456,9 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (newPassword.length < 8) {
-      res.status(400).json({ message: 'Password must be at least 8 characters.' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      res.status(400).json({ message: passwordError });
       return;
     }
 
@@ -492,8 +515,9 @@ export const changePassword = async (req: any, res: Response): Promise<void> => 
       return;
     }
 
-    if (newPassword.length < 8) {
-      res.status(400).json({ message: 'New password must be at least 8 characters.' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      res.status(400).json({ message: passwordError });
       return;
     }
 
