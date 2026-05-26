@@ -25,8 +25,22 @@ const ForgotPasswordPage: React.FC = () => {
     }
   };
 
+  const getPasswordRequirements = (pw: string) => [
+    { label: '8+ characters', met: pw.length >= 8 },
+    { label: 'Uppercase letter', met: /[A-Z]/.test(pw) },
+    { label: 'Lowercase letter', met: /[a-z]/.test(pw) },
+    { label: 'One number', met: /\d/.test(pw) },
+    { label: 'Special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(pw) }
+  ];
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requirements = getPasswordRequirements(newPassword);
+    const unmet = requirements.filter(r => !r.met);
+    if (unmet.length > 0) {
+      toast.error('Password does not meet requirements: ' + unmet[0].label);
+      return;
+    }
     setLoading(true);
     try {
       await resetPassword({ email, otp, newPassword });
@@ -98,6 +112,16 @@ const ForgotPasswordPage: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
+              {newPassword.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-4 px-1">
+                  {getPasswordRequirements(newPassword).map((req, i) => (
+                    <div key={i} className={`flex items-center gap-2 transition-all ${req.met ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <span className="text-[8px]">{req.met ? '●' : '○'}</span>
+                      <span className="text-[10px] font-medium tracking-tight whitespace-nowrap">{req.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="submit"

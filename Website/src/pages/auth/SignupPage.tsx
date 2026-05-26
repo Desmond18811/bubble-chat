@@ -13,13 +13,28 @@ const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const getPasswordRequirements = (pw: string) => [
+    { label: '8+ characters', met: pw.length >= 8 },
+    { label: 'Uppercase letter', met: /[A-Z]/.test(pw) },
+    { label: 'Lowercase letter', met: /[a-z]/.test(pw) },
+    { label: 'One number', met: /\d/.test(pw) },
+    { label: 'Special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(pw) }
+  ];
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requirements = getPasswordRequirements(password);
+    const unmet = requirements.filter(r => !r.met);
+    if (unmet.length > 0) {
+      toast.error('Password does not meet requirements: ' + unmet[0].label);
+      return;
+    }
+    if (password !== confirm_password) {
+      toast.error('Passwords do not match');
+      return;
+    }
     setLoading(true);
     try {
-      if (password !== confirm_password) {
-        throw new Error('Passwords do not match');
-      }
       const { publicKey, secretKey } = generateKeyPair();
       localStorage.setItem('bubble_sk', secretKey);
       const response = await register({ email, password, confirm_password, full_name, phone_number, publicKey });
@@ -66,11 +81,23 @@ const SignupPage: React.FC = () => {
           </div>
           <div>
             <label style={lbl}>Password</label>
-            <input type="password" required minLength={8} style={inp} placeholder="Min. 8 characters" value={password} onChange={e => setPassword(e.target.value)} onFocus={e => e.target.style.borderColor = 'rgba(255,231,146,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+            <input type="password" required style={inp} placeholder="Min. 8 characters" value={password} onChange={e => setPassword(e.target.value)} onFocus={e => e.target.style.borderColor = 'rgba(255,231,146,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+            {password.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginTop: 12, padding: '0 4px' }}>
+                {getPasswordRequirements(password).map((req, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, color: req.met ? '#10b981' : '#68768b', transition: 'all 0.2s' }}>
+                    <span style={{ fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 14, height: 14, borderRadius: '50%', background: req.met ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${req.met ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}` }}>
+                      {req.met ? '✓' : ''}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 500 }}>{req.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <label style={lbl}>Confirm Password</label>
-            <input type="password" required minLength={8} style={inp} placeholder="Re-enter your password" value={confirm_password} onChange={e => setConfirmPassword(e.target.value)} onFocus={e => e.target.style.borderColor = 'rgba(255,231,146,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+            <input type="password" required style={inp} placeholder="Re-enter your password" value={confirm_password} onChange={e => setConfirmPassword(e.target.value)} onFocus={e => e.target.style.borderColor = 'rgba(255,231,146,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
           </div>
 
           <div style={{ display: 'flex', gap: 10, padding: '10px 14px', background: 'rgba(255,231,146,0.05)', border: '1px solid rgba(255,231,146,0.12)', borderRadius: 10 }}>

@@ -18,8 +18,22 @@ const LoginPage: React.FC = () => {
     }
   }, []);
 
+  const getPasswordRequirements = (pw: string) => [
+    { label: '8+ characters', met: pw.length >= 8 },
+    { label: 'Uppercase letter', met: /[A-Z]/.test(pw) },
+    { label: 'Lowercase letter', met: /[a-z]/.test(pw) },
+    { label: 'One number', met: /\d/.test(pw) },
+    { label: 'Special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(pw) }
+  ];
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const requirements = getPasswordRequirements(password);
+    const unmet = requirements.filter(r => !r.met);
+    if (unmet.length > 0) {
+      toast.error('Password does not meet requirements: ' + unmet[0].label);
+      return;
+    }
     setLoading(true);
     try {
       const response = await login({ email, password });
@@ -113,6 +127,17 @@ const LoginPage: React.FC = () => {
               onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'}
               onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'}
             />
+            {/* Minimal requirements checklist for login */}
+            {password.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 8px', marginTop: 10, padding: '0 4px' }}>
+                {getPasswordRequirements(password).map((req, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: req.met ? '#10b981' : '#4b5563', opacity: 0.8 }}>
+                    <span style={{ fontSize: 8 }}>{req.met ? '●' : '○'}</span>
+                    <span style={{ fontSize: 9, fontWeight: 500 }}>{req.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button

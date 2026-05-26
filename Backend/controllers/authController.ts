@@ -606,7 +606,7 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
   try {
     const user = req.user;
     if (!user) {
-      res.redirect(`${process.env.ORIGIN || 'http://localhost:5173'}/login?error=auth_failed`);
+      res.redirect(`${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/login?error=auth_failed`);
       return;
     }
 
@@ -623,10 +623,10 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
     const userJson = encodeURIComponent(JSON.stringify(formatUser(user)));
 
     // Redirect back to frontend callback page with tokens
-    res.redirect(`${process.env.ORIGIN || 'http://localhost:5173'}/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`);
+    res.redirect(`${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`);
   } catch (err: any) {
     console.error('Google callback error:', err);
-    res.redirect(`${process.env.ORIGIN || 'http://localhost:5173'}/login?error=server_error`);
+    res.redirect(`${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/login?error=server_error`);
   }
 };
 
