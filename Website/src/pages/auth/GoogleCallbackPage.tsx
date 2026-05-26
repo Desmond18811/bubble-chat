@@ -1,68 +1,60 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const GoogleCallbackPage: React.FC = () => {
-    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const handled = useRef(false);
 
     useEffect(() => {
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        const userJson = searchParams.get('user');
-        const error = searchParams.get('error');
+        // Only run once — prevents double-fire on strict mode / re-renders
+        if (handled.current) return;
+        handled.current = true;
 
-        console.log('[GoogleAuth] Callback params:', {
+        // Use window.location.search directly — more reliable than useSearchParams
+        // because useSearchParams can sometimes re-render with an empty string
+        const params = new URLSearchParams(window.location.search);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const userJson = params.get('user');
+        const error = params.get('error');
+
+        console.log('[GoogleAuth] Callback params from URL:', {
             hasAccess: !!accessToken,
             hasRefresh: !!refreshToken,
-            userJson: userJson?.substring(0, 50) + '...',
-            error
+            hasUser: !!userJson,
+            error,
+            fullSearch: window.location.search.substring(0, 80),
         });
+
+        if (error) {
+            toast.error(`Sign-in failed: ${error}`);
+            navigate('/login', { replace: true });
+            return;
+        }
 
         if (accessToken && refreshToken && userJson) {
             try {
-                // URLSearchParams.get already decodes once, so JSON.parse should work directly
-                let user;
-                try {
-                    user = JSON.parse(userJson);
-                } catch (e) {
-                    console.log('[GoogleAuth] Direct parse failed, trying decodeURIComponent...');
-                    user = JSON.parse(decodeURIComponent(userJson));
-                }
-
-                console.log('[GoogleAuth] User parsed successfully:', user.email);
+                const user = JSON.parse(userJson);
 
                 localStorage.setItem('access_token', accessToken);
                 localStorage.setItem('refresh_token', refreshToken);
                 localStorage.setItem('user', JSON.stringify(user));
 
-                toast.success('Successfully logged in with Google!');
+                toast.success('Signed in with Google!');
 
-                // Small delay to ensure localStorage is flushed (some browsers/environments are tricky)
-                setTimeout(() => {
-                    if (!user.onboardingComplete) {
-                        console.log('[GoogleAuth] Redirecting to profile-setup');
-                        navigate('/profile-setup', { replace: true });
-                    } else {
-                        console.log('[GoogleAuth] Redirecting to messages');
-                        navigate('/messages', { replace: true });
-                    }
-                }, 100);
-            } catch (error) {
-                console.error('[GoogleAuth] Failed to parse user data:', error);
-                toast.error('Authentication error: invalid profile data');
+                const dest = user.onboardingComplete ? '/messages' : '/profile-setup';
+                console.log('[GoogleAuth] Navigating to:', dest, '| onboardingComplete:', user.onboardingComplete);
+                navigate(dest, { replace: true });
+            } catch (err) {
+                console.error('[GoogleAuth] Failed to parse user JSON:', err);
+                toast.error('Authentication error. Please try again.');
                 navigate('/login', { replace: true });
             }
-        } else if (error) {
-            console.error('[GoogleAuth] OAuth error from backend:', error);
-            toast.error(error);
-            navigate('/login', { replace: true });
         } else {
-            console.warn('[GoogleAuth] Missing params in callback URL');
-            // If they just landed here without params, send back to login
-            // navigate('/login', { replace: true });
+            console.warn('[GoogleAuth] No tokens found in URL. Nothing to do.');
         }
-    }, [searchParams, navigate]);
+    }, []); // Empty deps — run exactly once on mount
 
     return (
         <div style={{
@@ -84,25 +76,29 @@ const GoogleCallbackPage: React.FC = () => {
                 animation: 'spin 1s linear infinite',
                 marginBottom: 24
             }} />
-            <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Finalizing Authentication</h2>
-            <p style={{ fontSize: 14, color: '#9eacc3', marginTop: 8 }}>Securing your session in the Bubble space...</p>
+            <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>
+                Signing you in...
+            </h2>
+            <p style={{ fontSize: 14, color: '#9eacc3', marginTop: 8 }}>
+                Securing your session in the Bubble space...
+            </p>
 
-            {/* Fallback button if it takes too long */}
+            {/* Fallback button */}
             <div style={{ marginTop: 40 }}>
                 <button
                     onClick={() => navigate('/messages', { replace: true })}
                     style={{ background: 'transparent', border: 'none', color: '#9eacc3', textDecoration: 'underline', cursor: 'pointer', fontSize: 12, opacity: 0.6 }}
                 >
-                    Already logged in? Click here to continue
+                    Taking too long? Click here to continue →
                 </button>
             </div>
 
             <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
         </div>
     );
 };
