@@ -15,15 +15,15 @@ passport.use(new LocalStrategy(
     { usernameField: 'email' },
     async (email, password, done) => {
         try {
-            const user = await User.findOne({ 
-                $or: [{ email }, { phone_number: email }] 
+            const user = await User.findOne({
+                $or: [{ email }, { phone_number: email }]
             }).select('+password');
             if (!user) return done(null, false, { message: 'Incorrect email or password' });
             if (!user.password) return done(null, false, { message: 'Incorrect email or password' });
-            
+
             const isMatch = await bcrypt.compare(password, user.password as string);
             if (!isMatch) return done(null, false, { message: 'Incorrect email or password' });
-            
+
             return done(null, user);
         } catch (err) {
             return done(err);
@@ -62,7 +62,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let uniqueTag = 'bubble-' + Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
             while (await UserModel.findOne({ uniqueTag })) {
-              uniqueTag = 'bubble-' + Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+                uniqueTag = 'bubble-' + Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
             }
 
             user = await User.create({
@@ -76,11 +76,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
             // Background RSA keypair
             crypto.generateKeyPair('rsa', {
-              modulusLength: 2048,
-              publicKeyEncoding: { type: 'spki', format: 'pem' },
-              privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+                modulusLength: 2048,
+                publicKeyEncoding: { type: 'spki', format: 'pem' },
+                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
             }, async (err: any, pub: string, priv: string) => {
-              if (!err) await User.findByIdAndUpdate(user!._id, { publicKey: pub, privateKey: priv });
+                if (!err) await User.findByIdAndUpdate(user!._id, { publicKey: pub, privateKey: priv });
             });
 
             return done(null, user);
