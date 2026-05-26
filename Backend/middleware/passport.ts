@@ -44,8 +44,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
             // 2. Existing local user with same email → link accounts
             const googleEmail = profile.emails?.[0]?.value;
-            if (googleEmail) {
-                user = await User.findOne({ email: googleEmail });
+            if (googleEmail && typeof googleEmail === 'string') {
+                user = await User.findOne({ email: googleEmail.toLowerCase() });
                 if (user) {
                     user.googleId = profile.id;
                     if (!user.avatar && profile.photos?.[0]?.value) {

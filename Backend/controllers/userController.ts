@@ -308,26 +308,28 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
       is_bot: { $ne: true },
     };
 
+    // Privacy Fix: Always restrict search to same organization (except perhaps for global admins)
+    const currentUser = await User.findById(req.user?._id).select('organization role');
+    if (!currentUser?.organization && currentUser?.role !== 'admin') {
+      res.status(200).json({ message: 'No organization set.', total: 0, users: [] });
+      return;
+    }
+
+    if (currentUser?.role !== 'admin') {
+      filter.organization = currentUser?.organization;
+    }
+
     if (query) {
-      filter.$or = [
-        { full_name: { $regex: query, $options: 'i' } },
-        { username: { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } },
-        { uniqueTag: { $regex: query, $options: 'i' } },
+      filter.$and = [
+        {
+          $or: [
+            { full_name: { $regex: query, $options: 'i' } },
+            { username: { $regex: query, $options: 'i' } },
+            { email: { $regex: query, $options: 'i' } },
+            { uniqueTag: { $regex: query, $options: 'i' } },
+          ]
+        }
       ];
-    } else {
-      // Show colleagues in the same organization by default
-      const currentUser = await User.findById(req.user?._id).select('organization');
-      if (currentUser?.organization) {
-        filter.organization = currentUser.organization;
-      } else {
-        res.status(200).json({
-          message: 'No organization set. Cannot fetch default contacts.',
-          total: 0,
-          users: [],
-        });
-        return;
-      }
     }
 
     const users = await User.find(filter)

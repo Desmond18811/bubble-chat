@@ -36,9 +36,9 @@ export const initSocket = (server: HttpServer) => {
 
     // Automatically register user on connection and join their personal room
     socket.join(userId); // <-- personal room: guarantees delivery even when no chat is open
-    User.findByIdAndUpdate(userId, { 
-      socketId: socket.id, 
-      isOnline: true 
+    User.findByIdAndUpdate(userId, {
+      socketId: socket.id,
+      isOnline: true
     }).then(() => {
       socket.broadcast.emit('user_status_change', { userId, isOnline: true });
     });
@@ -46,9 +46,19 @@ export const initSocket = (server: HttpServer) => {
     // ─── Chat Room Management ─────────────────────────────────────────────────
     // Clients must join a room to receive real-time events scoped to that chat.
 
-    socket.on('join_room', (chatId: string) => {
-      socket.join(chatId);
-      console.log(`[Room] User ${userId} joined room: ${chatId}`);
+    socket.on('join_room', async (chatId: string) => {
+      try {
+        const { Conversation } = await import('../models/conversations');
+        const convo = await Conversation.findById(chatId);
+        if (convo && convo.users.map((id: any) => id.toString()).includes(userId)) {
+          socket.join(chatId);
+          console.log(`[Room] User ${userId} joined room: ${chatId}`);
+        } else {
+          console.warn(`[Room Security] User ${userId} attempted to join unauthorized room: ${chatId}`);
+        }
+      } catch (err) {
+        console.error('[Room] Join error:', err);
+      }
     });
 
     socket.on('leave_room', (chatId: string) => {
@@ -102,20 +112,20 @@ export const initSocket = (server: HttpServer) => {
 
       if (data.isBurnAfterReading) {
         setTimeout(() => {
-           socket.emit('message_burned', { messageId: data.messageId });
-           User.findById(data.toUserId).then(sender => {
-             if (sender && sender.socketId) io.to(sender.socketId).emit('message_burned', { messageId: data.messageId });
-           });
+          socket.emit('message_burned', { messageId: data.messageId });
+          User.findById(data.toUserId).then(sender => {
+            if (sender && sender.socketId) io.to(sender.socketId).emit('message_burned', { messageId: data.messageId });
+          });
         }, 60000);
       }
     });
 
     // ─── E2EE Public Key Exchange ─────────────────────────────────────────────
     socket.on('request_public_key', async (data: { targetUserId: string }) => {
-       const target = await User.findById(data.targetUserId);
-       if (target && target.publicKey) {
-         socket.emit('receive_public_key', { userId: data.targetUserId, publicKey: target.publicKey });
-       }
+      const target = await User.findById(data.targetUserId);
+      if (target && target.publicKey) {
+        socket.emit('receive_public_key', { userId: data.targetUserId, publicKey: target.publicKey });
+      }
     });
 
     // ─── Call Signaling ───────────────────────────────────────────────────────
