@@ -158,12 +158,23 @@ function SidebarNotifPopup({ onClose }: { onClose: () => void }) {
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 export default function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
   const { userData } = useUserProfile();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadChatsCount, setUnreadChatsCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
 
+  useEffect(() => {
+    const handleToggle = () => setIsMobileOpen(prev => !prev);
+    window.addEventListener('toggle-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-sidebar', handleToggle);
+  }, []);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const tick = async () => {
@@ -208,19 +219,32 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          onClick={() => setIsMobileOpen(false)}
+          className="fixed inset-0 z-[45] bg-black/60 md:hidden backdrop-blur-sm transition-opacity"
+        />
+      )}
+
       {notifOpen && <SidebarNotifPopup onClose={() => setNotifOpen(false)} />}
+
       <aside
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
         className={cn(
-          "fixed left-0 top-0 h-full z-50 flex flex-col py-6",
-          "backdrop-blur-2xl transition-all duration-300",
-          isExpanded ? "w-64" : "w-[85px]"
+          "fixed top-0 h-full z-50 flex flex-col py-6",
+          "backdrop-blur-2xl transition-all duration-300 ease-in-out",
+          // Desktop: left-0, width based on expansion
+          // Mobile: translates in/out, width fixed to 64 (isExpanded)
+          isExpanded ? "w-64" : "w-[85px]",
+          "left-0 md:translate-x-0",
+          !isMobileOpen ? "-translate-x-full md:translate-x-0" : "translate-x-0 shadow-2xl"
         )}
         style={{
           background: "var(--th-bg)",
           borderRight: "1px solid var(--th-border)",
-          boxShadow: "1px 0 40px rgba(0,0,0,0.8)",
+          boxShadow: isMobileOpen || isExpanded ? "10px 0 40px rgba(0,0,0,0.8)" : "none",
         }}
       >
         <div className={cn("mb-6 flex items-center h-10 px-6 transition-all overflow-hidden shrink-0", isExpanded ? "justify-start" : "justify-center")} style={{ background: "color-mix(in srgb, var(--th-bg) 70%, transparent)" }}>
@@ -245,7 +269,7 @@ export default function Sidebar() {
         </div>
 
         {/* Nav links */}
-        <nav className="flex flex-col flex-grow w-full mt-2 overflow-hidden">
+        <nav className="flex flex-col flex-grow w-full mt-2 overflow-hidden scrollbar-none">
           {NAV_ICONS.map(({ icon, label, path }) => {
             const active = isActive(path);
             return (
@@ -255,6 +279,7 @@ export default function Sidebar() {
                 title={isExpanded ? undefined : label}
                 onClick={() => {
                   if (path === "/messages") window.dispatchEvent(new CustomEvent('reset_active_chat'));
+                  setIsMobileOpen(false);
                 }}
                 className={cn("flex items-center h-12 mx-2 mb-1 rounded-xl shrink-0 border-l-[3px] transition-all duration-200 overflow-hidden")}
                 style={{
@@ -262,8 +287,6 @@ export default function Sidebar() {
                   borderLeftColor: active ? "var(--th-accent)" : "transparent",
                   background: active ? "rgba(255,231,146,0.08)" : "transparent",
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = "var(--th-text)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "var(--th-muted)"; e.currentTarget.style.background = "transparent"; } }}
               >
                 <span className="flex flex-shrink-0 items-center justify-center w-14 relative">
                   <MSIcon icon={icon} filled={active} className="text-2xl" />
@@ -298,8 +321,6 @@ export default function Sidebar() {
               cursor: "pointer",
               borderLeft: `3px solid ${notifOpen ? "var(--th-accent)" : "transparent"}`,
             }}
-            onMouseEnter={e => { if (!notifOpen) { e.currentTarget.style.color = "var(--th-text)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; } }}
-            onMouseLeave={e => { if (!notifOpen) { e.currentTarget.style.color = "var(--th-muted)"; e.currentTarget.style.background = "transparent"; } }}
           >
             <span className="flex flex-shrink-0 items-center justify-center w-14 relative">
               <MSIcon icon="notifications" filled={notifOpen} className="text-2xl" />
@@ -319,14 +340,13 @@ export default function Sidebar() {
           <Link
             to="/settings"
             title={isExpanded ? undefined : "Settings"}
+            onClick={() => setIsMobileOpen(false)}
             className={cn("flex items-center h-12 mx-2 mb-1 rounded-xl border-l-[3px] transition-all duration-200 overflow-hidden")}
             style={{
               color: isActive("/settings") ? "var(--th-accent)" : "var(--th-muted)",
               borderLeftColor: isActive("/settings") ? "var(--th-accent)" : "transparent",
               background: isActive("/settings") ? "rgba(255,231,146,0.08)" : "transparent",
             }}
-            onMouseEnter={e => { if (!isActive("/settings")) { e.currentTarget.style.color = "var(--th-text)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; } }}
-            onMouseLeave={e => { if (!isActive("/settings")) { e.currentTarget.style.color = "var(--th-muted)"; e.currentTarget.style.background = "transparent"; } }}
           >
             <span className="flex flex-shrink-0 items-center justify-center w-14">
               <MSIcon icon="settings" filled={isActive("/settings")} className="text-2xl" />
@@ -339,11 +359,10 @@ export default function Sidebar() {
           {/* Profile */}
           <Link
             to="/logout"
+            onClick={() => setIsMobileOpen(false)}
             title={isExpanded ? undefined : userData?.full_name || "Profile"}
             className="flex items-center h-14 mx-2 mt-1 rounded-xl transition-colors group overflow-hidden"
             style={{ color: "var(--th-muted)" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
           >
             <span className="flex flex-shrink-0 items-center justify-center w-14">
               <div className="w-9 h-9 rounded-full overflow-hidden" style={{ border: "1.5px solid rgba(255,255,255,0.12)" }}>

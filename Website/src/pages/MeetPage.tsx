@@ -21,6 +21,8 @@ import {
 import { ZegoUIKitPrebuilt } from "@zegocloud/zego-uikit-prebuilt";
 import { TranscriptDrawer } from "@/components/TranscriptDrawer";
 import { toast } from "sonner";
+import { MobileHeader } from "@/components/MobileHeader";
+import { Icon } from "@/components/Icon";
 
 // ─── Env ──────────────────────────────────────────────────────────────────────
 const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
@@ -76,18 +78,7 @@ interface ScheduledCall {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function MSIcon({ icon, filled = false, className }: { icon: string; filled?: boolean; className?: string }) {
-  return (
-    <span
-      className={cn("material-symbols-outlined select-none", className)}
-      style={{
-        fontVariationSettings: filled
-          ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
-          : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24",
-      }}
-    >
-      {icon}
-    </span>
-  );
+  return <Icon name={icon} fill={filled} className={className} />;
 }
 
 // ─── Action Items Drawer ──────────────────────────────────────────────────────
@@ -401,8 +392,13 @@ function MeetLobby() {
   const upcomingScheduled = scheduled.filter(s => s.scheduledAt >= now - 60 * 60 * 1000);
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar pb-8" onClick={() => setOpenMenuId(null)}>
-      <div className="mb-8">
+    <div
+      className="flex-1 overflow-y-auto custom-scrollbar pb-8 px-4 md:px-8 transition-all duration-300 pt-0 md:pt-8"
+      style={{ marginLeft: "var(--main-margin)" }}
+      onClick={() => setOpenMenuId(null)}
+    >
+      <MobileHeader title="Meets" />
+      <div className="mb-8 mt-28 md:mt-0">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-9 h-9 rounded-xl bg-[var(--th-accent)]/10 flex items-center justify-center">
             <MSIcon icon="video_chat" filled className="text-[var(--th-accent)] text-xl" />
@@ -414,8 +410,8 @@ function MeetLobby() {
       </div>
 
       {/* Primary call cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--th-accent)]/15 bg-gradient-to-br from-[var(--th-surface)] to-[var(--th-surface-low)] p-6 group cursor-pointer glass" onClick={() => startCall("voice")}>
+      <div className="flex sm:grid sm:grid-cols-2 gap-4 mb-8 overflow-x-auto pb-4 sm:pb-0 no-scrollbar snap-x">
+        <div className="flex-shrink-0 w-[85%] sm:w-auto relative overflow-hidden rounded-2xl border border-[var(--th-accent)]/15 bg-gradient-to-br from-[var(--th-surface)] to-[var(--th-surface-low)] p-6 group cursor-pointer glass snap-center" onClick={() => startCall("voice")}>
           <div className="absolute inset-0 bg-[var(--th-accent)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-[var(--th-accent)]/5 blur-xl" />
           <div className="relative">
@@ -434,7 +430,7 @@ function MeetLobby() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--th-secondary)]/15 bg-gradient-to-br from-[var(--th-surface)] to-[var(--th-surface-low)] p-6 group cursor-pointer glass" onClick={() => startCall("video")}>
+        <div className="flex-shrink-0 w-[85%] sm:w-auto relative overflow-hidden rounded-2xl border border-[var(--th-secondary)]/15 bg-gradient-to-br from-[var(--th-surface)] to-[var(--th-surface-low)] p-6 group cursor-pointer glass snap-center" onClick={() => startCall("video")}>
           <div className="absolute inset-0 bg-[var(--th-secondary)]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-[var(--th-secondary)]/5 blur-xl" />
           <div className="relative">
@@ -455,16 +451,16 @@ function MeetLobby() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
-        <button onClick={() => setShowSchedule(true)} className="flex flex-col items-start gap-2 p-4 rounded-xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-accent)]/30 hover:bg-[var(--th-surface-high)] transition-all group">
+      <div className="flex sm:grid sm:grid-cols-3 gap-3 mb-8 overflow-x-auto pb-4 sm:pb-0 no-scrollbar snap-x">
+        <button onClick={() => setShowSchedule(true)} className="flex-shrink-0 w-32 sm:w-auto flex flex-col items-start gap-2 p-4 rounded-xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-accent)]/30 hover:bg-[var(--th-surface-high)] transition-all group snap-start">
           <div className="w-9 h-9 rounded-xl bg-[var(--th-accent)]/10 flex items-center justify-center group-hover:scale-110 transition-transform"><MSIcon icon="calendar_add_on" className="text-[var(--th-accent)] text-lg" /></div>
           <div><p className="text-[var(--th-text)] text-sm font-semibold">Schedule</p><p className="text-[var(--th-muted)] text-xs">Plan ahead</p></div>
         </button>
-        <button onClick={() => setShowJoin(true)} className="flex flex-col items-start gap-2 p-4 rounded-xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-secondary)]/30 hover:bg-[var(--th-surface-high)] transition-all group">
+        <button onClick={() => setShowJoin(true)} className="flex-shrink-0 w-32 sm:w-auto flex flex-col items-start gap-2 p-4 rounded-xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-secondary)]/30 hover:bg-[var(--th-surface-high)] transition-all group snap-start">
           <div className="w-9 h-9 rounded-xl bg-[var(--th-secondary)]/10 flex items-center justify-center group-hover:scale-110 transition-transform"><MSIcon icon="login" className="text-[var(--th-secondary)] text-lg" /></div>
           <div><p className="text-[var(--th-text)] text-sm font-semibold">Join a call</p><p className="text-[var(--th-muted)] text-xs">Via link or ID</p></div>
         </button>
-        <button onClick={() => startCall("video")} className="flex flex-col items-start gap-2 p-4 rounded-xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-accent)]/30 hover:bg-[var(--th-surface-high)] transition-all group">
+        <button onClick={() => startCall("video")} className="flex-shrink-0 w-32 sm:w-auto flex flex-col items-start gap-2 p-4 rounded-xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-accent)]/30 hover:bg-[var(--th-surface-high)] transition-all group snap-start">
           <div className="w-9 h-9 rounded-xl bg-[var(--th-accent)]/10 flex items-center justify-center group-hover:scale-110 transition-transform"><MSIcon icon="group_add" className="text-[var(--th-accent)] text-lg" /></div>
           <div><p className="text-[var(--th-text)] text-sm font-semibold">Group call</p><p className="text-[var(--th-muted)] text-xs">Share link to invite</p></div>
         </button>
@@ -1316,7 +1312,8 @@ export default function BubbleMeet() {
       `}</style>
       <div className="bg-[var(--th-bg)] text-[var(--th-text)] overflow-hidden h-screen flex" style={{ fontFamily: "'Manrope', sans-serif" }}>
         <Sidebar />
-        <main className="ml-[85px] flex-1 flex flex-col h-full relative p-6 gap-4 overflow-hidden">
+        <MobileHeader title="MEET" />
+        <main className="flex-1 flex flex-col h-full relative p-4 md:p-6 gap-4 overflow-hidden pt-16 md:pt-6" style={{ marginLeft: "var(--main-margin)" }}>
           <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />
           <div className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] bg-[#a2c2fd]/5 blur-[120px] rounded-full pointer-events-none" />
           <div className="relative flex-1 flex flex-col min-h-0">

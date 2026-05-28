@@ -15,14 +15,12 @@ import {
 } from "@/api";
 import { toast } from "sonner";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { MobileHeader } from "@/components/MobileHeader";
+import { Icon } from "@/components/Icon";
 
 /* ─── UI Components ───────────────────────────────────────────────────────── */
 
-const Icon = ({ name, className = "", style = {} }: { name: string; className?: string; style?: any }) => (
-  <span className={cn("material-symbols-outlined", className)} style={{ fontSize: 22, ...style }}>
-    {name}
-  </span>
-);
+/* Shared Icon imported from @/components/Icon */
 
 const SG = { fontFamily: "'Space Grotesk', sans-serif" };
 
@@ -433,20 +431,21 @@ export default function AidaPage() {
 
   return (
     <div className="text-[var(--th-text)] min-h-screen flex font-['Manrope']" style={{ background: "var(--th-bg)" }}>
+      <MobileHeader title="Aida Assistant" />
       <Sidebar />
 
       {/* Modals */}
       {showTranscript && <TranscriptModal onClose={() => setShowTranscript(false)} onSubmit={handleTranscriptSubmit} />}
       {showKnowledge && <KnowledgeBaseModal onClose={() => setShowKnowledge(false)} />}
 
-      <main className="ml-[85px] flex-1 flex flex-col h-screen relative overflow-hidden">
+      <main className="flex-1 flex flex-col pt-20 md:pt-0 h-screen relative overflow-hidden transition-all duration-300" style={{ marginLeft: "var(--main-margin)" }}>
         {/* Ambient Glows */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />
 
         {/* Header */}
         <header
-          className="h-20 shrink-0 px-8 flex items-center justify-between border-b backdrop-blur-xl relative z-10"
+          className="h-16 md:h-20 shrink-0 px-4 md:px-8 hidden md:flex items-center justify-between border-b backdrop-blur-xl relative z-10"
           style={{ background: "color-mix(in srgb, var(--th-bg) 70%, transparent)", borderColor: "var(--th-border)" }}
         >
           <div className="flex items-center gap-4">
@@ -493,7 +492,7 @@ export default function AidaPage() {
         </header>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-8 relative z-10 custom-scrollbar">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-8 py-6 md:py-8 relative z-10 custom-scrollbar pt-20 md:pt-8">
           <div className="max-w-3xl mx-auto space-y-6">
 
             {/* Quick chips — only show with no real conversation yet */}
@@ -785,10 +784,10 @@ export default function AidaPage() {
         </div>
 
         {/* Input area */}
-        <div className="px-8 pb-6 pt-4 shrink-0 relative z-10">
+        <div className="px-4 md:px-8 pb-4 md:pb-6 pt-4 shrink-0 relative z-10">
           <div className="max-w-3xl mx-auto relative">
             <input
-              className="w-full border rounded-[20px] py-4 pl-6 pr-16 outline-none transition-all shadow-2xl"
+              className="w-full border rounded-2xl md:rounded-[20px] py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-16 outline-none transition-all shadow-2xl text-sm md:text-base"
               style={{
                 background: "rgba(17,39,63,0.4)",
                 borderColor: "rgba(255,255,255,0.08)",

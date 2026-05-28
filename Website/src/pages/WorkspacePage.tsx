@@ -5,6 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import { AvatarInitials } from "@/components/AvatarInitials";
 import { toast } from "sonner";
 import * as api from "@/api";
+import { MobileHeader } from "@/components/MobileHeader";
+import { Icon } from "@/components/Icon";
 
 /* ─── Types ────────────────────────────────────────────────────────────────── */
 type FileType = "image" | "video" | "audio" | "pdf" | "doc" | "spreadsheet" | "other" | "link";
@@ -877,6 +879,7 @@ export default function WorkspacesPage() {
 
   const [sortMode, setSortMode] = useState<"latest" | "oldest" | "largest">("latest");
   const [isShared, setIsShared] = useState(false);
+  const [isSecondarySidebarOpen, setIsSecondarySidebarOpen] = useState(false);
 
   // Fetch logged-in user for the avatar
   useEffect(() => {
@@ -1148,8 +1151,11 @@ export default function WorkspacesPage() {
 
 
 
-      {/* Top Bar */}
-      <header className="fixed top-0 right-0 z-40 h-20 px-10 flex justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
+      {/* Mobile Top Bar */}
+      <MobileHeader title="WORKSPACE" />
+
+      {/* Desktop Top Bar */}
+      <header className="hidden md:flex fixed top-0 right-0 z-40 h-20 px-10 justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
         style={{ left: "85px" }}>
         <h1 className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase mr-6" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           WORK
@@ -1190,9 +1196,38 @@ export default function WorkspacesPage() {
         </div>
       </header>
 
-      <main className="flex overflow-hidden" style={{ marginLeft: "85px", paddingTop: "80px", height: "100vh" }}>
-        {/* Left Sidebar */}
-        <aside className="w-72 flex flex-col gap-6 overflow-y-auto p-8 shrink-0" style={{ background: "var(--th-surface)" }}>
+      <main className="flex flex-col md:flex-row overflow-hidden"
+        style={{ marginLeft: "var(--main-margin)", paddingTop: "var(--top-bar-height, 96px)", height: "100vh", transition: "margin-left 0.3s ease" }}>
+
+        {/* Mobile Filter Toggle */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-[var(--th-border)] bg-[var(--th-surface)]">
+          <button
+            onClick={() => setIsSecondarySidebarOpen(!isSecondarySidebarOpen)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--th-surface-top)] text-[var(--th-accent)] font-bold text-xs"
+          >
+            <Icon name={isSecondarySidebarOpen ? "close" : "filter_list"} size={18} />
+            {isSecondarySidebarOpen ? "CLOSE FILTERS" : "FOLDERS & FILTERS"}
+          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowFolderModal(true)} className="p-2 rounded-xl bg-[var(--th-accent)]/10 text-[var(--th-accent)]"><Icon name="create_new_folder" size={20} /></button>
+            <button onClick={() => setShowUpload(true)} className="p-2 rounded-xl bg-[var(--th-accent)] text-[var(--th-accent-text)]"><Icon name="cloud_upload" size={20} /></button>
+          </div>
+        </div>
+
+        {/* Left Filter Sidebar */}
+        <aside
+          className={`
+            fixed md:relative inset-y-0 left-0 z-40 md:z-auto
+            w-72 md:w-72 flex flex-col gap-6 overflow-y-auto p-8 shrink-0
+            bg-[var(--th-surface)] border-r border-[var(--th-border)]
+            transition-all duration-300 ease-in-out
+            ${isSecondarySidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          `}
+        >
+          {/* Mobile close button inside aside */}
+          <div className="md:hidden flex justify-end mb-4">
+            <button onClick={() => setIsSecondarySidebarOpen(false)} className="text-[var(--th-muted)]"><Icon name="close" /></button>
+          </div>
           {/* Main buttons */}
           <div className="flex flex-col gap-3">
             <button
@@ -1278,34 +1313,34 @@ export default function WorkspacesPage() {
         </aside>
 
         {/* Main grid */}
-        <section className="flex-1 overflow-y-auto p-10" style={{ background: "var(--th-bg)" }}>
+        <section className="flex-1 overflow-y-auto p-4 md:p-10" style={{ background: "var(--th-bg)" }}>
           {/* Page Header */}
-          <header className="flex justify-between items-end mb-10">
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-10 gap-4">
             <div>
               <nav className="flex items-center gap-2 text-[10px] uppercase tracking-widest mb-2" style={{ ...SG, color: "var(--th-muted)" }}>
-                <span>Workspaces</span>
-                <MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} />
+                <span className="hidden md:inline">Workspaces</span>
+                <MSIcon name="chevron_right" className="hidden md:inline text-xs" style={{ fontSize: "14px" }} />
                 <span style={{ color: "var(--th-accent)" }}>{isShared ? "Shared with me" : (activeWs || "All Files")}</span>
                 {!isShared && activeSource && <><MSIcon name="chevron_right" className="text-xs" style={{ fontSize: "14px" }} /><span style={{ color: "#a2c2fd" }}>From {activeSource}</span></>}
               </nav>
-              <h1 className="text-4xl font-bold tracking-tight" style={{ ...SG, color: "var(--th-text)" }}>
+              <h1 className="text-2xl md:text-4xl font-bold tracking-tight" style={{ ...SG, color: "var(--th-text)" }}>
                 {isShared ? "Shared with me" : (activeWs || "All Files")}
               </h1>
               <p style={{ ...SG, fontSize: 12, color: "#68768b", marginTop: 4 }}>{sorted.length} {sorted.length === 1 ? "file" : "files"} {loading ? "— loading..." : ""}</p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-2 md:pb-0">
               {/* Sort */}
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
-                style={{ background: "#0c2037", border: "1px solid rgba(59,73,92,0.1)", color: "var(--th-text)", borderRadius: 10, padding: "8px 12px", fontSize: 12, cursor: "pointer", ...SG, outline: "none" }}
+                style={{ background: "#0c2037", border: "1px solid rgba(59,73,92,0.1)", color: "var(--th-text)", borderRadius: 10, padding: "8px 12px", fontSize: 12, cursor: "pointer", ...SG, outline: "none", flexShrink: 0 }}
               >
                 <option value="latest">Latest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="largest">Largest First</option>
               </select>
-              <button onClick={load} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,73,92,0.1)", color: "var(--th-muted)", borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>
+              <button onClick={load} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(59,73,92,0.1)", color: "var(--th-muted)", borderRadius: 10, padding: "8px 10px", cursor: "pointer", flexShrink: 0 }}>
                 <MSIcon name="refresh" style={{ fontSize: 18 }} />
               </button>
             </div>

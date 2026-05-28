@@ -58,14 +58,14 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#010f20', position: 'relative', overflow: 'hidden', fontFamily: "'Manrope', sans-serif" }}>
+    <div className="min-h-screen flex items-center justify-center bg-[#010f20] relative overflow-hidden font-sans p-4">
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* Glow Orbs */}
       <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'rgba(255,231,146,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
       <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40%', height: '40%', background: 'rgba(162,194,253,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
 
-      <div style={{ width: '100%', maxWidth: 440, padding: 40, background: 'rgba(3,20,39,0.7)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 28, boxShadow: '0 32px 80px rgba(0,0,0,0.5)', position: 'relative', zIndex: 10 }}>
+      <div className="w-full max-w-md bg-[rgba(3,20,39,0.7)] backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl p-6 md:p-10 relative z-10">
 
         {/* Session expired banner */}
         {sessionExpired && (

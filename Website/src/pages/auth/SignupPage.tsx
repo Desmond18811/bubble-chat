@@ -52,12 +52,12 @@ const SignupPage: React.FC = () => {
   const lbl = { display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase' as const, letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#010f20', fontFamily: "'Manrope', sans-serif", position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen flex items-center justify-center bg-[#010f20] font-sans relative overflow-hidden p-4">
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '40%', height: '40%', background: 'rgba(255,231,146,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
       <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '40%', height: '40%', background: 'rgba(162,194,253,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
 
-      <div style={{ width: '100%', maxWidth: 440, padding: 40, background: 'rgba(3,20,39,0.75)', backdropFilter: 'blur(32px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 28, boxShadow: '0 32px 80px rgba(0,0,0,0.5)', position: 'relative', zIndex: 10, margin: '40px 16px' }}>
+      <div className="w-full max-w-md bg-[rgba(3,20,39,0.75)] backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl p-6 md:p-10 relative z-10 transition-all">
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 18 }}>
             <img src="/icon.png" alt="Bubble" style={{ width: 36, height: 36, objectFit: 'contain' }} />

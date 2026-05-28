@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { AvatarInitials } from "@/components/AvatarInitials";
+import { MobileHeader } from "@/components/MobileHeader";
 import {
   fetchNetworks,
   fetchCommunityCategories,
@@ -55,7 +56,7 @@ function TopBar({ onSearch }: { onSearch: (q: string) => void }) {
       .catch(() => { });
   }, []);
   return (
-    <header className="fixed top-0 right-0 left-[85px] z-40 flex justify-between items-center h-20 px-10 border-b transition-colors"
+    <header className="hidden md:flex fixed top-0 right-0 left-[85px] z-40 justify-between items-center h-20 px-10 border-b transition-colors"
       style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)", backdropFilter: "blur(12px)", borderColor: "var(--th-border)" }}>
       <div className="flex-1 max-w-2xl flex items-center gap-6">
         <h1
@@ -323,6 +324,7 @@ export default function BubbleCommunity() {
       style={{ fontFamily: "'Manrope', sans-serif", background: "var(--th-bg)", color: "var(--th-text)" }}
     >
       <Sidebar />
+      <MobileHeader title="COMMUNITY" />
       <TopBar onSearch={setSearchQuery} />
 
       {/* Ambient glows */}
@@ -331,24 +333,40 @@ export default function BubbleCommunity() {
       <div className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
         style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
 
-      <main className="ml-[85px] mt-20 p-10 h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar no-scrollbar relative z-10">
-        <section className="mb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <main
+        className="mt-20 md:mt-20 p-4 md:p-10 h-[calc(100vh-80px)] md:h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar no-scrollbar relative z-10"
+        style={{ marginLeft: "var(--main-margin)" }}
+      >
+        <section className="mb-8">
+          {/* Mobile search bar */}
+          <div className="md:hidden mb-4">
+            <div className="relative">
+              <MSIcon icon="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--th-muted)", fontSize: 18 }} />
+              <input
+                type="text"
+                placeholder="Search communities..."
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none border"
+                style={{ background: "var(--th-surface-top)", color: "var(--th-text)", borderColor: "var(--th-border)" }}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h1 className="text-5xl font-bold mb-2 tracking-tight transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}>
+              <h1 className="text-3xl md:text-5xl font-bold mb-2 tracking-tight transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}>
                 Community Hub
               </h1>
-              <p className="max-w-xl text-lg transition-colors" style={{ color: "var(--th-muted)" }}>
+              <p className="max-w-xl text-sm md:text-lg transition-colors" style={{ color: "var(--th-muted)" }}>
                 Discover and join exclusive networks of creators, builders, and visionaries.
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 shrink-0">
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="px-6 py-2.5 h-auto rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all hover:scale-105"
+                className="px-4 md:px-6 py-2.5 h-auto rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all hover:scale-105"
                 style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", boxShadow: "0 0 20px color-mix(in srgb, var(--th-accent) 20%, transparent)" }}
               >
-                Create Network
+                + Network
               </Button>
             </div>
           </div>
@@ -360,7 +378,7 @@ export default function BubbleCommunity() {
           onSuccess={loadData}
         />
 
-        <section className="mb-10 flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+        <section className="mb-6 flex gap-2 overflow-x-auto pb-3 custom-scrollbar no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
           {/* Fixed: My Communities tab always first */}
           <button
             onClick={() => setActiveCategory('My Communities')}

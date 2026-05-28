@@ -15,6 +15,8 @@ import { uploadAvatar, getMyFollowers, getMyFollowing, followUser } from "@/api"
 import { getSecureMediaUrl } from "@/lib/utils";
 import * as api from "@/api";
 import { exportKeyBackup, importKeyBackup, getPrivateKey } from "@/lib/key-storage";
+import { MobileHeader } from "@/components/MobileHeader";
+import { Icon } from "@/components/Icon";
 
 const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
 
@@ -86,11 +88,11 @@ function MSIcon({
 function TopBar() {
   return (
     <header
-      className="fixed top-0 right-0 z-50 flex items-center justify-between px-8 h-20 transition-colors"
+      className="fixed top-0 right-0 z-50 hidden md:flex items-center justify-between px-8 h-20 transition-colors"
       style={{
         background: "color-mix(in srgb, var(--th-bg) 70%, transparent)",
         backdropFilter: "blur(20px)",
-        left: "85px",
+        left: "var(--sidebar-width)",
         borderBottom: "1px solid var(--th-border)",
       }}
     >
@@ -1138,6 +1140,7 @@ export default function SettingsPage() {
       `}</style>
 
       <TopBar />
+      <MobileHeader title="Settings" />
       <Sidebar />
 
       {/* Ambient glows */}
@@ -1150,21 +1153,24 @@ export default function SettingsPage() {
         style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }}
       />
 
-      <main className="px-12 pb-20 transition-all duration-300 relative z-10" style={{ marginLeft: 96, paddingTop: "6rem" }}>
-        <header className="mb-16">
+      <main
+        className="px-6 md:px-12 pb-20 transition-all duration-300 relative z-10"
+        style={{ marginLeft: "var(--main-margin)", paddingTop: "5rem" }}
+      >
+        <header className="mb-10 md:mb-16 mt-12 md:mt-0">
           <h1
-            className="text-5xl font-bold tracking-tighter mb-2 transition-colors"
+            className="text-3xl md:text-5xl font-bold tracking-tighter mb-2 transition-colors"
             style={{ ...SG, color: "var(--th-text)" }}
           >
             Account Settings
           </h1>
-          <p className="max-w-xl transition-colors" style={{ color: "var(--th-muted)" }}>
+          <p className="max-w-xl text-sm md:text-base transition-colors" style={{ color: "var(--th-muted)" }}>
             Personalize your interface, manage security protocols, and configure your profile identity.
           </p>
         </header>
 
         <div className="grid grid-cols-12 gap-8 items-start">
-          <div className="col-span-12 lg:col-span-7 space-y-8">
+          <div className="col-span-12 lg:col-span-12 xl:col-span-7 space-y-8">
             <ProfileSection />
             <EncryptionSection />
             <PrivacySection />
@@ -1173,7 +1179,7 @@ export default function SettingsPage() {
             <BillingSection />
             <EcosystemSection />
           </div>
-          <div className="col-span-12 lg:col-span-5 relative space-y-8">
+          <div className="col-span-12 lg:col-span-12 xl:col-span-5 relative space-y-8">
             <ThemeSection />
             <SocialSection />
           </div>

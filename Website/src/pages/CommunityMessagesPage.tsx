@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import { AvatarInitials } from "@/components/AvatarInitials";
+import { MobileHeader } from "@/components/MobileHeader";
 import {
   fetchNetworkById,
   fetchNetworkPosts,
@@ -13,15 +14,7 @@ import {
 } from "@/api";
 import { formatDistanceToNow } from "date-fns";
 
-/* ─── Icon helper ─────────────────────────────────────────────────────────── */
-const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
-  <span
-    className={cn("material-symbols-outlined select-none", className)}
-    style={{ fontVariationSettings: `'FILL' ${fill ? 1 : 0}, 'wght' 400, 'GRAD' 0, 'opsz' 24`, lineHeight: 1, ...style }}
-  >
-    {name}
-  </span>
-);
+import { Icon } from "@/components/Icon";
 
 /* ─── Breadcrumb ───────────────────────────────────────────────────────────── */
 function Breadcrumb({ network }: { network: any }) {
@@ -230,19 +223,20 @@ export default function CommunityMessagesPage() {
 
       <div className="bg-[#010f20] text-[#d8e6ff] min-h-screen flex font-['Manrope']">
         <Sidebar />
+        <MobileHeader title="COMMUNITY" />
 
-        <main className="ml-[85px] flex-1 flex flex-col h-screen relative overflow-hidden">
+        <main className="flex-1 flex flex-col h-screen relative overflow-hidden pt-16 md:pt-0" style={{ marginLeft: "var(--main-margin)" }}>
           {/* Subtle Ambient Background */}
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none -mr-40 -mt-40" />
 
           {/* Header */}
-          <header className="h-24 shrink-0 px-10 flex items-center justify-between border-b border-[#3b495c]/10 bg-[#010f20]/60 backdrop-blur-xl relative z-10">
-            <div className="flex items-center gap-6">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden border border-[#3b495c]/20">
+          <header className="shrink-0 px-4 md:px-10 py-4 md:h-24 flex items-center justify-between border-b border-[#3b495c]/10 bg-[#010f20]/60 backdrop-blur-xl relative z-10">
+            <div className="flex items-center gap-3 md:gap-6">
+              <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden border border-[#3b495c]/20 shrink-0">
                 <img src={network?.image || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe"} className="w-full h-full object-cover" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   {network?.title || "Loading..."}
                 </h1>
                 <p className="text-xs text-[#9eacc3] uppercase tracking-widest font-bold">
@@ -265,7 +259,7 @@ export default function CommunityMessagesPage() {
           </header>
 
           {/* Message List */}
-          <div className="flex-1 overflow-y-auto px-10 py-8 custom-scrollbar relative z-10">
+          <div className="flex-1 overflow-y-auto px-4 md:px-10 py-6 md:py-8 custom-scrollbar relative z-10">
             <div className="max-w-3xl mx-auto">
               <Breadcrumb network={network} />
 
