@@ -15,6 +15,7 @@ function Icon({ name, filled = false, size = 22, style = {}, className = "" }: a
                 fontVariationSettings: `'FILL' ${filled ? 1 : 0}, 'wght' ${filled ? 500 : 400}, 'GRAD' 0, 'opsz' ${size}`,
                 fontSize: size,
                 lineHeight: 1,
+                color: "var(--muted-foreground)",
                 ...style,
             }}
         >
@@ -57,11 +58,11 @@ function NotifPopup({ onClose }: { onClose: () => void }) {
         if (type?.includes("like")) return { name: "favorite", color: "#ef4444" };
         if (type?.includes("comment") || type?.includes("reply")) return { name: "mode_comment", color: "#a2c2fd" };
         if (type?.includes("follow")) return { name: "person_add", color: "#4ade80" };
-        if (type?.includes("message")) return { name: "chat", color: "var(--th-accent)" };
+        if (type?.includes("message")) return { name: "chat", color: "var(--primary)" };
         if (type?.includes("meeting")) return { name: "video_call", color: "#a78bfa" };
         if (type?.includes("task") || type?.includes("action")) return { name: "task_alt", color: "#fb923c" };
         if (type?.includes("payment")) return { name: "payments", color: "#facc15" };
-        return { name: "notifications", color: "var(--th-secondary)" };
+        return { name: "notifications", color: "var(--secondary)" };
     };
 
     return (
@@ -73,7 +74,7 @@ function NotifPopup({ onClose }: { onClose: () => void }) {
                 right: 0,
                 width: 380,
                 maxHeight: 520,
-                background: "color-mix(in srgb, var(--th-bg) 95%, transparent)",
+                background: "color-mix(in srgb, var(--background) 95%, transparent)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 20,
                 boxShadow: "0 32px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.04)",
@@ -85,10 +86,10 @@ function NotifPopup({ onClose }: { onClose: () => void }) {
             }}
         >
             {/* Header */}
-            <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Icon name="notifications" filled size={18} style={{ color: "var(--th-accent)" }} />
-                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--th-text)", letterSpacing: "0.02em" }}>
+                    <Icon name="notifications" filled size={18} style={{ color: "var(--primary)" }} />
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--foreground)", letterSpacing: "0.02em" }}>
                         Notifications
                     </span>
                     {items.filter(n => !n.isRead).length > 0 && (
@@ -100,7 +101,7 @@ function NotifPopup({ onClose }: { onClose: () => void }) {
                 {items.some(n => !n.isRead) && (
                     <button
                         onClick={handleMarkAll}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--th-accent)", fontSize: 11, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: "var(--primary)", fontSize: 11, fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}
                     >
                         Mark all read
                     </button>
@@ -110,9 +111,9 @@ function NotifPopup({ onClose }: { onClose: () => void }) {
             {/* List */}
             <div style={{ overflowY: "auto", flex: 1 }}>
                 {loading ? (
-                    <div style={{ padding: 32, textAlign: "center", color: "var(--th-muted)", fontSize: 13 }}>Loading…</div>
+                    <div style={{ padding: 32, textAlign: "center", color: "var(--muted-foreground)", fontSize: 13 }}>Loading…</div>
                 ) : items.length === 0 ? (
-                    <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--th-muted)" }}>
+                    <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--muted-foreground)" }}>
                         <Icon name="notifications_none" size={40} style={{ display: "block", margin: "0 auto 10px", opacity: 0.4 }} />
                         <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 13 }}>All caught up!</p>
                     </div>
@@ -137,10 +138,10 @@ function NotifPopup({ onClose }: { onClose: () => void }) {
                                     <Icon name={ic.name} filled size={17} style={{ color: ic.color }} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 13, color: n.isRead ? "var(--th-muted)" : "var(--th-text)", fontFamily: "'Manrope', sans-serif", margin: 0, lineHeight: 1.45 }}>
+                                    <p style={{ fontSize: 13, color: n.isRead ? "var(--muted-foreground)" : "var(--foreground)", fontFamily: "'Manrope', sans-serif", margin: 0, lineHeight: 1.45 }}>
                                         {n.body || n.title}
                                     </p>
-                                    <span style={{ fontSize: 11, color: "var(--th-muted)", fontFamily: "'Space Grotesk', sans-serif" }}>
+                                    <span style={{ fontSize: 11, color: "var(--muted-foreground)", fontFamily: "'Space Grotesk', sans-serif" }}>
                                         {n.createdAt ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true }) : ""}
                                     </span>
                                 </div>
@@ -194,18 +195,18 @@ export default function PageHeader({ title, subtitle, icon, children }: PageHead
                 alignItems: "center",
                 justifyContent: "space-between",
                 padding: "0 28px",
-                background: "color-mix(in srgb, var(--th-surface) 80%, transparent)",
+                background: "color-mix(in srgb, var(--background) 80%, transparent)",
                 backdropFilter: "blur(24px)",
                 WebkitBackdropFilter: "blur(24px)",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                boxShadow: "0 4px 40px rgba(0,0,0,0.6)",
+                borderBottom: "1px solid var(--border)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
             }}
         >
             {/* Left — Title */}
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 {icon && (
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "color-mix(in srgb, var(--th-accent) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--th-accent) 20%, transparent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Icon name={icon} size={18} style={{ color: "var(--th-accent)" }} />
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "color-mix(in srgb, var(--primary) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--primary) 20%, transparent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Icon name={icon} size={18} style={{ color: "var(--primary)" }} />
                     </div>
                 )}
                 <div>
@@ -214,7 +215,7 @@ export default function PageHeader({ title, subtitle, icon, children }: PageHead
                             fontFamily: "'Space Grotesk', sans-serif",
                             fontWeight: 700,
                             fontSize: 18,
-                            color: "var(--th-text)",
+                            color: "var(--primary)",
                             margin: 0,
                             letterSpacing: "0.03em",
                             textTransform: "uppercase",
@@ -223,7 +224,7 @@ export default function PageHeader({ title, subtitle, icon, children }: PageHead
                         {title}
                     </h1>
                     {subtitle && (
-                        <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: "var(--th-muted)", margin: 0, marginTop: 1 }}>{subtitle}</p>
+                        <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, color: "var(--muted-foreground)", margin: 0, marginTop: 1 }}>{subtitle}</p>
                     )}
                 </div>
             </div>
@@ -243,10 +244,10 @@ export default function PageHeader({ title, subtitle, icon, children }: PageHead
                             border: "1px solid rgba(255,255,255,0.08)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             cursor: "pointer", transition: "all 0.2s", position: "relative",
-                            color: notifOpen ? "var(--th-accent)" : "var(--th-secondary)",
+                            color: notifOpen ? "var(--primary)" : "var(--secondary)",
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "var(--th-accent)"; }}
-                        onMouseLeave={e => { if (!notifOpen) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "var(--th-secondary)"; } }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "var(--primary)"; }}
+                        onMouseLeave={e => { if (!notifOpen) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "var(--secondary)"; } }}
                     >
                         <Icon name="notifications" filled={notifOpen} size={19} />
                         {unread > 0 && (
@@ -275,7 +276,7 @@ export default function PageHeader({ title, subtitle, icon, children }: PageHead
                         background: "transparent",
                     }}
                     title={userData?.full_name || "Profile"}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = "var(--th-accent)"}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "var(--primary)"}
                     onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}
                 >
                     <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />

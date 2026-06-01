@@ -255,25 +255,25 @@ export function TranscriptDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
       <div
-        className="bg-[var(--th-surface)] border-l border-[var(--th-border)] w-full max-w-lg h-full shadow-2xl flex flex-col"
+        className="bg-[var(--card)] border-l border-[var(--border)] w-full max-w-lg h-full shadow-2xl flex flex-col"
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[var(--th-border)]" style={{ background: "var(--th-surface-low)" }}>
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border)]" style={{ background: "var(--muted)" }}>
           <div>
-            <h2 className="text-[var(--th-text)] font-bold text-lg flex items-center gap-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              <MSIcon icon="subtitles" className="text-[var(--th-accent)]" />
+            <h2 className="text-[var(--foreground)] font-bold text-lg flex items-center gap-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              <MSIcon icon="subtitles" className="text-[var(--primary)]" />
               Call Transcript
             </h2>
-            <p className="text-xs text-[var(--th-muted)] mt-1 truncate max-w-xs">{label}</p>
+            <p className="text-xs text-[var(--muted-foreground)] mt-1 truncate max-w-xs">{label}</p>
           </div>
           <div className="flex items-center gap-2">
             {log && (
-              <button onClick={handleDownload} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-[var(--th-muted)] hover:text-[var(--th-accent)] hover:border-[var(--th-accent)]/30 transition-all" title="Download transcript">
+              <button onClick={handleDownload} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[var(--accent)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:border-[var(--primary)]/30 transition-all" title="Download transcript">
                 <MSIcon icon="download" style={{ fontSize: 18 }} />
               </button>
             )}
-            <button onClick={onClose} className="text-[var(--th-muted)] hover:text-[var(--th-accent)] transition-colors p-1">
+            <button onClick={onClose} className="text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors p-1">
               <MSIcon icon="close" />
             </button>
           </div>
@@ -282,16 +282,16 @@ export function TranscriptDrawer({
         {/* Loading */}
         {loading && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: "var(--th-accent)", borderTopColor: "transparent" }} />
+            <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }} />
           </div>
         )}
 
         {/* Error */}
         {!loading && error && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
-            <MSIcon icon="error_outline" style={{ color: "var(--th-muted)", fontSize: 48, opacity: 0.4 }} />
-            <p className="text-sm text-[var(--th-muted)]">{error}</p>
-            <p className="text-xs text-[var(--th-muted)] opacity-60">Transcripts are only available for meetings that used the live captions feature.</p>
+            <MSIcon icon="error_outline" style={{ color: "var(--muted-foreground)", fontSize: 48, opacity: 0.4 }} />
+            <p className="text-sm text-[var(--muted-foreground)]">{error}</p>
+            <p className="text-xs text-[var(--muted-foreground)] opacity-60">Transcripts are only available for meetings that used the live captions feature.</p>
           </div>
         )}
 
@@ -299,22 +299,22 @@ export function TranscriptDrawer({
         {!loading && log && (
           <>
             {/* Meeting meta */}
-            <div className="px-6 py-4 border-b border-[var(--th-border)] bg-[var(--th-surface-low)]">
-              <div className="flex items-center gap-4 text-xs text-[var(--th-muted)]">
+            <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--muted)]">
+              <div className="flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
                 <span className="flex items-center gap-1"><MSIcon icon="schedule" style={{ fontSize: 14 }} />{new Date(log.startedAt).toLocaleString()}</span>
                 {log.duration && <span className="flex items-center gap-1"><MSIcon icon="timer" style={{ fontSize: 14 }} />{fmtDuration(log.duration)}</span>}
                 <span className="flex items-center gap-1"><MSIcon icon="group" style={{ fontSize: 14 }} />{1 + (log.attendees?.length || 0)} participants</span>
               </div>
               {log.summary && (
-                <div className="mt-3 p-3 rounded-xl text-xs text-[var(--th-text)] leading-relaxed" style={{ background: "color-mix(in srgb, var(--th-accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--th-accent) 20%, transparent)" }}>
-                  <span className="font-bold text-[var(--th-accent)] block mb-1 text-[10px] uppercase tracking-widest">AI Summary</span>
+                <div className="mt-3 p-3 rounded-xl text-xs text-[var(--foreground)] leading-relaxed" style={{ background: "color-mix(in srgb, var(--primary) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--primary) 20%, transparent)" }}>
+                  <span className="font-bold text-[var(--primary)] block mb-1 text-[10px] uppercase tracking-widest">AI Summary</span>
                   {log.summary}
                 </div>
               )}
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-[var(--th-border)]" style={{ background: "var(--th-surface-low)" }}>
+            <div className="flex border-b border-[var(--border)]" style={{ background: "var(--muted)" }}>
               {tabs.map(tab => (
                 <button
                   key={tab.id}
@@ -322,8 +322,8 @@ export function TranscriptDrawer({
                   className="flex-1 flex items-center justify-center gap-1.5 py-3 text-[10px] font-bold transition-all uppercase tracking-wide"
                   style={{
                     fontFamily: "'Space Grotesk', sans-serif",
-                    color: activeTab === tab.id ? "var(--th-accent)" : "var(--th-muted)",
-                    borderBottom: activeTab === tab.id ? "2px solid var(--th-accent)" : "2px solid transparent",
+                    color: activeTab === tab.id ? "var(--primary)" : "var(--muted-foreground)",
+                    borderBottom: activeTab === tab.id ? "2px solid var(--primary)" : "2px solid transparent",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -332,7 +332,7 @@ export function TranscriptDrawer({
                   <MSIcon icon={tab.icon} style={{ fontSize: 14 }} />
                   {tab.label}
                   {tab.count > 0 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: activeTab === tab.id ? "color-mix(in srgb, var(--th-accent) 20%, transparent)" : "var(--th-surface-top)", color: activeTab === tab.id ? "var(--th-accent)" : "var(--th-muted)" }}>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: activeTab === tab.id ? "color-mix(in srgb, var(--primary) 20%, transparent)" : "var(--accent)", color: activeTab === tab.id ? "var(--primary)" : "var(--muted-foreground)" }}>
                       {tab.count}
                     </span>
                   )}
@@ -347,23 +347,23 @@ export function TranscriptDrawer({
               {activeTab === "transcript" && (
                 <div className="space-y-4">
                   {log.transcript.length === 0 ? (
-                    <p className="text-sm text-[var(--th-muted)] text-center py-8">No transcript recorded for this call.</p>
+                    <p className="text-sm text-[var(--muted-foreground)] text-center py-8">No transcript recorded for this call.</p>
                   ) : (
                     log.transcript.map((entry, i) => (
                       <div key={i} className="flex gap-3">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", color: "var(--th-accent)" }}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)", color: "var(--primary)" }}>
                           {(entry.speaker || "?")[0].toUpperCase()}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2 mb-1">
-                            <span className="text-xs font-bold" style={{ color: "var(--th-accent)", fontFamily: "'Space Grotesk', sans-serif" }}>{entry.speaker || "Unknown"}</span>
+                            <span className="text-xs font-bold" style={{ color: "var(--primary)", fontFamily: "'Space Grotesk', sans-serif" }}>{entry.speaker || "Unknown"}</span>
                             {entry.timestamp && (
-                              <span className="text-[10px]" style={{ color: "var(--th-muted)" }}>
+                              <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>
                                 {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                               </span>
                             )}
                           </div>
-                          <p className="text-sm leading-relaxed" style={{ color: "var(--th-text)" }}>{entry.text}</p>
+                          <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>{entry.text}</p>
                         </div>
                       </div>
                     ))
@@ -375,22 +375,22 @@ export function TranscriptDrawer({
               {activeTab === "tasks" && (
                 <div className="space-y-3">
                   {log.actionItems.length === 0 ? (
-                    <p className="text-sm text-[var(--th-muted)] text-center py-8">No tasks were extracted from this meeting.</p>
+                    <p className="text-sm text-[var(--muted-foreground)] text-center py-8">No tasks were extracted from this meeting.</p>
                   ) : (
                     log.actionItems.map((item, i) => (
-                      <div key={i} className="p-4 rounded-xl border" style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)" }}>
+                      <div key={i} className="p-4 rounded-xl border" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
                         <div className="flex gap-3 items-start">
-                          <MSIcon icon={item.status === "done" ? "check_circle" : "radio_button_unchecked"} filled={item.status === "done"} style={{ color: item.status === "done" ? "#4ade80" : "var(--th-muted)", fontSize: 18, marginTop: 2 }} />
+                          <MSIcon icon={item.status === "done" ? "check_circle" : "radio_button_unchecked"} filled={item.status === "done"} style={{ color: item.status === "done" ? "#4ade80" : "var(--muted-foreground)", fontSize: 18, marginTop: 2 }} />
                           <div className="flex-1">
-                            <p className="text-sm font-medium" style={{ color: "var(--th-text)" }}>{item.text || item.task}</p>
+                            <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{item.text || item.task}</p>
                             {(item.assignedToName || item.assignedTo) && (
-                              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "var(--th-accent)" }}>
+                              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: "var(--primary)" }}>
                                 <MSIcon icon="person" style={{ fontSize: 12 }} />
                                 Assigned to {item.assignedToName || item.assignedTo}
                               </p>
                             )}
                           </div>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase" style={{ background: item.status === "done" ? "rgba(74,222,128,0.1)" : "color-mix(in srgb, var(--th-accent) 10%, transparent)", color: item.status === "done" ? "#4ade80" : "var(--th-accent)" }}>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase" style={{ background: item.status === "done" ? "rgba(74,222,128,0.1)" : "color-mix(in srgb, var(--primary) 10%, transparent)", color: item.status === "done" ? "#4ade80" : "var(--primary)" }}>
                             {item.status}
                           </span>
                         </div>
@@ -404,23 +404,23 @@ export function TranscriptDrawer({
               {activeTab === "files" && (
                 <div className="space-y-3">
                   {log.filesShared.length === 0 ? (
-                    <p className="text-sm text-[var(--th-muted)] text-center py-8">No files or links were shared during this meeting.</p>
+                    <p className="text-sm text-[var(--muted-foreground)] text-center py-8">No files or links were shared during this meeting.</p>
                   ) : (
                     log.filesShared.map(file => (
-                      <div key={file._id} className="p-4 rounded-xl border" style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)" }}>
+                      <div key={file._id} className="p-4 rounded-xl border" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "color-mix(in srgb, var(--th-accent) 10%, transparent)" }}>
-                            <MSIcon icon={fileTypeIcon(file.fileType)} style={{ color: "var(--th-accent)", fontSize: 20 }} />
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
+                            <MSIcon icon={fileTypeIcon(file.fileType)} style={{ color: "var(--primary)", fontSize: 20 }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate" style={{ color: "var(--th-text)" }}>{file.name}</p>
+                            <p className="font-bold text-sm truncate" style={{ color: "var(--foreground)" }}>{file.name}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               {/* Source badge */}
-                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1" style={{ background: "color-mix(in srgb, var(--th-secondary) 10%, transparent)", color: "var(--th-secondary)" }}>
+                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1" style={{ background: "color-mix(in srgb, var(--secondary) 10%, transparent)", color: "var(--secondary)" }}>
                                 <MSIcon icon={sourceIcon(file.source)} style={{ fontSize: 10 }} />
                                 {file.source === 'tab_share' ? 'Link' : file.source === 'screen_share' ? 'Screen' : 'File'}
                               </span>
-                              <p className="text-xs" style={{ color: "var(--th-muted)" }}>
+                              <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
                                 {fmtBytes(file.fileSize)}
                                 {file.uploadedBy?.full_name || file.uploadedBy?.username || file.uploadedByName
                                   ? ` · by ${file.uploadedBy?.full_name || file.uploadedBy?.username || file.uploadedByName}`
@@ -429,23 +429,23 @@ export function TranscriptDrawer({
                             </div>
                             {/* Link URL preview */}
                             {file.linkUrl && (
-                              <p className="text-[10px] mt-1 font-mono truncate" style={{ color: "var(--th-accent)" }}>{file.linkUrl}</p>
+                              <p className="text-[10px] mt-1 font-mono truncate" style={{ color: "var(--primary)" }}>{file.linkUrl}</p>
                             )}
                           </div>
                           <div className="flex gap-2 shrink-0">
                             {file.linkUrl ? (
-                              <a href={file.linkUrl} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all hover:border-[var(--th-accent)]/40 hover:text-[var(--th-accent)]" style={{ borderColor: "var(--th-border)", color: "var(--th-muted)" }} title="Open link">
+                              <a href={file.linkUrl} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all hover:border-[var(--primary)]/40 hover:text-[var(--primary)]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }} title="Open link">
                                 <MSIcon icon="open_in_new" style={{ fontSize: 16 }} />
                               </a>
                             ) : (
                               <>
                                 {file.fileUrl && (
-                                  <a href={`${BASE_URL}/workspace/file/${file.fileId}/proxy`} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all hover:border-[var(--th-accent)]/40 hover:text-[var(--th-accent)]" style={{ borderColor: "var(--th-border)", color: "var(--th-muted)" }} title="Preview">
+                                  <a href={`${BASE_URL}/workspace/file/${file.fileId}/proxy`} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all hover:border-[var(--primary)]/40 hover:text-[var(--primary)]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }} title="Preview">
                                     <MSIcon icon="visibility" style={{ fontSize: 16 }} />
                                   </a>
                                 )}
                                 {file.fileId && (
-                                  <a href={`${BASE_URL}/workspace/file/${file.fileId}/proxy?download=true`} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all hover:border-[var(--th-accent)]/40 hover:text-[var(--th-accent)]" style={{ borderColor: "var(--th-border)", color: "var(--th-muted)" }} title="Download">
+                                  <a href={`${BASE_URL}/workspace/file/${file.fileId}/proxy?download=true`} target="_blank" rel="noreferrer" className="w-8 h-8 flex items-center justify-center rounded-lg border transition-all hover:border-[var(--primary)]/40 hover:text-[var(--primary)]" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }} title="Download">
                                     <MSIcon icon="download" style={{ fontSize: 16 }} />
                                   </a>
                                 )}
@@ -453,7 +453,7 @@ export function TranscriptDrawer({
                             )}
                           </div>
                         </div>
-                        <p className="text-[10px] mt-2 opacity-50" style={{ color: "var(--th-muted)" }}>Shared {new Date(file.sharedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                        <p className="text-[10px] mt-2 opacity-50" style={{ color: "var(--muted-foreground)" }}>Shared {new Date(file.sharedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
                       </div>
                     ))
                   )}
@@ -464,27 +464,27 @@ export function TranscriptDrawer({
               {activeTab === "screens" && (
                 <div className="space-y-3">
                   {log.screenShares.length === 0 ? (
-                    <p className="text-sm text-[var(--th-muted)] text-center py-8">No screen sharing sessions were recorded for this meeting.</p>
+                    <p className="text-sm text-[var(--muted-foreground)] text-center py-8">No screen sharing sessions were recorded for this meeting.</p>
                   ) : (
                     log.screenShares.map(session => (
-                      <div key={session._id} className="p-4 rounded-xl border flex items-start gap-3" style={{ background: "var(--th-surface-low)", borderColor: "var(--th-border)" }}>
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "color-mix(in srgb, var(--th-secondary) 10%, transparent)" }}>
-                          <MSIcon icon={session.shareType === 'tab' ? 'open_in_new' : session.shareType === 'window' ? 'open_in_full' : 'screen_share'} style={{ color: "var(--th-secondary)", fontSize: 20 }} />
+                      <div key={session._id} className="p-4 rounded-xl border flex items-start gap-3" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "color-mix(in srgb, var(--secondary) 10%, transparent)" }}>
+                          <MSIcon icon={session.shareType === 'tab' ? 'open_in_new' : session.shareType === 'window' ? 'open_in_full' : 'screen_share'} style={{ color: "var(--secondary)", fontSize: 20 }} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <p className="font-bold text-sm" style={{ color: "var(--th-text)" }}>{session.label || `${session.shareType} share`}</p>
-                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-bold" style={{ background: "color-mix(in srgb, var(--th-secondary) 10%, transparent)", color: "var(--th-secondary)" }}>
+                            <p className="font-bold text-sm" style={{ color: "var(--foreground)" }}>{session.label || `${session.shareType} share`}</p>
+                            <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-bold" style={{ background: "color-mix(in srgb, var(--secondary) 10%, transparent)", color: "var(--secondary)" }}>
                               {session.shareType}
                             </span>
                           </div>
-                          <p className="text-xs" style={{ color: "var(--th-muted)" }}>
+                          <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
                             By {session.sharedByName || "Unknown"} · Started {new Date(session.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             {session.duration ? ` · ${fmtDuration(session.duration)}` : session.endedAt ? "" : " · Ongoing"}
                           </p>
                         </div>
                         {session.duration && (
-                          <span className="text-xs px-2 py-1 rounded-lg font-bold shrink-0" style={{ background: "color-mix(in srgb, var(--th-accent) 10%, transparent)", color: "var(--th-accent)" }}>
+                          <span className="text-xs px-2 py-1 rounded-lg font-bold shrink-0" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>
                             {fmtDuration(session.duration)}
                           </span>
                         )}

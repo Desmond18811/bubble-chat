@@ -10,50 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import Sidebar from "@/components/Sidebar";
-import { useTheme, THEMES, ThemeId } from "@/lib/ThemeContext";
-import { uploadAvatar, getMyFollowers, getMyFollowing, followUser } from "@/api";
+import { uploadAvatar } from "@/api";
 import { getSecureMediaUrl } from "@/lib/utils";
 import * as api from "@/api";
 import { exportKeyBackup, importKeyBackup, getPrivateKey } from "@/lib/key-storage";
 import { MobileHeader } from "@/components/MobileHeader";
 import { Icon } from "@/components/Icon";
-
-const BASE_URL = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || "http://localhost:3000/api/v1";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ConnectedApp = {
-  id: string;
-  name: string;
-  status: "connected" | "disconnected";
-  iconSrc: string;
-};
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const CONNECTED_APPS: ConnectedApp[] = [
-  {
-    id: "figma",
-    name: "Figma",
-    status: "connected",
-    iconSrc:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBVH9cArX99Il_0LZN_Mclf4J92ZSbNyRvq1YVGndQDucDaU1IeKGKtZgvzEKKfGKWai2GA9Hnzj2WxqzcaDEGlzZWrEUDpIjK9_FROsDmrEHztDFVJOHPNhk9_9-9NCyv6Y0LK8xTp3SSnBSak-mEVXbrUeQZq1YR5ZJiQ7_fYRWSCRfdO3QMvYpOTGIoNWabplMW1oj5BYfKiliLNoRM_4CGNzCbXrHvXyojoTGv1tjUZXChr-OL7paEN910YBlgoh1UWtoucUhuc",
-  },
-  {
-    id: "slack",
-    name: "Slack",
-    status: "connected",
-    iconSrc:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBVfsgbil0KJpyKMxadvhsoZmE0eB3Ru4n2DazoIlwjghcJgwPwOW0U3bovYT3Xud8JwJ1oDjFur29P4lcj8DK_lBdiBQMHnfm3j_9fk74aBYt-NvqWhMDeDIzMrYMD0gFByjaprBsclaN0HsztK8KDtVqAkze8MFwXZEMabUyvKnetRyODWiJTvODButV_gcoYho_JCZssms_HLqSFst1I4RDEzHMRYNobEUHrxt7Qr_mfyRznClZxF3d4K1Ui_W0PIUi2GtBg2cVZ",
-  },
-  {
-    id: "notion",
-    name: "Notion",
-    status: "disconnected",
-    iconSrc:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDdI9_OlbbZt9r7EE8epYnJBlkzibbzNU9u_JpndEhSR-akgKRmgHWMFh3gLbQqvfxAFlI0LejrP3UCbLcw1OEHI1flOMzQXFoap5NAySEni8h4mXzjQkefvdgoWNNLtHDLfU6vFSUuK6AY9PD9HrO6d12T_7D5Z6hbvnGW1KT1o9kv3h5N10z7mUCp354iqu0jecQMp9VwBDHgmf5sCFkf7FlUABdgt1PM3jZD2vz2amICEbje1V9eaGWSs-N9fuSOxrxpCXxCq5OC",
-  },
-];
 
 const SG: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" };
 
@@ -90,16 +52,16 @@ function TopBar() {
     <header
       className="fixed top-0 right-0 z-50 hidden md:flex items-center justify-between px-8 h-20 transition-colors"
       style={{
-        background: "color-mix(in srgb, var(--th-bg) 70%, transparent)",
-        backdropFilter: "blur(20px)",
+        background: "rgba(255, 255, 255, 0.4)",
+        backdropFilter: "blur(24px)",
         left: "var(--sidebar-width)",
-        borderBottom: "1px solid var(--th-border)",
+        borderBottom: "1px solid rgba(12, 32, 55, 0.15)",
       }}
     >
       <div className="flex items-center gap-4">
         <span
           className="text-2xl font-bold tracking-tighter transition-colors uppercase"
-          style={{ ...SG, color: "var(--th-accent)" }}
+          style={{ ...SG, color: "var(--primary)" }}
         >
           SETTINGS
         </span>
@@ -117,8 +79,8 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
       className="w-12 h-6 rounded-full relative p-1 transition-colors duration-300 shrink-0"
       style={{
         background: enabled
-          ? "color-mix(in srgb, var(--th-accent) 20%, transparent)"
-          : "color-mix(in srgb, var(--th-muted) 30%, transparent)",
+          ? "color-mix(in srgb, var(--primary) 20%, transparent)"
+          : "color-mix(in srgb, var(--muted-foreground) 30%, transparent)",
       }}
       aria-checked={enabled}
       role="switch"
@@ -126,7 +88,7 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
       <div
         className="w-4 h-4 rounded-full transition-all duration-300"
         style={{
-          background: enabled ? "var(--th-accent)" : "var(--th-muted)",
+          background: enabled ? "var(--primary)" : "var(--muted-foreground)",
           marginLeft: enabled ? "auto" : "0",
         }}
       />
@@ -216,22 +178,22 @@ function ProfileSection() {
     <section
       className="p-8 rounded-2xl border transition-colors"
       style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
+        background: "color-mix(in srgb, var(--muted) 40%, transparent)",
         backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
+        borderColor: "var(--border)",
       }}
     >
       <div className="flex items-center justify-between mb-8">
         <div>
           <h3
             className="text-xl font-semibold mb-1 transition-colors"
-            style={{ ...SG, color: "var(--th-accent)" }}
+            style={{ ...SG, color: "var(--primary)" }}
           >
             Identity Profile
           </h3>
           <p
             className="text-[10px] uppercase tracking-widest transition-colors"
-            style={{ ...SG, color: "var(--th-muted)" }}
+            style={{ ...SG, color: "var(--muted-foreground)" }}
           >
             Public Information & Security
           </p>
@@ -240,7 +202,7 @@ function ProfileSection() {
           onClick={handleSave}
           disabled={loading}
           className="px-6 py-2 rounded-xl text-xs font-bold tracking-wider border-0 transition-all hover:scale-105"
-          style={{ ...SG, background: "var(--th-accent)", color: "var(--th-accent-text)", height: "auto" }}
+          style={{ ...SG, background: "var(--primary)", color: "var(--primary-foreground)", height: "auto" }}
         >
           {loading ? "SAVING..." : "SAVE CHANGES"}
         </Button>
@@ -251,7 +213,7 @@ function ProfileSection() {
         <label className="relative group shrink-0 cursor-pointer">
           <div
             className="w-32 h-32 rounded-xl overflow-hidden relative transition-colors"
-            style={{ background: "var(--th-surface-top)" }}
+            style={{ background: "var(--accent)" }}
           >
             <img
               src={
@@ -263,19 +225,19 @@ function ProfileSection() {
             />
             <div
               className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-colors duration-300"
-              style={{ background: "color-mix(in srgb, var(--th-bg) 60%, transparent)" }}
+              style={{ background: "color-mix(in srgb, var(--background) 60%, transparent)" }}
             >
-              <MSIcon name="cloud_upload" style={{ color: "var(--th-accent)" }} />
-              <span className="text-[10px] font-bold mt-1" style={{ color: "var(--th-text)" }}>
+              <MSIcon name="cloud_upload" style={{ color: "var(--primary)" }} />
+              <span className="text-[10px] font-bold mt-1" style={{ color: "var(--foreground)" }}>
                 Upload
               </span>
             </div>
           </div>
           <div
             className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 shadow-lg"
-            style={{ background: "var(--th-accent)" }}
+            style={{ background: "var(--primary)" }}
           >
-            <MSIcon name="edit" filled style={{ color: "var(--th-accent-text)", fontSize: "16px" }} />
+            <MSIcon name="edit" filled style={{ color: "var(--primary-foreground)", fontSize: "16px" }} />
           </div>
           <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} disabled={loading} />
         </label>
@@ -285,7 +247,7 @@ function ProfileSection() {
           <div className="space-y-2">
             <label
               className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
-              style={{ ...SG, color: "var(--th-muted)" }}
+              style={{ ...SG, color: "var(--muted-foreground)" }}
             >
               Display Name
             </label>
@@ -294,16 +256,16 @@ function ProfileSection() {
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 transition-all"
               style={{
-                background: "var(--th-surface-top)",
-                borderColor: "var(--th-border)",
-                color: "var(--th-text)",
+                background: "var(--accent)",
+                borderColor: "rgba(12, 32, 55, 0.12)",
+                color: "var(--foreground)",
               }}
             />
           </div>
           <div className="space-y-2">
             <label
               className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
-              style={{ ...SG, color: "var(--th-muted)" }}
+              style={{ ...SG, color: "var(--muted-foreground)" }}
             >
               Username
             </label>
@@ -312,9 +274,9 @@ function ProfileSection() {
               readOnly
               className="w-full border rounded-xl px-4 py-3 text-sm transition-all"
               style={{
-                background: "var(--th-surface-top)",
-                borderColor: "var(--th-border)",
-                color: "var(--th-accent)",
+                background: "var(--accent)",
+                borderColor: "rgba(12, 32, 55, 0.12)",
+                color: "var(--primary)",
                 fontWeight: 700,
               }}
             />
@@ -322,7 +284,7 @@ function ProfileSection() {
           <div className="col-span-full space-y-2">
             <label
               className="text-[10px] uppercase tracking-widest ml-1 block transition-colors"
-              style={{ ...SG, color: "var(--th-muted)" }}
+              style={{ ...SG, color: "var(--muted-foreground)" }}
             >
               Bio
             </label>
@@ -332,9 +294,9 @@ function ProfileSection() {
               rows={3}
               className="w-full border rounded-xl px-4 py-3 text-sm focus-visible:ring-2 resize-none transition-all"
               style={{
-                background: "var(--th-surface-top)",
-                color: "var(--th-text)",
-                borderColor: "var(--th-border)",
+                background: "var(--accent)",
+                color: "var(--foreground)",
+                borderColor: "rgba(12, 32, 55, 0.12)",
               }}
             />
           </div>
@@ -382,22 +344,22 @@ function SecuritySection() {
 
   return (
     <section
-      className="p-8 rounded-2xl border transition-colors"
+      className="p-8 rounded-3xl border transition-all"
       style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-        backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
+        background: "rgba(255, 255, 255, 0.4)",
+        backdropFilter: "blur(24px)",
+        borderColor: "rgba(12, 32, 55, 0.1)",
       }}
     >
-      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
+      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--primary)" }}>
         Security Protocols
       </h3>
       <div className="space-y-4">
         <div
           className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer border"
-          style={{ background: "var(--th-surface)", borderColor: "transparent" }}
+          style={{ background: "var(--card)", borderColor: "transparent" }}
           onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLElement).style.borderColor = "var(--th-border)")
+            ((e.currentTarget as HTMLElement).style.borderColor = "var(--border)")
           }
           onMouseLeave={(e) =>
             ((e.currentTarget as HTMLElement).style.borderColor = "transparent")
@@ -408,17 +370,17 @@ function SecuritySection() {
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
               style={{
-                background: "color-mix(in srgb, var(--th-secondary) 20%, transparent)",
-                color: "var(--th-secondary)",
+                background: "color-mix(in srgb, var(--secondary) 20%, transparent)",
+                color: "var(--secondary)",
               }}
             >
               <MSIcon name="shield_lock" />
             </div>
             <div>
-              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--foreground)" }}>
                 Two-Factor Authentication
               </p>
-              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
+              <p className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>
                 Secure your account with TOTP verification.
               </p>
             </div>
@@ -472,11 +434,11 @@ function EncryptionSection() {
   };
 
   return (
-    <section className="p-8 rounded-2xl border transition-colors mb-8" style={{ background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)", backdropFilter: "blur(20px)", borderColor: "var(--th-border)" }}>
+    <section className="p-8 rounded-3xl border transition-all mb-8" style={{ background: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(24px)", borderColor: "rgba(var(--primary), 0.1)" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-semibold mb-1 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>End-to-End Encryption</h3>
-          <p className="text-[10px] uppercase tracking-widest transition-colors" style={{ ...SG, color: "var(--th-muted)" }}>Privacy Protection & Identity Backup</p>
+          <h3 className="text-xl font-semibold mb-1 transition-colors" style={{ ...SG, color: "var(--primary)" }}>End-to-End Encryption</h3>
+          <p className="text-[10px] uppercase tracking-widest transition-colors" style={{ ...SG, color: "var(--muted-foreground)" }}>Privacy Protection & Identity Backup</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: hasKey ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: hasKey ? "#10b981" : "#ef4444", border: `1px solid ${hasKey ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
@@ -486,38 +448,38 @@ function EncryptionSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl border transition-colors group cursor-pointer" style={{ background: "var(--th-surface)", borderColor: "transparent" }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--th-border)")}
+        <div className="p-4 rounded-xl border transition-colors group cursor-pointer" style={{ background: "var(--card)", borderColor: "transparent" }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--border)")}
           onMouseLeave={e => (e.currentTarget.style.borderColor = "transparent")}
           onClick={handleBackup}>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: "color-mix(in srgb, var(--th-accent) 20%, transparent)", color: "var(--th-accent)" }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: "color-mix(in srgb, var(--primary) 20%, transparent)", color: "var(--primary)" }}>
               <MSIcon name="download" />
             </div>
             <div>
-              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Backup Identity Key</p>
-              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>Download your .bubblekey file</p>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--foreground)" }}>Backup Identity Key</p>
+              <p className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>Download your .bubblekey file</p>
             </div>
           </div>
         </div>
 
-        <label className="p-4 rounded-xl border transition-colors group cursor-pointer" style={{ background: "var(--th-surface)", borderColor: "transparent" }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--th-border)")}
+        <label className="p-4 rounded-xl border transition-colors group cursor-pointer" style={{ background: "var(--card)", borderColor: "transparent" }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--border)")}
           onMouseLeave={e => (e.currentTarget.style.borderColor = "transparent")}>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: "color-mix(in srgb, var(--th-secondary) 20%, transparent)", color: "var(--th-secondary)" }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors" style={{ background: "color-mix(in srgb, var(--secondary) 20%, transparent)", color: "var(--secondary)" }}>
               <MSIcon name="upload" />
             </div>
             <div>
-              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Restore Identity</p>
-              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>Import from .bubblekey backup</p>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--foreground)" }}>Restore Identity</p>
+              <p className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>Import from .bubblekey backup</p>
             </div>
           </div>
           <input type="file" hidden accept=".bubblekey,.txt" onChange={handleImport} disabled={loading} />
         </label>
       </div>
 
-      <p className="mt-6 text-[11px] leading-relaxed transition-colors flex items-start gap-2" style={{ color: "var(--th-muted)" }}>
+      <p className="mt-6 text-[11px] leading-relaxed transition-colors flex items-start gap-2" style={{ color: "var(--muted-foreground)" }}>
         <span>ℹ️</span>
         <span>End-to-End Encryption ensures that only you and your recipients can read your transmissions. Your private key is stored locally and encrypted on this device. <strong>Bubble Space</strong> never has access to your private key. <strong>Always keep a backup file in a safe place.</strong></span>
       </p>
@@ -561,30 +523,30 @@ function NotificationsSection() {
 
   return (
     <section
-      className="p-8 rounded-2xl border transition-colors mt-8"
+      className="p-8 rounded-3xl border transition-all mt-8"
       style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-        backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
+        background: "rgba(255, 255, 255, 0.4)",
+        backdropFilter: "blur(24px)",
+        borderColor: "rgba(var(--primary), 0.1)",
       }}
     >
-      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
+      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--primary)" }}>
         Notifications
       </h3>
       <div className="space-y-4">
         <div className="flex items-center justify-between p-4 rounded-xl transition-colors group cursor-pointer border"
-          style={{ background: "var(--th-surface)", borderColor: "transparent" }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--th-border)")}
+          style={{ background: "var(--card)", borderColor: "transparent" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "var(--border)")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = "transparent")}
           onClick={toggleNotifs}>
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
-              style={{ background: "color-mix(in srgb, var(--th-accent) 20%, transparent)", color: "var(--th-accent)" }}>
+              style={{ background: "color-mix(in srgb, var(--primary) 20%, transparent)", color: "var(--primary)" }}>
               <MSIcon name="notifications" />
             </div>
             <div>
-              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>Desktop Notifications</p>
-              <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>Receive alerts when someone sends you a message.</p>
+              <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--foreground)" }}>Desktop Notifications</p>
+              <p className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>Receive alerts when someone sends you a message.</p>
             </div>
           </div>
           <Toggle enabled={notifsEnabled} onToggle={toggleNotifs} />
@@ -594,426 +556,7 @@ function NotificationsSection() {
   );
 }
 
-// ─── Social Section — FIXED ───────────────────────────────────────────────────
-
-function SocialSection() {
-  const [following, setFollowing] = useState<any[]>([]);
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [tab, setTab] = useState<"following" | "followers">("following");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Get current user's ID from localStorage
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
-        const userId = user._id || user.id;
-
-        if (!userId) {
-          setLoading(false);
-          return;
-        }
-
-        // Pass userId to the following/followers calls
-        const [fingRes, fersRes] = await Promise.all([
-          getMyFollowing(userId).catch(() => ({ following: [] })),
-          getMyFollowers(userId).catch(() => ({ followers: [] })),
-        ]);
-
-        setFollowing(fingRes.following || []);
-        setFollowers(fersRes.followers || []);
-      } catch {
-        // Silently fail — user might not have follows yet
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const handleUnfollow = async (id: string, index: number) => {
-    try {
-      await followUser(id);
-      setFollowing((prev) => prev.filter((_, i) => i !== index));
-      toast.success("Unfollowed successfully.");
-    } catch {
-      toast.error("Failed to unfollow.");
-    }
-  };
-
-  const activeList = tab === "following" ? following : followers;
-
-  return (
-    <section
-      className="p-8 rounded-2xl border transition-colors relative overflow-hidden"
-      style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-        backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
-          Social Network
-        </h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTab("following")}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${tab === "following" ? "opacity-100" : "opacity-50"
-              }`}
-            style={{
-              ...SG,
-              background: tab === "following" ? "var(--th-surface-high)" : "transparent",
-              color: "var(--th-text)",
-            }}
-          >
-            Following ({following.length})
-          </button>
-          <button
-            onClick={() => setTab("followers")}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${tab === "followers" ? "opacity-100" : "opacity-50"
-              }`}
-            style={{
-              ...SG,
-              background: tab === "followers" ? "var(--th-surface-high)" : "transparent",
-              color: "var(--th-text)",
-            }}
-          >
-            Followers ({followers.length})
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-16 rounded-xl animate-pulse"
-              style={{ background: "var(--th-surface)" }}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeList.length === 0 && (
-            <p className="text-sm col-span-full py-8 text-center" style={{ color: "var(--th-muted)", ...SG }}>
-              No {tab} found.
-            </p>
-          )}
-          {activeList.map((user: any, i: number) => (
-            <div
-              key={user._id || i}
-              className="flex items-center gap-4 p-4 rounded-xl border transition-all hover:scale-[1.01]"
-              style={{ background: "var(--th-surface)", borderColor: "var(--th-border)" }}
-            >
-              <img
-                src={
-                  getSecureMediaUrl(user.avatar) ||
-                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username || i}`
-                }
-                alt={user.username}
-                className="w-12 h-12 rounded-full object-cover bg-black/10"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`;
-                }}
-              />
-              <div className="flex-1 overflow-hidden">
-                <h4 className="font-bold text-sm truncate" style={{ color: "var(--th-text)" }}>
-                  {user.full_name || user.username}
-                </h4>
-                <p className="text-xs truncate" style={{ color: "var(--th-muted)" }}>
-                  @{user.username}
-                </p>
-              </div>
-              {tab === "following" && (
-                <button
-                  onClick={() => handleUnfollow(user._id, i)}
-                  className="px-4 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors"
-                  style={{
-                    background: "color-mix(in srgb, var(--th-error, #ef4444) 15%, transparent)",
-                    color: "var(--th-error, #ef4444)",
-                  }}
-                >
-                  Unfollow
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-// ─── Theme Section ────────────────────────────────────────────────────────────
-
-function ThemeSection() {
-  const { themeId: selectedTheme, setTheme: setSelectedTheme } = useTheme();
-  const [glassIntensity, setGlassIntensity] = useState(70);
-
-  // Update favicon when theme changes
-  useEffect(() => {
-    try {
-      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-      if (link) {
-        // If you have theme-specific favicons, map them here
-        // For now, we keep the default but the hook is wired
-        const themeColors: Record<string, string> = {
-          midnight: "#ffe792",
-          neon: "#00f0ff",
-          aurora: "#4ade80",
-          ember: "#ff7143",
-          default: "#ffe792",
-        };
-        document.documentElement.style.setProperty(
-          "--favicon-color",
-          themeColors[selectedTheme] || themeColors.default
-        );
-      }
-    } catch { }
-  }, [selectedTheme]);
-
-  return (
-    <section
-      className="p-8 rounded-2xl border h-full transition-colors duration-300 relative z-10"
-      style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-        backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
-      }}
-    >
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-1 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
-          Theme Customization
-        </h3>
-        <p className="text-[10px] uppercase tracking-widest transition-colors" style={{ ...SG, color: "var(--th-muted)" }}>
-          Atmosphere &amp; Visuals
-        </p>
-      </div>
-
-      <div className="space-y-8">
-        {/* Palette Presets */}
-        <div>
-          <label
-            className="text-[10px] uppercase tracking-widest block mb-4 transition-colors"
-            style={{ ...SG, color: "var(--th-muted)" }}
-          >
-            Core Atmosphere
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            {THEMES.map((preset) => {
-              const isSelected = selectedTheme === preset.id;
-              return (
-                <button
-                  key={preset.id}
-                  onClick={() => setSelectedTheme(preset.id as ThemeId)}
-                  className="relative flex flex-col gap-4 p-4 rounded-xl text-left transition-all"
-                  style={{
-                    background: isSelected ? "var(--th-surface-top)" : "var(--th-surface)",
-                    border: isSelected ? "2px solid var(--th-accent)" : "2px solid transparent",
-                    boxShadow: isSelected ? "0 0 0 4px var(--th-glow)" : "none",
-                    opacity: isSelected ? 1 : 0.6,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.opacity = "1";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.opacity = "0.6";
-                  }}
-                >
-                  <div className="flex gap-2">
-                    {preset.swatches.map((color) => (
-                      <div key={color} className="w-6 h-6 rounded-md" style={{ background: color }} />
-                    ))}
-                  </div>
-                  <span className="text-xs font-bold transition-colors" style={{ ...SG, color: "var(--th-text)" }}>
-                    {preset.label}
-                  </span>
-                  {isSelected && (
-                    <MSIcon
-                      name="check_circle"
-                      filled
-                      className="absolute top-3 right-3 text-sm transition-colors"
-                      style={{ color: "var(--th-accent)", fontSize: "16px" }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Glass Intensity */}
-        <div>
-          <label
-            className="text-[10px] uppercase tracking-widest block mb-6 transition-colors"
-            style={{ ...SG, color: "var(--th-muted)" }}
-          >
-            Glass Morphism Intensity
-          </label>
-          <div
-            className="relative h-1 w-full rounded-full mb-3 shadow-[inset_0_0_5px_rgba(0,0,0,0.5)]"
-            style={{ background: "var(--th-surface-top)" }}
-          >
-            <div
-              className="absolute top-0 left-0 h-full rounded-full transition-colors"
-              style={{ width: `${glassIntensity}%`, background: "var(--th-accent)" }}
-            />
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={glassIntensity}
-              onChange={(e) => setGlassIntensity(Number(e.target.value))}
-              className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
-            />
-            <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ring-4 pointer-events-none transition-all"
-              style={{
-                left: `calc(${glassIntensity}% - 8px)`,
-                background: "var(--th-accent)",
-                boxShadow: "0 0 0 4px var(--th-glow)",
-              }}
-            />
-          </div>
-          <div
-            className="flex justify-between text-[10px] transition-colors"
-            style={{ ...SG, color: "var(--th-muted)", opacity: 0.6 }}
-          >
-            <span>OFF</span>
-            <span>TOTAL GLOW</span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Billing Section ──────────────────────────────────────────────────────────
-
-function BillingSection() {
-  const [loading, setLoading] = useState(false);
-
-  const handleCheckout = async (isAnonymous: boolean) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${BASE_URL}/payment/create-checkout-session`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-        body: JSON.stringify({ isAnonymous, planType: "premium" }),
-      });
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error(data.error || "Failed to initialize checkout");
-      }
-    } catch {
-      toast.error("Payment gateway unavailable");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <section
-      className="p-8 rounded-2xl border transition-colors"
-      style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-        backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
-      }}
-    >
-      <h3
-        className="text-xl font-semibold mb-6 transition-colors"
-        style={{ ...SG, color: "var(--th-text)" }}
-      >
-        Subscription & Billing
-      </h3>
-      <div className="space-y-4">
-        <div
-          className="flex items-center justify-between p-4 rounded-xl group transition-all"
-          style={{ background: "var(--th-surface)" }}
-        >
-          <div>
-            <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>
-              Upgrade to Premium
-            </p>
-            <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
-              Standard checkout.
-            </p>
-          </div>
-          <Button
-            disabled={loading}
-            onClick={() => handleCheckout(false)}
-            className="text-xs font-bold h-8 px-4 rounded-lg transition-colors hover:scale-105"
-            style={{ background: "color-mix(in srgb, var(--th-secondary) 80%, white)", color: "var(--th-bg)" }}
-          >
-            Upgrade
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Ecosystem Section ────────────────────────────────────────────────────────
-
-function EcosystemSection() {
-  return (
-    <div
-      className="p-8 rounded-2xl border transition-colors relative z-10"
-      style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-        backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-xl font-semibold transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
-          Connected Apps
-        </h3>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {CONNECTED_APPS.map((app) => (
-          <div
-            key={app.id}
-            className="flex items-center gap-4 p-4 rounded-xl transition-colors"
-            style={{
-              background: "var(--th-surface)",
-              opacity: app.status === "disconnected" ? 0.5 : 1,
-              filter: app.status === "disconnected" ? "grayscale(100%)" : "none",
-            }}
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors"
-              style={{ background: "var(--th-surface-top)" }}
-            >
-              <img src={app.iconSrc} alt={app.name} className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-bold transition-colors" style={{ ...SG, color: "var(--th-text)" }}>
-                {app.name}
-              </p>
-              <p
-                className="text-[10px] transition-colors"
-                style={{ color: "var(--th-muted)", ...SG, textTransform: "capitalize" }}
-              >
-                {app.status}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// ─── Privacy Section ──────────────────────────────────────────────────────────
 
 function PrivacySection() {
   const [privacy, setPrivacy] = useState({
@@ -1080,12 +623,12 @@ function PrivacySection() {
     <section
       className="p-8 rounded-2xl border transition-colors"
       style={{
-        background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
+        background: "color-mix(in srgb, var(--muted) 40%, transparent)",
         backdropFilter: "blur(20px)",
-        borderColor: "var(--th-border)",
+        borderColor: "var(--border)",
       }}
     >
-      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--th-accent)" }}>
+      <h3 className="text-xl font-semibold mb-6 transition-colors" style={{ ...SG, color: "var(--primary)" }}>
         Privacy Governance
       </h3>
       <div className="space-y-4">
@@ -1093,23 +636,23 @@ function PrivacySection() {
           <div
             key={s.id}
             className="flex items-center justify-between p-4 rounded-xl transition-colors group border"
-            style={{ background: "var(--th-surface)", borderColor: "transparent" }}
+            style={{ background: "var(--card)", borderColor: "transparent" }}
           >
             <div className="flex items-center gap-4">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
                 style={{
-                  background: "color-mix(in srgb, var(--th-secondary) 20%, transparent)",
-                  color: "var(--th-secondary)",
+                  background: "color-mix(in srgb, var(--secondary) 20%, transparent)",
+                  color: "var(--secondary)",
                 }}
               >
                 <MSIcon name={s.icon} />
               </div>
               <div>
-                <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--th-text)" }}>
+                <p className="font-medium text-sm transition-colors" style={{ ...SG, color: "var(--foreground)" }}>
                   {s.title}
                 </p>
-                <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
+                <p className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>
                   {s.desc}
                 </p>
               </div>
@@ -1131,7 +674,7 @@ export default function SettingsPage() {
   return (
     <div
       className="min-h-screen transition-colors duration-300 relative overflow-hidden"
-      style={{ background: "var(--th-bg)", color: "var(--th-text)" }}
+      style={{ background: "var(--background)", color: "var(--foreground)" }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
@@ -1145,12 +688,12 @@ export default function SettingsPage() {
 
       {/* Ambient glows */}
       <div
-        className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
-        style={{ background: "var(--th-glow)" }}
+        className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors opacity-30"
+        style={{ background: "var(--primary)" }}
       />
       <div
-        className="fixed bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
-        style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }}
+        className="fixed bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors opacity-20"
+        style={{ background: "var(--primary)" }}
       />
 
       <main
@@ -1160,28 +703,22 @@ export default function SettingsPage() {
         <header className="mb-10 md:mb-16 mt-12 md:mt-0">
           <h1
             className="text-3xl md:text-5xl font-bold tracking-tighter mb-2 transition-colors"
-            style={{ ...SG, color: "var(--th-text)" }}
+            style={{ ...SG, color: "var(--foreground)" }}
           >
             Account Settings
           </h1>
-          <p className="max-w-xl text-sm md:text-base transition-colors" style={{ color: "var(--th-muted)" }}>
+          <p className="max-w-xl text-sm md:text-base transition-colors" style={{ color: "var(--muted-foreground)" }}>
             Personalize your interface, manage security protocols, and configure your profile identity.
           </p>
         </header>
 
         <div className="grid grid-cols-12 gap-8 items-start">
-          <div className="col-span-12 lg:col-span-12 xl:col-span-7 space-y-8">
+          <div className="col-span-12 space-y-8">
             <ProfileSection />
             <EncryptionSection />
             <PrivacySection />
             <SecuritySection />
             <NotificationsSection />
-            <BillingSection />
-            <EcosystemSection />
-          </div>
-          <div className="col-span-12 lg:col-span-12 xl:col-span-5 relative space-y-8">
-            <ThemeSection />
-            <SocialSection />
           </div>
         </div>
       </main>

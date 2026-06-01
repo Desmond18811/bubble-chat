@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { login } from '@/api';
 import { toast } from 'sonner';
+import { BubblespaceLogo } from '@/components/bubblespace-logo';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -58,20 +59,20 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#010f20] relative overflow-hidden font-sans p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden font-sans p-4">
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* Glow Orbs */}
-      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'rgba(255,231,146,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
-      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40%', height: '40%', background: 'rgba(162,194,253,0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'hsl(var(--primary) / 0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40%', height: '40%', background: 'hsl(var(--primary) / 0.08)', filter: 'blur(100px)', borderRadius: '50%' }} />
 
-      <div className="w-full max-w-md bg-[rgba(3,20,39,0.7)] backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl p-6 md:p-10 relative z-10">
+      <div className="w-full max-w-md bg-card/80 backdrop-blur-2xl border border-border rounded-3xl shadow-2xl p-6 md:p-10 relative z-10">
 
         {/* Session expired banner */}
         {sessionExpired && (
           <div style={{
-            background: 'rgba(239,68,68,0.12)',
-            border: '1px solid rgba(239,68,68,0.3)',
+            background: 'rgba(239,68,68,0.05)',
+            border: '1px solid rgba(239,68,68,0.2)',
             borderRadius: 12,
             padding: '12px 18px',
             marginBottom: 24,
@@ -81,8 +82,8 @@ const LoginPage: React.FC = () => {
           }}>
             <span style={{ fontSize: 18 }}>⏱</span>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#f87171', fontFamily: "'Space Grotesk', sans-serif", margin: 0 }}>Session Expired</p>
-              <p style={{ fontSize: 11, color: '#fca5a5', fontFamily: "'Manrope', sans-serif", margin: 0, marginTop: 2 }}>Your session has ended. Please log in again to continue.</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', fontFamily: "'Space Grotesk', sans-serif", margin: 0 }}>Session Expired</p>
+              <p style={{ fontSize: 11, color: '#f87171', fontFamily: "'Manrope', sans-serif", margin: 0, marginTop: 2 }}>Your session has ended. Please log in again to continue.</p>
             </div>
           </div>
         )}
@@ -90,48 +91,48 @@ const LoginPage: React.FC = () => {
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
-            <img src="/icon.png" alt="Bubble" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-            <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--th-accent)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE SPACE</span>
+            <BubblespaceLogo className="w-9 h-9" />
+            <span style={{ fontSize: 24, fontWeight: 700, color: 'hsl(var(--primary))', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>BUBBLE SPACE</span>
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#d8e6ff', margin: '0 0 8px', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>Welcome Back</h1>
-          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9eacc3', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Secure Encryption Protocol</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'hsl(var(--foreground))', margin: '0 0 8px', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.02em' }}>Welcome Back</h1>
+          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'hsl(var(--muted-foreground))', margin: 0, fontFamily: "'Space Grotesk', sans-serif" }}>Secure Encryption Protocol</p>
         </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 }}>Frequency Address</label>
+            <label style={{ display: 'block', fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 8, marginLeft: 4 }}>Frequency Address</label>
             <input
               type="email"
               required
-              style={{ width: '100%', background: '#071a2f', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: '#d8e6ff', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
+              style={{ width: '100%', background: 'hsl(var(--accent))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: 'hsl(var(--foreground))', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
               placeholder="e.g. explorer@nebula.io"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'}
+              onFocus={(e) => e.target.style.borderColor = 'hsl(var(--primary))'}
+              onBlur={(e) => e.target.style.borderColor = 'hsl(var(--border))'}
             />
           </div>
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <label style={{ fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: '#9eacc3', textTransform: 'uppercase', letterSpacing: '0.14em', marginLeft: 4 }}>Access Key</label>
-              <Link to="/forgot-password" style={{ fontSize: 10, color: '#ffe792', fontFamily: "'Space Grotesk', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: 600 }}>Forgot Key?</Link>
+              <label style={{ fontSize: 10, fontFamily: "'Space Grotesk', sans-serif", color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', letterSpacing: '0.14em', marginLeft: 4 }}>Access Key</label>
+              <Link to="/forgot-password" style={{ fontSize: 10, color: 'hsl(var(--primary))', fontFamily: "'Space Grotesk', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: 600 }}>Forgot Key?</Link>
             </div>
             <input
               type="password"
               required
-              style={{ width: '100%', background: '#071a2f', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: '#d8e6ff', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
+              style={{ width: '100%', background: 'hsl(var(--accent))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '14px 20px', fontSize: 14, color: 'hsl(var(--foreground))', outline: 'none', boxSizing: 'border-box', fontFamily: "'Manrope', sans-serif" }}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onFocus={(e) => e.target.style.borderColor = 'rgba(255,231,146,0.35)'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.04)'}
+              onFocus={(e) => e.target.style.borderColor = 'hsl(var(--primary))'}
+              onBlur={(e) => e.target.style.borderColor = 'hsl(var(--border))'}
             />
             {/* Minimal requirements checklist for login */}
             {password.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 8px', marginTop: 10, padding: '0 4px' }}>
                 {getPasswordRequirements(password).map((req, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: req.met ? '#10b981' : '#4b5563', opacity: 0.8 }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, color: req.met ? '#10b981' : '#64748b', opacity: 0.8 }}>
                     <span style={{ fontSize: 8 }}>{req.met ? '●' : '○'}</span>
                     <span style={{ fontSize: 9, fontWeight: 500 }}>{req.label}</span>
                   </div>
@@ -143,7 +144,7 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', background: 'var(--th-accent)', color: 'var(--th-accent-text)', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', padding: '18px 0', borderRadius: 14, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, boxShadow: '0 0 24px color-mix(in srgb, var(--th-accent) 20%, transparent)', marginTop: 4, transition: 'all 0.15s ease' }}
+            style={{ width: '100%', background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.14em', padding: '18px 0', borderRadius: 14, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)', marginTop: 4, transition: 'all 0.15s ease' }}
             onMouseEnter={(e) => { if (!loading) e.currentTarget.style.filter = 'brightness(1.1)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
           >
@@ -153,15 +154,15 @@ const LoginPage: React.FC = () => {
 
         {/* Social divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '28px 0' }}>
-          <div style={{ flex: 1, height: 1, background: 'rgba(59,73,92,0.3)' }} />
-          <span style={{ fontSize: 11, color: '#9eacc3', fontFamily: "'Space Grotesk', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(59,73,92,0.3)' }} />
+          <div style={{ flex: 1, height: 1, background: 'hsl(var(--border))' }} />
+          <span style={{ fontSize: 11, color: 'hsl(var(--muted-foreground))', fontFamily: "'Space Grotesk', sans-serif", textTransform: 'uppercase', letterSpacing: '0.1em' }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'hsl(var(--border))' }} />
         </div>
 
         <button
-          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', transition: 'background 0.15s ease', fontFamily: "'Space Grotesk', sans-serif", color: '#d8e6ff', fontSize: 13, fontWeight: 600 }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+          style={{ width: '100%', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 14, padding: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', transition: 'background 0.15s ease', fontFamily: "'Space Grotesk', sans-serif", color: 'hsl(var(--foreground))', fontSize: 13, fontWeight: 600 }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'hsl(var(--accent))'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'hsl(var(--card))'}
           onClick={() => {
             const baseUrl = (import.meta.env.VITE_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
             window.location.href = `${baseUrl}/auth/google`;
@@ -171,13 +172,14 @@ const LoginPage: React.FC = () => {
           Continue with Google
         </button>
 
-        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 13, color: '#9eacc3', fontFamily: "'Space Grotesk', sans-serif" }}>
+        <p style={{ textAlign: 'center', marginTop: 28, fontSize: 13, color: 'hsl(var(--muted-foreground))', fontFamily: "'Space Grotesk', sans-serif" }}>
           New Explorer?{' '}
-          <Link to="/signup" style={{ color: '#ffe792', fontWeight: 700, textDecoration: 'none' }}>Request Access</Link>
+          <Link to="/signup" style={{ color: 'hsl(var(--primary))', fontWeight: 700, textDecoration: 'none' }}>Request Access</Link>
         </p>
       </div>
     </div>
   );
 };
+
 
 export default LoginPage;

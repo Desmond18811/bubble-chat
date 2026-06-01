@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/users';
-import { uploadToFilebase } from '../utils/filebase';
+import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -8,52 +8,65 @@ export interface AuthRequest extends Request {
 
 // ─── Format Helper ────────────────────────────────────────────────────────────
 
-const formatUser = (u: any, includePrivate = false) => ({
-  id: u._id,
-  full_name: u.full_name || null,
-  username: u.username || null,
-  email: includePrivate ? (u.email || null) : undefined,
-  phone_number: includePrivate ? (u.phone_number || null) : undefined,
-  avatar: u.avatar || null,
-  gender: u.gender || null,
-  date_of_birth: includePrivate ? (u.date_of_birth || null) : undefined,
-  status_message: u.status_message || null,
-  mood_emoji: u.mood_emoji || null,
-  hobbies: u.hobbies || [],
-  location: {
-    city: u.location?.city || null,
-    country: u.location?.country || null,
-    timezone: u.location?.timezone || 'UTC',
-  },
-  isOnline: u.isOnline ?? false,
-  lastSeen: u.lastSeen || null,
-  last_active_at: u.last_active_at || null,
-  uniqueTag: u.uniqueTag || null,
-  bio: u.bio || null,
-  blog: u.blog || null,
-  links: u.links || [],
-  sharedResources: u.sharedResources || [],
-  // Org Identity
-  organization: u.organization || null,
-  org_role: u.org_role || null,
-  org_industry: u.org_industry || null,
-  org_size: u.org_size || null,
-  onboardingComplete: u.onboardingComplete ?? false,
-  isVerified: u.isVerified ?? false,
-  isPremium: u.isPremium ?? false,
-  is_bot: u.is_bot ?? false,
-  verified_badge: u.verified_badge ?? false,
-  publicKey: u.publicKey || null,
-  notification_settings: includePrivate ? (u.notification_settings || null) : undefined,
-  privacy_settings: includePrivate ? (u.privacy_settings || null) : undefined,
-  contacts: includePrivate ? (u.contacts || []) : undefined,
-  blocked_users: includePrivate ? (u.blocked_users || []) : undefined,
-  followersCount: u.followers?.length ?? 0,
-  followingCount: u.following?.length ?? 0,
-  postsCount: u.postsCount ?? u.posts?.length ?? 0,
-  createdAt: u.createdAt,
-  updatedAt: u.updatedAt,
-});
+const formatUser = async (u: any, includePrivate = false) => {
+  let avatar = u.avatar || null;
+  if (avatar && avatar.startsWith('http')) {
+    try {
+      avatar = await getSignedMediaUrl(avatar);
+    } catch (err) {
+      console.error('Error signing avatar URL:', err);
+    }
+  }
+
+  return {
+    id: u._id,
+    full_name: u.full_name || null,
+    username: u.username || null,
+    email: includePrivate ? (u.email || null) : undefined,
+    phone_number: includePrivate ? (u.phone_number || null) : undefined,
+    avatar,
+    gender: u.gender || null,
+    date_of_birth: includePrivate ? (u.date_of_birth || null) : undefined,
+    status_message: u.status_message || null,
+    mood_emoji: u.mood_emoji || null,
+    hobbies: u.hobbies || [],
+    location: {
+      city: u.location?.city || null,
+      country: u.location?.country || null,
+      timezone: u.location?.timezone || 'UTC',
+    },
+    isOnline: u.isOnline ?? false,
+    lastSeen: u.lastSeen || null,
+    last_active_at: u.last_active_at || null,
+    uniqueTag: u.uniqueTag || null,
+    bio: u.bio || null,
+    blog: u.blog || null,
+    links: u.links || [],
+    sharedResources: u.sharedResources || [],
+    // Org Identity
+    organization: u.organization || null,
+    org_role: u.org_role || null,
+    org_industry: u.org_industry || null,
+    org_size: u.org_size || null,
+    app_background: u.app_background || 'bubbles',
+    custom_background: u.custom_background || null,
+    onboardingComplete: u.onboardingComplete ?? false,
+    isVerified: u.isVerified ?? false,
+    isPremium: u.isPremium ?? false,
+    is_bot: u.is_bot ?? false,
+    verified_badge: u.verified_badge ?? false,
+    publicKey: u.publicKey || null,
+    notification_settings: includePrivate ? (u.notification_settings || null) : undefined,
+    privacy_settings: includePrivate ? (u.privacy_settings || null) : undefined,
+    contacts: includePrivate ? (u.contacts || []) : undefined,
+    blocked_users: includePrivate ? (u.blocked_users || []) : undefined,
+    followersCount: u.followers?.length ?? 0,
+    followingCount: u.following?.length ?? 0,
+    postsCount: u.postsCount ?? u.posts?.length ?? 0,
+    createdAt: u.createdAt,
+    updatedAt: u.updatedAt,
+  };
+};
 
 // ─── Profile Completeness ─────────────────────────────────────────────────────
 
@@ -106,7 +119,7 @@ export const getMyProfile = async (req: AuthRequest, res: Response): Promise<voi
     res.status(200).json({
       message: 'Profile retrieved successfully.',
       data: {
-        ...formatUser(user, true),
+        ...(await formatUser(user, true)),
         profile_completeness: completeness,
       },
     });
@@ -150,13 +163,18 @@ export const getPublicProfile = async (req: AuthRequest, res: Response): Promise
       privacyLastSeen === 'everyone' ||
       (privacyLastSeen === 'contacts' && isContact);
 
+    let avatar = user.avatar || null;
+    if (avatar && avatar.startsWith('http')) {
+      avatar = await getSignedMediaUrl(avatar).catch(() => avatar);
+    }
+
     res.status(200).json({
       message: 'Public profile retrieved.',
       data: {
         id: user._id,
         full_name: user.full_name || null,
         username: user.username || null,
-        avatar: user.avatar || null,
+        avatar,
         bio: user.bio || null,
         blog: user.blog || null,
         links: user.links || [],
@@ -200,6 +218,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     'full_name', 'bio', 'blog', 'links', 'status_message', 'mood_emoji',
     'gender', 'date_of_birth', 'hobbies', 'location',
     'notification_settings', 'privacy_settings', 'username',
+    'phone_number', 'organization', 'org_role', 'app_background', 'custom_background'
   ];
 
   // Check username uniqueness if being updated
@@ -239,7 +258,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     res.status(200).json({
       message: 'Profile updated successfully.',
       data: {
-        ...formatUser(updated, true),
+        ...(await formatUser(updated, true)),
         profile_completeness: completeness,
       },
     });
@@ -290,7 +309,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
       message: 'Avatar uploaded and updated successfully.',
       data: {
         avatarUrl: url,
-        user: updatedUser ? formatUser(updatedUser, true) : null,
+        user: updatedUser ? await formatUser(updatedUser, true) : null,
       },
     });
   } catch (err: any) {
@@ -300,6 +319,44 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
       error: err.message,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
+  }
+};
+
+// ─── UPLOAD BACKGROUND ────────────────────────────────────────────────────────
+/**
+ * POST /api/v1/profile/background
+ * FormData with field "file"
+ */
+export const uploadBackground = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  if (!req.file) {
+    res.status(400).json({ message: 'No image file provided.' });
+    return;
+  }
+
+  try {
+    const fileKey = `backgrounds/${req.user._id}/${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+    const { url } = await uploadToFilebase(req.file.buffer, fileKey, req.file.mimetype);
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { app_background: 'custom', custom_background: url },
+      { returnDocument: 'after' }
+    );
+
+    res.status(200).json({
+      message: 'Background uploaded successfully.',
+      data: {
+        backgroundUrl: url,
+        user: updatedUser ? await formatUser(updatedUser, true) : null,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Background upload failed: ' + err.message });
   }
 };
 
@@ -424,7 +481,7 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     return;
   }
 
-  const { organization, org_role, org_industry, org_size, bio, full_name } = req.body;
+  const { organization, org_role, org_industry, org_size, bio, full_name, phone_number, app_background } = req.body;
 
   const validOrgSizes = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
   if (org_size && !validOrgSizes.includes(org_size)) {
@@ -442,6 +499,8 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     if (org_size !== undefined) updateData.org_size = org_size;
     if (bio !== undefined) updateData.bio = bio;
     if (full_name !== undefined) updateData.full_name = full_name;
+    if (phone_number !== undefined) updateData.phone_number = phone_number;
+    if (app_background !== undefined) updateData.app_background = app_background;
 
     const updated = await User.findByIdAndUpdate(
       req.user._id,
@@ -456,7 +515,7 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
 
     res.status(200).json({
       message: 'Profile setup complete. Welcome to Bubble Space!',
-      data: formatUser(updated, true),
+      data: await formatUser(updated, true),
     });
   } catch (err: any) {
     res.status(500).json({ message: 'Profile setup failed: ' + err.message });

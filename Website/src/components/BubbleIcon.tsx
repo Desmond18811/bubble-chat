@@ -6,8 +6,8 @@ interface BubbleIconProps extends React.SVGProps<SVGSVGElement> {
 }
 
 const BubbleIcon: React.FC<BubbleIconProps> = ({
-  primaryColor = 'var(--th-accent)',
-  secondaryColor = 'var(--th-secondary)',
+  primaryColor = 'var(--primary)',
+  secondaryColor = 'var(--secondary)',
   ...props
 }) => {
   // Unique IDs per instance prevent multiple BubbleIcons from sharing gradient definitions

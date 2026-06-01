@@ -154,18 +154,18 @@ export default function NotificationsPage() {
 
   return (
     <BubbleLayout>
-      <div className="flex-1 flex flex-col h-full" style={{ background: "var(--th-bg)" }}>
+      <div className="flex-1 flex flex-col h-full" style={{ background: "var(--background)" }}>
         {/* Header */}
         <div
           className="flex items-center justify-between px-8 py-5 border-b shrink-0"
-          style={{ borderColor: "var(--th-border)", background: "var(--th-surface)" }}
+          style={{ borderColor: "rgba(12, 32, 55, 0.15)", background: "var(--card)" }}
         >
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: "var(--th-text)" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "var(--primary)" }}>
               Notifications
             </h1>
             {unreadCount > 0 && (
-              <p className="text-sm mt-0.5" style={{ color: "var(--th-muted)" }}>
+              <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
                 {unreadCount} unread
               </p>
             )}
@@ -178,8 +178,9 @@ export default function NotificationsPage() {
                 onClick={() => setFilter(f)}
                 className="px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all"
                 style={{
-                  background: filter === f ? "var(--th-accent)" : "var(--th-border)",
-                  color: filter === f ? "#fff" : "var(--th-secondary)",
+                  background: filter === f ? "var(--primary)" : "var(--muted)",
+                  color: filter === f ? "var(--primary-foreground)" : "var(--muted-foreground)",
+                  border: filter === f ? "1px solid var(--primary)" : "1px solid rgba(12, 32, 55, 0.15)"
                 }}
               >
                 {f}
@@ -189,7 +190,7 @@ export default function NotificationsPage() {
               <button
                 onClick={handleMarkAllRead}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all hover:opacity-80"
-                style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", color: "var(--th-accent)" }}
+                style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)", color: "var(--primary)" }}
               >
                 <MSIcon icon="done_all" className="text-base" />
                 Mark all read
@@ -205,22 +206,22 @@ export default function NotificationsPage() {
                 Clear all
               </button>
             )}
-            <div className="w-10 h-10 rounded-xl overflow-hidden border ml-2 shrink-0" style={{ borderColor: 'var(--th-border)' }}>
+            <div className="w-10 h-10 rounded-xl overflow-hidden border ml-2 shrink-0" style={{ borderColor: 'rgba(12, 32, 55, 0.15)' }}>
               <AvatarInitials name={userData?.full_name || userData?.username || "U"} url={userData?.avatar} className="text-sm" />
             </div>
           </div>
         </div>
 
         {/* Quick Settings Bar */}
-        <div className="px-8 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--th-border)", background: "color-mix(in srgb, var(--th-surface) 60%, transparent)" }}>
+        <div className="px-8 py-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(12, 32, 55, 0.15)", background: "color-mix(in srgb, var(--card) 60%, transparent)" }}>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${userData?.privacy_settings?.email_notifications !== false ? 'bg-indigo-500/10 text-indigo-400' : 'bg-gray-500/10 text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${userData?.privacy_settings?.email_notifications !== false ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                 <MSIcon icon={userData?.privacy_settings?.email_notifications !== false ? "mail" : "mail_off"} className="text-lg" />
               </div>
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--th-text)" }}>Email Alerts</p>
-                <p className="text-[10px]" style={{ color: "var(--th-muted)" }}>{userData?.privacy_settings?.email_notifications !== false ? 'Enabled' : 'Disabled'}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: "var(--foreground)" }}>Email Alerts</p>
+                <p className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>{userData?.privacy_settings?.email_notifications !== false ? 'Enabled' : 'Disabled'}</p>
               </div>
               <button
                 onClick={async () => {
@@ -236,27 +237,27 @@ export default function NotificationsPage() {
                   }
                 }}
                 className="ml-2 w-10 h-5 rounded-full relative p-0.5 transition-colors duration-300 shrink-0"
-                style={{ background: (userData?.privacy_settings?.email_notifications !== false) ? "var(--th-accent)" : "rgba(100,116,139,0.3)" }}
+                style={{ background: (userData?.privacy_settings?.email_notifications !== false) ? "var(--primary)" : "rgba(100,116,139,0.3)" }}
               >
                 <div className="w-4 h-4 rounded-full bg-white transition-all duration-300" style={{ marginLeft: (userData?.privacy_settings?.email_notifications !== false) ? "auto" : "0" }} />
               </button>
             </div>
           </div>
-          <p className="text-[10px] italic" style={{ color: "var(--th-muted)" }}>Control how you receive alerts from outside your organization</p>
+          <p className="text-[10px] italic" style={{ color: "var(--muted-foreground)" }}>Control how you receive alerts from outside your organization</p>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-8 py-4">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--th-accent)", borderTopColor: "transparent" }} />
+              <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }} />
             </div>
           ) : displayed.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "var(--th-surface)" }}>
-                <MSIcon icon="notifications_none" className="text-4xl" style={{ color: "var(--th-muted)" } as any} />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "var(--card)" }}>
+                <MSIcon icon="notifications_none" className="text-4xl" style={{ color: "var(--muted-foreground)" } as any} />
               </div>
-              <p className="text-lg font-medium" style={{ color: "var(--th-muted)" }}>
+              <p className="text-lg font-medium" style={{ color: "var(--muted-foreground)" }}>
                 {filter === "unread" ? "All caught up!" : "No notifications yet"}
               </p>
             </div>
@@ -264,7 +265,7 @@ export default function NotificationsPage() {
             <div className="space-y-8 max-w-2xl mx-auto">
               {Object.entries(grouped).map(([day, items]) => (
                 <div key={day}>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--th-muted)" }}>
+                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted-foreground)" }}>
                     {day}
                   </p>
                   <div className="space-y-1">
@@ -279,8 +280,8 @@ export default function NotificationsPage() {
                           style={{
                             background: n.read
                               ? "transparent"
-                              : "color-mix(in srgb, var(--th-accent) 5%, transparent)",
-                            border: `1px solid ${n.read ? "var(--th-border)" : "color-mix(in srgb, var(--th-accent) 20%, transparent)"}`,
+                              : "color-mix(in srgb, var(--primary) 5%, transparent)",
+                            border: `1px solid ${n.read ? "rgba(12, 32, 55, 0.15)" : "color-mix(in srgb, var(--primary) 20%, transparent)"}`,
                           }}
                         >
                           {/* Icon */}
@@ -293,10 +294,10 @@ export default function NotificationsPage() {
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-snug" style={{ color: "var(--th-text)" }}>
+                            <p className="text-sm font-semibold leading-snug" style={{ color: "var(--foreground)" }}>
                               {n.title}
                             </p>
-                            <p className="text-sm mt-0.5 leading-relaxed" style={{ color: "var(--th-muted)" }}>
+                            <p className="text-sm mt-0.5 leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
                               {n.body}
                             </p>
                             {n.type === "message_request" && (
@@ -304,7 +305,7 @@ export default function NotificationsPage() {
                                 <button
                                   onClick={(e) => handleMessageRequest(e, n, "accept")}
                                   className="px-4 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-                                  style={{ background: "var(--th-accent)", color: "var(--th-accent-text)" }}
+                                  style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
                                 >
                                   Accept
                                 </button>
@@ -321,11 +322,11 @@ export default function NotificationsPage() {
 
                           {/* Meta */}
                           <div className="flex flex-col items-end gap-2 shrink-0">
-                            <span className="text-xs whitespace-nowrap" style={{ color: "var(--th-muted)" }}>
+                            <span className="text-xs whitespace-nowrap" style={{ color: "var(--muted-foreground)" }}>
                               {timeAgo(n.createdAt)}
                             </span>
                             {!n.read && (
-                              <div className="w-2 h-2 rounded-full" style={{ background: "var(--th-accent)" }} />
+                              <div className="w-2 h-2 rounded-full" style={{ background: "var(--primary)" }} />
                             )}
                           </div>
 

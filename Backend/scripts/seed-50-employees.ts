@@ -143,6 +143,8 @@ async function run() {
                 org_size: org.size,
                 role: emp.role,
                 bio: emp.bio,
+                avatar: `https://i.pravatar.cc/150?u=${emp.email}`,
+                app_background: ['bubbles', 'light', 'dark'][i % 3] as any,
                 uniqueTag,
                 isVerified: true,
                 onboardingComplete: true,

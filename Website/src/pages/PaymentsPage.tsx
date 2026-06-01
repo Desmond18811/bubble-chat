@@ -105,8 +105,8 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
     <section
       className="w-1/3 p-8 border-r overflow-y-auto transition-colors z-10 relative"
       style={{
-        borderColor: "var(--th-border)",
-        background: "color-mix(in srgb, var(--th-surface-low) 50%, transparent)",
+        borderColor: "var(--border)",
+        background: "color-mix(in srgb, var(--muted) 50%, transparent)",
         backdropFilter: "blur(20px)"
       }}
     >
@@ -114,18 +114,18 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
         {/* Balance Card */}
         <div
           className="p-8 rounded-2xl relative overflow-hidden transition-colors"
-          style={{ background: "var(--th-surface-high)" }}
+          style={{ background: "var(--secondary)" }}
         >
           <div
             className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 transition-colors"
-            style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)" }}
+            style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
           />
           <div className="relative z-10">
             <span
               className="text-xs uppercase tracking-widest transition-colors"
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
-                color: "var(--th-muted)",
+                color: "var(--muted-foreground)",
               }}
             >
               Ledger Balance
@@ -135,12 +135,12 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                 className="text-4xl font-bold transition-colors"
                 style={{
                   fontFamily: "'Space Grotesk', sans-serif",
-                  color: "var(--th-accent)",
+                  color: "var(--primary)",
                 }}
               >
                 ₦{intPart}
               </span>
-              <span className="text-lg transition-colors" style={{ color: "var(--th-secondary)" }}>
+              <span className="text-lg transition-colors" style={{ color: "var(--secondary)" }}>
                 .{decPart}
               </span>
             </div>
@@ -149,7 +149,7 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                 onClick={handleDeposit}
                 disabled={loading}
                 className="flex-1 py-3 rounded-full font-bold text-sm border-0 transition-transform hover:scale-105 active:scale-95"
-                style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", height: "auto" }}
+                style={{ background: "var(--primary)", color: "var(--primary-foreground)", height: "auto" }}
               >
                 {loading ? "Processing..." : "Deposit Top-up"}
               </Button>
@@ -159,9 +159,9 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                 variant="outline"
                 className="flex-1 py-3 rounded-full font-bold text-sm transition-colors"
                 style={{
-                  background: "var(--th-surface-top)",
-                  color: "var(--th-text)",
-                  borderColor: "var(--th-border)",
+                  background: "var(--accent)",
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
                   height: "auto",
                 }}
               >
@@ -169,21 +169,21 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
               </Button>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-[var(--th-border)] flex flex-col gap-3">
+            <div className="mt-6 pt-6 border-t border-[var(--border)] flex flex-col gap-3">
               <button
                 onClick={() => window.location.href = '/aida?trigger=finance'}
-                className="w-full p-4 rounded-2xl border border-[#ffe792]/20 bg-[#ffe792]/5 hover:bg-[#ffe792]/10 flex items-center justify-between group transition-all"
+                className="w-full p-4 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 flex items-center justify-between group transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 border border-[#ffe792]/20 flex items-center justify-center">
-                    <MSIcon name="auto_awesome" style={{ color: "#ffe792", fontSize: 18 }} />
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <MSIcon name="auto_awesome" style={{ color: "var(--primary)", fontSize: 18 }} />
                   </div>
                   <div className="text-left">
-                    <p className="text-[10px] uppercase font-bold text-[#ffe792] tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Financial Oracle</p>
-                    <p className="text-[var(--th-text)] text-xs font-semibold">Get Aida's insights</p>
+                    <p className="text-[10px] uppercase font-bold text-primary tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Financial Oracle</p>
+                    <p className="text-[var(--foreground)] text-xs font-semibold">Get Aida's insights</p>
                   </div>
                 </div>
-                <MSIcon name="chevron_right" style={{ color: "rgba(255,231,146,0.4)" }} className="group-hover:translate-x-1 transition-transform" />
+                <MSIcon name="chevron_right" style={{ color: "var(--primary)", opacity: 0.4 }} className="group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
@@ -196,7 +196,7 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
                   </div>
                   <div className="text-left">
                     <p className="text-[10px] uppercase font-bold text-red-400 tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Run Audit</p>
-                    <p className="text-[var(--th-text)] text-xs font-semibold">Detect anomalies</p>
+                    <p className="text-[var(--foreground)] text-xs font-semibold">Detect anomalies</p>
                   </div>
                 </div>
                 <MSIcon name="chevron_right" style={{ color: "rgba(239,68,68,0.4)" }} className="group-hover:translate-x-1 transition-transform" />
@@ -214,17 +214,17 @@ function BalanceSidebar({ onRefresh, transactions }: { onRefresh: () => void, tr
 function TransactionCard({ tx }: { tx: Transaction }) {
   const isIncome = tx.type === "deposit" || tx.type === "income";
   const icon = tx.type === "deposit" || tx.type === "income" ? "call_received" : "call_made";
-  const iconColor = isIncome ? "var(--th-accent)" : "var(--th-secondary)";
+  const iconColor = isIncome ? "var(--primary)" : "var(--secondary)";
 
   return (
     <div
       className="rounded-2xl p-6 transition-all group border"
       style={{
-        background: "var(--th-surface)",
+        background: "var(--card)",
         borderColor: "transparent",
       }}
       onMouseEnter={(e) =>
-        (e.currentTarget.style.borderColor = "var(--th-border)")
+        (e.currentTarget.style.borderColor = "var(--border)")
       }
       onMouseLeave={(e) =>
         (e.currentTarget.style.borderColor = "transparent")
@@ -233,23 +233,23 @@ function TransactionCard({ tx }: { tx: Transaction }) {
       <div className="flex justify-between items-start mb-6">
         <div
           className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
-          style={{ background: "var(--th-surface-top)", color: iconColor }}
+          style={{ background: "var(--accent)", color: iconColor }}
         >
           <MSIcon name={icon} filled />
         </div>
       </div>
       <div>
-        <h3 className="font-bold text-lg leading-tight mb-1 transition-colors capitalize" style={{ color: "var(--th-text)", fontFamily: "'Space Grotesk', sans-serif" }}>
+        <h3 className="font-bold text-lg leading-tight mb-1 transition-colors capitalize" style={{ color: "var(--foreground)", fontFamily: "'Space Grotesk', sans-serif" }}>
           {tx.type}
         </h3>
-        <p className="text-xs mb-4 line-clamp-1 transition-colors" style={{ color: "var(--th-muted)" }}>
+        <p className="text-xs mb-4 line-clamp-1 transition-colors" style={{ color: "var(--muted-foreground)" }}>
           {tx.description || tx.source}
         </p>
         <div className="flex items-end justify-between">
-          <span className="text-2xl font-bold tracking-tight transition-colors" style={{ color: isIncome ? "var(--th-accent)" : "var(--th-text)" }}>
+          <span className="text-2xl font-bold tracking-tight transition-colors" style={{ color: isIncome ? "var(--primary)" : "var(--foreground)" }}>
             {isIncome ? "+" : "-"}${tx.amount}
           </span>
-          <span className="text-[10px] uppercase tracking-widest font-bold transition-colors" style={{ color: "var(--th-muted)" }}>
+          <span className="text-[10px] uppercase tracking-widest font-bold transition-colors" style={{ color: "var(--muted-foreground)" }}>
             {new Date(tx.createdAt).toLocaleDateString()}
           </span>
         </div>
@@ -275,11 +275,11 @@ function TransactionsGrid({ transactions }: { transactions: Transaction[] }) {
         <div>
           <h2
             className="text-3xl font-bold tracking-tight transition-colors"
-            style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}
+            style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
           >
             Recent Activity
           </h2>
-          <p className="text-sm mt-1 transition-colors" style={{ color: "var(--th-muted)" }}>
+          <p className="text-sm mt-1 transition-colors" style={{ color: "var(--muted-foreground)" }}>
             Real-time ledger of your luminous transactions
           </p>
         </div>
@@ -292,16 +292,16 @@ function TransactionsGrid({ transactions }: { transactions: Transaction[] }) {
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 background:
-                  activeFilter === f ? "var(--th-surface-high)" : "transparent",
-                color: activeFilter === f ? "var(--th-text)" : "var(--th-muted)",
+                  activeFilter === f ? "var(--secondary)" : "transparent",
+                color: activeFilter === f ? "var(--foreground)" : "var(--muted-foreground)",
               }}
               onMouseEnter={(e) => {
                 if (activeFilter !== f)
-                  (e.currentTarget as HTMLElement).style.color = "var(--th-accent)";
+                  (e.currentTarget as HTMLElement).style.color = "var(--primary)";
               }}
               onMouseLeave={(e) => {
                 if (activeFilter !== f)
-                  (e.currentTarget as HTMLElement).style.color = "var(--th-muted)";
+                  (e.currentTarget as HTMLElement).style.color = "var(--muted-foreground)";
               }}
             >
               {f}
@@ -312,7 +312,7 @@ function TransactionsGrid({ transactions }: { transactions: Transaction[] }) {
 
       <div className="columns-1 lg:columns-2 gap-6 space-y-6 relative z-10">
         {filtered.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: "var(--th-muted)" }}>No transactions available.</div>
+          <div className="p-8 text-center" style={{ color: "var(--muted-foreground)" }}>No transactions available.</div>
         ) : filtered.map((tx) => (
           <TransactionCard key={tx._id} tx={tx} />
         ))}
@@ -328,32 +328,32 @@ function AidaFinancialAssistant({ isOpen, onClose }: { isOpen: boolean, onClose:
 
   return (
     <aside className="w-96 border-l h-full absolute right-0 top-0 bottom-0 z-50 flex flex-col transition-all"
-      style={{ background: "color-mix(in srgb, var(--th-bg) 80%, var(--th-surface))", borderColor: "var(--th-border)", backdropFilter: "blur(20px)" }}>
-      <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: "var(--th-border)" }}>
+      style={{ background: "color-mix(in srgb, var(--background) 80%, var(--card))", borderColor: "var(--border)", backdropFilter: "blur(20px)" }}>
+      <div className="p-6 border-b flex justify-between items-center" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{ background: "var(--th-accent)", color: "var(--th-accent-text)", fontFamily: "'Space Grotesk', sans-serif" }}>A</div>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{ background: "var(--primary)", color: "var(--primary-foreground)", fontFamily: "'Space Grotesk', sans-serif" }}>A</div>
           <div>
-            <h4 className="font-bold text-sm transition-colors" style={{ color: "var(--th-text)" }}>Aida Financial</h4>
-            <p className="text-[10px] transition-colors" style={{ color: "var(--th-muted)" }}>Analyzing Your Ledger Data</p>
+            <h4 className="font-bold text-sm transition-colors" style={{ color: "var(--foreground)" }}>Aida Financial</h4>
+            <p className="text-[10px] transition-colors" style={{ color: "var(--muted-foreground)" }}>Analyzing Your Ledger Data</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1 rounded-full transition-colors" style={{ color: "var(--th-muted)" }}
-          onMouseEnter={e => e.currentTarget.style.color = "var(--th-accent)"}
-          onMouseLeave={e => e.currentTarget.style.color = "var(--th-muted)"}>
+        <button onClick={onClose} className="p-1 rounded-full transition-colors" style={{ color: "var(--muted-foreground)" }}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--primary)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--muted-foreground)"}>
           <MSIcon name="close" />
         </button>
       </div>
       <div className="flex-1 p-6 overflow-y-auto space-y-4">
-        <div className="bg-transparent border rounded-2xl p-4 text-sm" style={{ borderColor: "var(--th-border)", color: "var(--th-text)" }}>
+        <div className="bg-transparent border rounded-2xl p-4 text-sm" style={{ borderColor: "var(--border)", color: "var(--foreground)" }}>
           Hello! I am Aida. Based on your recent ledger activity, you've withdrawn a significant amount compared to your deposits this week. Would you like me to map out an expense-saving projection?
         </div>
       </div>
-      <div className="p-4 border-t" style={{ borderColor: "var(--th-border)" }}>
+      <div className="p-4 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="relative">
           <Input placeholder="Ask Aida about your finances..."
             className="w-full rounded-xl pl-4 pr-10 py-3 border transition-colors"
-            style={{ background: "var(--th-surface)", color: "var(--th-text)", borderColor: "var(--th-border)" }} />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--th-accent)" }}>
+            style={{ background: "var(--card)", color: "var(--foreground)", borderColor: "var(--border)" }} />
+          <button className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: "var(--primary)" }}>
             <MSIcon name="send" />
           </button>
         </div>
@@ -389,7 +389,7 @@ export default function PaymentsDashboard() {
   return (
     <div
       className="min-h-screen transition-colors duration-300 overflow-hidden"
-      style={{ background: "var(--th-bg)", color: "var(--th-text)", fontFamily: "'Manrope', sans-serif" }}
+      style={{ background: "var(--background)", color: "var(--foreground)", fontFamily: "'Manrope', sans-serif" }}
     >
       <Sidebar />
       <PageHeader
@@ -398,8 +398,8 @@ export default function PaymentsDashboard() {
         subtitle="Ledger & transactions"
       >
         <div className="relative">
-          <MSIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--th-muted)", fontSize: "18px" }} />
-          <Input placeholder="Search transactions..." className="pl-9 pr-4 py-2 text-sm w-56 rounded-full border-none" style={{ background: "rgba(255,255,255,0.06)", color: "var(--th-text)" }} />
+          <MSIcon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--muted-foreground)", fontSize: "18px" }} />
+          <Input placeholder="Search transactions..." className="pl-9 pr-4 py-2 text-sm w-56 rounded-full border-none" style={{ background: "rgba(255,255,255,0.06)", color: "var(--foreground)" }} />
         </div>
       </PageHeader>
       <main className="flex relative" style={{ marginLeft: "85px", paddingTop: "4.375rem", minHeight: "100vh" }}>
@@ -408,7 +408,7 @@ export default function PaymentsDashboard() {
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors scale-150"
           style={{ background: "var(--th-glow)" }} />
         <div className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
-          style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
+          style={{ background: "color-mix(in srgb, var(--secondary) 15%, transparent)" }} />
 
         <BalanceSidebar onRefresh={fetchTx} transactions={data} />
         <TransactionsGrid transactions={data} />
@@ -421,9 +421,9 @@ export default function PaymentsDashboard() {
         onClick={() => setShowAida(!showAida)}
         className="fixed bottom-8 right-8 w-16 h-16 rounded-full flex items-center justify-center z-50 transition-all hover:scale-110 active:scale-90 shadow-2xl"
         style={{
-          background: "var(--th-accent)",
-          color: "var(--th-accent-text)",
-          boxShadow: showAida ? "0 0 40px var(--th-glow)" : "0 25px 50px color-mix(in srgb, var(--th-accent) 20%, transparent)",
+          background: "var(--primary)",
+          color: "var(--primary-foreground)",
+          boxShadow: showAida ? "0 0 40px var(--th-glow)" : "0 25px 50px color-mix(in srgb, var(--primary) 20%, transparent)",
         }}
       >
         <MSIcon name={showAida ? "close" : "smart_toy"} className="text-3xl" />

@@ -58,31 +58,31 @@ export default function SavedPage() {
   const activePost = posts.find(p => p._id === activeId) || null;
 
   return (
-    <div className="min-h-screen transition-colors duration-300" style={{ background: "var(--th-bg)", color: "var(--th-text)", fontFamily: "'Manrope', sans-serif" }}>
+    <div className="min-h-screen transition-colors duration-300" style={{ background: "var(--background)", color: "var(--foreground)", fontFamily: "'Manrope', sans-serif" }}>
       <Sidebar />
       <PageHeader title="Saved" icon="bookmark" subtitle="Your saved posts" />
 
       <main className="flex overflow-hidden relative" style={{ marginLeft: 85, paddingTop: 70, height: "100vh" }}>
 
         {/* Glows */}
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
-          style={{ background: "var(--th-glow)" }} />
-        <div className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
-          style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors opacity-30"
+          style={{ background: "var(--primary)" }} />
+        <div className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors opacity-20"
+          style={{ background: "var(--primary)" }} />
 
         {/* Saved List Sidebar */}
         <aside className="flex flex-col flex-shrink-0 transition-colors relative z-10" style={{
           width: 380, height: "100%",
-          background: "color-mix(in srgb, var(--th-surface-low) 60%, transparent)", backdropFilter: "blur(20px)",
-          borderRight: `1px solid var(--th-border)`
+          background: "color-mix(in srgb, var(--muted) 60%, transparent)", backdropFilter: "blur(20px)",
+          borderRight: `1px solid var(--border)`
         }}>
           {/* Header */}
           <div className="p-8 pb-4">
             <div className="flex items-center justify-between mb-6">
-              <h1 className="font-bold text-2xl transition-colors" style={{ fontFamily: "'Space Grotesk',sans-serif", color: "var(--th-text)" }}>Saved</h1>
+              <h1 className="font-bold text-2xl transition-colors" style={{ fontFamily: "'Space Grotesk',sans-serif", color: "var(--primary)" }}>Saved</h1>
               <button className="p-2 rounded-lg transition-colors border-none cursor-pointer"
-                style={{ color: "var(--th-accent)", background: "transparent" }}
-                onMouseEnter={e => e.currentTarget.style.background = "color-mix(in srgb, var(--th-accent) 10%, transparent)"}
+                style={{ color: "var(--primary)", background: "transparent" }}
+                onMouseEnter={e => e.currentTarget.style.background = "color-mix(in srgb, var(--primary) 10%, transparent)"}
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               >
                 <Icon name="filter_list" style={{ fontSize: 20 }} />
@@ -95,8 +95,8 @@ export default function SavedPage() {
                 <button key={f} onClick={() => setActiveFilter(f)} className="px-4 py-1.5 rounded-full border-none cursor-pointer text-[11px] uppercase tracking-widest flex-shrink-0 transition-all font-bold"
                   style={{
                     fontFamily: "'Space Grotesk',sans-serif",
-                    background: activeFilter === f ? "var(--th-accent)" : "var(--th-surface-top)",
-                    color: activeFilter === f ? "var(--th-accent-text)" : "var(--th-muted)"
+                    background: activeFilter === f ? "var(--primary)" : "var(--accent)",
+                    color: activeFilter === f ? "var(--primary-foreground)" : "var(--muted-foreground)"
                   }}>
                   {f}
                 </button>
@@ -107,9 +107,9 @@ export default function SavedPage() {
           {/* Item list */}
           <div className="flex-1 overflow-y-auto px-4 pb-8 flex flex-col gap-2 custom-scrollbar">
             {loading ? (
-              <p className="text-center mt-10 transition-colors" style={{ color: "var(--th-muted)" }}>Loading saved items...</p>
+              <p className="text-center mt-10 transition-colors" style={{ color: "var(--muted-foreground)" }}>Loading saved items...</p>
             ) : posts.length === 0 ? (
-              <div className="text-center mt-10 transition-colors" style={{ color: "var(--th-muted)" }}>
+              <div className="text-center mt-10 transition-colors" style={{ color: "var(--muted-foreground)" }}>
                 <Icon name="bookmark_border" style={{ fontSize: 32, marginBottom: 12, opacity: 0.5 }} />
                 <p style={{ fontFamily: "'Space Grotesk',sans-serif" }}>No saved items.</p>
               </div>
@@ -119,28 +119,28 @@ export default function SavedPage() {
                 return (
                   <div key={item._id} onClick={() => setActiveId(item._id)} className="p-4 rounded-xl cursor-pointer transition-all"
                     style={{
-                      background: isActive ? "var(--th-surface-high)" : "transparent",
-                      borderLeft: isActive ? `4px solid var(--th-accent)` : "4px solid transparent",
-                      boxShadow: isActive ? "0 0 15px var(--th-glow)" : "none",
+                      background: isActive ? "var(--primary)/10" : "transparent",
+                      borderLeft: isActive ? `4px solid var(--primary)` : "4px solid transparent",
+                      boxShadow: isActive ? "0 0 15px rgba(79,70,229,0.1)" : "none",
                     }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--th-surface-low)"; }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--muted)"; }}
                     onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
                   >
                     <div className="flex gap-4 items-center">
-                      <div className="h-14 w-14 flex-shrink-0 rounded-lg overflow-hidden transition-colors" style={{ background: "var(--th-surface)" }}>
+                      <div className="h-14 w-14 flex-shrink-0 rounded-lg overflow-hidden transition-colors" style={{ background: "var(--card)" }}>
                         {item.media && item.media.length > 0 && item.media[0].type.startsWith('image') ? (
                           <img src={item.media[0].url} alt="media" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Icon name="article" style={{ color: "var(--th-muted)", opacity: 0.5 }} />
+                            <Icon name="article" style={{ color: "var(--muted-foreground)", opacity: 0.5 }} />
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold truncate transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}>
+                        <h4 className="text-sm font-bold truncate transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--primary)" }}>
                           {item.author?.full_name || "Unknown Author"}
                         </h4>
-                        <p className="text-xs truncate mt-1 transition-colors" style={{ color: "var(--th-muted)" }}>
+                        <p className="text-xs truncate mt-1 transition-colors" style={{ color: "var(--muted-foreground)" }}>
                           {item.content}
                         </p>
                       </div>
@@ -155,7 +155,7 @@ export default function SavedPage() {
         {/* Detail View */}
         <section className="flex-1 h-full overflow-y-auto bg-transparent relative z-10 custom-scrollbar">
           {loading ? null : !activePost ? (
-            <div className="w-full h-full flex items-center justify-center transition-colors" style={{ color: "var(--th-muted)", fontFamily: "'Space Grotesk', sans-serif" }}>
+            <div className="w-full h-full flex items-center justify-center transition-colors" style={{ color: "var(--muted-foreground)", fontFamily: "'Space Grotesk', sans-serif" }}>
               Select an item to view details
             </div>
           ) : (
@@ -167,11 +167,11 @@ export default function SavedPage() {
                     src={activePost.author?.avatar || "https://via.placeholder.com/50"}
                     alt="author"
                     className="w-12 h-12 rounded-full object-cover transition-colors"
-                    style={{ border: "1px solid var(--th-border)" }}
+                    style={{ border: "1px solid var(--border)" }}
                   />
                   <div>
-                    <h2 className="font-bold text-lg m-0 transition-colors" style={{ color: "var(--th-text)" }}>{activePost.author?.full_name}</h2>
-                    <span className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
+                    <h2 className="font-bold text-lg m-0 transition-colors" style={{ color: "var(--primary)" }}>{activePost.author?.full_name}</h2>
+                    <span className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>
                       @{activePost.author?.username || "user"} • {new Date(activePost.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -180,24 +180,24 @@ export default function SavedPage() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button className="h-10 px-4 rounded-lg flex items-center gap-2 border-none cursor-pointer font-bold transition-all text-xs uppercase"
-                    style={{ background: "var(--th-surface)", color: "var(--th-text)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "var(--th-surface-top)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "var(--th-surface)"}
+                    style={{ background: "var(--card)", color: "var(--foreground)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--accent)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "var(--card)"}
                     onClick={() => handleUnsave(activePost._id)}>
-                    <Icon name="bookmark_remove" filled style={{ fontSize: 16, color: "var(--th-accent)" }} />
+                    <Icon name="bookmark_remove" filled style={{ fontSize: 16, color: "var(--primary)" }} />
                     Unsave
                   </button>
                   <button className="w-10 h-10 rounded-lg flex items-center justify-center border-none cursor-pointer transition-colors"
-                    style={{ background: "var(--th-surface)", color: "var(--th-text)" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "var(--th-surface-top)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "var(--th-surface)"}>
+                    style={{ background: "var(--card)", color: "var(--foreground)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "var(--accent)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "var(--card)"}>
                     <Icon name="share" style={{ fontSize: 18 }} />
                   </button>
                 </div>
               </header>
 
               {/* Content */}
-              <div className="text-sm leading-relaxed mb-8 transition-colors" style={{ color: "var(--th-text)" }}>
+              <div className="text-sm leading-relaxed mb-8 transition-colors" style={{ color: "var(--foreground)" }}>
                 {activePost.content}
               </div>
 
@@ -205,7 +205,7 @@ export default function SavedPage() {
               {activePost.media && activePost.media.length > 0 && (
                 <div className="grid gap-4 mt-6" style={{ gridTemplateColumns: activePost.media.length === 1 ? "1fr" : "repeat(2, 1fr)" }}>
                   {activePost.media.map((m: any, idx: number) => (
-                    <div key={idx} className="rounded-xl overflow-hidden border transition-colors" style={{ borderColor: "var(--th-border)", background: "var(--th-surface)" }}>
+                    <div key={idx} className="rounded-xl overflow-hidden border transition-colors" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
                       {m.type.startsWith('video') ? (
                         <video src={m.url} controls className="w-full max-h-96 object-cover" />
                       ) : m.type.startsWith('audio') ? (

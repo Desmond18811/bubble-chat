@@ -11,6 +11,7 @@ import {
   getFollowing,
   deleteAccount,
   setupProfile,
+  uploadBackground,
 } from '../controllers/profileController';
 
 const router = express.Router();
@@ -190,6 +191,7 @@ router.delete('/me', jwtAuth, deleteAccount);
  *         description: No file provided or invalid type/size.
  */
 router.post('/avatar', jwtAuth, upload.single('file'), uploadAvatar);
+router.post('/background', jwtAuth, upload.single('file'), uploadBackground);
 
 /**
  * @swagger

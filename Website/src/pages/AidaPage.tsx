@@ -46,24 +46,19 @@ const TranscriptModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div
-        className="w-full max-w-2xl mx-4 rounded-3xl border p-8 shadow-2xl"
-        style={{
-          background: "color-mix(in srgb, var(--th-bg) 90%, transparent)",
-          borderColor: "rgba(255,231,146,0.2)",
-        }}
+        className="w-full max-w-2xl mx-4 rounded-3xl border border-border p-8 shadow-2xl bg-card"
       >
         <div className="flex items-center gap-3 mb-6">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.3)" }}
+            className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 border border-primary/20"
           >
-            <Icon name="mic" style={{ color: "#ffe792" }} />
+            <Icon name="mic" className="text-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#ffe792]" style={SG}>Meeting Transcript</h2>
-            <p className="text-xs text-white/40">Paste your transcript — Aida will extract action items & summary</p>
+            <h2 className="text-lg font-bold text-primary" style={SG}>Meeting Transcript</h2>
+            <p className="text-xs text-muted-foreground">Paste your transcript — Aida will extract action items & summary</p>
           </div>
-          <button onClick={onClose} className="ml-auto text-white/30 hover:text-white transition-colors">
+          <button onClick={onClose} className="ml-auto text-muted-foreground hover:text-primary transition-colors">
             <Icon name="close" />
           </button>
         </div>
@@ -73,7 +68,7 @@ const TranscriptModal = ({
           style={{
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.08)",
-            color: "var(--th-text)",
+            color: "var(--foreground)",
             fontFamily: "'Manrope', sans-serif",
           }}
           placeholder="Paste your meeting transcript here…&#10;&#10;Example:&#10;John: We need to deploy by Friday.&#10;Sarah: I'll handle the testing by Thursday.&#10;John: Great. Sarah will also update the docs."
@@ -85,16 +80,14 @@ const TranscriptModal = ({
         <div className="flex gap-3 mt-4">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl border text-sm font-semibold text-white/50 hover:text-white transition-all"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
+            className="flex-1 py-3 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition-all"
           >
             Cancel
           </button>
           <button
             onClick={() => { if (text.trim()) { onSubmit(text.trim()); onClose(); } }}
             disabled={!text.trim()}
-            className="flex-1 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-30"
-            style={{ background: "#ffe792", color: "#655400" }}
+            className="flex-1 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground transition-all disabled:opacity-30"
           >
             Extract Action Items
           </button>
@@ -152,7 +145,7 @@ const KnowledgeBaseModal = ({
   const inputStyle = {
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.08)",
-    color: "var(--th-text)",
+    color: "var(--foreground)",
     fontFamily: "'Manrope', sans-serif",
     outline: "none",
   };
@@ -160,27 +153,25 @@ const KnowledgeBaseModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div
-        className="w-full max-w-3xl max-h-[90vh] rounded-3xl border flex flex-col shadow-2xl overflow-hidden"
-        style={{ background: "color-mix(in srgb, var(--th-bg) 95%, transparent)", borderColor: "rgba(255,231,146,0.2)" }}
+        className="w-full max-w-3xl max-h-[90vh] rounded-3xl border border-border flex flex-col shadow-2xl overflow-hidden bg-card"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 p-6 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,231,146,0.1)", border: "1px solid rgba(255,231,146,0.3)" }}>
-            <Icon name="library_books" style={{ color: "#ffe792" }} />
+        <div className="flex items-center gap-3 p-6 border-b border-border">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 border border-primary/20">
+            <Icon name="library_books" className="text-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#ffe792]" style={SG}>AIda Knowledge Base</h2>
-            <p className="text-xs text-white/40">Documents AIda reads to answer your questions accurately</p>
+            <h2 className="text-lg font-bold text-primary" style={SG}>AIda Knowledge Base</h2>
+            <p className="text-xs text-muted-foreground">Documents AIda reads to answer your questions accurately</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
-            style={{ background: "rgba(255,231,146,0.1)", color: "#ffe792", border: "1px solid rgba(255,231,146,0.2)" }}
+            className="ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-primary/10 text-primary border border-primary/20"
           >
             <Icon name={showForm ? "remove" : "add"} style={{ fontSize: 16 }} />
             Add Doc
           </button>
-          <button onClick={onClose} className="ml-2 text-white/30 hover:text-white transition-colors">
+          <button onClick={onClose} className="ml-2 text-muted-foreground hover:text-primary transition-colors">
             <Icon name="close" />
           </button>
         </div>
@@ -239,8 +230,7 @@ const KnowledgeBaseModal = ({
             <button
               onClick={handleCreate}
               disabled={saving || !form.title.trim() || !form.content.trim()}
-              className="w-full py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-30"
-              style={{ background: "#ffe792", color: "#655400" }}
+              className="w-full py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground transition-all disabled:opacity-30"
             >
               {saving ? "Saving…" : "Add to Knowledge Base"}
             </button>
@@ -250,37 +240,35 @@ const KnowledgeBaseModal = ({
         {/* Doc List */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
           {loading ? (
-            <div className="text-center text-white/30 py-12 text-sm">Loading knowledge base…</div>
+            <div className="text-center text-muted-foreground py-12 text-sm">Loading knowledge base…</div>
           ) : docs.length === 0 ? (
             <div className="text-center py-12">
-              <Icon name="library_books" style={{ color: "#ffe792", fontSize: 40, opacity: 0.3 }} />
-              <p className="text-white/30 text-sm mt-4">No documents yet. Add your company policies, SOPs, mission statements, and more.</p>
-              <p className="text-white/20 text-xs mt-2">AIda will use these to give context-aware, accurate answers.</p>
+              <Icon name="library_books" className="text-primary opacity-30" style={{ fontSize: 40 }} />
+              <p className="text-muted-foreground text-sm mt-4">No documents yet. Add your company policies, SOPs, mission statements, and more.</p>
+              <p className="text-muted-foreground/60 text-xs mt-2">AIda will use these to give context-aware, accurate answers.</p>
             </div>
           ) : (
             docs.map((doc: any) => (
               <div
                 key={doc._id}
-                className="flex items-center gap-4 p-4 rounded-2xl border group"
-                style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                className="flex items-center gap-4 p-4 rounded-2xl border border-border group bg-secondary/30"
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(255,231,146,0.08)", border: "1px solid rgba(255,231,146,0.15)" }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 border border-primary/20"
                 >
-                  <Icon name="article" style={{ color: "#ffe792", fontSize: 18 }} />
+                  <Icon name="article" className="text-primary" style={{ fontSize: 18 }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{doc.title}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{doc.title}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className="text-[10px] uppercase tracking-widest text-white/30 px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground px-2 py-0.5 rounded-full bg-muted">
                       {doc.department}
                     </span>
-                    <span className="text-[10px] uppercase tracking-widest text-[#ffe792]/50 px-2 py-0.5 rounded-full" style={{ background: "rgba(255,231,146,0.05)" }}>
+                    <span className="text-[10px] uppercase tracking-widest text-primary/70 px-2 py-0.5 rounded-full bg-primary/5">
                       {doc.accessLevel}
                     </span>
                     {(doc.tags || []).slice(0, 3).map((t: string) => (
-                      <span key={t} className="text-[10px] text-white/20">#{t}</span>
+                      <span key={t} className="text-[10px] text-muted-foreground/60">#{t}</span>
                     ))}
                   </div>
                 </div>
@@ -430,7 +418,7 @@ export default function AidaPage() {
   ];
 
   return (
-    <div className="text-[var(--th-text)] min-h-screen flex font-['Manrope']" style={{ background: "var(--th-bg)" }}>
+    <div className="text-[var(--foreground)] min-h-screen flex font-['Manrope']" style={{ background: "var(--background)" }}>
       <MobileHeader title="Aida Assistant" />
       <Sidebar />
 
@@ -440,23 +428,21 @@ export default function AidaPage() {
 
       <main className="flex-1 flex flex-col pt-20 md:pt-0 h-screen relative overflow-hidden transition-all duration-300" style={{ marginLeft: "var(--main-margin)" }}>
         {/* Ambient Glows */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
 
         {/* Header */}
         <header
-          className="h-16 md:h-20 shrink-0 px-4 md:px-8 hidden md:flex items-center justify-between border-b backdrop-blur-xl relative z-10"
-          style={{ background: "color-mix(in srgb, var(--th-bg) 70%, transparent)", borderColor: "var(--th-border)" }}
+          className="h-16 md:h-20 shrink-0 px-4 md:px-8 hidden md:flex items-center justify-between border-b border-border bg-background/70 backdrop-blur-xl relative z-10"
         >
           <div className="flex items-center gap-4">
             <div
-              className="w-11 h-11 rounded-2xl flex items-center justify-center border shadow-[0_0_20px_rgba(255,231,146,0.15)]"
-              style={{ background: "rgba(255,231,146,0.1)", borderColor: "rgba(255,231,146,0.3)" }}
+              className="w-11 h-11 rounded-2xl flex items-center justify-center border border-primary/30 bg-primary/10 shadow-[0_0_20px_rgba(79,70,229,0.15)]"
             >
-              <Icon name="auto_awesome" style={{ color: "#ffe792" }} />
+              <Icon name="auto_awesome" className="text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-[#ffe792]" style={SG}>Aida Luminous</h1>
+              <h1 className="text-xl font-bold tracking-tight text-primary" style={SG}>Aida Luminous</h1>
               <p className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40">DeepSeek · RAG Intelligence</p>
             </div>
           </div>
@@ -471,7 +457,7 @@ export default function AidaPage() {
                 key={label}
                 onClick={action}
                 disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] text-xs font-bold uppercase tracking-widest hover:border-[#ffe792]/40 hover:text-[#ffe792] transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent border border-border text-xs font-bold uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-all disabled:opacity-50"
                 style={SG}
               >
                 <Icon name={icon} style={{ fontSize: 15 }} />
@@ -481,7 +467,7 @@ export default function AidaPage() {
             <button
               onClick={handleClearConversation}
               title="Clear conversation"
-              className="w-9 h-9 rounded-xl bg-[var(--th-surface-top)] border border-[var(--th-border)] flex items-center justify-center text-[var(--th-muted)] hover:text-red-400 hover:border-red-400/30 transition-all"
+              className="w-9 h-9 rounded-xl bg-[var(--accent)] border border-[#0c2037/20] flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-400 hover:border-red-400/30 transition-all"
             >
               <Icon name="delete_sweep" style={{ fontSize: 17 }} />
             </button>
@@ -503,10 +489,9 @@ export default function AidaPage() {
                     key={label}
                     onClick={() => handleSend(text)}
                     disabled={loading}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold hover:border-[#ffe792]/40 hover:text-[#ffe792] transition-all disabled:opacity-50"
-                    style={{ borderColor: "rgba(255,255,255,0.08)", color: "var(--th-text)", background: "rgba(255,255,255,0.02)" }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-border text-xs font-semibold hover:border-primary/40 hover:text-primary transition-all disabled:opacity-50 bg-secondary/20"
                   >
-                    <Icon name={icon} style={{ fontSize: 16, color: "#ffe792" }} />
+                    <Icon name={icon} style={{ fontSize: 16 }} className="text-primary" />
                     {label}
                   </button>
                 ))}
@@ -519,31 +504,26 @@ export default function AidaPage() {
                   className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border"
                   style={
                     msg.role === "assistant"
-                      ? { background: "rgba(255,231,146,0.1)", borderColor: "rgba(255,231,146,0.2)", color: "#ffe792" }
-                      : { background: "var(--th-surface-top)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }
+                      ? { background: "var(--primary)", borderColor: "var(--primary)", color: "var(--primary-foreground)" }
+                      : { background: "var(--accent)", borderColor: "#0c2037/20", color: "var(--foreground)" }
                   }
                 >
                   <Icon name={msg.role === "assistant" ? "auto_awesome" : "person"} />
                 </div>
 
                 <div
-                  className="px-6 py-4 rounded-3xl max-w-[82%] text-[14.5px] leading-[1.75] shadow-xl"
-                  style={
+                  className={cn(
+                    "px-6 py-4 rounded-3xl max-w-[82%] text-[14.5px] leading-[1.75] shadow-lg border transition-all duration-300",
                     msg.role === "assistant"
-                      ? {
-                        background: "rgba(255,255,255,0.03)",
-                        color: "var(--th-text)",
-                        border: "1px solid rgba(255,255,255,0.05)",
-                        backdropFilter: "blur(10px)",
-                        whiteSpace: "pre-wrap",
-                      }
-                      : {
-                        background: "#ffe792",
-                        color: "#655400",
-                        fontWeight: "600",
-                        whiteSpace: "pre-wrap",
-                      }
-                  }
+                      ? "text-[var(--foreground)]"
+                      : "bg-[var(--primary)] text-white border-[var(--primary)] font-semibold shadow-[0_8px_20px_rgba(var(--primary),0.2)]"
+                  )}
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    background: msg.role === "assistant" ? "rgba(255, 255, 255, 0.4)" : undefined,
+                    backdropFilter: msg.role === "assistant" ? "blur(24px)" : undefined,
+                    borderColor: msg.role === "assistant" ? "rgba(var(--primary), 0.1)" : undefined
+                  }}
                 >
                   {msg.content}
 
@@ -554,9 +534,11 @@ export default function AidaPage() {
                         <div className="mt-4 flex flex-col gap-2">
                           <p className="text-xs font-semibold opacity-60 mb-1">Files found:</p>
                           {action.files.map((f: any) => (
-                            <a href="/workspace" key={f._id} className="block p-3 rounded-xl border border-white/10 bg-black/20 hover:bg-black/40 transition-colors">
-                              <p className="text-sm font-bold truncate" style={{ color: "#ffe792" }}>{f.name}</p>
-                              <p className="text-[10px] text-white/40 uppercase mt-1 tracking-widest">{f.fileType}</p>
+                            <a href="/workspace" key={f._id}
+                              className="block p-4 rounded-2xl border border-[var(--primary)]/10 transition-all hover:translate-x-1"
+                              style={{ background: "rgba(255, 255, 255, 0.5)", backdropFilter: "blur(12px)" }}>
+                              <p className="text-sm font-bold truncate text-[var(--primary)]">{f.name}</p>
+                              <p className="text-[10px] text-[var(--primary)]/60 font-bold uppercase mt-1 tracking-widest">{f.fileType}</p>
                             </a>
                           ))}
                         </div>
@@ -565,34 +547,34 @@ export default function AidaPage() {
                       {action.type === "SCHEDULE_TASK" && (
                         <div
                           onClick={() => window.location.href = '/calendar'}
-                          className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3 cursor-pointer hover:bg-black/40 transition-all hover:border-[#ffe792]/40"
+                          className="mt-4 p-4 rounded-xl border border-border bg-muted flex items-center gap-3 cursor-pointer hover:bg-secondary transition-all hover:border-primary/40"
                         >
-                          <Icon name="event_available" style={{ color: "#ffe792" }} />
+                          <Icon name="event_available" className="text-primary" />
                           <div>
-                            <p className="text-sm font-bold text-white">{action.title}</p>
-                            <p className="text-xs text-white/50">Scheduled to Calendar (Click to view)</p>
+                            <p className="text-sm font-bold text-foreground">{action.title}</p>
+                            <p className="text-xs text-muted-foreground">Scheduled to Calendar (Click to view)</p>
                           </div>
                         </div>
                       )}
 
                       {action.type === "OPEN_CALENDAR" && (
-                        <div className="mt-4 p-4 rounded-xl border border-white/10 bg-black/20 flex items-center gap-3">
-                          <Icon name="calendar_month" style={{ color: "#ffe792" }} />
-                          <p className="text-sm font-bold text-white">Opening Calendar…</p>
+                        <div className="mt-4 p-4 rounded-xl border border-border bg-muted flex items-center gap-3">
+                          <Icon name="calendar_month" className="text-primary" />
+                          <p className="text-sm font-bold text-foreground">Opening Calendar…</p>
                         </div>
                       )}
 
                       {action.type === "SCHEDULE_CALL" && (
-                        <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffe792]/5 blur-2xl rounded-full pointer-events-none" />
+                        <div className="mt-4 p-5 rounded-2xl border border-border bg-card shadow-lg relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full pointer-events-none" />
                           <div className="flex items-start justify-between relative z-10">
                             <div className="flex items-center gap-3 mb-2">
-                              <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30 shrink-0">
-                                <Icon name="video_call" style={{ color: "#ffe792" }} />
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/30 shrink-0">
+                                <Icon name="video_call" className="text-primary" />
                               </div>
                               <div>
-                                <h3 className="text-sm font-bold text-white">Generate Call Link</h3>
-                                <p className="text-xs text-white/50">Start or schedule a secure meeting</p>
+                                <h3 className="text-sm font-bold text-foreground">Generate Call Link</h3>
+                                <p className="text-xs text-muted-foreground">Start or schedule a secure meeting</p>
                               </div>
                             </div>
                           </div>
@@ -604,7 +586,7 @@ export default function AidaPage() {
                                 const roomId = `bubble-${uuid}-${Date.now()}`;
                                 window.location.href = `/meet/room/${roomId}?type=${action.callType || 'video'}`;
                               }}
-                              className="flex-1 py-2.5 rounded-xl bg-[#ffe792] text-[#655400] text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors"
+                              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
                             >
                               Join Now
                             </button>
@@ -616,7 +598,7 @@ export default function AidaPage() {
                                 navigator.clipboard.writeText(link);
                                 toast.success("Secure Call Link Copied!");
                               }}
-                              className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-xs font-bold uppercase tracking-widest hover:text-white hover:border-white/40 transition-colors"
+                              className="flex-1 py-2.5 rounded-xl border border-border text-foreground text-xs font-bold uppercase tracking-widest hover:border-primary/40 transition-colors"
                             >
                               Copy Link
                             </button>
@@ -626,15 +608,15 @@ export default function AidaPage() {
 
                       {/* ─── SCHEDULE_GROUP_CALL card ─── */}
                       {action.type === "SCHEDULE_GROUP_CALL" && (
-                        <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ffe792]/5 blur-2xl rounded-full pointer-events-none" />
+                        <div className="mt-4 p-5 rounded-2xl border border-border bg-card shadow-lg relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-2xl rounded-full pointer-events-none" />
                           <div className="flex items-center gap-3 mb-3 relative z-10">
-                            <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30 shrink-0">
-                              <Icon name={action.callType === 'audio' ? "phone" : "video_call"} style={{ color: "#ffe792" }} />
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/30 shrink-0">
+                              <Icon name={action.callType === 'audio' ? "phone" : "video_call"} className="text-primary" />
                             </div>
                             <div>
-                              <h3 className="text-sm font-bold text-white">{action.title || "Group Call"}</h3>
-                              <p className="text-xs text-white/50">{action.callType === 'audio' ? 'Audio' : 'Video'} call link ready</p>
+                              <h3 className="text-sm font-bold text-foreground">{action.title || "Group Call"}</h3>
+                              <p className="text-xs text-muted-foreground">{action.callType === 'audio' ? 'Audio' : 'Video'} call link ready</p>
                             </div>
                           </div>
 
@@ -642,7 +624,7 @@ export default function AidaPage() {
                           {action.participants && action.participants.length > 0 && (
                             <div className="mb-3 flex flex-wrap gap-1.5 relative z-10">
                               {action.participants.map((p: string, pi: number) => (
-                                <span key={pi} className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest" style={{ background: 'rgba(255,231,146,0.1)', color: '#ffe792', border: '1px solid rgba(255,231,146,0.2)' }}>
+                                <span key={pi} className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20">
                                   {p}
                                 </span>
                               ))}
@@ -656,7 +638,7 @@ export default function AidaPage() {
                                 const roomId = `bubble-${uuid}-${Date.now()}`;
                                 window.location.href = `/meet/room/${roomId}?type=${action.callType || 'video'}`;
                               }}
-                              className="flex-1 py-2.5 rounded-xl bg-[#ffe792] text-[#655400] text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors"
+                              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
                             >
                               Join Now
                             </button>
@@ -668,7 +650,7 @@ export default function AidaPage() {
                                 navigator.clipboard.writeText(link);
                                 toast.success(`${action.callType === 'audio' ? 'Audio' : 'Video'} Call Link Copied!`);
                               }}
-                              className="flex-1 py-2.5 rounded-xl border border-white/20 text-white/70 text-xs font-bold uppercase tracking-widest hover:text-white hover:border-white/40 transition-colors"
+                              className="flex-1 py-2.5 rounded-xl border border-border text-foreground text-xs font-bold uppercase tracking-widest hover:border-primary/40 transition-colors"
                             >
                               Copy & Share
                             </button>
@@ -678,39 +660,38 @@ export default function AidaPage() {
 
                       {/* ─── PLAN_PHASES card ─── */}
                       {action.type === "PLAN_PHASES" && action.createdTasks && (
-                        <div className="mt-4 p-5 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-40 h-40 bg-[#ffe792]/4 blur-3xl rounded-full pointer-events-none" />
+                        <div className="mt-4 p-5 rounded-2xl border border-border bg-card shadow-lg relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 blur-3xl rounded-full pointer-events-none" />
                           <div className="flex items-center gap-3 mb-4 relative z-10">
-                            <div className="w-10 h-10 rounded-xl bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30 shrink-0">
-                              <Icon name="account_tree" style={{ color: "#ffe792" }} />
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/30 shrink-0">
+                              <Icon name="account_tree" className="text-primary" />
                             </div>
                             <div>
-                              <h3 className="text-sm font-bold text-white">{action.planTitle || 'Plan'}</h3>
-                              <p className="text-xs text-white/50">{action.createdTasks.length} phase(s) added to Calendar</p>
+                              <h3 className="text-sm font-bold text-foreground">{action.planTitle || 'Plan'}</h3>
+                              <p className="text-xs text-muted-foreground">{action.createdTasks.length} phase(s) added to Calendar</p>
                             </div>
                           </div>
 
                           {/* Phase timeline */}
                           <div className="space-y-2 relative z-10 mb-4">
                             {action.createdTasks.map((task: any, ti: number) => (
-                              <div key={ti} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <div className="w-7 h-7 rounded-lg bg-[#ffe792]/10 border border-[#ffe792]/20 flex items-center justify-center text-[10px] font-bold" style={{ color: '#ffe792' }}>{ti + 1}</div>
+                              <div key={ti} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-border">
+                                <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">{ti + 1}</div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-white truncate">{task.title}</p>
-                                  <p className="text-[10px] text-white/40">
+                                  <p className="text-sm font-semibold text-foreground truncate">{task.title}</p>
+                                  <p className="text-[10px] text-muted-foreground">
                                     {task.start_time ? new Date(task.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
                                     {task.end_time ? ` → ${new Date(task.end_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
                                   </p>
                                 </div>
-                                <Icon name="check_circle" style={{ color: 'rgba(255,231,146,0.3)', fontSize: 16 }} />
+                                <Icon name="check_circle" className="text-primary/30" style={{ fontSize: 16 }} />
                               </div>
                             ))}
                           </div>
 
                           <button
                             onClick={() => window.location.href = '/calendar'}
-                            className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors relative z-10"
-                            style={{ background: 'rgba(255,231,146,0.1)', color: '#ffe792', border: '1px solid rgba(255,231,146,0.2)' }}
+                            className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors relative z-10 bg-primary/10 text-primary border border-primary/20"
                           >
                             View in Calendar
                           </button>
@@ -721,14 +702,14 @@ export default function AidaPage() {
 
                   {/* Template output */}
                   {msg.template && (
-                    <div className="mt-4 p-6 rounded-2xl border border-white/20 bg-gradient-to-br from-[#111620] to-[#0a0d14] shadow-2xl relative">
-                      <div className="absolute top-0 right-0 w-40 h-40 bg-[#ffe792]/5 blur-3xl rounded-full pointer-events-none" />
-                      <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3 relative z-10">
+                    <div className="mt-4 p-6 rounded-2xl border border-border bg-card shadow-lg relative">
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 blur-3xl rounded-full pointer-events-none" />
+                      <div className="flex items-center justify-between mb-4 border-b border-border pb-3 relative z-10">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-[#ffe792]/10 flex items-center justify-center border border-[#ffe792]/30">
-                            <Icon name="description" style={{ fontSize: 16, color: "#ffe792" }} />
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/30">
+                            <Icon name="description" style={{ fontSize: 16 }} className="text-primary" />
                           </div>
-                          <span className="text-xs font-bold text-white uppercase tracking-widest">Aida Drafted Document</span>
+                          <span className="text-xs font-bold text-foreground uppercase tracking-widest">Aida Drafted Document</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -746,19 +727,19 @@ export default function AidaPage() {
                                 toast.success("Saved to Workspace!");
                               } catch { toast.error("Failed to save to Workspace"); }
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 text-[10px] uppercase font-bold text-white/60 hover:text-white hover:border-[#ffe792]/40 transition-colors bg-black/40"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-[10px] uppercase font-bold text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors bg-secondary/40"
                           >
                             <Icon name="save" style={{ fontSize: 14 }} /> Workspace
                           </button>
                           <button
                             onClick={() => { navigator.clipboard.writeText(msg.template); toast.success("Copied to Clipboard!"); }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#ffe792]/20 text-[10px] uppercase font-bold text-[#ffe792] hover:bg-[#ffe792]/10 transition-colors bg-[#ffe792]/5"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/20 text-[10px] uppercase font-bold text-primary hover:bg-primary/10 transition-colors bg-primary/5"
                           >
                             <Icon name="content_copy" style={{ fontSize: 14 }} /> Copy
                           </button>
                         </div>
                       </div>
-                      <div className="text-sm text-white/80 whitespace-pre-wrap font-sans relative z-10 bg-black/20 p-4 rounded-xl border border-white/5" style={{ lineHeight: 1.7 }}>
+                      <div className="text-sm text-foreground/80 whitespace-pre-wrap font-sans relative z-10 bg-secondary/20 p-4 rounded-xl border border-border" style={{ lineHeight: 1.7 }}>
                         {msg.template}
                       </div>
                     </div>
@@ -770,12 +751,12 @@ export default function AidaPage() {
             {/* Loading indicator */}
             {loading && (
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#ffe792]/10 border border-[#ffe792]/20 flex items-center justify-center animate-pulse">
-                  <Icon name="auto_awesome" style={{ color: "#ffe792" }} />
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
+                  <Icon name="auto_awesome" className="text-primary" />
                 </div>
-                <div className="px-6 py-4 rounded-3xl bg-white/5 border border-white/5 flex gap-1.5 items-center">
+                <div className="px-6 py-4 rounded-3xl bg-accent/40 border border-border flex gap-1.5 items-center">
                   {[0, 200, 400].map((delay) => (
-                    <div key={delay} className="w-1.5 h-1.5 bg-[#ffe792] rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+                    <div key={delay} className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
                   ))}
                 </div>
               </div>
@@ -787,30 +768,27 @@ export default function AidaPage() {
         <div className="px-4 md:px-8 pb-4 md:pb-6 pt-4 shrink-0 relative z-10">
           <div className="max-w-3xl mx-auto relative">
             <input
-              className="w-full border rounded-2xl md:rounded-[20px] py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-16 outline-none transition-all shadow-2xl text-sm md:text-base"
+              className="w-full border border-border rounded-2xl md:rounded-[20px] py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-16 outline-none transition-all shadow-xl text-sm md:text-base bg-card focus:border-primary/40 text-foreground"
               style={{
-                background: "rgba(17,39,63,0.4)",
-                borderColor: "rgba(255,255,255,0.08)",
-                color: "var(--th-text)",
                 fontFamily: "'Manrope', sans-serif",
               }}
               placeholder="Ask Aida anything about your org, tasks, files…"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              onFocus={(e) => { e.target.style.borderColor = "rgba(255,231,146,0.3)"; e.target.style.background = "rgba(17,39,63,0.6)"; }}
-              onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; e.target.style.background = "rgba(17,39,63,0.4)"; }}
+              onFocus={(e) => { e.target.style.borderColor = "var(--primary)/30"; e.target.style.background = "var(--accent)/60"; }}
+              onBlur={(e) => { e.target.style.borderColor = "#0c2037/20"; e.target.style.background = "var(--card)"; }}
             />
             <button
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
               className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg disabled:opacity-30 disabled:grayscale"
-              style={{ background: "#ffe792", color: "#655400" }}
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
             >
               <Icon name="send" />
             </button>
           </div>
-          <p className="text-center text-[10px] text-white/15 mt-3 uppercase tracking-widest" style={SG}>
+          <p className="text-center text-[10px] text-muted-foreground/30 mt-3 uppercase tracking-widest" style={SG}>
             Aida · Powered by DeepSeek AI · Reads from your org knowledge base
           </p>
         </div>
@@ -819,8 +797,8 @@ export default function AidaPage() {
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,231,146,0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,231,146,0.2); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--primary)/10; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--primary)/20; }
       `}</style>
     </div >
   );

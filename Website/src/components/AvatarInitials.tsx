@@ -29,7 +29,7 @@ function getHashIndex(str: string) {
 
 function Initials({ name, className }: { name: string; className?: string }) {
   const initial = name ? name.charAt(0).toUpperCase() : '?';
-  const bg = name ? backgrounds[getHashIndex(name)] : "var(--th-surface-top)";
+  const bg = name ? backgrounds[getHashIndex(name)] : "var(--accent)";
   return (
     <div
       className={cn("flex flex-shrink-0 items-center justify-center font-bold text-white", className)}

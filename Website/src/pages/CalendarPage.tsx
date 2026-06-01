@@ -90,37 +90,37 @@ function TopBar({
 
   return (
     <header
-      className="hidden md:flex fixed top-0 right-0 z-40 h-20 px-10 justify-between items-center bg-[var(--th-bg)]/80 backdrop-blur-xl border-b border-[var(--th-border)]"
+      className="hidden md:flex fixed top-0 right-0 z-40 h-20 px-10 justify-between items-center bg-[var(--background)]/80 backdrop-blur-xl border-b border-[#0c2037]/20"
       style={{ left: "85px" }}
     >
       <h1
-        className="text-xl font-bold tracking-widest text-[var(--th-accent)] uppercase"
+        className="text-xl font-bold tracking-widest text-[var(--primary)] uppercase"
         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
         CALENDAR{" "}
-        <span className="ml-2 text-xs text-[var(--th-muted)] normal-case font-normal">
+        <span className="ml-2 text-xs text-[var(--muted-foreground)] normal-case font-normal">
           {tzAbbrev}
         </span>
       </h1>
 
       <div className="flex flex-1 mx-8 justify-end">
         <div
-          className="flex items-center px-4 py-2 rounded-xl transition-all border border-transparent focus-within:border-[var(--th-accent)]"
-          style={{ background: "var(--th-surface-top)" }}
+          className="flex items-center px-4 py-2 rounded-xl transition-all border border-transparent focus-within:border-[var(--primary)]"
+          style={{ background: "var(--accent)" }}
         >
-          <MSIcon icon="search" className="text-sm mr-2" style={{ color: "var(--th-muted)" }} />
+          <MSIcon icon="search" className="text-sm mr-2" style={{ color: "var(--muted-foreground)" }} />
           <Input
             type="text"
             placeholder="Search events..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="bg-transparent border-none focus-visible:ring-0 text-sm w-64 h-auto p-0 transition-colors"
-            style={{ color: "var(--th-text)" }}
+            style={{ color: "var(--foreground)" }}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="ml-2 text-[var(--th-muted)] hover:text-[var(--th-accent)] transition-colors"
+              className="ml-2 text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors"
             >
               <MSIcon icon="close" style={{ fontSize: 16 }} />
             </button>
@@ -132,17 +132,17 @@ function TopBar({
         {/* Get Briefing - calls inline handler, no navigation */}
         <button
           onClick={onBriefing}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#ffe792]/5 border border-[#ffe792]/20 hover:bg-[#ffe792]/10 transition-all group"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-all group"
         >
-          <MSIcon icon="auto_awesome" style={{ color: "#ffe792", fontSize: 18 }} />
+          <MSIcon icon="auto_awesome" style={{ color: "var(--primary)", fontSize: 18 }} />
           <span
-            className="text-[10px] font-bold uppercase tracking-wider text-[#ffe792]"
+            className="text-[10px] font-bold uppercase tracking-wider text-primary"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
             Get Briefing
           </span>
         </button>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border overflow-hidden" style={{ borderColor: "var(--th-border)" }}>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border overflow-hidden" style={{ borderColor: "#0c2037/20" }}>
           <AvatarInitials name={user?.full_name || user?.username || "U"} url={user?.avatar} />
         </div>
       </div>
@@ -206,32 +206,32 @@ function MiniCalendar({
         top: "calc(100% + 12px)",
         left: 0,
         width: 280,
-        background: "var(--th-surface)",
-        borderColor: "var(--th-border)",
+        background: "var(--card)",
+        borderColor: "#0c2037/20",
         boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
       }}
     >
       <div
         className="flex items-center justify-between px-4 py-3 border-b"
-        style={{ borderColor: "var(--th-border)" }}
+        style={{ borderColor: "#0c2037/20" }}
       >
         <button
           onClick={() => setViewMonth(subMonths(viewMonth, 1))}
           className="w-7 h-7 flex items-center justify-center rounded-lg hover:scale-105 transition-all"
-          style={{ background: "var(--th-surface-top)", color: "var(--th-secondary)" }}
+          style={{ background: "var(--accent)", color: "var(--secondary)" }}
         >
           <MSIcon icon="chevron_left" style={{ fontSize: 18 }} />
         </button>
         <span
           className="font-bold text-sm"
-          style={{ color: "var(--th-text)", fontFamily: "'Space Grotesk', sans-serif" }}
+          style={{ color: "var(--foreground)", fontFamily: "'Space Grotesk', sans-serif" }}
         >
           {format(viewMonth, "MMMM yyyy")}
         </span>
         <button
           onClick={() => setViewMonth(addMonths(viewMonth, 1))}
           className="w-7 h-7 flex items-center justify-center rounded-lg hover:scale-105 transition-all"
-          style={{ background: "var(--th-surface-top)", color: "var(--th-secondary)" }}
+          style={{ background: "var(--accent)", color: "var(--secondary)" }}
         >
           <MSIcon icon="chevron_right" style={{ fontSize: 18 }} />
         </button>
@@ -242,7 +242,7 @@ function MiniCalendar({
           <div
             key={d}
             className="text-center text-[10px] font-bold uppercase"
-            style={{ color: "var(--th-muted)" }}
+            style={{ color: "var(--muted-foreground)" }}
           >
             {d}
           </div>
@@ -266,15 +266,15 @@ function MiniCalendar({
                   className="w-8 h-8 mx-auto flex items-center justify-center rounded-xl text-xs font-medium transition-all hover:scale-110"
                   style={{
                     background: isSelected
-                      ? "var(--th-accent)"
+                      ? "var(--primary)"
                       : isTodayDate
-                        ? "color-mix(in srgb, var(--th-accent) 20%, transparent)"
+                        ? "color-mix(in srgb, var(--primary) 20%, transparent)"
                         : "transparent",
                     color: isSelected
-                      ? "var(--th-accent-text)"
+                      ? "var(--primary-foreground)"
                       : isTodayDate
-                        ? "var(--th-accent)"
-                        : "var(--th-text)",
+                        ? "var(--primary)"
+                        : "var(--foreground)",
                     fontWeight: isSelected || isTodayDate ? 700 : 400,
                   }}
                 >
@@ -286,7 +286,7 @@ function MiniCalendar({
         ))}
       </div>
 
-      <div className="border-t px-3 py-2" style={{ borderColor: "var(--th-border)" }}>
+      <div className="border-t px-3 py-2" style={{ borderColor: "#0c2037/20" }}>
         <button
           onClick={() => {
             onSelect(new Date());
@@ -294,8 +294,8 @@ function MiniCalendar({
           }}
           className="w-full py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all hover:scale-[1.02]"
           style={{
-            background: "color-mix(in srgb, var(--th-accent) 15%, transparent)",
-            color: "var(--th-accent)",
+            background: "color-mix(in srgb, var(--primary) 15%, transparent)",
+            color: "var(--primary)",
           }}
         >
           Jump to Today
@@ -331,34 +331,34 @@ function MobileAgenda({ currentDate, events, onSelectDate }: { currentDate: Date
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Month/Year Jumper Toggle */}
-      <div className="px-8 py-4 flex items-center justify-between border-b" style={{ borderColor: "var(--th-border)", background: "color-mix(in srgb, var(--th-surface-low) 50%, transparent)" }}>
+      <div className="px-8 py-4 flex items-center justify-between border-b" style={{ borderColor: "#0c2037/20", background: "color-mix(in srgb, var(--muted) 50%, transparent)" }}>
         <button
           onClick={() => setShowJumper(!showJumper)}
-          className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-[var(--th-surface)] border border-[var(--th-border)] shadow-lg shadow-black/20 transition-all"
+          className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-[var(--card)] border border-[#0c2037/20] shadow-lg shadow-black/20 transition-all"
         >
           <span className="font-bold text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
             {format(viewMonth, "MMMM yyyy")}
           </span>
-          <MSIcon icon={showJumper ? "expand_less" : "expand_more"} style={{ fontSize: 20, color: "var(--th-accent)" }} />
+          <MSIcon icon={showJumper ? "expand_less" : "expand_more"} style={{ fontSize: 20, color: "var(--primary)" }} />
         </button>
         <button
           onClick={() => onSelectDate(new Date())}
           className="px-5 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-[0.14em] transition-all"
-          style={{ background: "color-mix(in srgb, var(--th-accent) 15%, transparent)", color: "var(--th-accent)" }}
+          style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)", color: "var(--primary)" }}
         >
           Current
         </button>
       </div>
 
       {showJumper && (
-        <div className="bg-[var(--th-surface-high)] border-b p-4 max-h-[300px] overflow-y-auto custom-scrollbar" style={{ borderColor: "var(--th-border)" }}>
+        <div className="bg-[var(--secondary)] border-b p-4 max-h-[300px] overflow-y-auto custom-scrollbar" style={{ borderColor: "#0c2037/20" }}>
           <div className="grid grid-cols-3 gap-2">
             {months.map((m, idx) => (
               <button
                 key={m}
                 onClick={() => handleJump(idx, viewMonth.getFullYear())}
                 className={cn("py-2 rounded-xl text-[10px] font-bold uppercase transition-all border",
-                  viewMonth.getMonth() === idx ? "bg-[var(--th-accent)] text-[var(--th-accent-text)] border-transparent" : "bg-[var(--th-surface)] text-[var(--th-muted)] border-[var(--th-border)]"
+                  viewMonth.getMonth() === idx ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-transparent" : "bg-[var(--card)] text-[var(--muted-foreground)] border-[#0c2037/20]"
                 )}
               >
                 {m.slice(0, 3)}
@@ -371,7 +371,7 @@ function MobileAgenda({ currentDate, events, onSelectDate }: { currentDate: Date
                 key={y}
                 onClick={() => handleJump(viewMonth.getMonth(), y)}
                 className={cn("px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all border shrink-0",
-                  viewMonth.getFullYear() === y ? "bg-[var(--th-secondary)] text-white border-transparent" : "bg-[var(--th-surface)] text-[var(--th-muted)] border-[var(--th-border)]"
+                  viewMonth.getFullYear() === y ? "bg-[var(--secondary)] text-white border-transparent" : "bg-[var(--card)] text-[var(--muted-foreground)] border-[#0c2037/20]"
                 )}
               >
                 {y}
@@ -382,7 +382,7 @@ function MobileAgenda({ currentDate, events, onSelectDate }: { currentDate: Date
       )}
 
       {/* Week Strip */}
-      <div className="grid grid-cols-7 border-b transition-colors" style={{ borderColor: "var(--th-border)", background: "var(--th-surface-low)" }}>
+      <div className="grid grid-cols-7 border-b transition-colors" style={{ borderColor: "#0c2037/20", background: "var(--muted)" }}>
         {weekDays.map(d => {
           const active = isSameDay(d, currentDate);
           const tday = isToday(d);
@@ -391,11 +391,11 @@ function MobileAgenda({ currentDate, events, onSelectDate }: { currentDate: Date
               key={d.toISOString()}
               onClick={() => onSelectDate(d)}
               className="py-3 flex flex-col items-center gap-1 transition-all"
-              style={{ background: active ? "color-mix(in srgb, var(--th-accent) 10%, transparent)" : "transparent" }}
+              style={{ background: active ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "transparent" }}
             >
-              <span className={cn("text-[9px] font-bold uppercase", active ? "text-[var(--th-accent)]" : "text-[var(--th-muted)]")}>{format(d, "eee")}</span>
+              <span className={cn("text-[9px] font-bold uppercase", active ? "text-[var(--primary)]" : "text-[var(--muted-foreground)]")}>{format(d, "eee")}</span>
               <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
-                active ? "bg-[var(--th-accent)] text-[var(--th-accent-text)]" : tday ? "border border-[var(--th-accent)] text-[var(--th-accent)]" : "text-[var(--th-text)]")}>
+                active ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : tday ? "border border-[var(--primary)] text-[var(--primary)]" : "text-[var(--foreground)]")}>
                 {format(d, "d")}
               </div>
             </button>
@@ -405,13 +405,13 @@ function MobileAgenda({ currentDate, events, onSelectDate }: { currentDate: Date
 
       {/* Agenda Events */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 custom-scrollbar">
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--th-muted)]">Mission Timeline</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">Mission Timeline</h3>
         {dayEvents.length === 0 ? (
           <div className="py-12 text-center">
-            <div className="w-16 h-16 rounded-3xl bg-[var(--th-surface)] flex items-center justify-center mx-auto mb-4 border border-[var(--th-border)]">
-              <MSIcon icon="calendar_today" className="text-2xl text-[var(--th-muted)]" />
+            <div className="w-16 h-16 rounded-3xl bg-[var(--card)] flex items-center justify-center mx-auto mb-4 border border-[#0c2037/20]">
+              <MSIcon icon="calendar_today" className="text-2xl text-[var(--muted-foreground)]" />
             </div>
-            <p className="text-sm font-medium text-[var(--th-muted)]">No active segments defined for this sector.</p>
+            <p className="text-sm font-medium text-[var(--muted-foreground)]">No active segments defined for this sector.</p>
           </div>
         ) : (
           dayEvents.sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime()).map(e => {
@@ -419,14 +419,14 @@ function MobileAgenda({ currentDate, events, onSelectDate }: { currentDate: Date
             const isDone = e.status === "done";
             return (
               <div key={e._id} className="relative group">
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-full group-hover:w-1.5 transition-all" style={{ background: isDone ? "var(--th-muted)" : "var(--th-accent)" }} />
-                <div className="ml-4 p-4 rounded-2xl bg-[var(--th-surface)] border border-[var(--th-border)] hover:border-[var(--th-accent)]/30 transition-all">
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-full group-hover:w-1.5 transition-all" style={{ background: isDone ? "var(--muted-foreground)" : "var(--primary)" }} />
+                <div className="ml-4 p-4 rounded-2xl bg-[var(--card)] border border-[#0c2037/20] hover:border-[var(--primary)]/30 transition-all">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-bold text-[var(--th-accent)] uppercase tracking-wider">{format(start, "h:mm a")}</p>
-                    {e.meetingRef && <MSIcon icon="auto_awesome" className="text-xs text-[var(--th-accent)]" title="Aida Synced" />}
+                    <p className="text-xs font-bold text-[var(--primary)] uppercase tracking-wider">{format(start, "h:mm a")}</p>
+                    {e.meetingRef && <MSIcon icon="auto_awesome" className="text-xs text-[var(--primary)]" title="Aida Synced" />}
                   </div>
                   <h4 className={cn("font-bold text-base mb-1", isDone && "line-through opacity-50")}>{e.title}</h4>
-                  {e.description && <p className="text-xs text-[var(--th-muted)] line-clamp-2">{e.description}</p>}
+                  {e.description && <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">{e.description}</p>}
                 </div>
               </div>
             );
@@ -618,7 +618,7 @@ export default function CalendarPage() {
   return (
     <div
       className="min-h-screen transition-colors duration-300 relative overflow-hidden"
-      style={{ background: "var(--th-bg)", color: "var(--th-text)", fontFamily: "'Manrope', sans-serif" }}
+      style={{ background: "var(--background)", color: "var(--foreground)", fontFamily: "'Manrope', sans-serif" }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
@@ -644,7 +644,7 @@ export default function CalendarPage() {
       />
       <div
         className="absolute bottom-[-10%] left-[10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0"
-        style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }}
+        style={{ background: "color-mix(in srgb, var(--secondary) 15%, transparent)" }}
       />
 
       <main
@@ -655,8 +655,8 @@ export default function CalendarPage() {
         <div
           className="flex-1 flex flex-col backdrop-blur-xl rounded-3xl border overflow-hidden transition-colors"
           style={{
-            background: "color-mix(in srgb, var(--th-surface-top) 40%, transparent)",
-            borderColor: "var(--th-border)",
+            background: "color-mix(in srgb, var(--accent) 40%, transparent)",
+            borderColor: "#0c2037/20",
           }}
         >
           {/* ── Mobile Agenda View (Visible only on mobile) ── */}
@@ -672,24 +672,24 @@ export default function CalendarPage() {
           <div className="hidden md:flex flex-1 flex-col overflow-hidden">
             <div
               className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 md:p-6 border-b transition-colors gap-3 md:gap-0"
-              style={{ borderColor: "var(--th-border)" }}
+              style={{ borderColor: "#0c2037/20" }}
             >
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <button
                     onClick={() => setShowMiniCal((v) => !v)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:scale-105 transition-all group"
-                    style={{ background: "color-mix(in srgb, var(--th-accent) 10%, transparent)" }}
+                    style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}
                   >
                     <h2
                       className="text-lg md:text-2xl font-bold transition-colors"
-                      style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}
+                      style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--primary)" }}
                     >
                       {format(currentDate, "MMMM yyyy")}
                     </h2>
                     <MSIcon
                       icon={showMiniCal ? "expand_less" : "expand_more"}
-                      style={{ color: "var(--th-accent)", fontSize: 20 }}
+                      style={{ color: "var(--primary)", fontSize: 20 }}
                     />
                   </button>
                   {showMiniCal && (
@@ -706,7 +706,7 @@ export default function CalendarPage() {
                 {loading && (
                   <div
                     className="w-4 h-4 border-2 rounded-full animate-spin"
-                    style={{ borderColor: "var(--th-accent)", borderTopColor: "transparent" }}
+                    style={{ borderColor: "var(--primary)", borderTopColor: "transparent" }}
                   />
                 )}
               </div>
@@ -724,7 +724,7 @@ export default function CalendarPage() {
                 <button
                   className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl font-bold text-[10px] uppercase transition-colors border flex items-center gap-1 shrink-0"
                   onClick={() => setCurrentDate(subDays(currentDate, 1))}
-                  style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }}
+                  style={{ background: "var(--card)", borderColor: "#0c2037/20", color: "var(--secondary)" }}
                 >
                   <MSIcon icon="chevron_left" style={{ fontSize: 14 }} />
                   <span className="hidden md:inline">Prev</span>
@@ -732,14 +732,14 @@ export default function CalendarPage() {
                 <button
                   className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl font-bold text-[10px] uppercase transition-colors border flex items-center gap-1 shrink-0"
                   onClick={() => setCurrentDate(new Date())}
-                  style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-accent)" }}
+                  style={{ background: "var(--card)", borderColor: "#0c2037/20", color: "var(--primary)" }}
                 >
                   Today
                 </button>
                 <button
                   className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl font-bold text-[10px] uppercase transition-colors border flex items-center gap-1 shrink-0"
                   onClick={() => setCurrentDate(addDays(currentDate, 1))}
-                  style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }}
+                  style={{ background: "var(--card)", borderColor: "#0c2037/20", color: "var(--secondary)" }}
                 >
                   <span className="hidden md:inline">Next</span>
                   <MSIcon icon="chevron_right" style={{ fontSize: 14 }} />
@@ -747,7 +747,7 @@ export default function CalendarPage() {
                 <button
                   className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg md:rounded-xl font-bold text-[10px] uppercase transition-colors border flex items-center gap-1 shrink-0"
                   onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
-                  style={{ background: "var(--th-surface)", borderColor: "var(--th-border)", color: "var(--th-secondary)" }}
+                  style={{ background: "var(--card)", borderColor: "#0c2037/20", color: "var(--secondary)" }}
                 >
                   <span className="md:inline">+Week</span>
                   <MSIcon icon="keyboard_double_arrow_right" style={{ fontSize: 14 }} />
@@ -759,18 +759,18 @@ export default function CalendarPage() {
             <div className="overflow-x-auto custom-scrollbar flex-1 flex flex-col">
               <div
                 className="grid border-b flex-shrink-0 transition-colors"
-                style={{ borderColor: "var(--th-border)", gridTemplateColumns: "60px repeat(7, minmax(100px, 1fr))" }}
+                style={{ borderColor: "#0c2037/20", gridTemplateColumns: "60px repeat(7, minmax(100px, 1fr))" }}
               >
                 <div
                   className="p-4 flex flex-col items-center justify-center border-r transition-colors"
                   style={{
-                    borderColor: "var(--th-border)",
-                    background: "color-mix(in srgb, var(--th-surface-low) 50%, transparent)",
+                    borderColor: "#0c2037/20",
+                    background: "color-mix(in srgb, var(--muted) 50%, transparent)",
                   }}
                 >
                   <span
                     className="font-mono text-[10px] uppercase transition-colors"
-                    style={{ color: "var(--th-muted)" }}
+                    style={{ color: "var(--muted-foreground)" }}
                   >
                     TIME
                   </span>
@@ -785,24 +785,24 @@ export default function CalendarPage() {
                       onClick={() => setCurrentDate(day)}
                       style={{
                         background: isSelected
-                          ? "color-mix(in srgb, var(--th-accent) 15%, transparent)"
+                          ? "color-mix(in srgb, var(--primary) 15%, transparent)"
                           : isTodayDate
-                            ? "color-mix(in srgb, var(--th-accent) 5%, transparent)"
+                            ? "color-mix(in srgb, var(--primary) 5%, transparent)"
                             : "transparent",
                       }}
                     >
                       <span
                         className="text-[10px] uppercase font-semibold font-mono transition-colors"
-                        style={{ color: isSelected || isTodayDate ? "var(--th-accent)" : "var(--th-secondary)" }}
+                        style={{ color: isSelected || isTodayDate ? "var(--primary)" : "var(--secondary)" }}
                       >
                         {format(day, "eee")}
                       </span>
                       <button
                         className="text-xl font-bold mt-0.5 transition-all hover:scale-110 w-9 h-9 rounded-full flex items-center justify-center"
                         style={{
-                          color: isSelected ? "var(--th-accent-text)" : "var(--th-text)",
-                          background: isSelected ? "var(--th-accent)" : "transparent",
-                          border: isTodayDate && !isSelected ? "1px solid var(--th-accent)" : "none",
+                          color: isSelected ? "var(--primary-foreground)" : "var(--foreground)",
+                          background: isSelected ? "var(--primary)" : "transparent",
+                          border: isTodayDate && !isSelected ? "1px solid var(--primary)" : "none",
                         }}
                       >
                         {format(day, "d")}
@@ -821,7 +821,7 @@ export default function CalendarPage() {
                   {/* Time column */}
                   <div
                     className="col-span-1 border-r transition-colors"
-                    style={{ borderColor: "var(--th-border)" }}
+                    style={{ borderColor: "#0c2037/20" }}
                   >
                     {TIME_SLOTS.map((h) => (
                       <div
@@ -829,12 +829,12 @@ export default function CalendarPage() {
                         className="border-b flex items-start justify-center pt-2 transition-colors"
                         style={{
                           height: PIXELS_PER_HOUR,
-                          borderColor: "color-mix(in srgb, var(--th-border) 20%, transparent)",
+                          borderColor: "color-mix(in srgb, #0c2037/20 20%, transparent)",
                         }}
                       >
                         <span
                           className="font-mono text-[10px] transition-colors select-none"
-                          style={{ color: "var(--th-muted)" }}
+                          style={{ color: "var(--muted-foreground)" }}
                         >
                           {/* Fixed AM/PM formatting */}
                           {formatHour(h)}
@@ -851,7 +851,7 @@ export default function CalendarPage() {
                         key={day.toISOString()}
                         className="col-span-1 border-r relative transition-colors"
                         style={{
-                          borderColor: "color-mix(in srgb, var(--th-border) 20%, transparent)",
+                          borderColor: "color-mix(in srgb, #0c2037/20 20%, transparent)",
                         }}
                       >
                         {TIME_SLOTS.map((h) => (
@@ -860,7 +860,7 @@ export default function CalendarPage() {
                             className="border-b pointer-events-none transition-colors"
                             style={{
                               height: PIXELS_PER_HOUR,
-                              borderColor: "color-mix(in srgb, var(--th-border) 10%, transparent)",
+                              borderColor: "color-mix(in srgb, #0c2037/20 10%, transparent)",
                             }}
                           />
                         ))}
@@ -888,9 +888,9 @@ export default function CalendarPage() {
                                 top: topPx,
                                 height: heightPx,
                                 background: isDone
-                                  ? "color-mix(in srgb, var(--th-surface) 60%, transparent)"
-                                  : "color-mix(in srgb, var(--th-accent) 20%, transparent)",
-                                borderColor: isDone ? "var(--th-border)" : "var(--th-accent)",
+                                  ? "color-mix(in srgb, var(--card) 60%, transparent)"
+                                  : "color-mix(in srgb, var(--primary) 20%, transparent)",
+                                borderColor: isDone ? "#0c2037/20" : "var(--primary)",
                                 opacity: isDone ? 0.6 : 1,
                                 zIndex: 10,
                               }}
@@ -901,24 +901,24 @@ export default function CalendarPage() {
                                     <MSIcon
                                       icon="auto_awesome"
                                       className="text-[10px] shrink-0"
-                                      style={{ color: "var(--th-accent)" }}
+                                      style={{ color: "var(--primary)" }}
                                       title="Synced by Aida"
                                     />
                                   )}
                                   <p
                                     className="font-bold text-[11px] leading-tight truncate transition-colors"
-                                    style={{ color: isDone ? "var(--th-text)" : "var(--th-accent)" }}
+                                    style={{ color: isDone ? "var(--foreground)" : "var(--primary)" }}
                                   >
                                     {e.title}
                                   </p>
                                 </div>
                                 <div
                                   className="hidden group-hover:flex gap-1 p-1 rounded-lg shrink-0"
-                                  style={{ background: "var(--th-surface)" }}
+                                  style={{ background: "var(--card)" }}
                                 >
                                   <button
                                     onClick={() => handleMarkDone(e._id, e.status)}
-                                    style={{ color: "var(--th-accent)" }}
+                                    style={{ color: "var(--primary)" }}
                                     title={isDone ? "Mark as todo" : "Mark as done"}
                                   >
                                     <MSIcon
@@ -929,7 +929,7 @@ export default function CalendarPage() {
                                   </button>
                                   <button
                                     onClick={() => handleDelete(e._id)}
-                                    style={{ color: "var(--th-muted)" }}
+                                    style={{ color: "var(--muted-foreground)" }}
                                     title="Delete"
                                   >
                                     <MSIcon icon="delete" style={{ fontSize: 14 }} />
@@ -939,7 +939,7 @@ export default function CalendarPage() {
                               {heightPx > 40 && e.description && (
                                 <p
                                   className="text-[10px] mt-1 truncate transition-colors"
-                                  style={{ color: "var(--th-text)" }}
+                                  style={{ color: "var(--foreground)" }}
                                 >
                                   {e.description}
                                 </p>
@@ -947,7 +947,7 @@ export default function CalendarPage() {
                               {heightPx > 30 && (
                                 <p
                                   className="text-[9px] mt-0.5 transition-colors"
-                                  style={{ color: "var(--th-muted)" }}
+                                  style={{ color: "var(--muted-foreground)" }}
                                 >
                                   {format(startDate, "h:mm a")} – {format(endDate, "h:mm a")}
                                 </p>
@@ -970,19 +970,19 @@ export default function CalendarPage() {
           <div
             className="backdrop-blur-xl rounded-3xl p-6 border transition-colors relative overflow-hidden"
             style={{
-              background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-              borderColor: "var(--th-border)",
+              background: "color-mix(in srgb, var(--muted) 40%, transparent)",
+              borderColor: "#0c2037/20",
             }}
           >
             <h3
               className="font-bold text-lg mb-1 transition-colors"
-              style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-accent)" }}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--primary)" }}
             >
               Schedule Task
             </h3>
             <p
               className="text-[10px] uppercase tracking-widest mb-5 transition-colors"
-              style={{ color: "var(--th-muted)" }}
+              style={{ color: "var(--muted-foreground)" }}
             >
               {format(currentDate, "EEEE, MMMM d")}
             </p>
@@ -993,7 +993,7 @@ export default function CalendarPage() {
                 <div className="mb-2">
                   <label
                     className="text-[10px] uppercase font-bold tracking-widest mb-2 block transition-colors"
-                    style={{ color: "var(--th-muted)" }}
+                    style={{ color: "var(--muted-foreground)" }}
                   >
                     Templates
                   </label>
@@ -1007,15 +1007,15 @@ export default function CalendarPage() {
                         }}
                         className="shrink-0 w-32 p-3 rounded-xl border cursor-pointer hover:scale-105 transition-all flex flex-col justify-between h-20"
                         style={{
-                          borderColor: "var(--th-border)",
-                          background: "var(--th-surface)",
-                          color: "var(--th-text)",
+                          borderColor: "#0c2037/20",
+                          background: "var(--card)",
+                          color: "var(--foreground)",
                         }}
                       >
                         <span className="font-bold text-[11px] truncate">{t.title || t.name}</span>
                         <span
                           className="text-[9px] uppercase tracking-wider"
-                          style={{ color: "var(--th-accent)" }}
+                          style={{ color: "var(--primary)" }}
                         >
                           USE →
                         </span>
@@ -1028,7 +1028,7 @@ export default function CalendarPage() {
               <div>
                 <label
                   className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors"
-                  style={{ color: "var(--th-muted)" }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Title
                 </label>
@@ -1037,7 +1037,7 @@ export default function CalendarPage() {
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   placeholder="e.g. Team sync"
                   className="bg-transparent border transition-colors text-sm"
-                  style={{ borderColor: "var(--th-border)", color: "var(--th-text)" }}
+                  style={{ borderColor: "#0c2037/20", color: "var(--foreground)" }}
                   onKeyDown={(e) => e.key === "Enter" && handleCreateTask()}
                 />
               </div>
@@ -1045,7 +1045,7 @@ export default function CalendarPage() {
               <div>
                 <label
                   className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors"
-                  style={{ color: "var(--th-muted)" }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Notes
                 </label>
@@ -1054,14 +1054,14 @@ export default function CalendarPage() {
                   onChange={(e) => setNewTaskDesc(e.target.value)}
                   placeholder="Optional description"
                   className="bg-transparent border transition-colors text-sm"
-                  style={{ borderColor: "var(--th-border)", color: "var(--th-text)" }}
+                  style={{ borderColor: "#0c2037/20", color: "var(--foreground)" }}
                 />
               </div>
 
               <div>
                 <label
                   className="text-[10px] uppercase font-bold tracking-widest mb-1 block transition-colors"
-                  style={{ color: "var(--th-muted)" }}
+                  style={{ color: "var(--muted-foreground)" }}
                 >
                   Start Hour (24h)
                 </label>
@@ -1072,10 +1072,10 @@ export default function CalendarPage() {
                   min={7}
                   max={20}
                   className="bg-transparent border transition-colors text-sm"
-                  style={{ borderColor: "var(--th-border)", color: "var(--th-text)" }}
+                  style={{ borderColor: "#0c2037/20", color: "var(--foreground)" }}
                 />
                 {newTaskHour && (
-                  <p className="text-[10px] mt-1" style={{ color: "var(--th-muted)" }}>
+                  <p className="text-[10px] mt-1" style={{ color: "var(--muted-foreground)" }}>
                     = {formatHour(parseInt(newTaskHour) || 9)}
                   </p>
                 )}
@@ -1086,9 +1086,9 @@ export default function CalendarPage() {
                 disabled={!newTaskTitle}
                 className="w-full h-12 uppercase font-bold tracking-widest text-[10px] rounded-xl hover:scale-105 transition-transform"
                 style={{
-                  background: "var(--th-accent)",
-                  color: "var(--th-accent-text)",
-                  boxShadow: "0 0 15px color-mix(in srgb, var(--th-accent) 20%, transparent)",
+                  background: "var(--primary)",
+                  color: "var(--primary-foreground)",
+                  boxShadow: "0 0 15px color-mix(in srgb, var(--primary) 20%, transparent)",
                 }}
               >
                 Schedule Task
@@ -1100,20 +1100,20 @@ export default function CalendarPage() {
           <div
             className="backdrop-blur-xl rounded-3xl p-6 border flex-1 transition-colors relative overflow-hidden overflow-y-auto custom-scrollbar"
             style={{
-              background: "color-mix(in srgb, var(--th-surface-low) 40%, transparent)",
-              borderColor: "var(--th-border)",
+              background: "color-mix(in srgb, var(--muted) 40%, transparent)",
+              borderColor: "#0c2037/20",
             }}
           >
             <h3
               className="font-bold text-lg mb-6 transition-colors"
-              style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-text)" }}
+              style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--foreground)" }}
             >
               Upcoming
             </h3>
 
             <div className="space-y-4 relative z-10">
               {events.length === 0 && (
-                <p className="text-xs transition-colors" style={{ color: "var(--th-muted)" }}>
+                <p className="text-xs transition-colors" style={{ color: "var(--muted-foreground)" }}>
                   No events scheduled.
                 </p>
               )}
@@ -1130,25 +1130,25 @@ export default function CalendarPage() {
                     <div
                       key={e._id}
                       className="p-3 rounded-xl border transition-colors flex items-start gap-3"
-                      style={{ background: "var(--th-surface)", borderColor: "transparent" }}
+                      style={{ background: "var(--card)", borderColor: "transparent" }}
                     >
                       <div
                         className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
                         style={{
                           background:
-                            e.status === "done" ? "var(--th-muted)" : "var(--th-accent)",
+                            e.status === "done" ? "var(--muted-foreground)" : "var(--primary)",
                         }}
                       />
                       <div className="flex-1 min-w-0">
                         <p
                           className="font-bold text-xs leading-tight mb-1 transition-colors truncate"
-                          style={{ color: "var(--th-text)" }}
+                          style={{ color: "var(--foreground)" }}
                         >
                           {e.title}
                         </p>
                         <p
                           className="text-[10px] uppercase font-bold tracking-widest transition-colors"
-                          style={{ color: "var(--th-secondary)" }}
+                          style={{ color: "var(--secondary)" }}
                         >
                           {format(d, "MMM d")} · {format(d, "h:mm a")}
                         </p>
@@ -1165,24 +1165,24 @@ export default function CalendarPage() {
       {showBriefingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div
-            className="relative w-full max-w-lg rounded-3xl border p-8 shadow-2xl overflow-hidden z-10"
+            className="relative w-full max-w-lg rounded-3xl border border-border p-8 shadow-2xl overflow-hidden z-10"
             style={{
-              background: "color-mix(in srgb, var(--th-bg) 95%, transparent)",
-              borderColor: "rgba(255,231,146,0.3)",
+              background: "var(--card)",
+              borderColor: "var(--primary)/30",
             }}
           >
             <button
               onClick={() => setShowBriefingModal(false)}
               className="absolute top-6 right-6 hover:scale-110 transition-transform"
             >
-              <MSIcon icon="close" style={{ color: "var(--th-muted)" }} />
+              <MSIcon icon="close" style={{ color: "var(--muted-foreground)" }} />
             </button>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#ffe792]/10 border border-[#ffe792]/30">
-                <MSIcon icon="auto_awesome" style={{ color: "#ffe792", fontSize: 20 }} />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 border border-primary/30">
+                <MSIcon icon="auto_awesome" style={{ color: "var(--primary)", fontSize: 20 }} />
               </div>
               <h3
-                className="text-xl font-bold tracking-tight text-[#ffe792]"
+                className="text-xl font-bold tracking-tight text-primary"
                 style={{ fontFamily: "'Space Grotesk', sans-serif" }}
               >
                 Aida Daily Briefing
@@ -1198,7 +1198,7 @@ export default function CalendarPage() {
               ) : (
                 <div
                   className="text-[13px] leading-relaxed whitespace-pre-wrap"
-                  style={{ color: "var(--th-text)" }}
+                  style={{ color: "var(--foreground)" }}
                 >
                   {briefingText}
                 </div>

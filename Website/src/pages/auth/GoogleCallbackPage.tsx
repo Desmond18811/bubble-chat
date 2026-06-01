@@ -63,15 +63,15 @@ const GoogleCallbackPage: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#010f20',
-            color: '#d8e6ff',
+            background: 'hsl(var(--background))',
+            color: 'hsl(var(--foreground))',
             fontFamily: "'Space Grotesk', sans-serif"
         }}>
             <div style={{
                 width: 60,
                 height: 60,
-                border: '3px solid rgba(255,231,146,0.1)',
-                borderTop: '3px solid #ffe792',
+                border: '3px solid hsl(var(--primary) / 0.1)',
+                borderTop: '3px solid hsl(var(--primary))',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
                 marginBottom: 24
@@ -79,7 +79,7 @@ const GoogleCallbackPage: React.FC = () => {
             <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>
                 Signing you in...
             </h2>
-            <p style={{ fontSize: 14, color: '#9eacc3', marginTop: 8 }}>
+            <p style={{ fontSize: 14, color: 'hsl(var(--muted-foreground))', marginTop: 8 }}>
                 Securing your session in the Bubble space...
             </p>
 
@@ -87,7 +87,7 @@ const GoogleCallbackPage: React.FC = () => {
             <div style={{ marginTop: 40 }}>
                 <button
                     onClick={() => navigate('/messages', { replace: true })}
-                    style={{ background: 'transparent', border: 'none', color: '#9eacc3', textDecoration: 'underline', cursor: 'pointer', fontSize: 12, opacity: 0.6 }}
+                    style={{ background: 'transparent', border: 'none', color: 'hsl(var(--muted-foreground))', textDecoration: 'underline', cursor: 'pointer', fontSize: 12, opacity: 0.6 }}
                 >
                     Taking too long? Click here to continue →
                 </button>

@@ -34,17 +34,17 @@ const Icon = ({ name, fill = false, className = "", style = {} }: any) => (
 
 /* ─── Colour tokens ──────────────────────────────────────────────────────── */
 const C = {
-  bg: "var(--th-bg)",
-  surface: "var(--th-surface)",
-  surfaceLow: "var(--th-surface-low)",
-  surfaceHigh: "var(--th-surface-high)",
-  surfaceTop: "var(--th-surface-top)",
-  border: "var(--th-border)",
-  accent: "var(--th-accent)",
-  accentText: "var(--th-accent-text)",
-  secondary: "var(--th-secondary)",
-  text: "var(--th-text)",
-  muted: "var(--th-muted)",
+  bg: "var(--background)",
+  surface: "var(--card)",
+  surfaceLow: "var(--muted)",
+  surfaceHigh: "var(--secondary)",
+  surfaceTop: "var(--accent)",
+  border: "rgba(12, 32, 55, 0.15)",
+  accent: "var(--primary)",
+  accentText: "var(--primary-foreground)",
+  secondary: "var(--secondary)",
+  text: "var(--foreground)",
+  muted: "var(--muted-foreground)",
   error: "#ff716c",
   repost: "#4ade80",
 };
@@ -73,7 +73,7 @@ function ComposerModal({ onPostCreated, onClose }: { onPostCreated: (post: any) 
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
+        background: "rgba(255,255,255,0.6)", backdropFilter: "blur(8px)",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}
     >
@@ -81,7 +81,7 @@ function ComposerModal({ onPostCreated, onClose }: { onPostCreated: (post: any) 
         onClick={(e) => e.stopPropagation()}
         style={{
           background: C.surfaceLow, borderRadius: 20, padding: "28px",
-          border: `1px solid var(--th-border)`, width: "90%", maxWidth: 560,
+          border: `1px solid rgba(12, 32, 55, 0.15)`, width: "90%", maxWidth: 560,
           boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
         }}
       >
@@ -111,7 +111,7 @@ function ComposerModal({ onPostCreated, onClose }: { onPostCreated: (post: any) 
             />
             {file && (
               <div style={{ position: "relative", marginBottom: 12, width: "fit-content" }}>
-                <img src={URL.createObjectURL(file)} style={{ height: 110, borderRadius: 10, border: `1px solid var(--th-border)` }} alt="preview" />
+                <img src={URL.createObjectURL(file)} style={{ height: 110, borderRadius: 10, border: `1px solid rgba(12, 32, 55, 0.15)` }} alt="preview" />
                 <button
                   onClick={() => setFile(null)}
                   style={{ position: "absolute", top: -8, right: -8, background: C.error, color: "#fff", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
@@ -124,7 +124,7 @@ function ComposerModal({ onPostCreated, onClose }: { onPostCreated: (post: any) 
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 marginTop: 12, paddingTop: 12,
-                borderTop: `1px solid color-mix(in srgb, var(--th-border) 60%, transparent)`,
+                borderTop: `1px solid color-mix(in srgb, rgba(12, 32, 55, 0.15) 60%, transparent)`,
               }}
             >
               <div style={{ display: "flex", gap: 12, color: C.secondary }}>
@@ -199,7 +199,7 @@ function CommentPanel({ postId, comments: initComments }: { postId: string; comm
   };
 
   return (
-    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid color-mix(in srgb, var(--th-border) 40%, transparent)` }}>
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid color-mix(in srgb, rgba(12, 32, 55, 0.15) 40%, transparent)` }}>
       {comments.slice(0, 3).map((c: any, i: number) => (
         <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
           <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
@@ -263,7 +263,7 @@ function PostMenu({ post, onClose }: { post: any; onClose: () => void }) {
       <div style={{
         position: "absolute", top: 28, right: 0,
         background: C.surfaceHigh, borderRadius: 14,
-        border: `1px solid var(--th-border)`, padding: "6px 0",
+        border: `1px solid rgba(12, 32, 55, 0.15)`, padding: "6px 0",
         width: 190, zIndex: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
       }}>
         {items.map((item) => (
@@ -277,7 +277,7 @@ function PostMenu({ post, onClose }: { post: any; onClose: () => void }) {
               cursor: "pointer", fontFamily: "'Manrope',sans-serif", fontSize: 13,
               display: "flex", alignItems: "center", gap: 10,
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 7%, transparent)`}
+            onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, var(--primary) 7%, transparent)`}
             onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
           >
             <Icon name={item.icon} style={{ fontSize: 16, color: (item as any).danger ? C.error : C.muted }} />
@@ -317,9 +317,9 @@ function PostItem({ post }: { post: any }) {
   return (
     <article
       style={{
-        background: hovered ? `color-mix(in srgb, var(--th-surface) 70%, transparent)` : `color-mix(in srgb, var(--th-surface) 40%, transparent)`,
+        background: hovered ? `color-mix(in srgb, var(--card) 70%, transparent)` : `color-mix(in srgb, var(--card) 40%, transparent)`,
         padding: 24, borderRadius: 16,
-        border: `1px solid color-mix(in srgb, var(--th-border) 60%, transparent)`,
+        border: `1px solid color-mix(in srgb, rgba(12, 32, 55, 0.15) 60%, transparent)`,
         transition: "background 0.2s",
       }}
       onMouseEnter={() => setHovered(true)}
@@ -333,7 +333,7 @@ function PostItem({ post }: { post: any }) {
           {/* Header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
             <div>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15, color: C.text }}>{post.author?.full_name}</span>
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 15, color: "var(--primary)" }}>{post.author?.full_name}</span>
               <span style={{ fontFamily: "'Space Grotesk',sans-serif", color: C.muted, fontSize: 12, marginLeft: 8 }}>
                 @{post.author?.username} · {formatDistanceToNow(new Date(post.createdAt))} ago
               </span>
@@ -342,7 +342,7 @@ function PostItem({ post }: { post: any }) {
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 4, borderRadius: 6, transition: "background 0.15s" }}
-                onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 10%, transparent)`}
+                onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, var(--primary) 10%, transparent)`}
                 onMouseLeave={(e) => e.currentTarget.style.background = "none"}
               >
                 <Icon name="more_horiz" style={{ fontSize: 20 }} />
@@ -358,7 +358,7 @@ function PostItem({ post }: { post: any }) {
 
           {/* Media */}
           {post.mediaUrl && (
-            <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid var(--th-border)`, marginBottom: 16 }}>
+            <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid rgba(12, 32, 55, 0.15)`, marginBottom: 16 }}>
               {post.mediaType === "video" ? (
                 <video src={post.mediaUrl} controls style={{ width: "100%", display: "block" }} />
               ) : (
@@ -426,27 +426,27 @@ function RightSidebar() {
   return (
     <aside style={{ padding: "32px 28px" }}>
       <div style={{ position: "sticky", top: 104, display: "flex", flexDirection: "column", gap: 24 }}>
-        {/* Aida Luminous CTA — yellow accent */}
+        {/* Aida Luminous CTA — primary accent */}
         <div style={{
-          background: "linear-gradient(135deg, rgba(255,231,146,0.12), rgba(255,231,146,0.04))",
-          border: "1px solid rgba(255,231,146,0.25)",
+          background: "linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), color-mix(in srgb, var(--primary) 4%, transparent))",
+          border: "1px solid color-mix(in srgb, var(--primary) 25%, transparent)",
           borderRadius: 16, padding: "18px 20px",
           display: "flex", flexDirection: "column", gap: 10
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#ffe792", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, color: "#655400" }}>A</span>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 16, color: "var(--primary-foreground)" }}>A</span>
             </div>
             <div>
-              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "#ffe792", margin: 0 }}>Aida Luminous</p>
-              <p style={{ fontSize: 11, color: "rgba(255,231,146,0.6)", margin: 0 }}>Your AI companion</p>
+              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, color: "var(--primary)", margin: 0 }}>Aida Luminous</p>
+              <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: 0 }}>Your AI companion</p>
             </div>
           </div>
-          <p style={{ fontSize: 12, color: "rgba(255,231,146,0.7)", fontFamily: "'Manrope',sans-serif", margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 12, color: "var(--foreground)", opacity: 0.7, fontFamily: "'Manrope',sans-serif", margin: 0, lineHeight: 1.5 }}>
             Ask me anything about your feed, connections, or community insights.
           </p>
           <button style={{
-            background: "#ffe792", color: "#655400", border: "none",
+            background: "var(--primary)", color: "var(--primary-foreground)", border: "none",
             borderRadius: 999, padding: "7px 16px", fontFamily: "'Space Grotesk',sans-serif",
             fontWeight: 700, fontSize: 11, letterSpacing: "0.06em", cursor: "pointer",
             alignSelf: "flex-start",
@@ -456,14 +456,14 @@ function RightSidebar() {
         </div>
 
         {/* Trending */}
-        <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid var(--th-border)`, overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: `1px solid var(--th-border)` }}>
+        <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid rgba(12, 32, 55, 0.15)`, overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid rgba(12, 32, 55, 0.15)` }}>
             <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: C.accent, margin: 0 }}>
               Trending
             </h3>
           </div>
           {trending.length > 0 ? trending.slice(0, 4).map((t, i) => (
-            <div key={i} style={{ padding: "12px 20px", borderBottom: i < trending.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none", cursor: "pointer" }}
+            <div key={i} style={{ padding: "12px 20px", borderBottom: i < trending.length - 1 ? `1px solid color-mix(in srgb, rgba(12, 32, 55, 0.15) 50%, transparent)` : "none", cursor: "pointer" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = C.surfaceTop)}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
@@ -476,14 +476,14 @@ function RightSidebar() {
         </div>
 
         {/* Suggested */}
-        <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid var(--th-border)`, overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: `1px solid var(--th-border)` }}>
+        <div style={{ background: C.surfaceLow, borderRadius: 16, border: `1px solid rgba(12, 32, 55, 0.15)`, overflow: "hidden" }}>
+          <div style={{ padding: "16px 20px", borderBottom: `1px solid rgba(12, 32, 55, 0.15)` }}>
             <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: C.accent, margin: 0 }}>
               Who to Follow
             </h3>
           </div>
           {suggestions.length > 0 ? suggestions.slice(0, 3).map((s, i) => (
-            <div key={s._id || i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, var(--th-border) 50%, transparent)` : "none" }}>
+            <div key={s._id || i} style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < suggestions.length - 1 ? `1px solid color-mix(in srgb, rgba(12, 32, 55, 0.15) 50%, transparent)` : "none" }}>
               <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden" }}>
                 <AvatarInitials name={s.full_name || s.username || "U"} url={s.avatar} className="text-sm" />
               </div>
@@ -493,8 +493,8 @@ function RightSidebar() {
               </div>
               <button
                 onClick={() => handleFollow(s._id, i)}
-                style={{ padding: "5px 14px", border: `1px solid var(--th-accent)`, borderRadius: 999, background: "transparent", color: C.accent, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer", transition: "background 0.2s" }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 15%, transparent)`; }}
+                style={{ padding: "5px 14px", border: `1px solid var(--primary)`, borderRadius: 999, background: "transparent", color: C.accent, fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 11, cursor: "pointer", transition: "background 0.2s" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = `color-mix(in srgb, var(--primary) 15%, transparent)`; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
                 FOLLOW
@@ -530,13 +530,13 @@ function FeedDropdown({ value, onChange }: { value: string; onChange: (v: string
         onClick={() => setOpen((v) => !v)}
         style={{
           display: "flex", alignItems: "center", gap: 8,
-          background: C.surfaceTop, border: `1px solid var(--th-border)`,
+          background: C.surfaceTop, border: `1px solid rgba(12, 32, 55, 0.15)`,
           borderRadius: 12, padding: "9px 18px", cursor: "pointer",
           color: C.accent, fontFamily: "'Space Grotesk',sans-serif",
           fontWeight: 700, fontSize: 14, transition: "border-color 0.2s",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--th-accent) 40%, transparent)`)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = `var(--th-border)`)}
+        onMouseEnter={(e) => (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--primary) 40%, transparent)`)}
+        onMouseLeave={(e) => (e.currentTarget.style.borderColor = `rgba(12, 32, 55, 0.15)`)}
       >
         {value}
         <Icon name={open ? "expand_less" : "expand_more"} style={{ fontSize: 18, color: C.muted }} />
@@ -546,7 +546,7 @@ function FeedDropdown({ value, onChange }: { value: string; onChange: (v: string
           position: "absolute", top: "calc(100% + 8px)", left: "50%",
           transform: "translateX(-50%)",
           background: C.surfaceHigh, borderRadius: 14,
-          border: `1px solid var(--th-border)`, padding: "6px 0",
+          border: `1px solid rgba(12, 32, 55, 0.15)`, padding: "6px 0",
           minWidth: 160, zIndex: 50,
           boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
         }}>
@@ -561,7 +561,7 @@ function FeedDropdown({ value, onChange }: { value: string; onChange: (v: string
                 fontFamily: "'Manrope',sans-serif", fontSize: 14,
                 cursor: "pointer", fontWeight: tab === value ? 700 : 400,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = `color-mix(in srgb, var(--th-accent) 8%, transparent)`)}
+              onMouseEnter={(e) => (e.currentTarget.style.background = `color-mix(in srgb, var(--primary) 8%, transparent)`)}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
               {tab}
@@ -602,7 +602,7 @@ export default function BubbleFeed() {
   useEffect(() => { loadPosts(); }, [activeTab]);
 
   return (
-    <div style={{ background: "var(--th-bg)", color: "var(--th-text)", minHeight: "100vh", fontFamily: "'Manrope', sans-serif", position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "var(--background)", color: "var(--foreground)", minHeight: "100vh", fontFamily: "'Manrope', sans-serif", position: "relative", overflow: "hidden" }}>
       <Sidebar />
       <PageHeader title="Feed" icon="rss_feed" subtitle="Explore your network">
         <div style={{ display: "flex", alignItems: "center", gap: 8, background: C.surfaceTop, borderRadius: 999, padding: "8px 16px", border: `1px solid rgba(255,255,255,0.07)`, width: 280 }}>
@@ -615,16 +615,16 @@ export default function BubbleFeed() {
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
         style={{ background: "var(--th-glow)" }} />
       <div className="absolute top-[40%] left-[-10%] w-[30%] h-[40%] blur-[120px] rounded-full pointer-events-none z-0 transition-colors"
-        style={{ background: "color-mix(in srgb, var(--th-secondary) 15%, transparent)" }} />
+        style={{ background: "color-mix(in srgb, var(--secondary) 15%, transparent)" }} />
 
       <main style={{ marginLeft: 85, paddingTop: 70, display: "flex", minHeight: "100vh", background: "transparent", position: "relative", zIndex: 10 }}>
         {/* Feed column */}
-        <section style={{ flex: 1, borderRight: `1px solid var(--th-border)`, minWidth: 0 }}>
+        <section style={{ flex: 1, borderRight: `1px solid rgba(12, 32, 55, 0.15)`, minWidth: 0 }}>
           {/* Centered Dropdown bar — no title */}
           <div style={{
-            padding: "16px 24px", borderBottom: `1px solid var(--th-border)`,
+            padding: "16px 24px", borderBottom: `1px solid rgba(12, 32, 55, 0.15)`,
             position: "sticky", top: 72,
-            background: `color-mix(in srgb, var(--th-bg) 90%, transparent)`,
+            background: `color-mix(in srgb, var(--background) 90%, transparent)`,
             backdropFilter: "blur(12px)", zIndex: 30,
             display: "flex", justifyContent: "center", alignItems: "center",
           }}>
@@ -671,11 +671,11 @@ export default function BubbleFeed() {
           background: C.accent, color: C.accentText,
           border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 8px 32px color-mix(in srgb, var(--th-accent) 35%, transparent)`,
+          boxShadow: `0 8px 32px color-mix(in srgb, var(--primary) 35%, transparent)`,
           transition: "transform 0.2s, box-shadow 0.2s",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = `0 12px 40px color-mix(in srgb, var(--th-accent) 50%, transparent)`; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = `0 8px 32px color-mix(in srgb, var(--th-accent) 35%, transparent)`; }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = `0 12px 40px color-mix(in srgb, var(--primary) 50%, transparent)`; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = `0 8px 32px color-mix(in srgb, var(--primary) 35%, transparent)`; }}
       >
         <Icon name="add" style={{ fontSize: 28 }} />
       </button>

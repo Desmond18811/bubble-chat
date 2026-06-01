@@ -15,7 +15,7 @@ export function MobileHeader({ title, className }: MobileHeaderProps) {
         <header
             className={cn(
                 "flex md:hidden items-center justify-between px-8 h-20 fixed top-0 left-0 right-0 z-[40] transition-colors",
-                "bg-[color-mix(in_srgb,var(--th-bg)_80%,transparent)] backdrop-blur-md border-bottom border-[var(--th-border)]",
+                "bg-[color-mix(in_srgb,var(--background)_80%,transparent)] backdrop-blur-md border-bottom border-[var(--border)]",
                 className
             )}
         >
@@ -25,11 +25,11 @@ export function MobileHeader({ title, className }: MobileHeaderProps) {
                     className="p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors"
                     aria-label="Toggle Menu"
                 >
-                    <Icon name="menu" size={24} style={{ color: "#ffe792" }} />
+                    <Icon name="menu" size={24} style={{ color: "var(--primary)" }} />
                 </button>
                 <h1
                     className="text-base font-bold tracking-tight uppercase"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--th-accent)" }}
+                    style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--primary)" }}
                 >
                     {title}
                 </h1>

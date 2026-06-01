@@ -38,35 +38,36 @@ function MaterialIcon({
 function DashboardBackground() {
     return (
         <main
-            className="ml-[96px] min-h-screen p-12 blur-md pointer-events-none select-none overflow-hidden transition-all duration-300"
-            style={{ background: "#010f20" }}
+            className="ml-[var(--main-margin)] min-h-screen p-12 blur-md pointer-events-none select-none overflow-hidden transition-all duration-300"
+            style={{ background: "var(--background)" }}
         >
             <header className="mb-20">
                 <h1
                     className="text-6xl font-bold tracking-tighter mb-4"
-                    style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#d8e6ff" }}
+                    style={{ fontFamily: "'Space Grotesk', sans-serif", color: "var(--primary)" }}
                 >
                     Command Center
                 </h1>
                 <p
                     className="text-lg max-w-xl"
-                    style={{ color: "#a2c2fd" }}
+                    style={{ color: "var(--muted-foreground)" }}
                 >
-                    Reviewing your current active streams and celestial synchronization states.
+                    Reviewing your current active streams and synchronization states.
                 </p>
             </header>
 
             <div className="grid grid-cols-12 gap-8">
                 {/* Wide card */}
                 <div
-                    className="col-span-8 rounded-full h-96 p-8 relative overflow-hidden"
-                    style={{ background: "#031427" }}
+                    className="col-span-8 rounded-2xl h-96 p-8 relative overflow-hidden border"
+                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
                 >
                     <div
-                        className="absolute inset-0 rounded-full"
+                        className="absolute inset-0"
                         style={{
                             background:
-                                "linear-gradient(to bottom right, rgba(255,231,146,0.05), transparent)",
+                                "linear-gradient(to bottom right, var(--primary), transparent)",
+                            opacity: 0.05
                         }}
                     />
                     <div className="relative z-10 flex flex-col justify-between h-full">
@@ -75,19 +76,19 @@ function DashboardBackground() {
                                 className="text-sm tracking-widest uppercase"
                                 style={{
                                     fontFamily: "'Space Grotesk', sans-serif",
-                                    color: "#ffe792",
+                                    color: "var(--primary)",
                                 }}
                             >
                                 LIVE MONITOR
                             </span>
-                            <MaterialIcon name="monitoring" className="" style={{ color: "#ffe792" }} />
+                            <MaterialIcon name="monitoring" style={{ color: "var(--primary)" }} />
                         </div>
                         <div className="space-y-4">
                             {["w-3/4", "w-1/2", "w-2/3"].map((w, i) => (
                                 <div
                                     key={i}
                                     className={`h-2 ${w} rounded-full`}
-                                    style={{ background: "#11273f" }}
+                                    style={{ background: "var(--muted)" }}
                                 />
                             ))}
                         </div>
@@ -97,14 +98,14 @@ function DashboardBackground() {
                 {/* Narrow cards */}
                 <div className="col-span-4 space-y-8">
                     <div
-                        className="p-8 rounded-xl h-44"
-                        style={{ background: "#071a2f" }}
+                        className="p-8 rounded-xl h-44 border"
+                        style={{ background: "var(--card)", borderColor: "var(--border)" }}
                     >
                         <span
                             className="text-[10px] tracking-widest opacity-60 uppercase"
                             style={{
                                 fontFamily: "'Space Grotesk', sans-serif",
-                                color: "#a2c2fd",
+                                color: "var(--muted-foreground)",
                             }}
                         >
                             System Health
@@ -113,7 +114,7 @@ function DashboardBackground() {
                             className="mt-4 text-3xl font-bold"
                             style={{
                                 fontFamily: "'Space Grotesk', sans-serif",
-                                color: "#d8e6ff",
+                                color: "var(--foreground)",
                             }}
                         >
                             99.2%
@@ -122,15 +123,15 @@ function DashboardBackground() {
                     <div
                         className="p-8 rounded-xl h-44 border"
                         style={{
-                            background: "#0c2037",
-                            borderColor: "rgba(255,231,146,0.10)",
+                            background: "var(--card)",
+                            borderColor: "var(--border)",
                         }}
                     >
                         <span
                             className="text-[10px] tracking-widest uppercase"
                             style={{
                                 fontFamily: "'Space Grotesk', sans-serif",
-                                color: "#ffe792",
+                                color: "var(--primary)",
                             }}
                         >
                             Active Sessions
@@ -139,7 +140,7 @@ function DashboardBackground() {
                             className="mt-4 text-3xl font-bold"
                             style={{
                                 fontFamily: "'Space Grotesk', sans-serif",
-                                color: "#ffe792",
+                                color: "var(--primary)",
                             }}
                         >
                             12
@@ -160,25 +161,23 @@ function LogoutModal({
 }) {
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: "rgba(1,15,32,0.60)", backdropFilter: "blur(20px)" }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm"
         >
             <div
-                className="w-full max-w-lg p-12 rounded-3xl shadow-2xl relative overflow-hidden"
+                className="w-full max-w-lg p-12 rounded-3xl shadow-2xl relative overflow-hidden border"
                 style={{
-                    backdropFilter: "blur(20px)",
-                    background: "rgba(17,39,63,0.4)",
-                    border: "1px solid rgba(59,73,92,0.15)",
+                    background: "var(--card)",
+                    borderColor: "var(--border)",
                 }}
             >
                 {/* Decorative glows */}
                 <div
-                    className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-3xl"
-                    style={{ background: "rgba(255,231,146,0.10)" }}
+                    className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-3xl opacity-20"
+                    style={{ background: "var(--primary)" }}
                 />
                 <div
-                    className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full blur-3xl"
-                    style={{ background: "rgba(162,194,253,0.05)" }}
+                    className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-10"
+                    style={{ background: "var(--primary)" }}
                 />
 
                 <div className="relative z-10 text-center">
@@ -187,15 +186,14 @@ function LogoutModal({
                         <div
                             className="w-20 h-20 rounded-xl flex items-center justify-center border"
                             style={{
-                                background: "#11273f",
-                                borderColor: "rgba(255,231,146,0.20)",
+                                background: "var(--primary)/5",
+                                borderColor: "var(--primary)/20",
                             }}
                         >
                             <MaterialIcon
                                 name="power_settings_new"
                                 filled
-                                className="text-4xl"
-                                style={{ color: "#ffe792" }}
+                                className="text-4xl text-primary"
                             />
                         </div>
                     </div>
@@ -205,7 +203,7 @@ function LogoutModal({
                         className="text-4xl font-bold tracking-tighter mb-4"
                         style={{
                             fontFamily: "'Space Grotesk', sans-serif",
-                            color: "#d8e6ff",
+                            color: "var(--primary)",
                         }}
                     >
                         Disconnecting?
@@ -214,7 +212,7 @@ function LogoutModal({
                     {/* Body */}
                     <p
                         className="text-lg leading-relaxed mb-12"
-                        style={{ color: "#9eacc3" }}
+                        style={{ color: "var(--muted-foreground)" }}
                     >
                         Your session will be securely terminated. All unsaved observatory
                         configurations will be stored in your local vault.
@@ -227,61 +225,39 @@ function LogoutModal({
                             className="w-full py-5 px-8 font-bold rounded-xl tracking-tight text-lg transition-all duration-300 active:scale-95 border-0"
                             style={{
                                 fontFamily: "'Space Grotesk', sans-serif",
-                                background: "#ffe792",
-                                color: "#655400",
-                                boxShadow: "0 0 20px rgba(255,231,146,0.2)",
+                                background: "var(--primary)",
+                                color: "var(--primary-foreground)",
                                 height: "auto",
-                            }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "#ffd709";
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "#ffe792";
                             }}
                         >
                             Log Out
                         </Button>
 
-                        <Button
+                        <button
                             onClick={onCancel}
-                            variant="ghost"
-                            className="w-full py-5 px-8 font-medium rounded-xl tracking-tight text-lg transition-all duration-300 border-0"
+                            className="w-full py-5 px-8 font-medium rounded-xl tracking-tight text-lg transition-all duration-300 border border-border bg-transparent hover:bg-muted text-muted-foreground"
                             style={{
                                 fontFamily: "'Space Grotesk', sans-serif",
-                                color: "#ffe792",
-                                background: "transparent",
                                 height: "auto",
-                            }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.background =
-                                    "rgba(255,231,146,0.05)";
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.background = "transparent";
                             }}
                         >
                             Stay Connected
-                        </Button>
+                        </button>
                     </div>
 
                     {/* Footer badge */}
                     <div className="mt-12 flex items-center justify-center gap-2 opacity-40">
                         <div
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ background: "#ffe792" }}
+                            className="w-1.5 h-1.5 rounded-full bg-primary"
                         />
                         <span
-                            className="text-[10px] uppercase tracking-[0.2em]"
-                            style={{
-                                fontFamily: "'Space Grotesk', sans-serif",
-                                color: "#9eacc3",
-                            }}
+                            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+                            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                         >
                             Secure Vault Protocol 2.4
                         </span>
                         <div
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{ background: "#ffe792" }}
+                            className="w-1.5 h-1.5 rounded-full bg-primary"
                         />
                     </div>
                 </div>
@@ -313,7 +289,7 @@ export default function BubbleApp() {
     return (
         <div
             className="min-h-screen"
-            style={{ background: "#010f20", color: "#d8e6ff" }}
+            style={{ background: "var(--background)", color: "var(--foreground)" }}
         >
             {/* Google Fonts */}
             <style>{`

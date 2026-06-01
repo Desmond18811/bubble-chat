@@ -23,12 +23,12 @@ function Breadcrumb({ network }: { network: any }) {
     <div className="flex items-center gap-2 mb-6 text-xs font-bold uppercase tracking-widest">
       <button
         onClick={() => navigate("/community")}
-        className="text-[#9eacc3] hover:text-[#ffe792] transition-colors"
+        className="text-muted-foreground hover:text-primary transition-colors"
       >
         COMMUNITIES
       </button>
-      <Icon name="chevron_right" className="text-[#3b495c] text-sm" />
-      <span className="text-[#ffe792]">{network?.title || "LOADING..."}</span>
+      <Icon name="chevron_right" className="text-border text-sm" />
+      <span className="text-primary">{network?.title || "LOADING..."}</span>
     </div>
   );
 }
@@ -56,29 +56,29 @@ function BroadcastPost({ post, networkId, isCreator, onUpdate }: { post: any, ne
   };
 
   return (
-    <div className="bg-[#11273f]/30 backdrop-blur-xl border border-[#3b495c]/10 rounded-2xl p-6 mb-4 group hover:border-[#ffe792]/20 transition-all">
+    <div className="bg-card backdrop-blur-xl border border-border rounded-2xl p-6 mb-4 group hover:border-primary/20 transition-all shadow-sm">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#031427] flex items-center justify-center border border-[#3b495c]/20">
-            <Icon name="campaign" style={{ color: "#ffe792" }} />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+            <Icon name="campaign" style={{ color: "var(--primary)" }} />
           </div>
           <div>
-            <p className="text-[#d8e6ff] font-bold text-sm tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <p className="text-[var(--primary)] font-bold text-sm tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               {post.author?.full_name || post.author?.username || "Update Transmission"}
             </p>
-            <p className="text-[10px] text-[#9eacc3] uppercase tracking-tighter">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">
               {formatDistanceToNow(new Date(post.createdAt))} ago
             </p>
           </div>
         </div>
       </div>
 
-      <p className="text-[#d8e6ff] text-base leading-relaxed mb-6 whitespace-pre-wrap">
+      <p className="text-foreground text-base leading-relaxed mb-6 whitespace-pre-wrap">
         {post.content}
       </p>
 
       {post.mediaUrl && (
-        <div className="rounded-xl overflow-hidden border border-[#3b495c]/10 mb-6 bg-[#010f20]">
+        <div className="rounded-xl overflow-hidden border border-border mb-6 bg-muted">
           {post.mediaType === 'video' ? (
             <video src={post.mediaUrl} controls className="w-full" />
           ) : (
@@ -87,7 +87,7 @@ function BroadcastPost({ post, networkId, isCreator, onUpdate }: { post: any, ne
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-[#3b495c]/10">
+      <div className="flex items-center justify-between pt-4 border-t border-border">
         <div className="flex gap-2">
           {['🔥', '🚀', '⭐', '❤️'].map(emoji => {
             const reactionCount = post.reactions?.filter((r: any) => r.emoji === emoji).length || 0;
@@ -97,7 +97,7 @@ function BroadcastPost({ post, networkId, isCreator, onUpdate }: { post: any, ne
                 onClick={() => handleReact(emoji)}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs",
-                  reactionCount > 0 ? "bg-[#ffe792]/10 border-[#ffe792]/30 text-[#ffe792]" : "bg-[#0c2037] border-transparent text-[#9eacc3] hover:border-[#ffe792]/20"
+                  reactionCount > 0 ? "bg-primary/10 border-primary/30 text-primary" : "bg-secondary border-transparent text-muted-foreground hover:border-primary/20"
                 )}
               >
                 <span>{emoji}</span>
@@ -121,7 +121,7 @@ function BroadcastPost({ post, networkId, isCreator, onUpdate }: { post: any, ne
           )}
           <button
             onClick={handleForward}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0c2037] text-[#9eacc3] hover:text-[#ffe792] hover:bg-[#ffe792]/10 transition-all text-xs border border-transparent hover:border-[#ffe792]/30"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all text-xs border border-transparent hover:border-primary/30"
           >
             <Icon name="forward" className="text-sm" />
             {copied ? "COPIED" : "FORWARD"}
@@ -149,9 +149,9 @@ function BroadcastComposer({ networkId, onPostCreated }: { networkId: string, on
   };
 
   return (
-    <div className="mb-8 p-6 bg-[#031427]/60 border border-[#ffe792]/10 rounded-2xl">
+    <div className="mb-8 p-6 bg-card border border-border rounded-2xl shadow-sm">
       <textarea
-        className="w-full bg-transparent border-none outline-none text-[#d8e6ff] placeholder:text-[#3b495c] resize-none h-24 mb-4"
+        className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground/50 resize-none h-24 mb-4"
         placeholder="Transmit a new update to your network members..."
         value={content}
         onChange={e => setContent(e.target.value)}
@@ -160,7 +160,7 @@ function BroadcastComposer({ networkId, onPostCreated }: { networkId: string, on
         <button
           onClick={handlePost}
           disabled={loading || !content.trim()}
-          className="px-8 py-2.5 bg-[#ffe792] text-[#655400] rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-[#ffd709] transition-all disabled:opacity-50"
+          className="px-8 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold uppercase tracking-widest text-xs hover:opacity-90 transition-all disabled:opacity-50"
         >
           {loading ? "TRANSMITTING..." : "BROADCAST UPDATE"}
         </button>
@@ -221,35 +221,35 @@ export default function CommunityMessagesPage() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59,73,92,0.4); border-radius: 4px; }
       `}</style>
 
-      <div className="bg-[#010f20] text-[#d8e6ff] min-h-screen flex font-['Manrope']">
+      <div className="bg-background text-foreground min-h-screen flex font-['Manrope']">
         <Sidebar />
         <MobileHeader title="COMMUNITY" />
 
         <main className="flex-1 flex flex-col h-screen relative overflow-hidden pt-16 md:pt-0" style={{ marginLeft: "var(--main-margin)" }}>
           {/* Subtle Ambient Background */}
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#ffe792]/5 blur-[120px] rounded-full pointer-events-none -mr-40 -mt-40" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -mr-40 -mt-40" />
 
           {/* Header */}
-          <header className="shrink-0 px-4 md:px-10 py-4 md:h-24 flex items-center justify-between border-b border-[#3b495c]/10 bg-[#010f20]/60 backdrop-blur-xl relative z-10">
+          <header className="shrink-0 px-4 md:px-10 py-4 md:h-24 flex items-center justify-between border-b border-border bg-background/60 backdrop-blur-xl relative z-10">
             <div className="flex items-center gap-3 md:gap-6">
               <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden border border-[#3b495c]/20 shrink-0">
                 <img src={network?.image || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe"} className="w-full h-full object-cover" />
               </div>
               <div>
-                <h1 className="text-lg md:text-2xl font-bold tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <h1 className="text-lg md:text-2xl font-bold tracking-tight text-[var(--primary)]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   {network?.title || "Loading..."}
                 </h1>
-                <p className="text-xs text-[#9eacc3] uppercase tracking-widest font-bold">
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
                   {network?.memberCount || 0} Members Transmitting
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="w-10 h-10 rounded-xl bg-[#0c2037] flex items-center justify-center text-[#9eacc3] hover:text-[#ffe792] transition-all border border-[#3b495c]/20">
+              <button className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-primary transition-all border border-border">
                 <Icon name="search" />
               </button>
-              <button className="w-10 h-10 rounded-xl bg-[#0c2037] flex items-center justify-center text-[#9eacc3] hover:text-[#ffe792] transition-all border border-[#3b495c]/20">
+              <button className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:text-primary transition-all border border-border">
                 <Icon name="more_vert" />
               </button>
               <div className="w-10 h-10 rounded-xl overflow-hidden border ml-2" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
@@ -276,10 +276,10 @@ export default function CommunityMessagesPage() {
                   ))}
                   {posts.length === 0 && (
                     <div className="py-20 text-center">
-                      <div className="w-16 h-16 bg-[#11273f]/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#3b495c]/20">
-                        <Icon name="auto_quiet" style={{ color: "#9eacc3", fontSize: 28 }} />
+                      <div className="w-16 h-16 bg-secondary/40 rounded-full flex items-center justify-center mx-auto mb-4 border border-border">
+                        <Icon name="auto_quiet" style={{ color: "var(--muted-foreground)", fontSize: 28 }} />
                       </div>
-                      <p className="text-[#9eacc3] text-lg mb-2">
+                      <p className="text-muted-foreground text-lg mb-2">
                         {canPost ? "No updates broadcast yet." : "No updates transmitted from the creator yet."}
                       </p>
                       {canPost && (

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type ThemeId = "void-black" | "obsidian-gold" | "cyber-mint" | "nebula-violet" | "monolith-gray" | "crimson-eclipse" | "cyberpunk-edge" | "neon-synth" | "solar-flare" | "liquid-glass";
+export type ThemeId = "light-indigo" | "void-black" | "obsidian-gold" | "cyber-mint" | "nebula-violet" | "monolith-gray" | "crimson-eclipse" | "cyberpunk-edge" | "neon-synth" | "solar-flare" | "liquid-glass";
 
 export interface ThemeDefinition {
   id: ThemeId;
@@ -26,24 +26,24 @@ export interface ThemeDefinition {
 
 export const THEMES: ThemeDefinition[] = [
   {
-    id: "void-black",
-    label: "Void Black",
-    swatches: ["#000000", "#ffe792", "#1a1a1a"],
+    id: "light-indigo",
+    label: "Light Indigo",
+    swatches: ["#ffffff", "#4f46e5", "#f8fafc"],
     vars: {
-      "--th-bg": "#000000",
-      "--th-surface": "#0d0d0d",
-      "--th-surface-low": "#080808",
-      "--th-surface-high": "#161616",
-      "--th-surface-top": "#1f1f1f",
-      "--th-accent": "#ffe792",
-      "--th-accent-text": "#1a0e00",
-      "--th-secondary": "#a2c2fd",
-      "--th-text": "#f0f0f0",
-      "--th-muted": "#666666",
-      "--th-border": "rgba(255,255,255,0.07)",
-      "--th-glow": "rgba(255,231,146,0.12)",
-      "--th-glass-blur": "16px",
-      "--th-glass-opacity": "0.06",
+      "--th-bg": "#ffffff",
+      "--th-surface": "#ffffff",
+      "--th-surface-low": "#f8fafc",
+      "--th-surface-high": "#f1f5f9",
+      "--th-surface-top": "#e2e8f0",
+      "--th-accent": "#4f46e5",
+      "--th-accent-text": "#ffffff",
+      "--th-secondary": "#818cf8",
+      "--th-text": "#0f172a",
+      "--th-muted": "#64748b",
+      "--th-border": "#e2e8f0",
+      "--th-glow": "rgba(79,70,229,0.1)",
+      "--th-glass-blur": "24px",
+      "--th-glass-opacity": "0.8",
     },
   },
   {
@@ -68,129 +68,24 @@ export const THEMES: ThemeDefinition[] = [
     },
   },
   {
-    id: "cyber-mint",
-    label: "Cyber Mint",
-    swatches: ["#020b08", "#64ffda", "#0c1f18"],
+    id: "void-black",
+    label: "Void Black",
+    swatches: ["#000000", "#ffe792", "#1a1a1a"],
     vars: {
-      "--th-bg": "#020b08",
-      "--th-surface": "#0c1f18",
-      "--th-surface-low": "#061510",
-      "--th-surface-high": "#122e23",
-      "--th-surface-top": "#1a4030",
-      "--th-accent": "#64ffda",
-      "--th-accent-text": "#003323",
-      "--th-secondary": "#a8b2d1",
-      "--th-text": "#e6f1ff",
-      "--th-muted": "#8892b0",
-      "--th-border": "rgba(100,255,218,0.15)",
-      "--th-glow": "rgba(100,255,218,0.15)",
+      "--th-bg": "#000000",
+      "--th-surface": "#0d0d0d",
+      "--th-surface-low": "#080808",
+      "--th-surface-high": "#161616",
+      "--th-surface-top": "#1f1f1f",
+      "--th-accent": "#ffe792",
+      "--th-accent-text": "#1a0e00",
+      "--th-secondary": "#a2c2fd",
+      "--th-text": "#f0f0f0",
+      "--th-muted": "#666666",
+      "--th-border": "rgba(255,255,255,0.07)",
+      "--th-glow": "rgba(255,231,146,0.12)",
       "--th-glass-blur": "16px",
-      "--th-glass-opacity": "0.08",
-    },
-  },
-  {
-    id: "nebula-violet",
-    label: "Nebula Violet",
-    swatches: ["#0a0212", "#f0abfc", "#1d0833"],
-    vars: {
-      "--th-bg": "#0a0212",
-      "--th-surface": "#1d0833",
-      "--th-surface-low": "#120321",
-      "--th-surface-high": "#2b0a4a",
-      "--th-surface-top": "#3a1061",
-      "--th-accent": "#f0abfc",
-      "--th-accent-text": "#2a003e",
-      "--th-secondary": "#d8b4fe",
-      "--th-text": "#faf5ff",
-      "--th-muted": "#c0aadd",
-      "--th-border": "rgba(240,171,252,0.15)",
-      "--th-glow": "rgba(240,171,252,0.15)",
-      "--th-glass-blur": "20px",
-      "--th-glass-opacity": "0.12",
-    },
-  },
-  {
-    id: "monolith-gray",
-    label: "Monolith Gray",
-    swatches: ["#0a0a0a", "#e5e5e5", "#1f1f1f"],
-    vars: {
-      "--th-bg": "#0a0a0a",
-      "--th-surface": "#1f1f1f",
-      "--th-surface-low": "#141414",
-      "--th-surface-high": "#2e2e2e",
-      "--th-surface-top": "#3d3d3d",
-      "--th-accent": "#e5e5e5",
-      "--th-accent-text": "#111111",
-      "--th-secondary": "#a3a3a3",
-      "--th-text": "#f5f5f5",
-      "--th-muted": "#737373",
-      "--th-border": "rgba(229,229,229,0.12)",
-      "--th-glow": "rgba(229,229,229,0.1)",
-      "--th-glass-blur": "8px",
-      "--th-glass-opacity": "0.05",
-    },
-  },
-  {
-    id: "crimson-eclipse",
-    label: "Crimson Eclipse",
-    swatches: ["#0f0202", "#ef4444", "#240404"],
-    vars: {
-      "--th-bg": "#0f0202",
-      "--th-surface": "#240404",
-      "--th-surface-low": "#1a0303",
-      "--th-surface-high": "#3a0606",
-      "--th-surface-top": "#500909",
-      "--th-accent": "#ef4444",
-      "--th-accent-text": "#3a0000",
-      "--th-secondary": "#fca5a5",
-      "--th-text": "#fef2f2",
-      "--th-muted": "#f87171",
-      "--th-border": "rgba(239,68,68,0.15)",
-      "--th-glow": "rgba(239,68,68,0.15)",
-      "--th-glass-blur": "14px",
-      "--th-glass-opacity": "0.08",
-    },
-  },
-  {
-    id: "cyberpunk-edge",
-    label: "Cyberpunk Edge",
-    swatches: ["#09090b", "#fde047", "#18181b"],
-    vars: {
-      "--th-bg": "#09090b",
-      "--th-surface": "#18181b",
-      "--th-surface-low": "#0f0f12",
-      "--th-surface-high": "#27272a",
-      "--th-surface-top": "#3f3f46",
-      "--th-accent": "#fde047",
-      "--th-accent-text": "#422006",
-      "--th-secondary": "#e879f9",
-      "--th-text": "#fafafa",
-      "--th-muted": "#a1a1aa",
-      "--th-border": "rgba(253,224,71,0.15)",
-      "--th-glow": "rgba(232,121,249,0.2)",
-      "--th-glass-blur": "12px",
-      "--th-glass-opacity": "0.1",
-    },
-  },
-  {
-    id: "neon-synth",
-    label: "Neon Synth",
-    swatches: ["#020024", "#00d4ff", "#090979"],
-    vars: {
-      "--th-bg": "#020024",
-      "--th-surface": "#090979",
-      "--th-surface-low": "#050549",
-      "--th-surface-high": "#1212a4",
-      "--th-surface-top": "#1a1acb",
-      "--th-accent": "#00d4ff",
-      "--th-accent-text": "#002a33",
-      "--th-secondary": "#f80077",
-      "--th-text": "#ffffff",
-      "--th-muted": "#7cb7d5",
-      "--th-border": "rgba(0,212,255,0.2)",
-      "--th-glow": "rgba(248,0,119,0.2)",
-      "--th-glass-blur": "18px",
-      "--th-glass-opacity": "0.1",
+      "--th-glass-opacity": "0.06",
     },
   },
   {
@@ -223,8 +118,8 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  themeId: "obsidian-gold",
-  theme: THEMES[1],
+  themeId: "light-indigo",
+  theme: THEMES[0],
   setTheme: () => { },
 });
 
@@ -248,7 +143,7 @@ function applyTheme(theme: ThemeDefinition) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const saved = (localStorage.getItem("bubble-theme") as ThemeId) || "obsidian-gold";
+  const saved = (localStorage.getItem("bubble-theme") as ThemeId) || "light-indigo";
   const [themeId, setThemeId] = useState<ThemeId>(saved);
 
   const theme = THEMES.find((t) => t.id === themeId) ?? THEMES[0];

@@ -3,7 +3,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/lib/ThemeContext";
 import FeedPage from "./pages/FeedPage";
 import MessagesPage from "./pages/MessagesPage";
 import WorkspacePage from "./pages/WorkspacePage";
@@ -57,44 +56,42 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
 
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/verify-otp" element={<VerifyOTPPage />} />
-            <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
-            {/* Onboarding — needs token but skips onboarding check */}
-            <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetupPage /></ProtectedRoute>} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-otp" element={<VerifyOTPPage />} />
+          <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+          {/* Onboarding — needs token but skips onboarding check */}
+          <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetupPage /></ProtectedRoute>} />
 
-            <Route path="/feed" element={<Navigate to="/messages" replace />} />
-            <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-            <Route path="/workspace" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
-            <Route path="/workspace/shared/:folderId" element={<SharedWorkspacePage />} />
-            <Route path="/meet/*" element={<ProtectedRoute><MeetPage /></ProtectedRoute>} />
-            <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
-            <Route path="/community/:id/messages" element={<ProtectedRoute><CommunityMessagesPage /></ProtectedRoute>} />
-            <Route path="/saved" element={<ProtectedRoute><SavedPage /></ProtectedRoute>} />
-            <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
-            <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/ai" element={<ProtectedRoute><AidaPage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-            <Route path="/logout" element={<LogoutPage />} />
-            <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+          <Route path="/feed" element={<Navigate to="/messages" replace />} />
+          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+          <Route path="/workspace" element={<ProtectedRoute><WorkspacePage /></ProtectedRoute>} />
+          <Route path="/workspace/shared/:folderId" element={<SharedWorkspacePage />} />
+          <Route path="/meet/*" element={<ProtectedRoute><MeetPage /></ProtectedRoute>} />
+          <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+          <Route path="/community/:id/messages" element={<ProtectedRoute><CommunityMessagesPage /></ProtectedRoute>} />
+          <Route path="/saved" element={<ProtectedRoute><SavedPage /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/ai" element={<ProtectedRoute><AidaPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/logout" element={<LogoutPage />} />
+          <Route path="*" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
 
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
 );
 
 export default App;
