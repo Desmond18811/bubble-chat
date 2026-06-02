@@ -322,7 +322,7 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
         // If exact match found, just return that user specifically
         filter._id = exactMatch._id;
       } else {
-        // 2. Regular search: restrict to Coworkers OR existing Contacts
+        // 2. Regular search: prioritize Coworkers (same org)
         const allowedIds = [...(currentUser?.contacts || [])];
 
         filter.$and = [
@@ -331,13 +331,12 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
               { full_name: { $regex: query, $options: 'i' } },
               { username: { $regex: query, $options: 'i' } },
               { email: { $regex: query, $options: 'i' } },
-              { uniqueTag: { $regex: query, $options: 'i' } },
             ]
           },
           {
             $or: [
-              { organization: currentUser?.organization }, // Coworkers
-              { _id: { $in: allowedIds } } // Saved Contacts
+              { organization: currentUser?.organization }, // Priority: Coworkers
+              { _id: { $in: allowedIds } } // Existing contacts
             ]
           }
         ];

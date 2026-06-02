@@ -6,6 +6,7 @@ export interface IOrgDocument extends Document {
     department: string;
     accessLevel: 'public' | 'restricted' | 'admin';
     createdBy: mongoose.Types.ObjectId;
+    organizationId: mongoose.Types.ObjectId;
     pineconeIds: string[]; // IDs of chunks in Pinecone
     tags: string[];
     createdAt: Date;
@@ -23,6 +24,7 @@ const OrgDocumentSchema: Schema<IOrgDocument> = new Schema(
             default: 'public',
         },
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization' },
         pineconeIds: [{ type: String }],
         tags: [{ type: String }],
     },

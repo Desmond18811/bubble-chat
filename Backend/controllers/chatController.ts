@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Conversation } from '../models/conversations';
 import { User } from '../models/users';
 import { Message } from '../models/messages';
+import { getSignedMediaUrl } from '../utils/filebase';
 import mongoose from 'mongoose';
 
 export interface AuthRequest extends Request {
@@ -10,45 +11,52 @@ export interface AuthRequest extends Request {
 
 // ─── Shared format helpers ────────────────────────────────────────────────────
 
-const formatUser = (u: any) => ({
-  id: u._id,
-  full_name: u.full_name || null,
-  username: u.username || null,
-  email: u.email || null,
-  phone_number: u.phone_number || null,
-  avatar: u.avatar || null,
+const formatUser = async (u: any) => {
+  let avatar = u.avatar || null;
+  if (avatar && avatar.startsWith('http')) {
+    try { avatar = await getSignedMediaUrl(avatar); } catch (e) { }
+  }
 
-  // Status & Identity
-  status_message: u.status_message || null,
-  mood_emoji: u.mood_emoji || null,
-  isOnline: u.isOnline ?? false,
-  lastSeen: u.lastSeen || null,
-  last_active_at: u.last_active_at || null,
+  return {
+    id: u._id,
+    full_name: u.full_name || null,
+    username: u.username || null,
+    email: u.email || null,
+    phone_number: u.phone_number || null,
+    avatar,
 
-  // Metadata
-  uniqueTag: u.uniqueTag || null,
-  bio: u.bio || null,
-  isVerified: u.isVerified ?? false,
-  isPremium: u.isPremium ?? false,
-  verified_badge: u.verified_badge ?? false,
+    // Status & Identity
+    status_message: u.status_message || null,
+    mood_emoji: u.mood_emoji || null,
+    isOnline: u.isOnline ?? false,
+    lastSeen: u.lastSeen || null,
+    last_active_at: u.last_active_at || null,
 
-  // Organizational Identity
-  organization: u.organization || null,
-  org_role: u.org_role || null,
+    // Metadata
+    uniqueTag: u.uniqueTag || null,
+    bio: u.bio || null,
+    isVerified: u.isVerified ?? false,
+    isPremium: u.isPremium ?? false,
+    verified_badge: u.verified_badge ?? false,
 
-  // Encryption
-  publicKey: u.publicKey || null,
+    // Organizational Identity
+    organization: u.organization || null,
+    org_role: u.org_role || null,
 
-  createdAt: u.createdAt || null,
-  updatedAt: u.updatedAt || null,
-});
+    // Encryption
+    publicKey: u.publicKey || null,
 
-const formatConversation = (c: any) => ({
+    createdAt: u.createdAt || null,
+    updatedAt: u.updatedAt || null,
+  };
+};
+
+const formatConversation = async (c: any) => ({
   id: c._id,
-  chatName: c.chatName || null,
+  chatName: (c.chatName && c.chatName !== 'direct') ? c.chatName : null,
   isGroupChat: c.isGroupChat ?? false,
-  users: Array.isArray(c.users) ? c.users.map(formatUser) : [],
-  groupAdmin: c.groupAdmin ? formatUser(c.groupAdmin) : null,
+  users: Array.isArray(c.users) ? await Promise.all(c.users.map(formatUser)) : [],
+  groupAdmin: c.groupAdmin ? await formatUser(c.groupAdmin) : null,
 
   // Group Metadata
   groupIcon: c.groupIcon || null,
@@ -58,37 +66,30 @@ const formatConversation = (c: any) => ({
   // Features
   ephemeralSettings: {
     isEnabled: c.ephemeralSettings?.isEnabled ?? false,
-    duration: c.ephemeralSettings?.duration ?? 0,
+    duration: c.ephemeralSettings?.duration || 0,
   },
   theme: c.theme || 'default',
   is_broadcast: c.is_broadcast ?? false,
 
-  // User context (usually checked against current user in frontend, but here for completeness)
+  // User context
   mutedBy: c.mutedBy || [],
   archivedBy: c.archivedBy || [],
 
-  latestMessage: c.latestMessage
-    ? {
-      id: c.latestMessage._id,
-      content: c.latestMessage.content || null,
-      mediaUrl: c.latestMessage.mediaUrl || null,
-      mediaType: c.latestMessage.mediaType || null,
-      message_type: c.latestMessage.message_type || 'text',
-      sender: c.latestMessage.sender
-        ? {
-          id: c.latestMessage.sender._id,
-          full_name: c.latestMessage.sender.full_name || null,
-          username: c.latestMessage.sender.username || null,
-          avatar: c.latestMessage.sender.avatar || null,
-          uniqueTag: c.latestMessage.sender.uniqueTag || null,
-        }
-        : null,
-      sentAt: c.latestMessage.createdAt || null,
-    }
-    : null,
-  totalMembers: Array.isArray(c.users) ? c.users.length : 0,
-  createdAt: c.createdAt || null,
-  updatedAt: c.updatedAt || null,
+  latestMessage: c.latestMessage ? {
+    id: c.latestMessage._id,
+    content: c.latestMessage.content || null,
+    mediaUrl: c.latestMessage.mediaUrl || null,
+    mediaType: c.latestMessage.mediaType || null,
+    message_type: c.latestMessage.message_type || 'text',
+    sender: c.latestMessage.sender ? {
+      id: c.latestMessage.sender._id,
+      full_name: c.latestMessage.sender.full_name,
+      avatar: c.latestMessage.sender.avatar
+    } : null,
+    sentAt: c.latestMessage.createdAt
+  } : null,
+  unreadCount: c.unreadCount || 0,
+  updatedAt: c.updatedAt
 });
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
@@ -127,11 +128,11 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
     if (existing.length > 0) {
       res.status(200).json({
         message: 'Existing chat retrieved.',
-        conversation: formatConversation(existing[0]),
+        conversation: await formatConversation(existing[0]),
       });
     } else {
       const created = await Conversation.create({
-        chatName: 'direct',
+        chatName: '',
         isGroupChat: false,
         users: [req.user._id, userId],
       });
@@ -142,7 +143,7 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
 
       res.status(201).json({
         message: 'New direct conversation started.',
-        conversation: formatConversation(full),
+        conversation: await formatConversation(full),
       });
     }
   } catch (error: any) {
@@ -174,10 +175,8 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
       .sort({ updatedAt: -1 });
 
     const chatIds = results.map(c => c._id);
-
     const objectUserId = new mongoose.Types.ObjectId(req.user._id);
 
-    // Group all unread messages for the user by chat ID
     const unreadAgg = await Message.aggregate([
       {
         $match: {
@@ -195,13 +194,18 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
       unreadMap.set(item._id.toString(), item.count);
     });
 
+    const formattedConversations = await Promise.all(results.map(async (c) => {
+      const formatted = await formatConversation(c);
+      return {
+        ...formatted,
+        unreadCount: unreadMap.get(c._id.toString()) || 0
+      };
+    }));
+
     res.status(200).json({
       message: 'Conversations retrieved successfully.',
       total: results.length,
-      conversations: results.map((c) => ({
-        ...formatConversation(c),
-        unreadCount: unreadMap.get(c._id.toString()) || 0
-      })),
+      conversations: formattedConversations,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -246,7 +250,7 @@ export const createGroupChat = async (req: AuthRequest, res: Response): Promise<
 
     res.status(201).json({
       message: `Group "${req.body.name}" created successfully.`,
-      conversation: formatConversation(full),
+      conversation: await formatConversation(full),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -276,7 +280,7 @@ export const renameGroup = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(200).json({
       message: `Group renamed to "${chatName}" successfully.`,
-      conversation: formatConversation(updated),
+      conversation: await formatConversation(updated),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -308,8 +312,8 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
 
     res.status(200).json({
       message: 'Member added to group successfully.',
-      added_member: addedUser ? formatUser(addedUser) : { id: userId },
-      conversation: formatConversation(updated),
+      added_member: addedUser ? await formatUser(addedUser) : { id: userId },
+      conversation: await formatConversation(updated),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -340,7 +344,7 @@ export const removeFromGroup = async (req: AuthRequest, res: Response): Promise<
     res.status(200).json({
       message: 'Member removed from group successfully.',
       removed_user_id: userId,
-      conversation: formatConversation(updated),
+      conversation: await formatConversation(updated),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -359,8 +363,8 @@ export const muteChat = async (req: AuthRequest, res: Response): Promise<void> =
     const convo = await Conversation.findById(chatId);
     if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
 
-    // Security Fix: Verify user is a participant in the chat
-    if (!convo.users.includes(userId as any)) {
+    const isParticipant = convo.users.some(u => String(u) === String(userId));
+    if (!isParticipant) {
       res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
       return;
     }
@@ -383,7 +387,7 @@ export const muteChat = async (req: AuthRequest, res: Response): Promise<void> =
 };
 
 /**
- * Clear Chat — Mark all messages in a chat as deleted for the requesting user
+ * Clear Chat
  * PUT /api/v1/chat/clear/:chatId
  */
 export const clearChat = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -391,19 +395,16 @@ export const clearChat = async (req: AuthRequest, res: Response): Promise<void> 
   const userId = req.user?._id;
 
   try {
-    // Security Fix: Verify user is a participant in the chat
     const convo = await Conversation.findById(chatId);
-    if (!convo || !convo.users.includes(userId as any)) {
+    if (!convo || !convo.users.some(u => String(u) === String(userId))) {
       res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
       return;
     }
 
-    // 1. Mark conversation as deleted for this user (so it might disappear from list)
     await Conversation.findByIdAndUpdate(chatId, {
       $addToSet: { deletedBy: userId },
     });
 
-    // 2. Mark all existing messages as deleted for this user
     await Message.updateMany(
       { chat: chatId },
       { $addToSet: { deletedFor: userId } }
@@ -416,7 +417,7 @@ export const clearChat = async (req: AuthRequest, res: Response): Promise<void> 
 };
 
 /**
- * Toggle Chat Pin — Pin or unpin a conversation for the requesting user
+ * Toggle Chat Pin
  * PUT /api/v1/chat/pin/:chatId
  */
 export const toggleChatPin = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -427,8 +428,7 @@ export const toggleChatPin = async (req: AuthRequest, res: Response): Promise<vo
     const convo = await Conversation.findById(chatId);
     if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
 
-    // Security Fix: Verify user is a participant in the chat
-    if (!convo.users.includes(userId as any)) {
+    if (!convo.users.some(u => String(u) === String(userId))) {
       res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
       return;
     }
@@ -451,9 +451,7 @@ export const toggleChatPin = async (req: AuthRequest, res: Response): Promise<vo
 };
 
 /**
- * Delete Chat — hide the entire conversation from the current user's view.
- * All messages are soft-deleted for this user and the conversation is hidden.
- * The conversation continues to exist for other participants.
+ * Delete Chat
  * DELETE /api/v1/chat/:chatId
  */
 export const deleteChat = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -466,18 +464,15 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
     const convo = await Conversation.findById(chatId);
     if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
 
-    // Security Fix: Verify user is a participant in the chat
-    if (!convo.users.includes(userId as any)) {
+    if (!convo.users.some(u => String(u) === String(userId))) {
       res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
       return;
     }
 
-    // Add user to deletedBy so the chat is hidden for them
     await Conversation.findByIdAndUpdate(chatId, {
       $addToSet: { deletedBy: userId },
     });
 
-    // Soft-delete all messages in this chat for this user
     await Message.updateMany(
       { chat: chatId },
       { $addToSet: { deletedFor: userId } }
@@ -493,13 +488,8 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
 };
 
 /**
- * @swagger
- * /api/v1/chat/unread-count:
- *   get:
- *     tags: [Chat]
- *     summary: Get unread chat message count
- *     security:
- *       - bearerAuth: []
+ * Get unread chat message count
+ * GET /api/v1/chat/unread-count
  */
 export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -520,8 +510,41 @@ export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promi
     });
 
     const count = unreadChats.length;
-
     res.status(200).json({ count });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Toggle Archive Status for User
+ * PUT /api/v1/chat/archive/:chatId
+ */
+export const toggleArchiveChat = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  const userId = req.user?._id;
+
+  try {
+    const convo = await Conversation.findById(chatId);
+    if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    if (!convo.users.some(u => String(u) === String(userId))) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
+
+    const isArchived = convo.archivedBy.includes(userId as any);
+    if (isArchived) {
+      convo.archivedBy = convo.archivedBy.filter((id) => String(id) !== String(userId));
+    } else {
+      convo.archivedBy.push(userId as any);
+    }
+
+    await convo.save();
+    res.status(200).json({
+      message: isArchived ? 'Chat unarchived' : 'Chat archived',
+      isArchived: !isArchived,
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

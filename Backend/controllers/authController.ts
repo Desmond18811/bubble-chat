@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/users';
+import { Organization } from '../models/organizations';
 import { Otp } from '../models/otp';
 import { sendOTPEmail, sendPasswordResetEmail } from '../utils/mailer';
+import { seedOrgKnowledge } from './orgController';
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
@@ -78,7 +80,7 @@ const validatePassword = (password: string): string | null => {
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { full_name, email, phone_number, password, publicKey } = req.body;
+    const { full_name, email, phone_number, password, publicKey, org_name, org_industry, org_size } = req.body;
 
     if (!email && !phone_number) {
       res.status(400).json({ message: 'Email or phone number is required.' });
@@ -110,6 +112,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     const uniqueTag = await generateUniqueTag(full_name || 'user');
 
+    // Create new user
     const newUser = await User.create({
       full_name,
       email: email?.toLowerCase(),
@@ -119,7 +122,40 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       uniqueTag,
       onboardingComplete: false,
       publicKey,
+      organization: org_name || '', // Legacy support
+      org_industry,
+      org_size,
     });
+
+    // Handle Organization Registration
+    let organization = null;
+    if (org_name) {
+      const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase(); // Secure 8-char invite code
+      organization = await Organization.create({
+        name: org_name,
+        industry: org_industry,
+        size: org_size,
+        owner: newUser._id,
+        inviteCode,
+        pineconeNamespace: `org-${newUser._id}`,
+      });
+
+      // Update user with organization reference if needed
+      // (For now keeping it simple with the string 'organization' field on User as well)
+
+      // Seed basic knowledge for the organization
+      await seedOrgKnowledge(organization, (newUser._id as any).toString());
+    } else if (req.body.inviteCode) {
+      // Handle joining an existing organization during signup
+      const existingOrg = await Organization.findOne({ inviteCode: req.body.inviteCode });
+      if (existingOrg) {
+        await User.findByIdAndUpdate(newUser._id, {
+          organization: existingOrg.name,
+          org_industry: existingOrg.industry,
+          role: 'employee',
+        });
+      }
+    }
 
     await Otp.create({
       userId: newUser._id,

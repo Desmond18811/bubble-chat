@@ -107,13 +107,16 @@ const getAidaBotUser = async () => {
  */
 const retrieveOrgContext = async (
   message: string,
-  userRole: string
+  userRole: string,
+  organizationId: string
 ): Promise<{ context: string; docsFound: number }> => {
   try {
     // Determine which access levels this user can see
-    const accessFilter: Record<string, any> = userRole === 'admin'
-      ? {} // admin sees everything
-      : { accessLevel: { $in: ['public', 'restricted'] } };
+    const accessFilter: Record<string, any> = { organizationId: organizationId };
+
+    if (userRole !== 'admin') {
+      accessFilter.accessLevel = { $in: ['public', 'restricted'] };
+    }
 
     // 1. PRIMARY: MongoDB full-text search (uses the text index on title+content+tags)
     let orgDocs: any[] = [];
@@ -332,7 +335,7 @@ export const chatWithAidaInConversation = async (req: Request, res: Response): P
         start_time: { $gt: new Date() },
         status: { $nin: ['done', 'cancelled'] },
       }).sort({ start_time: 1 }).limit(3).lean(),
-      retrieveOrgContext(message, userRole),
+      retrieveOrgContext(message, userRole, (user as any)?.organizationId || ''),
       User.findById(userId).select('contacts').lean().then(async (u: any) => {
         if (!u?.contacts?.length) return [];
         return User.find({ _id: { $in: u.contacts } }).select('full_name username').limit(15).lean();
@@ -602,7 +605,7 @@ export const chatWithAida = async (req: Request, res: Response): Promise<void> =
         start_time: { $gt: new Date() },
         status: { $nin: ['done', 'cancelled'] },
       }).sort({ start_time: 1 }).limit(3).lean(),
-      retrieveOrgContext(message, userRole),
+      retrieveOrgContext(message, userRole, (user as any)?.organizationId || ''),
       User.findById(userId).select('contacts').lean().then(async (u: any) => {
         if (!u?.contacts?.length) return [];
         return User.find({ _id: { $in: u.contacts } }).select('full_name username').limit(15).lean();

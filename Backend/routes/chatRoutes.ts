@@ -12,6 +12,7 @@ import {
   toggleChatPin,
   deleteChat,
   getUnreadChatCount,
+  toggleArchiveChat,
 } from '../controllers/chatController';
 
 
@@ -217,6 +218,9 @@ router.put('/clear/:chatId', clearChat);
 
 /** PUT /api/v1/chat/pin/:chatId — Toggle pin status */
 router.put('/pin/:chatId', toggleChatPin);
+
+/** PATCH /api/v1/chat/toggle-archive/:chatId — Toggle archive status */
+router.patch('/toggle-archive/:chatId', toggleArchiveChat);
 
 /**
  * @swagger
