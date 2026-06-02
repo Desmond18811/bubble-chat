@@ -11,6 +11,10 @@ import {
   toggleFollowUser,
   getUserFollowers,
   getUserFollowing,
+  getContacts,
+  getMyContacts,
+  addContact,
+  removeContact,
 } from '../controllers/userController';
 
 const router = express.Router();
@@ -127,8 +131,17 @@ router.post('/:userId/follow', toggleFollowUser);
 /** GET /api/v1/user/:userId/followers */
 router.get('/:userId/followers', getUserFollowers);
 
-/** GET /api/v1/user/:userId/following */
-router.get('/:userId/following', getUserFollowing);
+/** GET /api/v1/user/contacts/my — Get my contacts */
+router.get('/contacts/my', getMyContacts);
+
+/** GET /api/v1/user/contacts — Search contacts */
+router.get('/contacts', getContacts);
+
+/** POST /api/v1/user/contacts/add — Add a contact */
+router.post('/contacts/add', addContact);
+
+/** DELETE /api/v1/user/contacts/:userId — Remove a contact */
+router.delete('/contacts/:userId', removeContact);
 
 export default router;
 

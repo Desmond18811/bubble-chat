@@ -13,6 +13,7 @@ import {
   chatWithAidaInConversation,
   summarizeConversation,
   getConversationContext,
+  getAidaWritingSuggestions,
   // Org Knowledge Base (RAG)
   listOrgDocs,
   getOrgDoc,
@@ -33,6 +34,7 @@ router.get('/conversation-context/:conversationId', requireAuth, getConversation
 
 // ── Core conversational endpoints (AidaPage) ─────────────────────────────────
 router.post('/chat', requireAuth, chatWithAida);
+router.post('/writing-suggestions', requireAuth, getAidaWritingSuggestions);
 router.get('/daily-briefing', requireAuth, getDailyBriefing);
 router.get('/financial-advice', requireAuth, getFinancialAdvice);
 

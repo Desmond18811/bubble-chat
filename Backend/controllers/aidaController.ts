@@ -1314,3 +1314,39 @@ export const getConversationContext = async (req: Request, res: Response): Promi
     res.status(500).json({ error: 'Failed to generate conversation context.' });
   }
 };
+
+/**
+ * POST /api/v1/aida/writing-suggestions
+ * Gives real-time writing completions/suggestions as the user types.
+ */
+export const getAidaWritingSuggestions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { message, conversationId } = req.body;
+    const userId = (req.user as any)?._id;
+
+    if (!message || message.length < 3) {
+      res.status(200).json({ suggestions: [] });
+      return;
+    }
+
+    const conv = await Conversation.findById(conversationId).populate('users', 'full_name org_role');
+    const recipient = conv?.users?.find((u: any) => String(u._id) !== String(userId));
+    const recipientName = (recipient as any)?.full_name || 'them';
+
+    const systemPrompt = `You are Aida, a smart writing assistant. Provide 3 short message completions or follow-up suggestions (max 10 words each) for a user currently typing a message to ${recipientName}. Return ONLY a JSON array of strings.`;
+    const userPrompt = `The user has typed: "${message}". What are 3 ways they might want to finish or follow up this thought?`;
+
+    const raw = await callAIDA(systemPrompt, userPrompt, 150, 0.7);
+    let suggestions: string[] = [];
+    try {
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      suggestions = JSON.parse(cleaned);
+    } catch {
+      suggestions = raw.split('\n').map(s => s.replace(/^\d+\.\s*/, '').trim()).filter(s => s.length > 0).slice(0, 3);
+    }
+
+    res.status(200).json({ suggestions });
+  } catch (error) {
+    res.status(200).json({ suggestions: ['How are you?', 'Let me know if you can help.', 'Thanks!'] });
+  }
+};

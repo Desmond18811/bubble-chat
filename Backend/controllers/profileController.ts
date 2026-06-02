@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/users';
+import { UserImage } from '../models/userImage';
 import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
 
 export interface AuthRequest extends Request {
@@ -65,6 +66,8 @@ const formatUser = async (u: any, includePrivate = false) => {
     postsCount: u.postsCount ?? u.posts?.length ?? 0,
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,
+    // Add base64 fallback if available (optional, can be large)
+    avatarFallback: u.avatarFallback || null,
   };
 };
 
@@ -299,6 +302,19 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
     const fileKey = `avatars/${req.user._id}/${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
     const { url } = await uploadToFilebase(req.file.buffer, fileKey, req.file.mimetype);
 
+    // Store in database as well (base64 fallback)
+    const base64Data = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    await UserImage.findOneAndUpdate(
+      { userId: req.user._id },
+      {
+        imageUrl: url,
+        base64Data,
+        mimetype: req.file.mimetype,
+        userId: req.user._id
+      },
+      { upsert: true, new: true }
+    );
+
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { avatar: url },
@@ -309,6 +325,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
       message: 'Avatar uploaded and updated successfully.',
       data: {
         avatarUrl: url,
+        avatarFallback: base64Data,
         user: updatedUser ? await formatUser(updatedUser, true) : null,
       },
     });

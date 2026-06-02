@@ -299,39 +299,54 @@ export const getUserProfile = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-/**
- * Search users
- * GET /api/v1/user/search?search=query
- */
 export const searchUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const query = (req.query.search as string) || '';
+    const currentUser = await User.findById(req.user?._id).select('organization contacts role');
+
     let filter: any = {
-      _id: { $ne: req.user?._id },
       is_bot: { $ne: true },
+      _id: { $ne: req.user?._id }, // Exclude self
     };
 
-    // Privacy Fix: Always restrict search to same organization (except perhaps for global admins)
-    const currentUser = await User.findById(req.user?._id).select('organization role');
-    if (!currentUser?.organization && currentUser?.role !== 'admin') {
-      res.status(200).json({ message: 'No organization set.', total: 0, users: [] });
-      return;
-    }
-
-    if (currentUser?.role !== 'admin') {
-      filter.organization = currentUser?.organization;
-    }
-
     if (query) {
-      filter.$and = [
-        {
-          $or: [
-            { full_name: { $regex: query, $options: 'i' } },
-            { username: { $regex: query, $options: 'i' } },
-            { email: { $regex: query, $options: 'i' } },
-            { uniqueTag: { $regex: query, $options: 'i' } },
-          ]
-        }
+      // 1. Check for exact match on BubbleID or Email (allow finding new people)
+      const exactMatch = await User.findOne({
+        $or: [
+          { uniqueTag: query },
+          { email: query.toLowerCase() }
+        ]
+      }).select('_id');
+
+      if (exactMatch) {
+        // If exact match found, just return that user specifically
+        filter._id = exactMatch._id;
+      } else {
+        // 2. Regular search: restrict to Coworkers OR existing Contacts
+        const allowedIds = [...(currentUser?.contacts || [])];
+
+        filter.$and = [
+          {
+            $or: [
+              { full_name: { $regex: query, $options: 'i' } },
+              { username: { $regex: query, $options: 'i' } },
+              { email: { $regex: query, $options: 'i' } },
+              { uniqueTag: { $regex: query, $options: 'i' } },
+            ]
+          },
+          {
+            $or: [
+              { organization: currentUser?.organization }, // Coworkers
+              { _id: { $in: allowedIds } } // Saved Contacts
+            ]
+          }
+        ];
+      }
+    } else {
+      // No query: default to showing only Coworkers and Contacts
+      filter.$or = [
+        { organization: currentUser?.organization },
+        { _id: { $in: currentUser?.contacts || [] } }
       ];
     }
 
@@ -355,7 +370,7 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
  */
 export const getOnlineScannedUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const users = await User.find({ isOnline: true, is_bot: { $ne: true }, _id: { $ne: req.user?._id } })
+    const users = await User.find({ isOnline: true, is_bot: { $ne: true } })
       .select('full_name username avatar uniqueTag isOnline')
       .limit(50);
     res.status(200).json({ message: 'Online users fetched.', users: users.map(formatUser) });
@@ -434,7 +449,11 @@ export const getSuggestions = async (req: AuthRequest, res: Response): Promise<v
     const alreadyFollowing = ((currentUser as any)?.following || []).map((id: any) => id.toString());
     alreadyFollowing.push(req.user._id.toString());
 
-    const users = await User.find({ _id: { $nin: alreadyFollowing }, is_bot: { $ne: true } })
+    const users = await User.find({
+      _id: { $nin: alreadyFollowing },
+      is_bot: { $ne: true },
+      organization: currentUser?.organization // Only suggest within the org
+    })
       .select('-password -refreshToken -privateKey -zegoToken -otp -otpExpires -passwordResetToken')
       .limit(8);
 
