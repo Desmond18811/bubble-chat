@@ -129,10 +129,13 @@ export const initSocket = (server: HttpServer) => {
     });
 
     // ─── Call Signaling ───────────────────────────────────────────────────────
-    socket.on('call_offer', async (data: { toUserId: string; roomId: string }) => {
+    socket.on('call_offer', async (data: { toUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
       const recipient = await User.findById(data.toUserId);
       if (recipient && recipient.socketId) {
-        io.to(recipient.socketId).emit('incoming_call', { fromUserId: userId, roomId: data.roomId });
+        io.to(recipient.socketId).emit('incoming_call', {
+          ...data,
+          fromUserId: userId
+        });
       }
     });
 
