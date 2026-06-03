@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Message } from '../models/messages';
 import { Conversation } from '../models/conversations';
-import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
+import { uploadToFilebase, getSignedMediaUrl, streamS3Object } from '../utils/filebase';
 import * as fs from 'fs';
 import { enqueueMessage } from '../utils/queue';
 
@@ -30,6 +30,7 @@ const formatSender = async (u: any) => {
 };
 
 const formatMessage = async (m: any) => ({
+  _id: m._id,       // always include _id for frontend compatibility
   id: m._id,
   content: m.content || null,
 
@@ -76,7 +77,38 @@ const formatMessage = async (m: any) => ({
  * POST /api/v1/message
  */
 export const sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { content, chatId, message_type, mediaUrl, mediaType, parent_message, fileSize, media_metadata, is_encrypted, location, mentions } = req.body;
+  let { content, chatId, message_type, mediaUrl, mediaType, parent_message, fileSize, media_metadata, is_encrypted, location, mentions, media_duration } = req.body;
+
+  if (req.file) {
+    try {
+      const result = await uploadToFilebase(
+        fs.createReadStream(req.file.path),
+        req.file.originalname,
+        req.file.mimetype
+      );
+      fs.unlinkSync(req.file.path);
+      mediaUrl = result.url;
+      fileSize = req.file.size;
+      
+      if (!message_type || message_type === 'text') {
+        if (req.file.mimetype.startsWith('image/')) message_type = 'image';
+        else if (req.file.mimetype.startsWith('video/')) message_type = 'video';
+        else if (req.file.mimetype.startsWith('audio/')) message_type = 'voice';
+        else message_type = 'file';
+      }
+      mediaType = message_type;
+
+      const durationVal = media_duration ? parseFloat(media_duration) : undefined;
+      media_metadata = {
+        ...media_metadata,
+        mime_type: req.file.mimetype,
+        ...(durationVal && { duration: durationVal })
+      };
+    } catch (uploadErr: any) {
+      res.status(500).json({ message: `File upload failed: ${uploadErr.message}` });
+      return;
+    }
+  }
 
   if ((!content && !mediaUrl) || !chatId) {
     res.status(400).json({ message: 'Missing required message fields' });
@@ -336,8 +368,7 @@ export const proxyMedia = async (req: AuthRequest, res: Response): Promise<void>
     return;
   }
   try {
-    const signedUrl = await getSignedMediaUrl(url as string);
-    res.redirect(signedUrl);
+    await streamS3Object(url as string, res);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

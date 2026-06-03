@@ -2,8 +2,16 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as fs from 'fs';
+import * as path from 'path';
+import { Response } from 'express';
+import { Readable } from 'stream';
 import dotenv from 'dotenv';
 dotenv.config();
+
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const BUCKET = process.env.FILEBASE_BUCKET as string;
 
@@ -39,6 +47,28 @@ export const extractKeyFromUrl = (url: string): string => {
   }
 };
 
+const saveFileLocally = async (
+  fileData: Buffer | fs.ReadStream,
+  fileKey: string
+): Promise<{ url: string; key: string }> => {
+  const safeFilename = fileKey.replace(/\//g, '_');
+  const localPath = path.join(uploadsDir, safeFilename);
+
+  if (fileData instanceof fs.ReadStream) {
+    const writeStream = fs.createWriteStream(localPath);
+    await new Promise((resolve, reject) => {
+      fileData.pipe(writeStream);
+      writeStream.on('finish', resolve);
+      writeStream.on('error', reject);
+    });
+  } else {
+    fs.writeFileSync(localPath, fileData);
+  }
+
+  const relativeUrl = `/uploads/${safeFilename}`;
+  return { url: relativeUrl, key: relativeUrl };
+};
+
 /**
  * Upload a file stream or buffer to Filebase (private bucket — no ACL).
  * IMPORTANT: We store the KEY (not the URL) for later presigning.
@@ -49,6 +79,15 @@ export const uploadToFilebase = async (
   fileKey: string,
   contentType: string
 ): Promise<{ url: string; key: string }> => {
+  const accessKey = process.env.FILEBASE_ACCESS_KEY;
+  const secretKey = process.env.FILEBASE_SECRET_KEY;
+  const bypassFilebase = process.env.BYPASS_FILEBASE === 'true' || !accessKey || !secretKey;
+  
+  if (bypassFilebase) {
+    console.log('ℹ️ Bypassing Filebase, saving file locally.');
+    return saveFileLocally(fileData, fileKey);
+  }
+
   try {
     const upload = new Upload({
       client: s3Client,
@@ -68,8 +107,15 @@ export const uploadToFilebase = async (
     const url = `https://s3.filebase.com/${BUCKET}/${fileKey}`;
     return { url, key: fileKey };
   } catch (error) {
-    console.error('[Filebase] Upload Error:', error);
-    throw error;
+    console.warn('⚠️ S3 Upload failed, falling back to local storage:', error);
+    if (fileData instanceof fs.ReadStream) {
+      const filePath = (fileData as any).path;
+      if (filePath && typeof filePath === 'string' && fs.existsSync(filePath)) {
+        const newStream = fs.createReadStream(filePath);
+        return saveFileLocally(newStream, fileKey);
+      }
+    }
+    return saveFileLocally(fileData, fileKey);
   }
 };
 
@@ -86,5 +132,73 @@ export const getSignedMediaUrl = async (keyOrUrl: string, downloadName?: string)
     ...(downloadName && { ResponseContentDisposition: `attachment; filename="${downloadName}"` })
   });
   return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+};
+
+/**
+ * Streams a Filebase object directly to the client response with proper cross-origin headers.
+ * Helps prevent ERR_BLOCKED_BY_RESPONSE.NotSameOrigin from browser security policies.
+ */
+export const streamS3Object = async (keyOrUrl: string, res: Response, downloadName?: string): Promise<void> => {
+  const key = keyOrUrl.startsWith('http') ? extractKeyFromUrl(keyOrUrl) : keyOrUrl;
+  
+  // Handle local fallback files directly
+  if (key.startsWith('/uploads/') || key.startsWith('uploads/')) {
+    const filename = key.replace(/^\/?uploads\//, '');
+    const localPath = path.join(uploadsDir, filename);
+    if (fs.existsSync(localPath)) {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      if (downloadName) {
+        res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      }
+      fs.createReadStream(localPath).pipe(res);
+      return;
+    } else {
+      res.status(404).json({ message: 'Local file not found' });
+      return;
+    }
+  }
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      ...(downloadName && { ResponseContentDisposition: `attachment; filename="${downloadName}"` })
+    });
+    
+    const response = await s3Client.send(command);
+    
+    if (response.ContentType) {
+      res.setHeader('Content-Type', response.ContentType);
+    }
+    if (response.ContentLength) {
+      res.setHeader('Content-Length', response.ContentLength);
+    }
+    if (response.ContentRange) {
+      res.setHeader('Content-Range', response.ContentRange);
+    }
+    if (response.AcceptRanges) {
+      res.setHeader('Accept-Ranges', response.AcceptRanges);
+    }
+    
+    // Explicitly allow cross-origin embedder policies to access this resource
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    if (downloadName) {
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+    }
+    
+    const stream = response.Body as Readable;
+    stream.pipe(res);
+  } catch (error: any) {
+    console.error(`[Filebase] Streaming error for key: ${key}`, error);
+    // Fallback: If it's a NoSuchKey error or similar, return 404
+    if (error.name === 'NoSuchKey') {
+      res.status(404).json({ message: 'File not found on storage server' });
+    } else {
+      res.status(500).json({ message: 'Error streaming file: ' + error.message });
+    }
+  }
 };
 

@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import dotenv from 'dotenv';
@@ -113,7 +114,10 @@ const strictLimiter = rateLimit({
 app.use('/api/v1/auth', strictLimiter);
 app.use('/api/v1/user/search', strictLimiter); // Prevent bulk scraping of identities
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(express.json());
 
 // JSON Parsing Error Handler
@@ -297,6 +301,9 @@ app.get('/', (req: Request, res: Response) => {
     status: 'online'
   });
 });
+
+// Static upload folder bypass
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
 app.use('/api/v1/chat', chatRoutes);

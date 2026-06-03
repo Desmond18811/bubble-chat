@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Story } from '../models/stories';
-import { uploadToFilebase, getSignedMediaUrl, extractKeyFromUrl } from '../utils/filebase';
+import { uploadToFilebase, getSignedMediaUrl, extractKeyFromUrl, streamS3Object } from '../utils/filebase';
 import { AuthRequest } from './userController';
 import * as fs from 'fs';
 
@@ -142,9 +142,8 @@ export const proxyStoryMedia = async (req: Request, res: Response): Promise<void
   try {
     const rawUrl = req.query.url as string;
     if (!rawUrl) { res.status(400).json({ message: 'Missing url parameter' }); return; }
-    const signedUrl = await getSignedMediaUrl(rawUrl);
-    res.redirect(signedUrl);
+    await streamS3Object(rawUrl, res);
   } catch (error: any) {
-    res.status(500).json({ message: 'Failed to generate signed URL: ' + error.message });
+    res.status(500).json({ message: 'Failed to stream story media: ' + error.message });
   }
 };

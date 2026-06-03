@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { WorkspaceFile } from '../models/workspaceFile';
-import { uploadToFilebase, getSignedMediaUrl, extractKeyFromUrl } from '../utils/filebase';
+import { uploadToFilebase, getSignedMediaUrl, extractKeyFromUrl, streamS3Object } from '../utils/filebase';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '../utils/filebase';
 import * as fs from 'fs';
@@ -377,8 +377,8 @@ export const proxyWorkspaceFile = async (req: AuthRequest, res: Response): Promi
     }
 
     const isDownload = req.query.download === 'true';
-    const signedUrl = await getSignedMediaUrl(file.fileKey, isDownload ? file.originalName || file.name : undefined);
-    res.redirect(signedUrl);
+    const downloadName = isDownload ? file.originalName || file.name : undefined;
+    await streamS3Object(file.fileKey, res, downloadName);
 
   } catch (err: any) {
     res.status(500).json({ message: err.message });
