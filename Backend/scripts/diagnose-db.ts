@@ -11,8 +11,14 @@ async function diagnose() {
         await mongoose.connect(MONGODB_URI);
         console.log('--- Database Diagnosis ---');
 
+        const db = mongoose.connection.db;
+        if (!db) {
+            console.error('Database object is undefined.');
+            return;
+        }
+
         // Check for users
-        const users = await mongoose.connection.db.collection('users').find({}).toArray();
+        const users = await db.collection('users').find({}).toArray();
         console.log(`Total Users: ${users.length}`);
         const emailMap: Record<string, number> = {};
         users.forEach(u => {
@@ -29,7 +35,7 @@ async function diagnose() {
         });
 
         // Check for conversations
-        const conversations = await mongoose.connection.db.collection('conversations').find({}).toArray();
+        const conversations = await db.collection('conversations').find({}).toArray();
         console.log(`Total Conversations: ${conversations.length}`);
         conversations.forEach(c => {
             console.log(`- Chat: ${c.chatName} | ID: ${c._id} | Group: ${c.isGroupChat} | Users: ${c.users.length}`);

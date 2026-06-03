@@ -201,3 +201,18 @@ export const saveTranscriptChunk = async (req: Request, res: Response) => {
     res.status(500).json({ message: err.message });
   }
 }; 
+
+// NEW: GET /api/v1/meet/livekit-token
+export const getLiveKitToken = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id?.toString() || 'guest';
+    const userName = (req as any).user?.full_name || (req as any).user?.username || 'Colleague';
+    const roomId = req.query.roomId as string || `meet-${Math.random().toString(36).substring(7)}`;
+
+    const { generateLiveKitToken } = await import('../utils/livekitService');
+    const token = await generateLiveKitToken(roomId, userName, userId);
+    res.json({ token });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+}; 

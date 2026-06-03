@@ -4,9 +4,11 @@ import { User } from '../models/users';
 import { Message } from '../models/messages';
 import { getSignedMediaUrl } from '../utils/filebase';
 import mongoose from 'mongoose';
+import { getIO } from '../utils/socket';
 
 export interface AuthRequest extends Request {
   user?: any;
+  io?: any;
 }
 
 // ─── Shared format helpers ────────────────────────────────────────────────────
@@ -126,9 +128,34 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
       });
 
     if (existing.length > 0) {
+      const chat = existing[0];
+      // Restore conversation if deleted
+      await Conversation.findByIdAndUpdate(chat._id, {
+        $pull: { deletedBy: { $in: [req.user._id, userId] } }
+      });
+
+      const updated = await Conversation.findById(chat._id)
+        .populate('users', '-password -refreshToken -privateKey -zegoToken')
+        .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
+        .populate({
+          path: 'latestMessage',
+          populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline' },
+        });
+
+      const formatted = await formatConversation(updated);
+
+      try {
+        const io = req.io || getIO();
+        [req.user._id, userId].forEach((uId: any) => {
+          io.to(String(uId)).emit('new_chat', formatted);
+        });
+      } catch (socketErr) {
+        console.error('Socket emit new_chat failed:', socketErr);
+      }
+
       res.status(200).json({
         message: 'Existing chat retrieved.',
-        conversation: await formatConversation(existing[0]),
+        conversation: formatted,
       });
     } else {
       const created = await Conversation.create({
@@ -141,9 +168,20 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
         .populate('users', '-password -refreshToken -privateKey')
         .populate('groupAdmin', '-password -refreshToken -privateKey');
 
+      const formatted = await formatConversation(full);
+
+      try {
+        const io = req.io || getIO();
+        [req.user._id, userId].forEach((uId: any) => {
+          io.to(String(uId)).emit('new_chat', formatted);
+        });
+      } catch (socketErr) {
+        console.error('Socket emit new_chat failed:', socketErr);
+      }
+
       res.status(201).json({
         message: 'New direct conversation started.',
-        conversation: await formatConversation(full),
+        conversation: formatted,
       });
     }
   } catch (error: any) {
@@ -248,9 +286,20 @@ export const createGroupChat = async (req: AuthRequest, res: Response): Promise<
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');
 
+    const formatted = await formatConversation(full);
+
+    try {
+      const io = req.io || getIO();
+      users.forEach((uId: any) => {
+        io.to(uId.toString()).emit('new_chat', formatted);
+      });
+    } catch (socketErr) {
+      console.error('Socket emit new_chat for group failed:', socketErr);
+    }
+
     res.status(201).json({
       message: `Group "${req.body.name}" created successfully.`,
-      conversation: await formatConversation(full),
+      conversation: formatted,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -477,6 +526,13 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
       { chat: chatId },
       { $addToSet: { deletedFor: userId } }
     );
+
+    try {
+      const io = req.io || getIO();
+      io.to(String(userId)).emit('chat_deleted', { chatId, userId: String(userId) });
+    } catch (socketErr) {
+      console.error('Socket emit chat_deleted failed:', socketErr);
+    }
 
     res.status(200).json({
       message: 'Chat deleted from your view.',

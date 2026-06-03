@@ -93,6 +93,14 @@ export const initSocket = (server: HttpServer) => {
       if (data.toUserId) io.to(data.toUserId).emit('typing_stop', { fromUserId: userId, chatId: data.chatId });
     });
 
+    socket.on('typing', (data: { chatId?: string }) => {
+      if (data.chatId) socket.to(data.chatId).emit('typing_start', { fromUserId: userId, chatId: data.chatId });
+    });
+
+    socket.on('stop_typing', (data: { chatId?: string }) => {
+      if (data.chatId) socket.to(data.chatId).emit('typing_stop', { fromUserId: userId, chatId: data.chatId });
+    });
+
     // ─── Voice Recording Indicator ────────────────────────────────────────────
     socket.on('recording_start', (data: { chatId: string }) => {
       socket.to(data.chatId).emit('recording_start', { fromUserId: userId, chatId: data.chatId });

@@ -4,9 +4,11 @@ import { Conversation } from '../models/conversations';
 import { uploadToFilebase, getSignedMediaUrl, streamS3Object } from '../utils/filebase';
 import * as fs from 'fs';
 import { enqueueMessage } from '../utils/queue';
+import { getIO } from '../utils/socket';
 
 export interface AuthRequest extends Request {
   user?: any;
+  io?: any;
 }
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
@@ -158,7 +160,18 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       $pull: { deletedBy: { $in: convo.users } }
     });
 
-    res.status(201).json(await formatMessage(fullMessage));
+    const formatted = await formatMessage(fullMessage);
+    try {
+      const io = req.io || getIO();
+      io.to(chatId).emit('new_message', formatted);
+      convo.users.forEach((u: any) => {
+        io.to(u.toString()).emit('new_message', formatted);
+      });
+    } catch (socketErr) {
+      console.error('Socket emit new_message failed:', socketErr);
+    }
+
+    res.status(201).json(formatted);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -283,6 +296,23 @@ export const reactToMessage = async (req: AuthRequest, res: Response): Promise<v
     }
 
     await msg.save();
+    try {
+      const io = req.io || getIO();
+      const reactionPayload = {
+        messageId,
+        chatId: String(msg.chat),
+        reactions: msg.reactions
+      };
+      io.to(String(msg.chat)).emit('message_reaction', reactionPayload);
+      const convo = await Conversation.findById(msg.chat);
+      if (convo) {
+        convo.users.forEach((u: any) => {
+          io.to(u.toString()).emit('message_reaction', reactionPayload);
+        });
+      }
+    } catch (socketErr) {
+      console.error('Socket emit message_reaction failed:', socketErr);
+    }
     res.status(200).json({ message: 'Reaction updated', reactions: msg.reactions });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -308,9 +338,36 @@ export const deleteMessage = async (req: AuthRequest, res: Response): Promise<vo
         return;
       }
       await Message.findByIdAndDelete(messageId);
+      try {
+        const io = req.io || getIO();
+        const deletePayload = {
+          messageId,
+          chatId: String(msg.chat),
+          deletedForEveryone: true
+        };
+        io.to(String(msg.chat)).emit('message_deleted', deletePayload);
+        const convo = await Conversation.findById(msg.chat);
+        if (convo) {
+          convo.users.forEach((u: any) => {
+            io.to(u.toString()).emit('message_deleted', deletePayload);
+          });
+        }
+      } catch (socketErr) {
+        console.error('Socket emit message_deleted failed:', socketErr);
+      }
       res.status(200).json({ message: 'Message deleted for everyone' });
     } else {
       await Message.findByIdAndUpdate(messageId, { $addToSet: { deletedFor: userId } });
+      try {
+        const io = req.io || getIO();
+        io.to(String(userId)).emit('message_deleted', {
+          messageId,
+          chatId: String(msg.chat),
+          deletedForUser: String(userId)
+        });
+      } catch (socketErr) {
+        console.error('Socket emit message_deleted for user failed:', socketErr);
+      }
       res.status(200).json({ message: 'Message deleted for you' });
     }
   } catch (error: any) {
