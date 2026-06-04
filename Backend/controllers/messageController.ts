@@ -61,8 +61,12 @@ const formatMessage = async (m: any) => ({
   reactions: m.reactions || [],
   edit_history: m.edit_history || [],
   mentions: Array.isArray(m.mentions) ? await Promise.all(m.mentions.map(formatSender)) : [],
-  isRead: m.isRead ?? false,
   readBy: Array.isArray(m.readBy) ? await Promise.all(m.readBy.map(formatSender)) : [],
+  isRead: m.readBy && m.readBy.some((r: any) => {
+    const senderId = String(m.sender?._id || m.sender?.id || m.sender);
+    const readerId = String(r._id || r.id || r);
+    return readerId !== senderId;
+  }),
 
   sender: m.sender ? await formatSender(m.sender) : null,
   chat: m.chat
@@ -388,6 +392,14 @@ export const markAsRead = async (req: AuthRequest, res: Response): Promise<void>
       { chat: chatId, sender: { $ne: userId } },
       { $addToSet: { readBy: userId }, isRead: true }
     );
+
+    try {
+      const io = req.io || getIO();
+      io.to(chatId).emit('messages_read', { chatId, userId });
+    } catch (socketErr) {
+      console.error('Socket emit messages_read failed:', socketErr);
+    }
+
     res.status(200).json({ message: 'Messages marked as read' });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

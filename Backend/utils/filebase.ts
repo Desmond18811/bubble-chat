@@ -125,6 +125,9 @@ export const uploadToFilebase = async (
  * If downloadName is provided, explicitly triggers browser "Save As" mechanics.
  */
 export const getSignedMediaUrl = async (keyOrUrl: string, downloadName?: string): Promise<string> => {
+  if (keyOrUrl.startsWith('http') && !keyOrUrl.includes('filebase.com')) {
+    return keyOrUrl;
+  }
   const key = keyOrUrl.startsWith('http') ? extractKeyFromUrl(keyOrUrl) : keyOrUrl;
   const command = new GetObjectCommand({
     Bucket: BUCKET,
@@ -139,6 +142,10 @@ export const getSignedMediaUrl = async (keyOrUrl: string, downloadName?: string)
  * Helps prevent ERR_BLOCKED_BY_RESPONSE.NotSameOrigin from browser security policies.
  */
 export const streamS3Object = async (keyOrUrl: string, res: Response, downloadName?: string): Promise<void> => {
+  if (keyOrUrl.startsWith('http') && !keyOrUrl.includes('filebase.com')) {
+    res.redirect(keyOrUrl);
+    return;
+  }
   const key = keyOrUrl.startsWith('http') ? extractKeyFromUrl(keyOrUrl) : keyOrUrl;
   
   // Handle local fallback files directly

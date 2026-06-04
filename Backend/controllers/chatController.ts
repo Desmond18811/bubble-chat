@@ -53,7 +53,7 @@ const formatUser = async (u: any) => {
   };
 };
 
-const formatConversation = async (c: any) => ({
+const formatConversation = async (c: any, userId?: any) => ({
   id: c._id,
   chatName: (c.chatName && c.chatName !== 'direct') ? c.chatName : null,
   isGroupChat: c.isGroupChat ?? false,
@@ -77,18 +77,24 @@ const formatConversation = async (c: any) => ({
   mutedBy: c.mutedBy || [],
   archivedBy: c.archivedBy || [],
 
-  latestMessage: c.latestMessage ? {
+  latestMessage: (c.latestMessage && (!userId || !c.latestMessage.deletedFor || !c.latestMessage.deletedFor.some((id: any) => String(id) === String(userId)))) ? {
     id: c.latestMessage._id,
     content: c.latestMessage.content || null,
     mediaUrl: c.latestMessage.mediaUrl || null,
     mediaType: c.latestMessage.mediaType || null,
     message_type: c.latestMessage.message_type || 'text',
     sender: c.latestMessage.sender ? {
-      id: c.latestMessage.sender._id,
-      full_name: c.latestMessage.sender.full_name,
-      avatar: c.latestMessage.sender.avatar
+      id: c.latestMessage.sender._id || c.latestMessage.sender,
+      full_name: c.latestMessage.sender.full_name || null,
+      avatar: c.latestMessage.sender.avatar || null
     } : null,
-    sentAt: c.latestMessage.createdAt
+    sentAt: c.latestMessage.createdAt,
+    readBy: c.latestMessage.readBy || [],
+    isRead: c.latestMessage.readBy && c.latestMessage.readBy.some((r: any) => {
+      const senderId = String(c.latestMessage.sender?._id || c.latestMessage.sender?.id || c.latestMessage.sender);
+      const readerId = String(r._id || r.id || r);
+      return readerId !== senderId;
+    })
   } : null,
   unreadCount: c.unreadCount || 0,
   updatedAt: c.updatedAt
@@ -142,7 +148,7 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
           populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline' },
         });
 
-      const formatted = await formatConversation(updated);
+      const formatted = await formatConversation(updated, req.user._id);
 
       try {
         const io = req.io || getIO();
@@ -168,7 +174,7 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
         .populate('users', '-password -refreshToken -privateKey')
         .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-      const formatted = await formatConversation(full);
+      const formatted = await formatConversation(full, req.user._id);
 
       try {
         const io = req.io || getIO();
@@ -200,9 +206,10 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
   }
 
   try {
+    const userObjectId = new mongoose.Types.ObjectId(req.user._id);
     const results = await Conversation.find({
-      users: { $elemMatch: { $eq: req.user._id } },
-      deletedBy: { $ne: req.user._id },
+      users: userObjectId,
+      deletedBy: { $ne: userObjectId },
     })
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey')
@@ -233,7 +240,7 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
     });
 
     const formattedConversations = await Promise.all(results.map(async (c) => {
-      const formatted = await formatConversation(c);
+      const formatted = await formatConversation(c, req.user._id);
       return {
         ...formatted,
         unreadCount: unreadMap.get(c._id.toString()) || 0
@@ -286,7 +293,7 @@ export const createGroupChat = async (req: AuthRequest, res: Response): Promise<
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-    const formatted = await formatConversation(full);
+    const formatted = await formatConversation(full, req.user._id);
 
     try {
       const io = req.io || getIO();
@@ -329,7 +336,7 @@ export const renameGroup = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(200).json({
       message: `Group renamed to "${chatName}" successfully.`,
-      conversation: await formatConversation(updated),
+      conversation: await formatConversation(updated, req.user?._id),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -362,7 +369,7 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
     res.status(200).json({
       message: 'Member added to group successfully.',
       added_member: addedUser ? await formatUser(addedUser) : { id: userId },
-      conversation: await formatConversation(updated),
+      conversation: await formatConversation(updated, req.user?._id),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -393,7 +400,7 @@ export const removeFromGroup = async (req: AuthRequest, res: Response): Promise<
     res.status(200).json({
       message: 'Member removed from group successfully.',
       removed_user_id: userId,
-      conversation: await formatConversation(updated),
+      conversation: await formatConversation(updated, req.user?._id),
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

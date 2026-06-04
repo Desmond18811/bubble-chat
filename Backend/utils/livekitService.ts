@@ -5,8 +5,8 @@ export const generateLiveKitToken = async (
   participantName: string,
   identity: string
 ): Promise<string> => {
-  const apiKey = process.env.LIVEKIT_API_KEY;
-  const apiSecret = process.env.LIVEKIT_API_SECRET;
+  const apiKey = process.env.LIVEKIT_API_KEY || process.env.VITE_LIVEKIT_API_KEY;
+  const apiSecret = process.env.LIVEKIT_API_SECRET || process.env.VITE_LIVEKIT_API_SECRET;
 
   if (!apiKey || !apiSecret) {
     throw new Error('LiveKit credentials are not configured in environment variables');
