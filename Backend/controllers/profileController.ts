@@ -501,13 +501,25 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
 
   const { 
     organization, org_role, org_industry, org_size, bio, full_name, phone_number, app_background, avatar,
-    gender, status_message, mood_emoji, hobbies, location
+    gender, status_message, mood_emoji, hobbies, location, username
   } = req.body;
 
   const validOrgSizes = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
   if (org_size && !validOrgSizes.includes(org_size)) {
     res.status(400).json({ message: 'Invalid org_size value.' });
     return;
+  }
+
+  // Check username uniqueness if being set
+  if (username) {
+    const existing = await User.findOne({
+      username: username.toLowerCase(),
+      _id: { $ne: req.user._id },
+    });
+    if (existing) {
+      res.status(409).json({ message: 'This username is already taken.' });
+      return;
+    }
   }
 
   try {
@@ -528,6 +540,7 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     if (mood_emoji !== undefined) updateData.mood_emoji = mood_emoji;
     if (hobbies !== undefined) updateData.hobbies = hobbies;
     if (location !== undefined) updateData.location = location;
+    if (username !== undefined) updateData.username = username.toLowerCase();
 
     const updated = await User.findByIdAndUpdate(
       req.user._id,
