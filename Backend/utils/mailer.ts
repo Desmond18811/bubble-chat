@@ -13,7 +13,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_ADDRESS = process.env.SMTP_FROM_EMAIL || 'noreply@yourdomain.com';
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'Bubble Chat';
 
-export const sendMail = async (to: string, subject: string, html: string) => {
+export const sendMail = async (to: string, subject: string, html: string, attachments?: any[]) => {
   if (!process.env.RESEND_API_KEY) {
     console.error(`❌ Mailer: RESEND_API_KEY is missing from environment variables.`);
     throw new Error('RESEND_API_KEY is not configured');
@@ -25,6 +25,7 @@ export const sendMail = async (to: string, subject: string, html: string) => {
       to,
       subject,
       html,
+      ...(attachments ? { attachments } : {}),
     });
 
     if (error) {
@@ -208,45 +209,20 @@ export const sendMeetingTranscriptEmail = async (
   to: string,
   name: string,
   meetingTitle: string,
-  transcriptHtml: string,
-  summary: string
+  transcriptRaw: string
 ) => {
-  const subject = `Meeting Summary & Transcript: ${meetingTitle}`;
+  const subject = `Meeting Transcript: ${meetingTitle}`;
 
-  // Simple chat log parser for raw transcripts to build beautiful dialog bubbles
-  let parsedTranscriptHtml = '';
-  const lines = transcriptHtml.split(/<br\s*\/?>|\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    
-    const colonIndex = trimmed.indexOf(':');
-    if (colonIndex > 0 && colonIndex < 30) {
-      const speaker = trimmed.substring(0, colonIndex).trim();
-      const text = trimmed.substring(colonIndex + 1).trim();
-      const isAida = speaker.toLowerCase().includes('aida') || speaker.toLowerCase().includes('assistant');
-      
-      parsedTranscriptHtml += `
-        <div style="margin-bottom: 16px; text-align: left;">
-          <div style="font-size: 10px; font-weight: 800; color: ${isAida ? '#6c5ce7' : '#1f2030'}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-family: 'Poppins', 'Segoe UI', sans-serif;">
-            ${speaker}
-          </div>
-          <div style="display: inline-block; background-color: ${isAida ? '#f3f0ff' : '#f8fafc'}; border: 1px solid ${isAida ? '#e5dbff' : '#e2e8f0'}; border-radius: 16px; padding: 12px 16px; font-size: 13.5px; line-height: 1.5; color: #2d3748; max-width: 85%; font-family: 'Segoe UI', sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-            ${text}
-          </div>
-        </div>
-      `;
-    } else {
-      parsedTranscriptHtml += `
-        <div style="margin-bottom: 12px; font-size: 13px; line-height: 1.6; color: #718096; text-align: left; font-style: italic; font-family: 'Segoe UI', sans-serif; padding-left: 8px; border-left: 2px solid #e2e8f0;">
-          ${trimmed}
-        </div>
-      `;
-    }
-  }
-  if (!parsedTranscriptHtml) {
-    parsedTranscriptHtml = `<div style="text-align: center; color: #a0aec0; font-style: italic; font-size: 13.5px; padding: 20px 0;">No transcript recorded.</div>`;
-  }
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const mdContent = `# Transcript: ${meetingTitle}\n\n${transcriptRaw || 'No transcript recorded.'}\n\n---\nDate: ${dateStr}\n`;
+  const attachmentBase64 = Buffer.from(mdContent).toString('base64');
+  const filename = `transcript-${meetingTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'meeting'}.md`;
 
   const html = `
     <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #fbfbfe; border-radius: 28px; overflow: hidden; border: 1px solid #eae7fa; box-shadow: 0 15px 35px -5px rgba(108, 92, 231, 0.06);">
@@ -258,27 +234,14 @@ export const sendMeetingTranscriptEmail = async (
       
       <!-- Body -->
       <div style="padding: 44px 36px; background-color: #ffffff;">
-        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 14px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">Meeting Minutes 📝</h2>
+        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 14px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">Meeting Transcript 📝</h2>
         <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 12px;">Hello ${name},</p>
         <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 28px;">
-          Here are the summary and details for your conversation: <strong style="color: #6c5ce7;">${meetingTitle}</strong>.
+          Your meeting <strong style="color: #6c5ce7;">${meetingTitle}</strong> has ended. We have attached the full meeting transcript file (.md) below for your reference.
         </p>
         
-        <!-- Summary Box -->
-        <div style="background-color: #efedfb; border-left: 5px solid #6c5ce7; padding: 22px; border-radius: 18px; margin-bottom: 32px; text-align: left; box-shadow: inset 0 1px 3px rgba(108,92,231,0.05);">
-          <h3 style="font-size: 14px; font-weight: 800; color: #6c5ce7; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Poppins', 'Segoe UI', sans-serif;">Aida AI Summary</h3>
-          <p style="font-size: 14px; color: #2d3748; margin: 0; line-height: 1.65; font-family: 'Segoe UI', sans-serif;">${summary || 'No summary available.'}</p>
-        </div>
-
-        <!-- Transcript Heading -->
-        <h3 style="font-size: 14px; font-weight: 800; color: #1f2030; margin: 0 0 14px; text-transform: uppercase; letter-spacing: 1.5px; text-align: left; font-family: 'Poppins', 'Segoe UI', sans-serif;">Parsed Dialogue</h3>
-        
-        <div style="background-color: #ffffff; border: 1px solid #eae7fa; padding: 24px; border-radius: 20px; max-height: 320px; overflow-y: auto; text-align: left; box-shadow: 0 4px 12px rgba(108,92,231,0.02);">
-          ${parsedTranscriptHtml}
-        </div>
-        
         <p style="font-size: 12px; color: #9a9aab; line-height: 1.7; margin-top: 28px; text-align: center; font-family: 'Segoe UI', sans-serif;">
-          This transcript and summary have been indexed inside your organization's Brain for instant search and retrieval.
+          This transcript has been processed and saved according to your preferences.
         </p>
       </div>
 
@@ -288,7 +251,13 @@ export const sendMeetingTranscriptEmail = async (
       </div>
     </div>
   `;
-  return await sendMail(to, subject, html);
+
+  return await sendMail(to, subject, html, [
+    {
+      content: attachmentBase64,
+      filename,
+    }
+  ]);
 };
 
 /**

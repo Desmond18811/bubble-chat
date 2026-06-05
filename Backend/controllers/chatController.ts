@@ -72,6 +72,7 @@ const formatConversation = async (c: any, userId?: any) => ({
   },
   theme: c.theme || 'default',
   is_broadcast: c.is_broadcast ?? false,
+  inviteCode: c.inviteCode || null,
 
   // User context
   mutedBy: c.mutedBy || [],
@@ -282,11 +283,15 @@ export const createGroupChat = async (req: AuthRequest, res: Response): Promise<
   users.push(req.user._id);
 
   try {
+    const crypto = await import('crypto');
+    const groupInviteCode = 'grp-' + crypto.randomBytes(6).toString('hex');
+
     const group = await Conversation.create({
       chatName: req.body.name,
       users,
       isGroupChat: true,
       groupAdmin: req.user._id,
+      inviteCode: groupInviteCode,
     });
 
     const full = await Conversation.findById(group._id)
@@ -607,6 +612,67 @@ export const toggleArchiveChat = async (req: AuthRequest, res: Response): Promis
     res.status(200).json({
       message: isArchived ? 'Chat unarchived' : 'Chat archived',
       isArchived: !isArchived,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Join a group chat by invite code
+ * POST /api/v1/chat/group/join
+ */
+export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { inviteCode } = req.body;
+  const userId = req.user?._id;
+
+  if (!inviteCode) {
+    res.status(400).json({ message: 'inviteCode is required' });
+    return;
+  }
+  if (!userId) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const group = await Conversation.findOne({ inviteCode, isGroupChat: true })
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
+
+    if (!group) {
+      res.status(404).json({ message: 'Group chat not found' });
+      return;
+    }
+
+    // Check if user is already in the group
+    const isMember = group.users.some((u: any) => String(u._id || u) === String(userId));
+    if (!isMember) {
+      group.users.push(userId);
+      await group.save();
+    }
+
+    const updated = await Conversation.findById(group._id)
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
+
+    const formatted = await formatConversation(updated, userId);
+
+    // Broadcast socket event
+    try {
+      const io = req.io || getIO();
+      io.to(userId.toString()).emit('new_chat', formatted);
+      // Emit to existing group members that a new user joined
+      updated?.users.forEach((u: any) => {
+        io.to(String(u._id || u)).emit('member_added', { chatId: group._id, member: formatted.users.find((x: any) => String(x.id) === String(userId)) });
+      });
+    } catch (socketErr) {
+      console.error('Socket emit group join failed:', socketErr);
+    }
+
+    res.status(200).json({
+      message: 'Successfully joined group.',
+      conversation: formatted,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

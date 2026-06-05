@@ -51,10 +51,35 @@ async function testOpenAI() {
   }
 }
 
+async function testDeepSeek() {
+  console.log('\n🤖 Testing DeepSeek API Configuration...');
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    console.error('❌ DeepSeek API key not found in env!');
+    return false;
+  }
+
+  try {
+    const deepseek = new OpenAI({
+      baseURL: 'https://api.deepseek.com/v1',
+      apiKey: apiKey,
+    });
+    // Call deepseek models to verify connectivity
+    const models = await deepseek.models.list();
+    console.log('✅ DeepSeek API Key VALID!');
+    console.log(`Successfully fetched ${models.data.length} models.`);
+    return true;
+  } catch (err: any) {
+    console.error('❌ DeepSeek API Key INVALID/UNREACHABLE:', err.message || err);
+    return false;
+  }
+}
+
 async function run() {
   console.log('=== Bubble Chat Service Diagnostic Tests ===\n');
   const lkOk = await testLiveKit();
   const aiOk = await testOpenAI();
+  const dsOk = await testDeepSeek();
   console.log('\n=== Diagnostic Run Finished ===');
 }
 

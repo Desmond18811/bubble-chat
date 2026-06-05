@@ -226,7 +226,8 @@ export const aiDescribeEvent = async (req: Request, res: Response): Promise<any>
       return res.status(400).json({ error: 'Prompt description is required' });
     }
 
-    const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY.length > 10;
+    const key = process.env.DEEPSEEK_API_KEY;
+    const hasDeepSeekKey = !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
     if (!hasDeepSeekKey) {
       return res.status(200).json({
         description: `Scheduled event based on prompt: "${prompt}". (AI description unavailable - DeepSeek key not configured.)`

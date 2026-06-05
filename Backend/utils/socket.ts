@@ -24,9 +24,18 @@ export const initSocket = (server: HttpServer) => {
       return next(new Error('Authentication error: Token missing'));
     }
     const secret = process.env.JWT_KEY || 'bubble_default_key';
-    jwt.verify(token, secret, (err: any, decoded: any) => {
+    jwt.verify(token, secret, async (err: any, decoded: any) => {
       if (err) return next(new Error('Authentication error: Invalid token'));
       (socket as any).userId = decoded.id;
+      try {
+        const user = await User.findById(decoded.id).select('username full_name');
+        if (user) {
+          (socket as any).username = user.username;
+          (socket as any).fullName = user.full_name;
+        }
+      } catch (dbErr) {
+        console.error('Socket auth DB lookup error:', dbErr);
+      }
       next();
     });
   });
@@ -68,7 +77,7 @@ export const initSocket = (server: HttpServer) => {
           $and: [{ $or: [{ host: userId }, { attendees: userId }] }],
         });
 
-        if (meeting || chatId.startsWith('meet-')) {
+        if (meeting || chatId.startsWith('meet-') || chatId.startsWith('bubble-')) {
           socket.join(chatId);
           console.log(`[Room] User ${userId} joined meeting room: ${chatId}`);
         } else {
@@ -101,9 +110,11 @@ export const initSocket = (server: HttpServer) => {
 
     // ─── Typing Indicators ────────────────────────────────────────────────────
     socket.on('typing_start', (data: { toUserId: string; chatId?: string }) => {
+      const fromUsername = (socket as any).username;
+      const fromName = (socket as any).fullName;
       // Emit to the chat room; also emit to the recipient's personal userId room as fallback
-      if (data.chatId) socket.to(data.chatId).emit('typing_start', { fromUserId: userId, chatId: data.chatId });
-      if (data.toUserId) io.to(data.toUserId).emit('typing_start', { fromUserId: userId, chatId: data.chatId });
+      if (data.chatId) socket.to(data.chatId).emit('typing_start', { fromUserId: userId, chatId: data.chatId, fromUsername, fromName });
+      if (data.toUserId) io.to(data.toUserId).emit('typing_start', { fromUserId: userId, chatId: data.chatId, fromUsername, fromName });
     });
 
     socket.on('typing_stop', (data: { toUserId: string; chatId?: string }) => {
@@ -112,7 +123,9 @@ export const initSocket = (server: HttpServer) => {
     });
 
     socket.on('typing', (data: { chatId?: string }) => {
-      if (data.chatId) socket.to(data.chatId).emit('typing_start', { fromUserId: userId, chatId: data.chatId });
+      const fromUsername = (socket as any).username;
+      const fromName = (socket as any).fullName;
+      if (data.chatId) socket.to(data.chatId).emit('typing_start', { fromUserId: userId, chatId: data.chatId, fromUsername, fromName });
     });
 
     socket.on('stop_typing', (data: { chatId?: string }) => {
@@ -146,8 +159,32 @@ export const initSocket = (server: HttpServer) => {
       }
     });
 
-    socket.on('meeting_transcript_chunk', (data: { roomId: string, speaker: string, text: string }) => {
+    socket.on('meeting_transcript_chunk', async (data: { roomId: string, speaker: string, text: string }) => {
       socket.to(data.roomId).emit('meeting_transcript_chunk', data);
+
+      // Save directly to MongoDB in real-time
+      try {
+        const { Meeting } = await import('../models/meeting');
+        await Meeting.updateOne(
+          { roomId: data.roomId, status: 'live' },
+          {
+            $push: {
+              transcriptChunks: {
+                speaker: data.speaker,
+                text: data.text,
+                timestamp: Date.now()
+              }
+            }
+          }
+        );
+      } catch (err) {
+        console.error('[Socket] Failed to save transcript chunk to DB:', err);
+      }
+    });
+
+    socket.on('meeting_started', (data: { roomId: string, meetingId: string }) => {
+      console.log(`[Meeting] Relaying meeting_started for room: ${data.roomId}`);
+      socket.to(data.roomId).emit('meeting_started', data);
     });
 
     socket.on('meeting_reaction', (data: { roomId: string, emoji: string }) => {

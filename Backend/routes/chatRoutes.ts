@@ -13,6 +13,7 @@ import {
   deleteChat,
   getUnreadChatCount,
   toggleArchiveChat,
+  joinGroupChatByInvite,
 } from '../controllers/chatController';
 
 
@@ -117,6 +118,7 @@ router.route('/').get(fetchChats);
  *                 conversation: { $ref: '#/components/schemas/Conversation' }
  */
 router.route('/group').post(createGroupChat);
+router.route('/group/join').post(joinGroupChatByInvite);
 
 /**
  * @swagger

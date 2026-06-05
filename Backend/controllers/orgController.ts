@@ -297,7 +297,8 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
     let aiSummary = description;
 
     console.log('[onboardOrgBrain] Checking DeepSeek Key status. Length:', process.env.DEEPSEEK_API_KEY ? process.env.DEEPSEEK_API_KEY.length : 0);
-    const hasDeepSeekKey = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY.length > 10;
+    const key = process.env.DEEPSEEK_API_KEY;
+    const hasDeepSeekKey = !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
     if (hasDeepSeekKey) {
       try {
         const response = await deepseekClient.chat.completions.create({

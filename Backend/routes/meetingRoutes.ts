@@ -10,6 +10,7 @@ import {
   getMeetingFiles,
   startScreenShare,
   endScreenShare,
+  getMeetingStatsWithUser,
 } from '../controllers/meetingController';
 import passport from 'passport';
 
@@ -21,6 +22,7 @@ router.use(requireAuth);
 // ── Core meeting CRUD ────────────────────────────────────────────────────────
 router.post('/', createMeeting);
 router.get('/', getMeetings);
+router.get('/stats/:withUserId', getMeetingStatsWithUser);
 router.get('/:id', getMeetingById);
 
 // ── Transcript (background real-time accumulation) ───────────────────────────

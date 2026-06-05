@@ -18,7 +18,7 @@ const deepseekClient = new OpenAI({
 
 const hasDeepSeekKey = (): boolean => {
   const key = process.env.DEEPSEEK_API_KEY;
-  return !!(key && key.length > 10 && key !== 'your_api_key_here');
+  return !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
 };
 
 // ─── Helper: AI-powered transcript processing via DeepSeek ───────────────────
@@ -173,6 +173,44 @@ export const getMeetings = async (
     res
       .status(500)
       .json({ message: 'Failed to fetch meetings', error: err.message });
+  }
+};
+
+// ─── GET /api/v1/meetings/stats/:withUserId ────────────────────────────────────
+
+export const getMeetingStatsWithUser = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const withUserId = String(req.params.withUserId || '');
+    if (!mongoose.Types.ObjectId.isValid(withUserId)) {
+      return res.status(400).json({ message: 'Invalid target user ID' });
+    }
+
+    const targetUserObjectId = new mongoose.Types.ObjectId(withUserId);
+    const currentUserObjectId = new mongoose.Types.ObjectId(userId);
+
+    const meetings = await Meeting.find({
+      status: 'ended',
+      $or: [
+        { host: currentUserObjectId, attendees: targetUserObjectId },
+        { host: targetUserObjectId, attendees: currentUserObjectId },
+        { attendees: { $all: [currentUserObjectId, targetUserObjectId] } }
+      ]
+    })
+      .sort({ startedAt: -1 })
+      .populate('host', 'full_name username avatar')
+      .populate('attendees', 'full_name username avatar')
+      .lean();
+
+    const count = meetings.length;
+    res.status(200).json({ count, meetings });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to fetch meeting statistics', error: err.message });
   }
 };
 
@@ -442,6 +480,9 @@ export const endMeeting = async (
     const userId = (req as any).user?._id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
+    const saveToStorage = req.body.saveToStorage !== false;
+    const sendEmail = req.body.sendEmail !== false;
+
     const searchId = String(req.params.id);
     const isObjectId = mongoose.Types.ObjectId.isValid(searchId);
 
@@ -497,6 +538,7 @@ export const endMeeting = async (
     // ── Background AI extraction (non-blocking) ───────────────────────────
     setImmediate(async () => {
       try {
+        const allParticipants = [meeting.host, ...meeting.attendees];
         const intelligence = await extractMeetingIntelligence(
           rawTranscript,
           meeting.attendeeNames || []
@@ -577,76 +619,55 @@ export const endMeeting = async (
           }
         }
 
-        // Find default group chat for organization
+        // Find organization for meeting host and save Minutes as a .md document to storage center
         const hostUser = await User.findById(meeting.host);
         let org = null;
         if (hostUser && hostUser.organization) {
           org = await Organization.findOne({ name: hostUser.organization });
         }
 
-        const bot = await User.findOne({ is_bot: true, username: 'aida' });
-        const botId = bot ? bot._id : null;
-
-        // Post summary + action items in default group chat on behalf of Aida bot
-        if (org) {
-          const defaultChat = await Conversation.findOne({
-            organizationId: org._id,
-            isDefaultOrgChat: true,
-          });
-
-          if (defaultChat) {
+        if (org && saveToStorage) {
+          try {
+            const { OrgDocument } = await import('../models/orgDocument');
+            const minutesTitle = `Meeting Minutes: ${meeting.title}`;
             const formattedActionItems = resolvedActionItems
               .map((ai) => `- ${ai.text} (Assigned to: ${ai.assignedToName || 'Unassigned'})`)
               .join('\n');
-            const chatContent = `📢 **Minutes: "${meeting.title}"**\n\n**Summary:**\n${intelligence.summary}\n\n**Action Items:**\n${formattedActionItems || 'None'}\n\n*Full transcript emailed to attendees.*`;
+            const minutesContent = `# Meeting Minutes: ${meeting.title}\n\n**Date:** ${new Date().toLocaleDateString()}\n**Duration:** ${meeting.duration ? Math.floor(meeting.duration / 60) + ' minutes' : 'unknown'}\n\n## Summary\n${intelligence.summary}\n\n## Action Items\n${formattedActionItems || 'None'}`;
 
-            const groupMsg = await Message.create({
-              chat: defaultChat._id,
-              sender: botId || meeting.host,
-              content: chatContent,
-              message_type: 'text',
+            await OrgDocument.create({
+              title: minutesTitle,
+              content: minutesContent,
+              department: 'general',
+              accessLevel: 'public',
+              createdBy: meeting.host,
+              organizationId: org._id,
+              tags: ['minutes', 'meeting', meeting.title.toLowerCase()],
             });
-
-            await Conversation.findByIdAndUpdate(defaultChat._id, {
-              $set: { latestMessage: (groupMsg as any)._id },
-            });
-
-            // Emit socket update for new message
-            try {
-              const { getIO } = await import('../utils/socket');
-              const io = getIO();
-              const { formatMessage } = await import('./messageController') as any;
-              const fullMsg = await Message.findById((groupMsg as any)._id).populate('sender', 'full_name username avatar is_bot');
-              const formatted = await formatMessage(fullMsg);
-              io.to(String(defaultChat._id)).emit('new_message', formatted);
-              defaultChat.users.forEach((u: any) => {
-                io.to(u.toString()).emit('new_message', formatted);
-              });
-            } catch (socketErr) {
-              console.error('[Meeting AI] Group chat socket message broadcast failed:', socketErr);
-            }
+            console.log(`[Meeting AI] Saved meeting minutes as OrgDocument for org: ${org.name}`);
+          } catch (docErr) {
+            console.error('[Meeting AI] Failed to save minutes document:', docErr);
           }
         }
 
         // Email participants with the restyled Light/Lavender Transcript template
-        const { sendMeetingTranscriptEmail } = await import('../utils/mailer');
-        const transcriptHtml = rawTranscript ? rawTranscript.replace(/\n/g, '<br />') : 'No transcript recorded.';
-        const allParticipants = [meeting.host, ...meeting.attendees];
-        for (const participantId of allParticipants) {
-          try {
-            const user = await User.findById(participantId);
-            if (user && user.email) {
-              await sendMeetingTranscriptEmail(
-                user.email,
-                user.full_name || user.username || 'Attendee',
-                meeting.title,
-                transcriptHtml,
-                intelligence.summary
-              );
-              console.log(`[Meeting Email] Transcript email sent to: ${user.email}`);
+        if (sendEmail) {
+          const { sendMeetingTranscriptEmail } = await import('../utils/mailer');
+          for (const participantId of allParticipants) {
+            try {
+              const user = await User.findById(participantId);
+              if (user && user.email) {
+                await sendMeetingTranscriptEmail(
+                  user.email,
+                  user.full_name || user.username || 'Attendee',
+                  meeting.title,
+                  rawTranscript
+                );
+                console.log(`[Meeting Email] Transcript email sent to: ${user.email}`);
+              }
+            } catch (emailErr) {
+              console.error('[Meeting Email] Failed sending transcript email:', emailErr);
             }
-          } catch (emailErr) {
-            console.error('[Meeting Email] Failed sending transcript email:', emailErr);
           }
         }
 

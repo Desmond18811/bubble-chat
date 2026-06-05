@@ -22,7 +22,7 @@ const deepseekClient = new OpenAI({
 
 const hasKey = (): boolean => {
   const key = process.env.DEEPSEEK_API_KEY;
-  return !!(key && key.length > 10 && key !== 'your_api_key_here');
+  return !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
 };
 
 // ─── Core AI call ─────────────────────────────────────────────────────────────
