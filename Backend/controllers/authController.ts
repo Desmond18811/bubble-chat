@@ -5,8 +5,11 @@ import crypto from 'crypto';
 import { User } from '../models/users';
 import { Organization } from '../models/organizations';
 import { Otp } from '../models/otp';
-import { sendOTPEmail, sendPasswordResetEmail } from '../utils/mailer';
+import { sendOTPEmail, sendPasswordResetEmail, sendWelcomeNewMemberEmail } from '../utils/mailer';
 import { seedOrgKnowledge } from './orgController';
+import { Conversation } from '../models/conversations';
+import { Message } from '../models/messages';
+import { getAidaBotUser } from './aidaController';
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
@@ -42,6 +45,7 @@ const formatUser = (u: any) => ({
   verified_badge: u.verified_badge ?? false,
   isOnline: u.isOnline ?? false,
   publicKey: u.publicKey || null,
+  role: u.role || 'employee',
   createdAt: u.createdAt,
   updatedAt: u.updatedAt,
 });
@@ -98,11 +102,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Check for existing account
+    // Check for existing account email
     if (email) {
       const existingEmail = await User.findOne({ email: email.toLowerCase() });
       if (existingEmail) {
         res.status(409).json({ message: 'An account with this email already exists.' });
+        return;
+      }
+    }
+
+    // Check for existing account phone number
+    if (phone_number) {
+      const existingPhone = await User.findOne({ phone_number });
+      if (existingPhone) {
+        res.status(409).json({ message: 'An account with this phone number already exists.' });
         return;
       }
     }
@@ -112,39 +125,69 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     const uniqueTag = await generateUniqueTag(full_name || 'user');
 
+    // Clean org values to prevent enum validation crashes
+    const cleanOrgName = org_name ? org_name.trim() : '';
+    const cleanOrgIndustry = cleanOrgName ? (org_industry || '') : '';
+    const validOrgSizes = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
+    const cleanOrgSize = (cleanOrgName && org_size && validOrgSizes.includes(org_size)) ? org_size : undefined;
+
     // Create new user
     const newUser = await User.create({
       full_name,
       email: email?.toLowerCase(),
-      phone_number,
+      phone_number: phone_number || undefined,
       password: hashedPassword,
       isVerified: false,
       uniqueTag,
       onboardingComplete: false,
       publicKey,
-      organization: org_name || '', // Legacy support
-      org_industry,
-      org_size,
+      organization: cleanOrgName,
+      org_industry: cleanOrgIndustry,
+      org_size: cleanOrgSize,
+      role: cleanOrgName ? 'admin' : 'employee',
     });
 
     // Handle Organization Registration
     let organization = null;
-    if (org_name) {
+    if (cleanOrgName) {
       const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase(); // Secure 8-char invite code
       organization = await Organization.create({
-        name: org_name,
-        industry: org_industry,
-        size: org_size,
+        name: cleanOrgName,
+        industry: cleanOrgIndustry || undefined,
+        size: cleanOrgSize,
         owner: newUser._id,
         inviteCode,
         pineconeNamespace: `org-${newUser._id}`,
       });
 
-      // Update user with organization reference if needed
-      // (For now keeping it simple with the string 'organization' field on User as well)
-
       // Seed basic knowledge for the organization
       await seedOrgKnowledge(organization, (newUser._id as any).toString());
+
+      // Create default group chat
+      const bot = await getAidaBotUser();
+      const botId = bot ? bot._id : null;
+      const defaultChat = await Conversation.create({
+        chatName: cleanOrgName,
+        isGroupChat: true,
+        users: botId ? [newUser._id, botId] : [newUser._id],
+        groupAdmin: newUser._id,
+        groupIcon: 'black',
+        groupDescription: `Default group chat for ${cleanOrgName}`,
+        organizationId: organization._id,
+        isDefaultOrgChat: true,
+      });
+
+      if (botId) {
+        const welcomeContent = `👋 **Welcome to the ${cleanOrgName} Workspace on Bubble!**\n\nI am **Aida**, your workspace intelligence assistant. I will automatically index shared resources and meeting transcripts to grow our collective business brain.\n\nAll members who join will automatically be added to this default group chat. Feel free to collaborate, share documents, schedule calls, and ask me anything!`;
+        const initialMsg = await Message.create({
+          chat: defaultChat._id,
+          sender: botId,
+          content: welcomeContent,
+          message_type: 'text',
+        });
+        defaultChat.latestMessage = (initialMsg as any)._id;
+        await defaultChat.save();
+      }
     } else if (req.body.inviteCode) {
       // Handle joining an existing organization during signup
       const existingOrg = await Organization.findOne({ inviteCode: req.body.inviteCode });
@@ -152,8 +195,31 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         await User.findByIdAndUpdate(newUser._id, {
           organization: existingOrg.name,
           org_industry: existingOrg.industry,
+          org_size: existingOrg.size,
           role: 'employee',
         });
+
+        // Add to default group chat
+        const defaultChat = await Conversation.findOne({
+          organizationId: existingOrg._id,
+          isDefaultOrgChat: true,
+        });
+
+        if (defaultChat) {
+          if (!defaultChat.users.map((id: any) => id.toString()).includes(newUser._id.toString())) {
+            defaultChat.users.push(newUser._id);
+            await defaultChat.save();
+          }
+        }
+
+        // Send welcome email (as they joined and completed signup here)
+        if (newUser.email) {
+          const summaryHtml = existingOrg.description 
+            ? existingOrg.description.replace(/\n/g, '<br />') 
+            : 'Welcome to the organization! The brain is currently ready and listening.';
+          
+          await sendWelcomeNewMemberEmail(newUser.email, newUser.full_name || newUser.username || 'Employee', existingOrg.name, summaryHtml);
+        }
       }
     }
 

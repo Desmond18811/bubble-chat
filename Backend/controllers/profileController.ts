@@ -56,6 +56,7 @@ const formatUser = async (u: any, includePrivate = false) => {
     isPremium: u.isPremium ?? false,
     is_bot: u.is_bot ?? false,
     verified_badge: u.verified_badge ?? false,
+    role: u.role || null,
     publicKey: u.publicKey || null,
     notification_settings: includePrivate ? (u.notification_settings || null) : undefined,
     privacy_settings: includePrivate ? (u.privacy_settings || null) : undefined,
@@ -498,7 +499,10 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     return;
   }
 
-  const { organization, org_role, org_industry, org_size, bio, full_name, phone_number, app_background } = req.body;
+  const { 
+    organization, org_role, org_industry, org_size, bio, full_name, phone_number, app_background, avatar,
+    gender, status_message, mood_emoji, hobbies, location
+  } = req.body;
 
   const validOrgSizes = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
   if (org_size && !validOrgSizes.includes(org_size)) {
@@ -518,6 +522,12 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     if (full_name !== undefined) updateData.full_name = full_name;
     if (phone_number !== undefined) updateData.phone_number = phone_number;
     if (app_background !== undefined) updateData.app_background = app_background;
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (gender !== undefined) updateData.gender = gender;
+    if (status_message !== undefined) updateData.status_message = status_message;
+    if (mood_emoji !== undefined) updateData.mood_emoji = mood_emoji;
+    if (hobbies !== undefined) updateData.hobbies = hobbies;
+    if (location !== undefined) updateData.location = location;
 
     const updated = await User.findByIdAndUpdate(
       req.user._id,

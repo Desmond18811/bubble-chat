@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type TaskType = 'event' | 'task' | 'synced';
+export type TaskType = 'event' | 'task' | 'synced' | 'meeting';
 export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'snoozed' | 'cancelled';
 export type TaskSource = 'manual' | 'meeting' | 'aida' | 'calendar_import';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
@@ -9,6 +9,7 @@ export interface ITask extends Document {
   user_id: mongoose.Types.ObjectId;       // owner / creator
   assignedTo?: mongoose.Types.ObjectId;   // who is responsible
   assignedToName?: string;
+  recipients?: mongoose.Types.ObjectId[]; // people invited / notified
 
   type: TaskType;
   title: string;
@@ -19,6 +20,7 @@ export interface ITask extends Document {
   status: TaskStatus;
   priority: TaskPriority;
   color?: string;       // hex color for calendar display
+  isUpdated?: boolean;  // whether it has been updated since creation
 
   // Provenance
   source: TaskSource;
@@ -41,8 +43,9 @@ const TaskSchema = new Schema<ITask>(
     user_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
     assignedToName: { type: String },
+    recipients: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
-    type: { type: String, enum: ['event', 'task', 'synced'], default: 'task' },
+    type: { type: String, enum: ['event', 'task', 'synced', 'meeting'], default: 'task' },
     title: { type: String, required: true },
     description: { type: String },
     start_time: { type: Date, required: true },
@@ -51,6 +54,7 @@ const TaskSchema = new Schema<ITask>(
     status: { type: String, enum: ['todo', 'in-progress', 'done', 'snoozed', 'cancelled'], default: 'todo' },
     priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
     color: { type: String, default: '#6366f1' },
+    isUpdated: { type: Boolean, default: false },
 
     source: { type: String, enum: ['manual', 'meeting', 'aida', 'calendar_import'], default: 'manual' },
     meetingRef: { type: Schema.Types.ObjectId, ref: 'Meeting' },

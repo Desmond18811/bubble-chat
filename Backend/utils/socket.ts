@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/users';
+import mongoose from 'mongoose';
 
 
 let io: Server;
@@ -52,7 +53,24 @@ export const initSocket = (server: HttpServer) => {
         const convo = await Conversation.findById(chatId);
         if (convo && convo.users.map((id: any) => id.toString()).includes(userId)) {
           socket.join(chatId);
-          console.log(`[Room] User ${userId} joined room: ${chatId}`);
+          console.log(`[Room] User ${userId} joined conversation room: ${chatId}`);
+          return;
+        }
+
+        // Allow meeting rooms starting with meet- or matching a live meeting user is associated with
+        const { Meeting } = await import('../models/meeting');
+        const isObjectId = mongoose.Types.ObjectId.isValid(chatId);
+        const meeting = await Meeting.findOne({
+          $or: [
+            ...(isObjectId ? [{ _id: chatId }] : []),
+            { roomId: chatId },
+          ],
+          $and: [{ $or: [{ host: userId }, { attendees: userId }] }],
+        });
+
+        if (meeting || chatId.startsWith('meet-')) {
+          socket.join(chatId);
+          console.log(`[Room] User ${userId} joined meeting room: ${chatId}`);
         } else {
           console.warn(`[Room Security] User ${userId} attempted to join unauthorized room: ${chatId}`);
         }
@@ -138,6 +156,11 @@ export const initSocket = (server: HttpServer) => {
 
     socket.on('meeting_chat_message', (data: { roomId: string, speaker: string, text: string, imageUrl?: string }) => {
       socket.to(data.roomId).emit('meeting_chat_message', data);
+    });
+
+    socket.on('meeting_ended', (data: { roomId: string }) => {
+      console.log(`[Meeting] Relaying meeting_ended for room: ${data.roomId}`);
+      socket.to(data.roomId).emit('meeting_ended', data);
     });
 
     // ─── E2EE Public Key Exchange ─────────────────────────────────────────────

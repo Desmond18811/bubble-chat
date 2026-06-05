@@ -45,6 +45,7 @@ const formatUser = (u: any) => ({
   is_bot: u.is_bot ?? false,
   verified_badge: u.verified_badge ?? false,
   publicKey: u.publicKey || null,
+  role: u.role || 'employee',
   notification_settings: u.notification_settings || null,
   privacy_settings: u.privacy_settings || null,
   contacts: u.contacts || [],

@@ -14,11 +14,12 @@ export const hasPinecone = (): boolean => {
     return !!(key && key !== 'your_pinecone_api_key_here');
 };
 
-const getIndex = () => {
+const getIndex = (namespace?: string) => {
     const pc = getPinecone();
     if (!pc) return null;
     const indexName = process.env.PINECONE_INDEX || 'bubble-org-knowledge';
-    return pc.index(indexName);
+    const index = pc.index(indexName);
+    return namespace ? index.namespace(namespace) : index;
 };
 
 export interface PineconeVector {
@@ -30,8 +31,8 @@ export interface PineconeVector {
 /**
  * Upsert vectors into Pinecone
  */
-export const upsertVectors = async (vectors: PineconeVector[]): Promise<boolean> => {
-    const index = getIndex();
+export const upsertVectors = async (vectors: PineconeVector[], namespace?: string): Promise<boolean> => {
+    const index = getIndex(namespace);
     if (!index) return false;
     try {
         const records: PineconeRecord<RecordMetadata>[] = vectors.map(v => ({
@@ -53,9 +54,10 @@ export const upsertVectors = async (vectors: PineconeVector[]): Promise<boolean>
 export const queryVectors = async (
     embedding: number[],
     topK = 5,
-    filter?: Record<string, any>
+    filter?: Record<string, any>,
+    namespace?: string
 ): Promise<{ id: string; score: number; metadata?: Record<string, any> }[]> => {
-    const index = getIndex();
+    const index = getIndex(namespace);
     if (!index) return [];
     try {
         const res = await index.query({
@@ -78,8 +80,8 @@ export const queryVectors = async (
 /**
  * Delete vectors by IDs
  */
-export const deleteVectors = async (ids: string[]): Promise<boolean> => {
-    const index = getIndex();
+export const deleteVectors = async (ids: string[], namespace?: string): Promise<boolean> => {
+    const index = getIndex(namespace);
     if (!index || ids.length === 0) return false;
     try {
         await index.deleteMany(ids);

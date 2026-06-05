@@ -31,7 +31,7 @@ const formatSender = async (u: any) => {
   };
 };
 
-const formatMessage = async (m: any) => ({
+export const formatMessage = async (m: any) => ({
   _id: m._id,       // always include _id for frontend compatibility
   id: m._id,
   content: m.content || null,

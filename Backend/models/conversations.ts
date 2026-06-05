@@ -25,6 +25,8 @@ export interface IConversation extends Document {
   };
   theme?: string;
   is_broadcast: boolean;
+  organizationId?: mongoose.Types.ObjectId;
+  isDefaultOrgChat?: boolean;
   
   createdAt: Date;
   updatedAt: Date;
@@ -92,6 +94,14 @@ const ConversationSchema: Schema<IConversation> = new Schema(
     },
     theme: { type: String, default: 'default' },
     is_broadcast: { type: Boolean, default: false },
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+    },
+    isDefaultOrgChat: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

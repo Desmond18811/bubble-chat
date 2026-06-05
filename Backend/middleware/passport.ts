@@ -72,6 +72,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                 avatar: profile.photos?.[0]?.value || '',
                 isVerified: true, // Google-verified email
                 uniqueTag,
+                role: 'employee',
             });
 
             // Background RSA keypair

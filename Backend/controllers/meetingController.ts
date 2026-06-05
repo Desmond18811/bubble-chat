@@ -6,6 +6,9 @@ import { User } from '../models/users';
 import OpenAI from 'openai';
 import { createNotification } from './notificationController';
 import { logActivity } from './activityLogController';
+import { Organization } from '../models/organizations';
+import { Conversation } from '../models/conversations';
+import { Message } from '../models/messages';
 
 // ─── DeepSeek client (same engine as aidaController) ─────────────────────────
 const deepseekClient = new OpenAI({
@@ -475,6 +478,16 @@ export const endMeeting = async (
     meeting.transcriptRaw = rawTranscript;
     await meeting.save();
 
+    // Broadcast meeting_ended via socket immediately to terminate the view for all participants
+    try {
+      const { getIO } = await import('../utils/socket');
+      const io = getIO();
+      io.to(meeting.roomId).emit('meeting_ended', { roomId: meeting.roomId });
+      console.log(`[Meeting] Broadcasted meeting_ended for room ${meeting.roomId}`);
+    } catch (socketErr) {
+      console.error('[Meeting] Socket emit meeting_ended failed:', socketErr);
+    }
+
     // Respond to client immediately so UI isn't blocked
     res.status(200).json({
       message: 'Meeting ended. AI analysis is running in the background.',
@@ -564,11 +577,134 @@ export const endMeeting = async (
           }
         }
 
+        // Find default group chat for organization
+        const hostUser = await User.findById(meeting.host);
+        let org = null;
+        if (hostUser && hostUser.organization) {
+          org = await Organization.findOne({ name: hostUser.organization });
+        }
+
+        const bot = await User.findOne({ is_bot: true, username: 'aida' });
+        const botId = bot ? bot._id : null;
+
+        // Post summary + action items in default group chat on behalf of Aida bot
+        if (org) {
+          const defaultChat = await Conversation.findOne({
+            organizationId: org._id,
+            isDefaultOrgChat: true,
+          });
+
+          if (defaultChat) {
+            const formattedActionItems = resolvedActionItems
+              .map((ai) => `- ${ai.text} (Assigned to: ${ai.assignedToName || 'Unassigned'})`)
+              .join('\n');
+            const chatContent = `📢 **Minutes: "${meeting.title}"**\n\n**Summary:**\n${intelligence.summary}\n\n**Action Items:**\n${formattedActionItems || 'None'}\n\n*Full transcript emailed to attendees.*`;
+
+            const groupMsg = await Message.create({
+              chat: defaultChat._id,
+              sender: botId || meeting.host,
+              content: chatContent,
+              message_type: 'text',
+            });
+
+            await Conversation.findByIdAndUpdate(defaultChat._id, {
+              $set: { latestMessage: (groupMsg as any)._id },
+            });
+
+            // Emit socket update for new message
+            try {
+              const { getIO } = await import('../utils/socket');
+              const io = getIO();
+              const { formatMessage } = await import('./messageController') as any;
+              const fullMsg = await Message.findById((groupMsg as any)._id).populate('sender', 'full_name username avatar is_bot');
+              const formatted = await formatMessage(fullMsg);
+              io.to(String(defaultChat._id)).emit('new_message', formatted);
+              defaultChat.users.forEach((u: any) => {
+                io.to(u.toString()).emit('new_message', formatted);
+              });
+            } catch (socketErr) {
+              console.error('[Meeting AI] Group chat socket message broadcast failed:', socketErr);
+            }
+          }
+        }
+
+        // Email participants with the restyled Light/Lavender Transcript template
+        const { sendMeetingTranscriptEmail } = await import('../utils/mailer');
+        const transcriptHtml = rawTranscript ? rawTranscript.replace(/\n/g, '<br />') : 'No transcript recorded.';
+        const allParticipants = [meeting.host, ...meeting.attendees];
+        for (const participantId of allParticipants) {
+          try {
+            const user = await User.findById(participantId);
+            if (user && user.email) {
+              await sendMeetingTranscriptEmail(
+                user.email,
+                user.full_name || user.username || 'Attendee',
+                meeting.title,
+                transcriptHtml,
+                intelligence.summary
+              );
+              console.log(`[Meeting Email] Transcript email sent to: ${user.email}`);
+            }
+          } catch (emailErr) {
+            console.error('[Meeting Email] Failed sending transcript email:', emailErr);
+          }
+        }
+
+        // Chunk & Index transcript to Pinecone under organization namespace to grow the brain
+        const { hasPinecone, upsertVectors } = await import('../utils/pinecone');
+        const { chunkText, generateEmbedding } = await import('../utils/embeddings');
+        const { OrgDocument } = await import('../models/orgDocument');
+        const crypto = await import('crypto');
+
+        if (hasPinecone() && org && rawTranscript) {
+          try {
+            const namespace = org.pineconeNamespace || `org-${org._id}`;
+            const transcriptTitle = `Meeting Transcript: ${meeting.title}`;
+            const chunks = chunkText(rawTranscript, 500, 100);
+            const pineconeIds: string[] = [];
+            const vectors = [];
+
+            for (const chunk of chunks) {
+              const embedding = await generateEmbedding(chunk);
+              if (embedding.length > 0) {
+                const id = `meet-chunk-${crypto.randomUUID()}`;
+                pineconeIds.push(id);
+                vectors.push({
+                  id,
+                  values: embedding,
+                  metadata: {
+                    title: transcriptTitle,
+                    chunk,
+                    department: 'general',
+                    accessLevel: 'public',
+                    organizationId: org._id,
+                    meetingId: meeting._id,
+                  },
+                });
+              }
+            }
+
+            if (vectors.length > 0) {
+              await upsertVectors(vectors, namespace);
+              // Save a local OrgDocument copy so it shows up in Brain files list
+              await OrgDocument.create({
+                title: transcriptTitle,
+                content: rawTranscript,
+                department: 'general',
+                accessLevel: 'public',
+                createdBy: meeting.host,
+                organizationId: org._id,
+                pineconeIds,
+                tags: ['transcript', 'meeting', meeting.title.toLowerCase()],
+              });
+              console.log(`[Meeting Pinecone] Upserted ${vectors.length} transcript chunks for namespace: ${namespace}`);
+            }
+          } catch (pineconeErr) {
+            console.error('[Meeting Pinecone] Upsert failed:', pineconeErr);
+          }
+        }
+
         // Notify all participants that minutes are ready
-        const allParticipants = [
-          meeting.host,
-          ...meeting.attendees,
-        ];
         for (const participantId of allParticipants) {
           if (String(participantId) !== String(userId)) {
             await createNotification({

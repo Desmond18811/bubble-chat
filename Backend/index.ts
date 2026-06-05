@@ -1,8 +1,13 @@
+import dotenv from 'dotenv';
+// Load environment variables immediately before any other module imports
+dotenv.config();
+
+console.log(`[Startup] DeepSeek API Key loaded status: ${process.env.DEEPSEEK_API_KEY ? 'YES (Length: ' + process.env.DEEPSEEK_API_KEY.length + ')' : 'NO'}`);
+
 import express, { Request, Response } from 'express';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import http from 'http';
 import cors from 'cors';
@@ -36,9 +41,6 @@ import templateRoutes from './routes/templateRoutes';
 import activityRoutes from './routes/activityRoutes';
 import orgRoutes from './routes/orgRoutes';
 import { seedDefaultTemplates } from './controllers/templateController';
-
-// Load environment variables FIRST before anything else reads them
-dotenv.config();
 
 const app = express();
 

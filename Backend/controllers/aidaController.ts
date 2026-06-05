@@ -10,6 +10,9 @@ import { Conversation } from '../models/conversations';
 import { Message } from '../models/messages';
 import Post from '../models/post';
 import mongoose from 'mongoose';
+import { queryVectors, hasPinecone } from '../utils/pinecone';
+import { generateEmbedding } from '../utils/embeddings';
+import { Organization } from '../models/organizations';
 
 // ─── DeepSeek Client (sole AI engine) ────────────────────────────────────────
 const deepseekClient = new OpenAI({
@@ -80,7 +83,7 @@ const buildSmartFallback = (userName: string, tasks: any[], files: any[], messag
 };
 
 // ─── Get or create the Aida bot user ─────────────────────────────────────────
-const getAidaBotUser = async () => {
+export const getAidaBotUser = async () => {
   let bot = await User.findOne({ is_bot: true, username: 'aida' });
   if (!bot) {
     bot = await User.create({
@@ -111,6 +114,32 @@ const retrieveOrgContext = async (
   organizationId: string
 ): Promise<{ context: string; docsFound: number }> => {
   try {
+    // 0. Try Pinecone RAG first if enabled
+    if (hasPinecone() && organizationId) {
+      try {
+        const org = await Organization.findById(organizationId);
+        const namespace = org?.pineconeNamespace || `org-${organizationId}`;
+        const embedding = await generateEmbedding(message);
+        if (embedding.length > 0) {
+          const matches = await queryVectors(embedding, 5, undefined, namespace);
+          if (matches && matches.length > 0) {
+            const contextText = matches
+              .map((match: any) => {
+                const chunk = match.metadata?.chunk || '';
+                const title = match.metadata?.title || 'Knowledge Piece';
+                const dept = match.metadata?.department || 'general';
+                return `--- [Brain Match: ${title}] (Dept: ${dept}) ---\n${chunk}`;
+              })
+              .join('\n\n');
+            console.log(`[Aida RAG] Retrieved ${matches.length} matches from Pinecone namespace: ${namespace}`);
+            return { context: contextText, docsFound: matches.length };
+          }
+        }
+      } catch (pineconeErr) {
+        console.error('[Aida RAG] Pinecone query failed, falling back to DB:', pineconeErr);
+      }
+    }
+
     // Determine which access levels this user can see
     const accessFilter: Record<string, any> = { organizationId: organizationId };
 

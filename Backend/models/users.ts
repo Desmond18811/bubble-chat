@@ -57,7 +57,7 @@ export interface IUser extends Document {
   org_industry?: string;
   org_size?: 'solo' | '2-10' | '11-50' | '51-200' | '201-500' | '500+';
   onboardingComplete?: boolean;
-  app_background?: 'bubbles' | 'light' | 'dark' | 'custom';
+  app_background?: 'bubbles' | 'light' | 'dark' | 'custom' | 'glass';
   custom_background?: string;
   unreadCount?: number;
 
@@ -132,7 +132,7 @@ const UserSchema: Schema<IUser> = new Schema(
     onboardingComplete: { type: Boolean, default: false },
     app_background: {
       type: String,
-      enum: ['bubbles', 'light', 'dark', 'custom'],
+      enum: ['bubbles', 'light', 'dark', 'custom', 'glass'],
       default: 'bubbles'
     },
     custom_background: { type: String, default: '' },
