@@ -128,6 +128,18 @@ export const initSocket = (server: HttpServer) => {
       }
     });
 
+    socket.on('meeting_transcript_chunk', (data: { roomId: string, speaker: string, text: string }) => {
+      socket.to(data.roomId).emit('meeting_transcript_chunk', data);
+    });
+
+    socket.on('meeting_reaction', (data: { roomId: string, emoji: string }) => {
+      socket.to(data.roomId).emit('meeting_reaction', data);
+    });
+
+    socket.on('meeting_chat_message', (data: { roomId: string, speaker: string, text: string, imageUrl?: string }) => {
+      socket.to(data.roomId).emit('meeting_chat_message', data);
+    });
+
     // ─── E2EE Public Key Exchange ─────────────────────────────────────────────
     socket.on('request_public_key', async (data: { targetUserId: string }) => {
       const target = await User.findById(data.targetUserId);

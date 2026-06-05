@@ -208,9 +208,10 @@ export const getLiveKitToken = async (req: Request, res: Response) => {
     const userId = (req as any).user?._id?.toString() || 'guest';
     const userName = (req as any).user?.full_name || (req as any).user?.username || 'Colleague';
     const roomId = req.query.roomId as string || `meet-${Math.random().toString(36).substring(7)}`;
+    const userAvatar = (req as any).user?.avatar || '';
 
     const { generateLiveKitToken } = await import('../utils/livekitService');
-    const token = await generateLiveKitToken(roomId, userName, userId);
+    const token = await generateLiveKitToken(roomId, userName, userId, userAvatar);
     res.json({ token });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
