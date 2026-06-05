@@ -212,42 +212,79 @@ export const sendMeetingTranscriptEmail = async (
   summary: string
 ) => {
   const subject = `Meeting Summary & Transcript: ${meetingTitle}`;
+
+  // Simple chat log parser for raw transcripts to build beautiful dialog bubbles
+  let parsedTranscriptHtml = '';
+  const lines = transcriptHtml.split(/<br\s*\/?>|\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex > 0 && colonIndex < 30) {
+      const speaker = trimmed.substring(0, colonIndex).trim();
+      const text = trimmed.substring(colonIndex + 1).trim();
+      const isAida = speaker.toLowerCase().includes('aida') || speaker.toLowerCase().includes('assistant');
+      
+      parsedTranscriptHtml += `
+        <div style="margin-bottom: 16px; text-align: left;">
+          <div style="font-size: 10px; font-weight: 800; color: ${isAida ? '#6c5ce7' : '#1f2030'}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-family: 'Poppins', 'Segoe UI', sans-serif;">
+            ${speaker}
+          </div>
+          <div style="display: inline-block; background-color: ${isAida ? '#f3f0ff' : '#f8fafc'}; border: 1px solid ${isAida ? '#e5dbff' : '#e2e8f0'}; border-radius: 16px; padding: 12px 16px; font-size: 13.5px; line-height: 1.5; color: #2d3748; max-width: 85%; font-family: 'Segoe UI', sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            ${text}
+          </div>
+        </div>
+      `;
+    } else {
+      parsedTranscriptHtml += `
+        <div style="margin-bottom: 12px; font-size: 13px; line-height: 1.6; color: #718096; text-align: left; font-style: italic; font-family: 'Segoe UI', sans-serif; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+          ${trimmed}
+        </div>
+      `;
+    }
+  }
+  if (!parsedTranscriptHtml) {
+    parsedTranscriptHtml = `<div style="text-align: center; color: #a0aec0; font-style: italic; font-size: 13.5px; padding: 20px 0;">No transcript recorded.</div>`;
+  }
+
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f8fafc; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.05);">
+    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #fbfbfe; border-radius: 28px; overflow: hidden; border: 1px solid #eae7fa; box-shadow: 0 15px 35px -5px rgba(108, 92, 231, 0.06);">
       <!-- Header -->
-      <div style="background: linear-gradient(135deg, #f5f3ff 0%, #e0e7ff 100%); padding: 40px 32px; text-align: center; border-bottom: 1px solid #ddd6fe;">
-        <div style="font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #7c3aed; text-transform: uppercase;">BUBBLE</div>
-        <div style="font-size: 11px; color: #8b5cf6; letter-spacing: 4px; text-transform: uppercase; margin-top: 4px; font-weight: 600;">Meeting Intelligence</div>
+      <div style="background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%); padding: 44px 36px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 30px; font-weight: 900; letter-spacing: 6px; color: #ffffff; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">BUBBLESPACE</div>
+        <div style="font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 4px; text-transform: uppercase; margin-top: 6px; font-weight: 700;">Meeting Intelligence Suite</div>
       </div>
       
       <!-- Body -->
-      <div style="padding: 40px 32px; background-color: #ffffff;">
-        <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 16px;">Meeting Minutes 📝</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #334155; margin: 0 0 12px;">Hello ${name},</p>
-        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin: 0 0 24px;">
-          Here are the summary and minutes for the meeting: <strong>${meetingTitle}</strong>.
+      <div style="padding: 44px 36px; background-color: #ffffff;">
+        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 14px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">Meeting Minutes 📝</h2>
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 12px;">Hello ${name},</p>
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 28px;">
+          Here are the summary and details for your conversation: <strong style="color: #6c5ce7;">${meetingTitle}</strong>.
         </p>
         
         <!-- Summary Box -->
-        <div style="background-color: #f5f3ff; border-left: 4px solid #8b5cf6; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left;">
-          <h3 style="font-size: 15px; font-weight: 700; color: #7c3aed; margin: 0 0 8px;">AI Summary</h3>
-          <p style="font-size: 14px; color: #475569; margin: 0; line-height: 1.6;">${summary || 'No summary available.'}</p>
+        <div style="background-color: #efedfb; border-left: 5px solid #6c5ce7; padding: 22px; border-radius: 18px; margin-bottom: 32px; text-align: left; box-shadow: inset 0 1px 3px rgba(108,92,231,0.05);">
+          <h3 style="font-size: 14px; font-weight: 800; color: #6c5ce7; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; font-family: 'Poppins', 'Segoe UI', sans-serif;">Aida AI Summary</h3>
+          <p style="font-size: 14px; color: #2d3748; margin: 0; line-height: 1.65; font-family: 'Segoe UI', sans-serif;">${summary || 'No summary available.'}</p>
         </div>
 
         <!-- Transcript Heading -->
-        <h3 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 10px; text-align: left;">Transcript</h3>
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 18px; border-radius: 12px; max-height: 250px; overflow-y: auto; text-align: left; font-size: 13px; line-height: 1.6; color: #475569; font-family: monospace;">
-          ${transcriptHtml || 'No transcript generated.'}
+        <h3 style="font-size: 14px; font-weight: 800; color: #1f2030; margin: 0 0 14px; text-transform: uppercase; letter-spacing: 1.5px; text-align: left; font-family: 'Poppins', 'Segoe UI', sans-serif;">Parsed Dialogue</h3>
+        
+        <div style="background-color: #ffffff; border: 1px solid #eae7fa; padding: 24px; border-radius: 20px; max-height: 320px; overflow-y: auto; text-align: left; box-shadow: 0 4px 12px rgba(108,92,231,0.02);">
+          ${parsedTranscriptHtml}
         </div>
         
-        <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; margin-top: 24px; text-align: center;">
-          This meeting transcript has been indexed in your company's Brain database for easy alignment.
+        <p style="font-size: 12px; color: #9a9aab; line-height: 1.7; margin-top: 28px; text-align: center; font-family: 'Segoe UI', sans-serif;">
+          This transcript and summary have been indexed inside your organization's Brain for instant search and retrieval.
         </p>
       </div>
 
       <!-- Footer -->
-      <div style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
-        <p style="font-size: 11px; color: #94a3b8; margin: 0; letter-spacing: 1px; font-weight: 600;">BUBBLE SPACE · SECURE TRANSMISSIONS</p>
+      <div style="padding: 24px 36px; background-color: #fbfbfe; border-top: 1px solid #eae7fa; text-align: center;">
+        <p style="font-size: 10px; color: #9a9aab; margin: 0; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase;">BUBBLESPACE · SECURE TRANSMISSIONS</p>
       </div>
     </div>
   `;
@@ -263,38 +300,38 @@ export const sendWelcomeNewMemberEmail = async (
   orgName: string,
   onboardingSummaryHtml: string
 ) => {
-  const subject = `Welcome to ${orgName} on Bubble!`;
+  const subject = `Welcome to ${orgName} on Bubblespace!`;
   const html = `
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f8fafc; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.05);">
+    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #fbfbfe; border-radius: 28px; overflow: hidden; border: 1px solid #eae7fa; box-shadow: 0 15px 35px -5px rgba(108, 92, 231, 0.06);">
       <!-- Header -->
-      <div style="background: linear-gradient(135deg, #f5f3ff 0%, #e0e7ff 100%); padding: 40px 32px; text-align: center; border-bottom: 1px solid #ddd6fe;">
-        <div style="font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #7c3aed; text-transform: uppercase;">BUBBLE</div>
-        <div style="font-size: 11px; color: #8b5cf6; letter-spacing: 4px; text-transform: uppercase; margin-top: 4px; font-weight: 600;">Organization Welcome</div>
+      <div style="background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%); padding: 44px 36px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 30px; font-weight: 900; letter-spacing: 6px; color: #ffffff; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">BUBBLESPACE</div>
+        <div style="font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 4px; text-transform: uppercase; margin-top: 6px; font-weight: 700;">Organization Welcome</div>
       </div>
       
       <!-- Body -->
-      <div style="padding: 40px 32px; background-color: #ffffff;">
-        <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 16px;">Welcome aboard! 🚀</h2>
-        <p style="font-size: 15px; line-height: 1.7; color: #334155; margin: 0 0 12px;">Hello ${name},</p>
-        <p style="font-size: 15px; line-height: 1.7; color: #475569; margin: 0 0 24px;">
-          You have successfully joined the organization <strong>${orgName}</strong> on Bubble. Here is a brief AI-compiled overview of the company to help get you up to speed instantly:
+      <div style="padding: 44px 36px; background-color: #ffffff;">
+        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 14px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">Welcome aboard! 🚀</h2>
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 12px;">Hello ${name},</p>
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 24px;">
+          You have successfully joined <strong style="color: #6c5ce7;">${orgName}</strong> on Bubblespace. Here is a brief AI-compiled overview of the company to help get you up to speed instantly:
         </p>
         
         <!-- Company Profile Box -->
-        <div style="background-color: #f5f3ff; border-left: 4px solid #8b5cf6; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left; font-size: 14.5px; line-height: 1.6; color: #334155;">
+        <div style="background-color: #efedfb; border-left: 5px solid #6c5ce7; padding: 24px; border-radius: 18px; margin-bottom: 32px; text-align: left; font-size: 14px; line-height: 1.7; color: #2d3748; font-family: 'Segoe UI', sans-serif; box-shadow: inset 0 1px 3px rgba(108,92,231,0.05);">
           ${onboardingSummaryHtml || 'No company overview is available yet.'}
         </div>
 
-        <div style="text-align: center; margin: 24px 0 10px;">
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/dashboard" style="display: inline-block; padding: 14px 28px; background-color: #8b5cf6; color: #ffffff; font-weight: 700; text-decoration: none; border-radius: 12px; letter-spacing: 1px; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.2);">
+        <div style="text-align: center; margin: 32px 0 10px;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/dashboard" style="display: inline-block; padding: 16px 32px; background-color: #6c5ce7; color: #ffffff; font-weight: 800; font-size: 14px; text-decoration: none; border-radius: 16px; letter-spacing: 1px; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.25); font-family: 'Poppins', sans-serif; transition: all 0.2s;">
             ENTER WORKSPACE
           </a>
         </div>
       </div>
 
       <!-- Footer -->
-      <div style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
-        <p style="font-size: 11px; color: #94a3b8; margin: 0; letter-spacing: 1px; font-weight: 600;">BUBBLE SPACE · SECURE TRANSMISSIONS</p>
+      <div style="padding: 24px 36px; background-color: #fbfbfe; border-top: 1px solid #eae7fa; text-align: center;">
+        <p style="font-size: 10px; color: #9a9aab; margin: 0; letter-spacing: 1px; font-weight: 700; text-transform: uppercase;">BUBBLESPACE · SECURE TRANSMISSIONS</p>
       </div>
     </div>
   `;
