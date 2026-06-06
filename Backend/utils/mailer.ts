@@ -307,3 +307,74 @@ export const sendWelcomeNewMemberEmail = async (
   return await sendMail(to, subject, html);
 };
 
+/**
+ * Send calendar event invitation/notification email
+ */
+export const sendCalendarEventEmail = async (
+  to: string,
+  userName: string,
+  eventTitle: string,
+  eventType: 'meeting' | 'event' | 'task',
+  startTime: Date,
+  endTime: Date,
+  description?: string,
+  creatorName?: string
+) => {
+  const subject = `Invitation: ${eventTitle}`;
+  const startStr = new Date(startTime).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+  const endStr = new Date(endTime).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+
+  const html = `
+    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #fbfbfe; border-radius: 28px; overflow: hidden; border: 1px solid #eae7fa; box-shadow: 0 15px 35px -5px rgba(108, 92, 231, 0.06);">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%); padding: 44px 36px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 30px; font-weight: 900; letter-spacing: 6px; color: #ffffff; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">BUBBLESPACE</div>
+        <div style="font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 4px; text-transform: uppercase; margin-top: 6px; font-weight: 700;">Calendar & Workspace Schedule</div>
+      </div>
+      
+      <!-- Body -->
+      <div style="padding: 44px 36px; background-color: #ffffff;">
+        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 14px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">
+          New ${eventType === 'meeting' ? 'Meeting 📅' : 'Event 📢'} Scheduled
+        </h2>
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 12px;">Hello ${userName},</p>
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 28px;">
+          ${creatorName || 'A teammate'} has scheduled a new ${eventType} on Bubblespace.
+        </p>
+
+        <!-- Event Card -->
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 20px; text-align: left; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.01);">
+          <h3 style="font-size: 16px; font-weight: 800; color: #6c5ce7; margin: 0 0 12px; font-family: 'Poppins', 'Segoe UI', sans-serif;">
+            ${eventTitle}
+          </h3>
+          <p style="font-size: 13.5px; color: #4a5568; margin: 0 0 8px; line-height: 1.5;">
+            <strong>Starts:</strong> ${startStr}
+          </p>
+          <p style="font-size: 13.5px; color: #4a5568; margin: 0 0 16px; line-height: 1.5;">
+            <strong>Ends:</strong> ${endStr}
+          </p>
+          ${description ? `
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 13px; color: #718096; line-height: 1.6;">
+              <strong>Description:</strong><br />
+              ${description.replace(/\n/g, '<br />')}
+            </div>
+          ` : ''}
+        </div>
+
+        <div style="text-align: center; margin: 28px 0 10px;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:8080'}/dashboard/calls" style="display: inline-block; padding: 14px 28px; background-color: #6c5ce7; color: #ffffff; font-weight: 800; font-size: 13px; text-decoration: none; border-radius: 14px; letter-spacing: 1px; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.2); font-family: 'Poppins', sans-serif; transition: all 0.2s;">
+            VIEW ON CALENDAR
+          </a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 24px 36px; background-color: #fbfbfe; border-top: 1px solid #eae7fa; text-align: center;">
+        <p style="font-size: 10px; color: #9a9aab; margin: 0; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase;">BUBBLESPACE · SECURE TRANSMISSIONS</p>
+      </div>
+    </div>
+  `;
+
+  return await sendMail(to, subject, html);
+};
+

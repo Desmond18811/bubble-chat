@@ -164,6 +164,55 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
       }
     }
 
+    // ── Send Email Invitations ───────────────────────────────────────────────
+    try {
+      const { sendCalendarEventEmail } = await import('../utils/mailer');
+      const creator = await User.findById(userId).select('full_name username organization');
+      const creatorName = creator?.full_name || creator?.username || 'A teammate';
+
+      const emailList: { email: string; name: string }[] = [];
+
+      if (hasRecipients) {
+        // Send email to specific selected recipients
+        for (const recId of recipients) {
+          const recUser = await User.findById(recId).select('email full_name username');
+          if (recUser && recUser.email) {
+            emailList.push({ email: recUser.email, name: recUser.full_name || recUser.username || 'Attendee' });
+          }
+        }
+      } else if ((type === 'meeting' || type === 'event') && creator && creator.organization) {
+        // Broadcast: Send email to everyone in the organization
+        const orgUsers = await User.find({ organization: creator.organization }).select('email full_name username');
+        for (const recUser of orgUsers) {
+          if (recUser.email) {
+            emailList.push({ email: recUser.email, name: recUser.full_name || recUser.username || 'Attendee' });
+          }
+        }
+      } else if (assignedTo && String(assignedTo) !== String(userId)) {
+        // Single task assignment
+        const recUser = await User.findById(assignedTo).select('email full_name username');
+        if (recUser && recUser.email) {
+          emailList.push({ email: recUser.email, name: recUser.full_name || recUser.username || 'Assignee' });
+        }
+      }
+
+      // Send the calendar emails asynchronously
+      for (const recipientInfo of emailList) {
+        sendCalendarEventEmail(
+          recipientInfo.email,
+          recipientInfo.name,
+          title,
+          type || 'task',
+          start_time || new Date(),
+          end_time || new Date(),
+          description,
+          creatorName
+        ).catch((err) => console.error(`[Calendar Email] Failed to send email to ${recipientInfo.email}:`, err));
+      }
+    } catch (emailErr) {
+      console.error('[Calendar Email] Failed to queue invitation emails:', emailErr);
+    }
+
     await logActivity({
       actor: userId,
       action: 'task_created',
