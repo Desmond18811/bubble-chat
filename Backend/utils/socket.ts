@@ -184,7 +184,7 @@ export const initSocket = (server: HttpServer) => {
 
     socket.on('meeting_started', (data: { roomId: string, meetingId: string }) => {
       console.log(`[Meeting] Relaying meeting_started for room: ${data.roomId}`);
-      socket.to(data.roomId).emit('meeting_started', data);
+      io.to(data.roomId).emit('meeting_started', data);
     });
 
     socket.on('meeting_reaction', (data: { roomId: string, emoji: string }) => {
@@ -197,7 +197,7 @@ export const initSocket = (server: HttpServer) => {
 
     socket.on('meeting_ended', (data: { roomId: string }) => {
       console.log(`[Meeting] Relaying meeting_ended for room: ${data.roomId}`);
-      socket.to(data.roomId).emit('meeting_ended', data);
+      io.to(data.roomId).emit('meeting_ended', data);
     });
 
     // ─── E2EE Public Key Exchange ─────────────────────────────────────────────

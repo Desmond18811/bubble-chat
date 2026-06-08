@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { User } from '../models/users';
 import { UserImage } from '../models/userImage';
 import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
+import { Conversation } from '../models/conversations';
+import { WorkspaceFile } from '../models/workspaceFile';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -18,6 +20,9 @@ const formatUser = async (u: any, includePrivate = false) => {
       console.error('Error signing avatar URL:', err);
     }
   }
+
+  const chatsCount = await Conversation.countDocuments({ users: u._id }).catch(() => 0);
+  const filesCount = await WorkspaceFile.countDocuments({ uploadedBy: u._id, isFolder: { $ne: true } }).catch(() => 0);
 
   return {
     id: u._id,
@@ -65,6 +70,8 @@ const formatUser = async (u: any, includePrivate = false) => {
     followersCount: u.followers?.length ?? 0,
     followingCount: u.following?.length ?? 0,
     postsCount: u.postsCount ?? u.posts?.length ?? 0,
+    chatsCount,
+    filesCount,
     createdAt: u.createdAt,
     updatedAt: u.updatedAt,
     // Add base64 fallback if available (optional, can be large)
@@ -172,6 +179,9 @@ export const getPublicProfile = async (req: AuthRequest, res: Response): Promise
       avatar = await getSignedMediaUrl(avatar).catch(() => avatar);
     }
 
+    const chatsCount = await Conversation.countDocuments({ users: user._id }).catch(() => 0);
+    const filesCount = await WorkspaceFile.countDocuments({ uploadedBy: user._id, isFolder: { $ne: true } }).catch(() => 0);
+
     res.status(200).json({
       message: 'Public profile retrieved.',
       data: {
@@ -199,6 +209,8 @@ export const getPublicProfile = async (req: AuthRequest, res: Response): Promise
         followersCount: (user.followers as any[])?.length ?? 0,
         followingCount: (user.following as any[])?.length ?? 0,
         postsCount: user.postsCount ?? 0,
+        chatsCount,
+        filesCount,
         publicKey: user.publicKey || null,
         createdAt: user.createdAt,
       },
