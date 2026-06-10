@@ -100,12 +100,8 @@ export const initSocket = (server: HttpServer) => {
         socket.to(data.chatId).emit('receive_message', data);
         return;
       }
-      // Fallback: look up recipient socketId
-      User.findById(data.toUserId).then(recipient => {
-        if (recipient && recipient.socketId) {
-          io.to(recipient.socketId).emit('receive_message', data);
-        }
-      });
+      // Fallback: send directly to recipient's personal room
+      io.to(data.toUserId).emit('receive_message', data);
     });
 
     // ─── Typing Indicators ────────────────────────────────────────────────────
@@ -143,18 +139,12 @@ export const initSocket = (server: HttpServer) => {
 
     // ─── Read Receipts & Burn Protocol ───────────────────────────────────────
     socket.on('message_read', async (data: { messageId: string, toUserId: string, isBurnAfterReading: boolean }) => {
-      User.findById(data.toUserId).then(sender => {
-        if (sender && sender.socketId) {
-          io.to(sender.socketId).emit('message_read_receipt', { messageId: data.messageId, readBy: userId });
-        }
-      });
+      io.to(data.toUserId).emit('message_read_receipt', { messageId: data.messageId, readBy: userId });
 
       if (data.isBurnAfterReading) {
         setTimeout(() => {
           socket.emit('message_burned', { messageId: data.messageId });
-          User.findById(data.toUserId).then(sender => {
-            if (sender && sender.socketId) io.to(sender.socketId).emit('message_burned', { messageId: data.messageId });
-          });
+          io.to(data.toUserId).emit('message_burned', { messageId: data.messageId });
         }, 60000);
       }
     });
@@ -210,27 +200,18 @@ export const initSocket = (server: HttpServer) => {
 
     // ─── Call Signaling ───────────────────────────────────────────────────────
     socket.on('call_offer', async (data: { toUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
-      const recipient = await User.findById(data.toUserId);
-      if (recipient && recipient.socketId) {
-        io.to(recipient.socketId).emit('incoming_call', {
-          ...data,
-          fromUserId: userId
-        });
-      }
+      io.to(data.toUserId).emit('incoming_call', {
+        ...data,
+        fromUserId: userId
+      });
     });
 
     socket.on('call_answer', async (data: { toUserId: string; roomId: string }) => {
-      const caller = await User.findById(data.toUserId);
-      if (caller && caller.socketId) {
-        io.to(caller.socketId).emit('call_accepted', { byUserId: userId, roomId: data.roomId });
-      }
+      io.to(data.toUserId).emit('call_accepted', { byUserId: userId, roomId: data.roomId });
     });
 
     socket.on('call_reject', async (data: { toUserId: string }) => {
-      const caller = await User.findById(data.toUserId);
-      if (caller && caller.socketId) {
-        io.to(caller.socketId).emit('call_rejected', { byUserId: userId });
-      }
+      io.to(data.toUserId).emit('call_rejected', { byUserId: userId });
     });
 
     socket.on('disconnect', async () => {
