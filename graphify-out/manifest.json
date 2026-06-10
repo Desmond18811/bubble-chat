@@ -10,8 +10,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/package.json": {
-    "mtime": 1780513072.2474601,
-    "ast_hash": "8207207bda7e2f36151651d40019ca6e",
+    "mtime": 1781078160.6376147,
+    "ast_hash": "b71cb6f0b4bd2edfb22afcc6ea3dada6",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/railway.json": {
@@ -45,13 +45,13 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/chat-list.tsx": {
-    "mtime": 1780749661.5519927,
-    "ast_hash": "4424805b6975fca5046f8b542a5e4661",
+    "mtime": 1781119568.4543805,
+    "ast_hash": "6f1fb335eb5b93fdabb47d47e59811ee",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/chat-window.tsx": {
-    "mtime": 1781077104.908242,
-    "ast_hash": "fb74b835fe05bfea486f58efa9bf9a1b",
+    "mtime": 1781119817.11327,
+    "ast_hash": "ce393d5b271ad2eb822a360191b4a0f5",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/create-group-modal.tsx": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/dashboard.tsx": {
-    "mtime": 1780924478.1623523,
-    "ast_hash": "5c796da0ca1e1f3dd8a1b0ba1ea5e5e4",
+    "mtime": 1781119809.972957,
+    "ast_hash": "2664881c1c08d745431341c8bbea1f3c",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/group-info.tsx": {
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
-    "mtime": 1781076153.077179,
-    "ast_hash": "48e4ccb601a2c2b4d1dbec0200eba4c0",
+    "mtime": 1781119823.2096639,
+    "ast_hash": "bc55076efb01bac541a062d16bac6c62",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/BubbleCursor.tsx": {
@@ -585,8 +585,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/login.tsx": {
-    "mtime": 1780671246.5282152,
-    "ast_hash": "93c14328b8b9575c4b8a5c1135b15e32",
+    "mtime": 1781119619.2503712,
+    "ast_hash": "fb54136229c9554f8f4844b2b09dbee7",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/setup-profile.tsx": {
@@ -595,8 +595,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/signup.tsx": {
-    "mtime": 1780675069.8913434,
-    "ast_hash": "bd1298d1359a07262532d661154c23d2",
+    "mtime": 1781119623.9868248,
+    "ast_hash": "9fbb0832d31d425302530f4c5c9a131e",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/verify-otp.tsx": {
