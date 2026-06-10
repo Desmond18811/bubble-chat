@@ -146,6 +146,9 @@ const MOCK_CONTACTS = [
 
 export default function Messages() {
   const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
+
+  const FILTERS = ["All", "Unread", "Friends", "Work", "Archive"];
 
   const getInitials = (name: string) => {
     return name
@@ -179,7 +182,7 @@ export default function Messages() {
 
       {/* Search */}
       <View className="px-6 py-2">
-        <View className="flex-row items-center rounded-full bg-purple/5 border border-purple/5 px-4 py-3">
+        <View className="flex-row items-center rounded-3xl bg-purple/10 border border-purple/5 px-4 py-3">
           <Search className="size-5 text-purple mr-2" />
           <TextInput
             placeholder="Search conversations..."
@@ -189,6 +192,30 @@ export default function Messages() {
             className="flex-1 text-[15px] text-ink font-medium"
           />
         </View>
+      </View>
+
+      <View className="px-6 pb-2 pt-1">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row overflow-visible">
+          {FILTERS.map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              onPress={() => setActiveFilter(filter)}
+              className={`mr-2 px-4 py-1.5 rounded-full border transition-colors ${
+                activeFilter === filter
+                  ? "bg-purple border-purple"
+                  : "bg-transparent border-purple/10"
+              }`}
+            >
+              <Text
+                className={`text-[13px] font-semibold ${
+                  activeFilter === filter ? "text-white" : "text-ink-soft"
+                }`}
+              >
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView className="flex-1 px-4 mt-2" showsVerticalScrollIndicator={false}>
@@ -205,18 +232,18 @@ export default function Messages() {
             <TouchableOpacity
               key={chat.id}
               activeOpacity={0.7}
-              className="flex-row items-center rounded-2xl p-2.5 mb-1 hover:bg-purple-light/40"
+              className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
             >
               {/* Avatar */}
-              <View className="relative">
+              <View className="relative shrink-0">
                 {chat.avatar ? (
                   <Image
                     source={{ uri: chat.avatar }}
-                    className="size-12 rounded-2xl"
+                    className="size-[52px] rounded-2xl"
                   />
                 ) : (
-                  <View className="size-12 rounded-2xl bg-purple-soft items-center justify-center">
-                    <Text className="text-purple font-bold text-base">
+                  <View className="size-[52px] rounded-2xl bg-purple/10 items-center justify-center">
+                    <Text className="text-purple font-bold text-xl">
                       {getInitials(chat.name)}
                     </Text>
                   </View>
@@ -244,13 +271,13 @@ export default function Messages() {
                   ) : (
                     <View className="flex-row items-center flex-1 min-w-0 pr-4">
                       {chat.status === "delivered" && (
-                        <Check className="size-3.5 text-ink-soft mr-1" />
+                        <Check className="size-3.5 text-black/20 mr-1" />
                       )}
                       {chat.status === "read_other_all" && (
                         <CheckCheck className="size-3.5 text-purple mr-1" />
                       )}
-                      <Text className="text-[13px] text-ink-soft truncate" numberOfLines={1}>
-                        {chat.isMuted && <BellOff className="size-3 text-ink-soft mr-1" />}
+                      <Text className="text-[13px] text-black/50 truncate" numberOfLines={1}>
+                        {chat.isMuted && <BellOff className="size-3 text-black/20 mr-1" />}
                         {chat.latestMessage || "Say hello! 👋"}
                       </Text>
                     </View>
@@ -281,12 +308,12 @@ export default function Messages() {
             <TouchableOpacity
               key={contact.id}
               activeOpacity={0.7}
-              className="flex-row items-center rounded-2xl p-2.5 mb-1 hover:bg-purple/5"
+              className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
             >
               {/* Avatar */}
-              <View className="relative">
-                <View className="size-12 rounded-2xl bg-purple-soft/60 items-center justify-center">
-                  <Text className="text-purple/80 font-bold text-base">
+              <View className="relative shrink-0">
+                <View className="size-[52px] rounded-2xl bg-purple/10 items-center justify-center">
+                  <Text className="text-purple font-bold text-xl">
                     {getInitials(contact.name)}
                   </Text>
                 </View>
@@ -298,7 +325,7 @@ export default function Messages() {
               {/* Contact details */}
               <View className="flex-1 min-w-0 ml-3">
                 <Text className="text-[15px] font-semibold text-ink">{contact.name}</Text>
-                <Text className="text-xs text-ink-soft italic mt-0.5">Not messaged yet • Click to chat</Text>
+                <Text className="text-xs text-black/40 italic mt-0.5">Not messaged yet • Click to chat</Text>
               </View>
             </TouchableOpacity>
           ))}
