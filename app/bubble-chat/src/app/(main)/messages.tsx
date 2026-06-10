@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
-import { Search, Plus, Pin, BellOff, MessageSquare } from "lucide-react-native";
+import { Search, Plus, Pin, BellOff, MessageSquare, Check, CheckCheck } from "lucide-react-native";
 import { Image } from "expo-image";
 
 const MOCK_CHATS = [
@@ -14,7 +14,8 @@ const MOCK_CHATS = [
     unreadCount: 3,
     isPinned: true,
     isOnline: false,
-    typingUser: null
+    typingUser: null,
+    status: "read_own"
   },
   {
     id: "2",
@@ -22,11 +23,26 @@ const MOCK_CHATS = [
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop",
     isGroupChat: false,
     latestMessage: "🎤 Voice message (0:14)",
-    time: "Yesterday",
+    time: "10:15 AM",
     unreadCount: 0,
     isPinned: true,
     isOnline: true,
-    typingUser: null
+    typingUser: null,
+    status: "unread_other"
+  },
+  {
+    id: "9",
+    name: "Company Announcements",
+    avatar: null,
+    isGroupChat: true,
+    latestMessage: "📢 Welcome our 50 new employee additions!",
+    time: "9:30 AM",
+    unreadCount: 0,
+    isPinned: true,
+    isMuted: true,
+    isOnline: false,
+    typingUser: null,
+    status: "read_own"
   },
   {
     id: "3",
@@ -34,30 +50,98 @@ const MOCK_CHATS = [
     avatar: null,
     isGroupChat: true,
     latestMessage: null,
-    time: "Monday",
+    time: "Yesterday",
     unreadCount: 0,
     isPinned: false,
     isOnline: false,
-    typingUser: { name: "Alice", username: "alice" }
+    typingUser: { name: "Alice", username: "alice" },
+    status: "typing"
   },
   {
     id: "4",
     name: "Sarah Chen",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop",
     isGroupChat: false,
-    time: "2 days ago",
+    time: "Yesterday",
     latestMessage: "Are we still on for the 2 PM meeting?",
     unreadCount: 1,
     isPinned: false,
     isOnline: true,
-    typingUser: null
+    typingUser: null,
+    status: "unread_other"
+  },
+  {
+    id: "8",
+    name: "David Kim",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop",
+    isGroupChat: false,
+    time: "Monday",
+    latestMessage: "Sounds good. Let's catch up later today.",
+    unreadCount: 0,
+    isPinned: false,
+    isOnline: true,
+    typingUser: null,
+    status: "delivered"
+  },
+  {
+    id: "5",
+    name: "Marketing HQ",
+    avatar: null,
+    isGroupChat: true,
+    latestMessage: "New campaign launch plan draft uploaded",
+    time: "Monday",
+    unreadCount: 0,
+    isPinned: false,
+    isOnline: false,
+    typingUser: null,
+    status: "read_other_all"
+  },
+  {
+    id: "6",
+    name: "Development Sync",
+    avatar: null,
+    isGroupChat: true,
+    latestMessage: "Vite build runs successfully on staging",
+    time: "May 31",
+    unreadCount: 0,
+    isPinned: false,
+    isOnline: false,
+    typingUser: null,
+    status: "read_other_all"
+  },
+  {
+    id: "7",
+    name: "Emma Watson",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop",
+    isGroupChat: false,
+    time: "May 30",
+    latestMessage: "Thanks for the feedback!",
+    unreadCount: 0,
+    isPinned: false,
+    isOnline: false,
+    typingUser: null,
+    status: "read_other_all"
+  },
+  {
+    id: "10",
+    name: "General Channel",
+    avatar: null,
+    isGroupChat: true,
+    latestMessage: "Floating in a delightful place 🫧",
+    time: "May 28",
+    unreadCount: 0,
+    isPinned: false,
+    isOnline: false,
+    typingUser: null,
+    status: "read_other_all"
   }
 ];
 
 const MOCK_CONTACTS = [
-  { id: "5", name: "David Kim", avatar: null, isOnline: true },
-  { id: "6", name: "Emily Watson", avatar: null, isOnline: false },
-  { id: "7", name: "Marcus Johnson", avatar: null, isOnline: true }
+  { id: "101", name: "Emily Watson", avatar: null, isOnline: false },
+  { id: "102", name: "Marcus Johnson", avatar: null, isOnline: true },
+  { id: "103", name: "Helena Rostova", avatar: null, isOnline: true },
+  { id: "104", name: "Tyler Durden", avatar: null, isOnline: false }
 ];
 
 export default function Messages() {
@@ -87,7 +171,7 @@ export default function Messages() {
         <Text className="text-2xl font-extrabold text-purple tracking-tight">
           Messages
         </Text>
-        <TouchableOpacity className="flex-row items-center gap-1.5 rounded-full bg-purple/10 px-4 py-2">
+        <TouchableOpacity className="flex-row items-center rounded-full bg-purple/10 px-4 py-2">
           <Plus className="size-4 text-purple mr-1" />
           <Text className="text-xs font-bold text-purple">New Group</Text>
         </TouchableOpacity>
@@ -95,7 +179,7 @@ export default function Messages() {
 
       {/* Search */}
       <View className="px-6 py-2">
-        <View className="flex-row items-center gap-3 rounded-full bg-purple/5 border border-purple/5 px-4 py-3">
+        <View className="flex-row items-center rounded-full bg-purple/5 border border-purple/5 px-4 py-3">
           <Search className="size-5 text-purple mr-2" />
           <TextInput
             placeholder="Search conversations..."
@@ -121,7 +205,7 @@ export default function Messages() {
             <TouchableOpacity
               key={chat.id}
               activeOpacity={0.7}
-              className="flex-row items-center gap-3 rounded-2xl p-2.5 mb-1 hover:bg-purple-light/40"
+              className="flex-row items-center rounded-2xl p-2.5 mb-1 hover:bg-purple-light/40"
             >
               {/* Avatar */}
               <View className="relative">
@@ -145,7 +229,7 @@ export default function Messages() {
               {/* Chat details */}
               <View className="flex-1 min-w-0 ml-3">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[15px] font-semibold text-ink flex-row items-center truncate">
+                  <Text className="text-[15px] font-semibold text-ink flex-row items-center truncate max-w-[70%]">
                     {chat.isPinned && <Pin className="size-3 text-purple mr-1 fill-purple" />}
                     {chat.name}
                   </Text>
@@ -154,13 +238,22 @@ export default function Messages() {
 
                 <View className="mt-1 flex-row items-center justify-between">
                   {chat.typingUser ? (
-                    <Text className="text-[13px] text-purple font-semibold animate-pulse">
+                    <Text className="text-[13px] text-purple font-semibold">
                       @{chat.typingUser.username} is typing…
                     </Text>
                   ) : (
-                    <Text className="text-[13px] text-ink-soft truncate pr-4" numberOfLines={1}>
-                      {chat.latestMessage || "Say hello! 👋"}
-                    </Text>
+                    <View className="flex-row items-center flex-1 min-w-0 pr-4">
+                      {chat.status === "delivered" && (
+                        <Check className="size-3.5 text-ink-soft mr-1" />
+                      )}
+                      {chat.status === "read_other_all" && (
+                        <CheckCheck className="size-3.5 text-purple mr-1" />
+                      )}
+                      <Text className="text-[13px] text-ink-soft truncate" numberOfLines={1}>
+                        {chat.isMuted && <BellOff className="size-3 text-ink-soft mr-1" />}
+                        {chat.latestMessage || "Say hello! 👋"}
+                      </Text>
+                    </View>
                   )}
                   {chat.unreadCount > 0 && (
                     <View className="flex size-5 items-center justify-center rounded-full bg-accent-orange">
@@ -188,7 +281,7 @@ export default function Messages() {
             <TouchableOpacity
               key={contact.id}
               activeOpacity={0.7}
-              className="flex-row items-center gap-3 rounded-2xl p-2.5 mb-1 hover:bg-purple/5"
+              className="flex-row items-center rounded-2xl p-2.5 mb-1 hover:bg-purple/5"
             >
               {/* Avatar */}
               <View className="relative">
