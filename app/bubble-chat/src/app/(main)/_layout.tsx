@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { MessageSquare, Phone, User, Calendar } from "lucide-react-native";
+import { MessageSquare, Phone, User, Calendar, Users } from "lucide-react-native";
 import React from "react";
 
 export default function TabsLayout() {
@@ -10,7 +10,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#6c5ce7",
         tabBarInactiveTintColor: "#9a9aab",
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: "600",
         },
         tabBarStyle: {
@@ -51,12 +51,27 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="people"
+        options={{
+          title: "People",
+          tabBarIcon: ({ color }) => (
+            <Users color={color} size={22} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
           tabBarIcon: ({ color }) => (
             <User color={color} size={22} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat/[id]"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

@@ -81,18 +81,18 @@ export default function UpdatesScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-4 py-4">
-        <View className="bg-purple-soft/20 rounded-3xl p-4 border border-black/5">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-lg font-bold text-ink">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
             <View className="flex-row gap-2">
-              <TouchableOpacity onPress={prevMonth} className="p-2 border border-black/5 rounded-xl">
+              <TouchableOpacity onPress={prevMonth} className="p-2 border border-black/5 rounded-xl bg-white">
                 <ChevronLeft color="#1f2030" size={16} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setCurrentDate(new Date())} className="px-3 py-2 border border-black/5 rounded-xl">
+              <TouchableOpacity onPress={() => setCurrentDate(new Date())} className="px-3 py-2 border border-black/5 rounded-xl bg-white">
                 <Text className="text-xs font-bold text-ink">Today</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={nextMonth} className="p-2 border border-black/5 rounded-xl">
+              <TouchableOpacity onPress={nextMonth} className="p-2 border border-black/5 rounded-xl bg-white">
                 <ChevronRight color="#1f2030" size={16} />
               </TouchableOpacity>
             </View>
@@ -114,12 +114,12 @@ export default function UpdatesScreen() {
                 <TouchableOpacity
                   key={idx}
                   onPress={() => setSelectedDate(cell.date)}
-                  className={`w-[14.28%] aspect-square p-1`}
+                  className="w-[14.28%] aspect-square p-1"
                 >
-                  <View className={`flex-1 rounded-xl p-1 justify-between ${
-                    selected ? 'bg-purple border border-purple' : 
-                    today ? 'border border-purple/50 bg-purple/5' : 
-                    cell.isCurrentMonth ? 'bg-white border border-black/5' : 'bg-slate-50 border border-black/5 opacity-50'
+                  <View className={`flex-1 rounded-[14px] p-1.5 justify-between border ${
+                    selected ? 'bg-purple border-purple' : 
+                    today ? 'border-purple/50 bg-purple/5' : 
+                    cell.isCurrentMonth ? 'bg-white border-black/5' : 'bg-slate-50 border-black/5 opacity-50'
                   }`}>
                     <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-ink'}`}>
                       {cell.date.getDate()}
@@ -134,12 +134,12 @@ export default function UpdatesScreen() {
           </View>
         </View>
 
-        <View className="mt-6">
+        <View className="p-6">
           <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1">Agenda for</Text>
           <Text className="text-lg font-bold text-ink mb-4">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
 
           {selectedDayTasks.length === 0 ? (
-            <View className="py-10 border-2 border-dashed border-black/5 rounded-3xl bg-white/50 items-center justify-center">
+            <View className="py-10 border-2 border-dashed border-black/5 rounded-[24px] bg-white/50 items-center justify-center">
               <Calendar color="#1f2030" size={24} opacity={0.2} className="mb-2" />
               <Text className="text-sm text-ink-soft font-medium">No events scheduled.</Text>
             </View>

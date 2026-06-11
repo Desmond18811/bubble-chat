@@ -1,53 +1,99 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Phone, Video, Search, MoreVertical, Smile, Paperclip, Mic, Send } from 'lucide-react-native';
+import { ChevronLeft, Phone, Video, Search, MoreVertical, Smile, Paperclip, Mic, Send, X, User, Mail, Briefcase } from 'lucide-react-native';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [message, setMessage] = useState('');
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
-  // Dummy chat data
-  const chatName = id === '1' ? 'Design Team' : 'Alex Rivera';
-  const isOnline = id !== '1';
-  
+  // Mock User details (corresponding to the chat ID)
+  const isGroup = id === '1';
+  const chatName = isGroup ? 'Design Team' : 'Alex Rivera';
+  const avatarUrl = isGroup ? null : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop';
+  const username = isGroup ? 'design_team' : 'alex_rivera';
+  const bio = isGroup 
+    ? 'Official collaborative space for the Bubblespace product and UI design team.'
+    : 'Product Designer at Bubblespace. Love crafting sweet interfaces.';
+  const email = isGroup ? 'design@bubblespace.co' : 'alex.rivera@bubblespace.co';
+  const phone = isGroup ? 'N/A' : '+1 (555) 019-2834';
+  const isOnline = !isGroup;
+
   const dummyMessages = [
     { id: '1', text: 'Hey team, how is the new design coming along?', sender: 'other', time: '10:00 AM' },
     { id: '2', text: 'Almost done, just finishing up the mobile views.', sender: 'me', time: '10:05 AM' },
     { id: '3', text: 'Great! Let me know if you need any assets.', sender: 'other', time: '10:10 AM' },
   ];
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-black/5">
-        <View className="flex-row items-center flex-1">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3 p-1">
+        <View className="flex-row items-center flex-1 min-w-0">
+          <TouchableOpacity onPress={() => router.back()} className="mr-2 p-1">
             <ChevronLeft color="#1f2030" size={24} />
           </TouchableOpacity>
-          <View className="flex-1">
-            <Text className="text-[17px] font-bold text-ink" numberOfLines={1}>{chatName}</Text>
-            {isOnline ? (
-              <Text className="text-xs text-green-500 font-semibold">Online</Text>
+          
+          {/* Clickable Header Info Area */}
+          <TouchableOpacity 
+            onPress={() => setIsInfoOpen(true)}
+            className="flex-row items-center flex-1 min-w-0"
+            activeOpacity={0.7}
+          >
+            {avatarUrl ? (
+              <View className="relative shrink-0 mr-3">
+                <View className="w-10 h-10 rounded-xl overflow-hidden bg-purple-soft">
+                  <Text className="hidden" /> {/* Fallback space */}
+                  {/* Avatar Image */}
+                  <View style={{ width: 40, height: 40, backgroundColor: '#eae7fa' }}>
+                    <Text className="text-purple font-bold text-center mt-2">{getInitials(chatName)}</Text>
+                  </View>
+                </View>
+                {isOnline && (
+                  <View className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-white bg-green-500" />
+                )}
+              </View>
             ) : (
-              <Text className="text-xs text-ink-soft">2 members • 1 online</Text>
+              <View className="size-10 rounded-xl bg-purple/10 items-center justify-center mr-3 shrink-0">
+                <Text className="text-purple font-bold text-sm">
+                  {getInitials(chatName)}
+                </Text>
+              </View>
             )}
-          </View>
+            <View className="flex-1 min-w-0">
+              <Text className="text-[16px] font-bold text-ink leading-tight" numberOfLines={1}>
+                {chatName}
+              </Text>
+              <Text className="text-[11px] text-ink-soft mt-0.5">
+                {isOnline ? 'Online' : isGroup ? '2 members' : 'Offline'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
         
-        <View className="flex-row items-center gap-4">
-          <TouchableOpacity>
+        {/* Actions aligned on the same horizontal line */}
+        <View className="flex-row items-center gap-4 shrink-0">
+          <TouchableOpacity className="p-1">
             <Search color="#9a9aab" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity className="p-1">
             <Phone color="#6c5ce7" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity className="p-1">
             <Video color="#6c5ce7" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsInfoOpen(true)} className="p-1">
             <MoreVertical color="#9a9aab" size={20} />
           </TouchableOpacity>
         </View>
@@ -103,6 +149,74 @@ export default function ChatScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
+
+      {/* Information Section Modal (White Background) */}
+      <Modal visible={isInfoOpen} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+          {/* Info Modal Header */}
+          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+            <View>
+              <Text className="text-xl font-bold text-ink">Information</Text>
+              <Text className="text-xs text-ink-soft">{isGroup ? 'Group Details' : 'Contact Details'}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setIsInfoOpen(false)} className="p-1">
+              <X color="#1f2030" size={24} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
+            {/* Centered User/Group Info */}
+            <View className="items-center bg-purple-soft/20 rounded-3xl p-6 border border-black/5 shadow-sm mb-6">
+              <View className="w-20 h-20 rounded-3xl bg-purple/10 items-center justify-center mb-4 border border-purple/5 shadow-sm">
+                {isGroup ? (
+                  <Text className="text-purple font-bold text-2xl">{getInitials(chatName)}</Text>
+                ) : (
+                  <User color="#6c5ce7" size={36} />
+                )}
+              </View>
+              <Text className="text-[20px] font-bold text-ink text-center leading-tight">{chatName}</Text>
+              <Text className="text-[14px] font-bold text-purple mt-1">@{username}</Text>
+              <Text className="text-[13px] text-ink-soft text-center mt-3 leading-relaxed px-4">{bio}</Text>
+            </View>
+
+            {/* Detailed Cards */}
+            <View className="space-y-4">
+              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
+                <Mail color="#6c5ce7" size={20} />
+                <View className="ml-3 flex-1">
+                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Email Address</Text>
+                  <Text className="text-sm font-semibold text-ink mt-0.5">{email}</Text>
+                </View>
+              </View>
+
+              {!isGroup && (
+                <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
+                  <Phone color="#6c5ce7" size={20} />
+                  <View className="ml-3 flex-1">
+                    <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Phone Number</Text>
+                    <Text className="text-sm font-semibold text-ink mt-0.5">{phone}</Text>
+                  </View>
+                </View>
+              )}
+
+              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                <Briefcase color="#6c5ce7" size={20} />
+                <View className="ml-3 flex-1">
+                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Organization</Text>
+                  <Text className="text-sm font-semibold text-ink mt-0.5">Bubblespace (Staff)</Text>
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              onPress={() => setIsInfoOpen(false)}
+              className="mt-8 bg-purple py-4 rounded-2xl items-center shadow-md shadow-purple/20 mb-8"
+            >
+              <Text className="text-white font-bold text-sm">Close Information</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

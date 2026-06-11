@@ -34,22 +34,24 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView className="flex-1">
-        <View className="p-6">
-          <View className="bg-purple-soft/30 rounded-3xl border border-black/5 p-8 items-center shadow-sm">
-            <View className="w-24 h-24 rounded-3xl bg-purple/10 items-center justify-center mb-4 shadow-sm">
+        <View className="w-full">
+          {/* Hero Card */}
+          <View className="bg-purple-soft/30 items-center shadow-sm w-full p-6 rounded-none">
+            <View className="w-24 h-24 rounded-3xl bg-purple/10 items-center justify-center mb-4 shadow-sm border border-purple/5">
               <User color="#6c5ce7" size={40} />
             </View>
             <Text className="text-[22px] font-bold text-ink leading-tight">{user.full_name}</Text>
-            <Text className="text-[14px] font-bold text-purple mt-1">@{user.username}</Text>
-            <Text className="text-[14px] font-semibold text-ink-soft mt-1">{user.org_role}</Text>
-            <Text className="text-[14px] text-ink-soft text-center mt-3 leading-relaxed">{user.bio}</Text>
+            <Text className="text-[14px] font-bold text-purple mt-1.5">@{user.username}</Text>
+            <Text className="text-[14px] font-semibold text-ink-soft mt-1.5">{user.org_role}</Text>
+            <Text className="text-[14px] text-ink-soft text-center mt-4 leading-relaxed max-w-sm">{user.bio}</Text>
 
-            <View className="w-full flex-row justify-around bg-white rounded-2xl py-4 mt-6 shadow-sm border border-black/5">
-              <View className="items-center px-4">
+            {/* Stats row */}
+            <View className="flex-row w-full items-center justify-around rounded-2xl bg-white shadow-sm py-4 mt-6 max-w-sm border border-black/5">
+              <View className="items-center px-6">
                 <Text className="text-[20px] font-bold text-purple">{user.chatsCount}</Text>
                 <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5">Chats</Text>
               </View>
-              <View className="items-center px-4 border-l border-black/5">
+              <View className="items-center px-6 border-l border-black/5">
                 <Text className="text-[20px] font-bold text-purple">{user.filesCount}</Text>
                 <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5">Files</Text>
               </View>
@@ -57,15 +59,18 @@ export default function ProfileScreen() {
 
             <TouchableOpacity
               onPress={() => setIsEditing(true)}
-              className="flex-row items-center bg-purple px-6 py-3 rounded-2xl mt-6 shadow-lg shadow-purple/20"
+              className="flex-row items-center justify-center rounded-2xl bg-purple px-6 py-3 mt-6 shadow-lg shadow-purple/20"
             >
               <Pencil color="#fff" size={14} />
               <Text className="text-white text-[14px] font-bold ml-2">Edit profile</Text>
             </TouchableOpacity>
           </View>
 
-          <View className="bg-purple-soft/30 rounded-3xl border border-black/5 p-6 mt-6 shadow-sm">
-            <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-4">Contact details</Text>
+          {/* Contact Details Card */}
+          <View className="bg-purple-soft/30 w-full p-6 rounded-none shadow-sm mt-6">
+            <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5">
+              Contact details
+            </Text>
             
             <View className="space-y-4">
               <View className="flex-row items-center bg-white/60 p-4 rounded-2xl border border-black/5 mb-3">
@@ -84,13 +89,15 @@ export default function ProfileScreen() {
                 </View>
               </View>
               
-              <View className="flex-row items-center bg-white/60 p-4 rounded-2xl border border-black/5">
-                <Briefcase color="#6c5ce7" size={20} />
-                <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Organization</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5">{user.organization} ({user.org_role})</Text>
+              {user.organization && (
+                <View className="flex-row items-center bg-white/60 p-4 rounded-2xl border border-black/5">
+                  <Briefcase color="#6c5ce7" size={20} />
+                  <View className="ml-3 flex-1">
+                    <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Organization</Text>
+                    <Text className="text-sm font-semibold text-ink mt-0.5">{user.organization} ({user.org_role})</Text>
+                  </View>
                 </View>
-              </View>
+              )}
             </View>
           </View>
         </View>

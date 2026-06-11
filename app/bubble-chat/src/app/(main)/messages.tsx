@@ -233,7 +233,7 @@ export default function Messages() {
             <Link href={`/chat/${chat.id}`} key={chat.id} asChild>
               <TouchableOpacity
                 activeOpacity={0.7}
-                className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
+                className="flex-row items-center rounded-2xl px-3 py-3 mb-1 active:bg-purple/5"
               >
                 {/* Avatar */}
                 <View className="relative shrink-0">
@@ -310,7 +310,7 @@ export default function Messages() {
             <Link href={`/chat/${contact.id}`} key={contact.id} asChild>
               <TouchableOpacity
                 activeOpacity={0.7}
-                className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
+                className="flex-row items-center rounded-2xl px-3 py-3 mb-1 active:bg-purple/5"
               >
                 {/* Avatar */}
                 <View className="relative shrink-0">
