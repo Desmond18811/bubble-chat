@@ -5,13 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  StyleSheet,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus } from "lucide-react-native";
 import { Image } from "expo-image";
 import { getChats, getContacts, subscribeToChats, Chat, Contact } from "../../lib/mockData";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
+import { BlurView } from "expo-blur";
 
 const FILTERS = ["All", "Unread", "Friends", "Work", "Archive"];
 
@@ -59,82 +61,21 @@ export default function Messages() {
 
   const isEmpty = filteredChats.length === 0 && filteredContacts.length === 0;
 
+  const insets = useSafeAreaInsets();
+  const headerHeight = 170 + insets.top;
+
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: "#f8f7ff" }} edges={["top"]}>
-      {/* ── Header ── */}
-      <View className="flex-row items-center justify-between px-5 pt-5 pb-3">
-        <Svg height="36" width="160">
-          <Defs>
-            <LinearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <Stop offset="0%" stopColor="#6c5ce7" />
-              <Stop offset="100%" stopColor="rgba(108,92,231,0.6)" />
-            </LinearGradient>
-          </Defs>
-          <SvgText
-            fill="url(#textGrad)"
-            fontSize="26"
-            fontFamily="SpaceGrotesk_700Bold"
-            x="0"
-            y="26"
-            letterSpacing="-0.5"
-          >
-            Messages
-          </SvgText>
-        </Svg>
-      </View>
-
-      {/* ── Search ── */}
-      <View className="px-5 pb-3">
-        <View
-          className="flex-row items-center rounded-[24px] px-4 py-3"
-          style={{ backgroundColor: "rgba(108,92,231,0.08)", borderWidth: 1, borderColor: "rgba(108,92,231,0.08)" }}
-        >
-          <Search size={18} color="#6c5ce7" style={{ marginRight: 10, flexShrink: 0 }} />
-          <TextInput
-            placeholder="Search conversations..."
-            value={search}
-            onChangeText={setSearch}
-            placeholderTextColor="rgba(31,32,48,0.35)"
-            style={{ flex: 1, fontSize: 14.5, color: "#1f2030", fontFamily: "Poppins_400Regular" }}
-          />
-        </View>
-      </View>
-
-      {/* ── Filter Tabs ── */}
-      <View className="pb-2">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
-          {FILTERS.map((filter) => {
-            const isActive = activeFilter === filter;
-            return (
-              <TouchableOpacity
-                key={filter}
-                onPress={() => setActiveFilter(filter)}
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 7,
-                  borderRadius: 100,
-                  backgroundColor: isActive ? "#6c5ce7" : "rgba(108,92,231,0.08)",
-                  borderWidth: 1,
-                  borderColor: isActive ? "#6c5ce7" : "transparent",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontFamily: isActive ? "Poppins_700Bold" : "Poppins_500Medium",
-                    color: isActive ? "#ffffff" : "#9a9aab",
-                  }}
-                >
-                  {filter}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: "#f8f7ff" }}>
       {/* ── Chat / Contact List ── */}
-      <ScrollView className="flex-1 px-2 pt-2" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          paddingTop: headerHeight - 45, // Starts 45px under the header bottom, so the first contact starts blurred!
+          paddingBottom: 120, // Leave room for the floating tab bar
+          paddingHorizontal: 8,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         {isEmpty ? (
           <View className="items-center justify-center py-20">
             <MessageSquarePlus size={36} color="rgba(31,32,48,0.12)" />
@@ -181,7 +122,104 @@ export default function Messages() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── Floating Blur Header Overlay ── */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: headerHeight,
+          zIndex: 10,
+          overflow: "hidden",
+        }}
+      >
+        <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
+        <View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            backgroundColor: "rgba(248, 247, 255, 0.82)", // Semi-transparent matching app background
+            borderBottomWidth: 1,
+            borderBottomColor: "rgba(108,92,231,0.06)",
+          }}
+        />
+
+        <View style={{ paddingTop: insets.top }}>
+          {/* Header Title */}
+          <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+            <Svg height="36" width="160">
+              <Defs>
+                <LinearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#6c5ce7" />
+                  <Stop offset="100%" stopColor="rgba(108,92,231,0.6)" />
+                </LinearGradient>
+              </Defs>
+              <SvgText
+                fill="url(#textGrad)"
+                fontSize="26"
+                fontFamily="SpaceGrotesk_700Bold"
+                x="0"
+                y="26"
+                letterSpacing="-0.5"
+              >
+                Messages
+              </SvgText>
+            </Svg>
+          </View>
+
+          {/* Search */}
+          <View className="px-5 pb-3">
+            <View
+              className="flex-row items-center rounded-[24px] px-4 py-3"
+              style={{ backgroundColor: "rgba(108,92,231,0.08)", borderWidth: 1, borderColor: "rgba(108,92,231,0.08)" }}
+            >
+              <Search size={18} color="#6c5ce7" style={{ marginRight: 10, flexShrink: 0 }} />
+              <TextInput
+                placeholder="Search conversations..."
+                value={search}
+                onChangeText={setSearch}
+                placeholderTextColor="rgba(31,32,48,0.35)"
+                style={{ flex: 1, fontSize: 14.5, color: "#1f2030", fontFamily: "Poppins_400Regular" }}
+              />
+            </View>
+          </View>
+
+          {/* Filter Tabs */}
+          <View className="pb-2">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
+              {FILTERS.map((filter) => {
+                const isActive = activeFilter === filter;
+                return (
+                  <TouchableOpacity
+                    key={filter}
+                    onPress={() => setActiveFilter(filter)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 7,
+                      borderRadius: 100,
+                      backgroundColor: isActive ? "#6c5ce7" : "rgba(108,92,231,0.08)",
+                      borderWidth: 1,
+                      borderColor: isActive ? "#6c5ce7" : "transparent",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontFamily: isActive ? "Poppins_700Bold" : "Poppins_500Medium",
+                        color: isActive ? "#ffffff" : "#9a9aab",
+                      }}
+                    >
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
