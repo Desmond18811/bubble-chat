@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Text, View, TextInput, TouchableOpacity, ScrollView, SafeAreaView } from "react-native";
+import { Link } from "expo-router";
 import { Search, Plus, Pin, BellOff, MessageSquare, Check, CheckCheck } from "lucide-react-native";
 import { Image } from "expo-image";
 
@@ -229,69 +230,70 @@ export default function Messages() {
           </View>
 
           {filteredChats.map((chat) => (
-            <TouchableOpacity
-              key={chat.id}
-              activeOpacity={0.7}
-              className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
-            >
-              {/* Avatar */}
-              <View className="relative shrink-0">
-                {chat.avatar ? (
-                  <Image
-                    source={{ uri: chat.avatar }}
-                    className="size-[52px] rounded-2xl"
-                  />
-                ) : (
-                  <View className="size-[52px] rounded-2xl bg-purple/10 items-center justify-center">
-                    <Text className="text-purple font-bold text-xl">
-                      {getInitials(chat.name)}
-                    </Text>
-                  </View>
-                )}
-                {chat.isOnline && (
-                  <View className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white bg-green-500 shadow-sm" />
-                )}
-              </View>
-
-              {/* Chat details */}
-              <View className="flex-1 min-w-0 ml-3">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-[15px] font-semibold text-ink flex-row items-center truncate max-w-[70%]">
-                    {chat.isPinned && <Pin className="size-3 text-purple mr-1 fill-purple" />}
-                    {chat.name}
-                  </Text>
-                  <Text className="text-xs text-ink-soft font-semibold">{chat.time}</Text>
-                </View>
-
-                <View className="mt-1 flex-row items-center justify-between">
-                  {chat.typingUser ? (
-                    <Text className="text-[13px] text-purple font-semibold">
-                      @{chat.typingUser.username} is typing…
-                    </Text>
+            <Link href={`/chat/${chat.id}`} key={chat.id} asChild>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
+              >
+                {/* Avatar */}
+                <View className="relative shrink-0">
+                  {chat.avatar ? (
+                    <Image
+                      source={{ uri: chat.avatar }}
+                      className="size-[52px] rounded-2xl"
+                    />
                   ) : (
-                    <View className="flex-row items-center flex-1 min-w-0 pr-4">
-                      {chat.status === "delivered" && (
-                        <Check className="size-3.5 text-black/20 mr-1" />
-                      )}
-                      {chat.status === "read_other_all" && (
-                        <CheckCheck className="size-3.5 text-purple mr-1" />
-                      )}
-                      <Text className="text-[13px] text-black/50 truncate" numberOfLines={1}>
-                        {chat.isMuted && <BellOff className="size-3 text-black/20 mr-1" />}
-                        {chat.latestMessage || "Say hello! 👋"}
+                    <View className="size-[52px] rounded-2xl bg-purple/10 items-center justify-center">
+                      <Text className="text-purple font-bold text-xl">
+                        {getInitials(chat.name)}
                       </Text>
                     </View>
                   )}
-                  {chat.unreadCount > 0 && (
-                    <View className="flex size-5 items-center justify-center rounded-full bg-accent-orange">
-                      <Text className="text-[10px] font-bold text-white leading-none">
-                        {chat.unreadCount}
-                      </Text>
-                    </View>
+                  {chat.isOnline && (
+                    <View className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white bg-green-500 shadow-sm" />
                   )}
                 </View>
-              </View>
-            </TouchableOpacity>
+
+                {/* Chat details */}
+                <View className="flex-1 min-w-0 ml-3">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[15px] font-semibold text-ink flex-row items-center truncate max-w-[70%]">
+                      {chat.isPinned && <Pin className="size-3 text-purple mr-1 fill-purple" />}
+                      {chat.name}
+                    </Text>
+                    <Text className="text-xs text-ink-soft font-semibold">{chat.time}</Text>
+                  </View>
+
+                  <View className="mt-1 flex-row items-center justify-between">
+                    {chat.typingUser ? (
+                      <Text className="text-[13px] text-purple font-semibold">
+                        @{chat.typingUser.username} is typing…
+                      </Text>
+                    ) : (
+                      <View className="flex-row items-center flex-1 min-w-0 pr-4">
+                        {chat.status === "delivered" && (
+                          <Check className="size-3.5 text-black/20 mr-1" />
+                        )}
+                        {chat.status === "read_other_all" && (
+                          <CheckCheck className="size-3.5 text-purple mr-1" />
+                        )}
+                        <Text className="text-[13px] text-black/50 truncate" numberOfLines={1}>
+                          {chat.isMuted && <BellOff className="size-3 text-black/20 mr-1" />}
+                          {chat.latestMessage || "Say hello! 👋"}
+                        </Text>
+                      </View>
+                    )}
+                    {chat.unreadCount > 0 && (
+                      <View className="flex size-5 items-center justify-center rounded-full bg-accent-orange">
+                        <Text className="text-[10px] font-bold text-white leading-none">
+                          {chat.unreadCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </Link>
           ))}
         </View>
 
@@ -305,29 +307,30 @@ export default function Messages() {
           </View>
 
           {filteredContacts.map((contact) => (
-            <TouchableOpacity
-              key={contact.id}
-              activeOpacity={0.7}
-              className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
-            >
-              {/* Avatar */}
-              <View className="relative shrink-0">
-                <View className="size-[52px] rounded-2xl bg-purple/10 items-center justify-center">
-                  <Text className="text-purple font-bold text-xl">
-                    {getInitials(contact.name)}
-                  </Text>
+            <Link href={`/chat/${contact.id}`} key={contact.id} asChild>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                className="flex-row items-center rounded-[24px] px-3 py-3 mb-1 active:bg-purple/5"
+              >
+                {/* Avatar */}
+                <View className="relative shrink-0">
+                  <View className="size-[52px] rounded-2xl bg-purple/10 items-center justify-center">
+                    <Text className="text-purple font-bold text-xl">
+                      {getInitials(contact.name)}
+                    </Text>
+                  </View>
+                  {contact.isOnline && (
+                    <View className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white bg-green-500 shadow-sm" />
+                  )}
                 </View>
-                {contact.isOnline && (
-                  <View className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-white bg-green-500 shadow-sm" />
-                )}
-              </View>
 
-              {/* Contact details */}
-              <View className="flex-1 min-w-0 ml-3">
-                <Text className="text-[15px] font-semibold text-ink">{contact.name}</Text>
-                <Text className="text-xs text-black/40 italic mt-0.5">Not messaged yet • Click to chat</Text>
-              </View>
-            </TouchableOpacity>
+                {/* Contact details */}
+                <View className="flex-1 min-w-0 ml-3">
+                  <Text className="text-[15px] font-semibold text-ink">{contact.name}</Text>
+                  <Text className="text-xs text-black/40 italic mt-0.5">Not messaged yet • Click to chat</Text>
+                </View>
+              </TouchableOpacity>
+            </Link>
           ))}
         </View>
       </ScrollView>
