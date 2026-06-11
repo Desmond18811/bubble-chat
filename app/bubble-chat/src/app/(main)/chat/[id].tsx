@@ -1,222 +1,320 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View, Text, TouchableOpacity, ScrollView,
+  TextInput, KeyboardAvoidingView, Platform, Modal,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Phone, Video, Search, MoreVertical, Smile, Paperclip, Mic, Send, X, User, Mail, Briefcase } from 'lucide-react-native';
+import {
+  ChevronLeft, Phone, Video, Search, MoreVertical,
+  Smile, Paperclip, Mic, Send, X, Mail, Briefcase,
+} from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { getChatById, sendMessage, subscribeToChats, Message } from '../../../lib/mockData';
+
+const PURPLE = '#6c5ce7';
+const INK = '#1f2030';
+const INK_SOFT = '#9a9aab';
+const BG = '#f8f7ff';
+const PURPLE_SOFT = 'rgba(108,92,231,0.10)';
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const [message, setMessage] = useState('');
+  const [messageText, setMessageText] = useState('');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const scrollViewRef = useRef<ScrollView>(null);
 
-  // Mock User details (corresponding to the chat ID)
-  const isGroup = id === '1';
-  const chatName = isGroup ? 'Design Team' : 'Alex Rivera';
-  const avatarUrl = isGroup ? null : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop';
-  const username = isGroup ? 'design_team' : 'alex_rivera';
-  const bio = isGroup 
-    ? 'Official collaborative space for the Bubblespace product and UI design team.'
-    : 'Product Designer at Bubblespace. Love crafting sweet interfaces.';
-  const email = isGroup ? 'design@bubblespace.co' : 'alex.rivera@bubblespace.co';
-  const phone = isGroup ? 'N/A' : '+1 (555) 019-2834';
-  const isOnline = !isGroup;
+  const chat = getChatById(id as string);
 
-  const dummyMessages = [
-    { id: '1', text: 'Hey team, how is the new design coming along?', sender: 'other', time: '10:00 AM' },
-    { id: '2', text: 'Almost done, just finishing up the mobile views.', sender: 'me', time: '10:05 AM' },
-    { id: '3', text: 'Great! Let me know if you need any assets.', sender: 'other', time: '10:10 AM' },
-  ];
+  useEffect(() => {
+    if (!chat) return;
+    setMessages([...chat.messages]);
+    chat.unreadCount = 0;
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
+    const unsubscribe = subscribeToChats(() => {
+      const updated = getChatById(id as string);
+      if (updated) {
+        setMessages([...updated.messages]);
+        updated.unreadCount = 0;
+      }
+    });
+    return () => unsubscribe();
+  }, [id]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, [messages, chat?.status]);
+
+  if (!chat) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: INK, fontFamily: 'Poppins_600SemiBold', fontSize: 15 }}>Conversation not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16, backgroundColor: PURPLE, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14 }}>
+          <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+  const handleSend = () => {
+    if (!messageText.trim()) return;
+    sendMessage(chat.id, messageText.trim());
+    setMessageText('');
   };
 
+  const statusLine = chat.status === 'typing'
+    ? 'typing…'
+    : chat.isOnline
+    ? 'Online'
+    : chat.isGroupChat
+    ? `${chat.messages.length} messages`
+    : 'Offline';
+
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-black/5">
-        <View className="flex-row items-center flex-1 min-w-0">
-          <TouchableOpacity onPress={() => router.back()} className="mr-2 p-1">
-            <ChevronLeft color="#1f2030" size={24} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
+
+      {/* ── Header ── */}
+      <View style={{
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: 14, paddingVertical: 10,
+        borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)',
+        backgroundColor: '#ffffff',
+      }}>
+        {/* Back + Avatar + Name */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ padding: 6, marginRight: 4 }}>
+            <ChevronLeft size={20} color={PURPLE} />
           </TouchableOpacity>
-          
-          {/* Clickable Header Info Area */}
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={() => setIsInfoOpen(true)}
-            className="flex-row items-center flex-1 min-w-0"
-            activeOpacity={0.7}
+            activeOpacity={0.75}
+            style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}
           >
-            {avatarUrl ? (
-              <View className="relative shrink-0 mr-3">
-                <View className="w-10 h-10 rounded-xl overflow-hidden bg-purple-soft">
-                  <Text className="hidden" /> {/* Fallback space */}
-                  {/* Avatar Image */}
-                  <View style={{ width: 40, height: 40, backgroundColor: '#eae7fa' }}>
-                    <Text className="text-purple font-bold text-center mt-2">{getInitials(chatName)}</Text>
-                  </View>
+            <View style={{ position: 'relative', flexShrink: 0, marginRight: 10 }}>
+              {chat.avatar ? (
+                <Image source={{ uri: chat.avatar }} style={{ width: 40, height: 40, borderRadius: 12 }} />
+              ) : (
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>{getInitials(chat.name)}</Text>
                 </View>
-                {isOnline && (
-                  <View className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-white bg-green-500" />
-                )}
-              </View>
-            ) : (
-              <View className="size-10 rounded-xl bg-purple/10 items-center justify-center mr-3 shrink-0">
-                <Text className="text-purple font-bold text-sm">
-                  {getInitials(chatName)}
-                </Text>
-              </View>
-            )}
-            <View className="flex-1 min-w-0">
-              <Text className="text-[16px] font-bold text-ink leading-tight" numberOfLines={1}>
-                {chatName}
+              )}
+              {chat.isOnline && (
+                <View style={{ position: 'absolute', bottom: -1, right: -1, width: 11, height: 11, borderRadius: 99, backgroundColor: '#22c55e', borderWidth: 2, borderColor: '#ffffff' }} />
+              )}
+            </View>
+
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ fontSize: 15.5, fontFamily: 'Poppins_700Bold', color: INK, lineHeight: 20 }}>
+                {chat.name}
               </Text>
-              <Text className="text-[11px] text-ink-soft mt-0.5">
-                {isOnline ? 'Online' : isGroup ? '2 members' : 'Offline'}
+              <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_400Regular', color: chat.status === 'typing' ? PURPLE : INK_SOFT, marginTop: 1 }}>
+                {statusLine}
               </Text>
             </View>
           </TouchableOpacity>
         </View>
-        
-        {/* Actions aligned on the same horizontal line */}
-        <View className="flex-row items-center gap-4 shrink-0">
-          <TouchableOpacity className="p-1">
-            <Search color="#9a9aab" size={20} />
-          </TouchableOpacity>
-          <TouchableOpacity className="p-1">
-            <Phone color="#6c5ce7" size={20} />
-          </TouchableOpacity>
-          <TouchableOpacity className="p-1">
-            <Video color="#6c5ce7" size={20} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setIsInfoOpen(true)} className="p-1">
-            <MoreVertical color="#9a9aab" size={20} />
-          </TouchableOpacity>
+
+        {/* Action Icons */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          <IconBtn icon={<Search size={18} color={PURPLE} />} />
+          <IconBtn icon={<Phone size={18} color={PURPLE} />} />
+          <IconBtn icon={<Video size={18} color={PURPLE} />} />
+          <IconBtn icon={<MoreVertical size={18} color={PURPLE} />} onPress={() => setIsInfoOpen(true)} />
         </View>
       </View>
 
-      {/* Message List */}
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView className="flex-1 px-4 py-4" contentContainerStyle={{ paddingBottom: 20 }}>
-          {dummyMessages.map(msg => {
+      {/* ── Messages + Input ── */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Subtle lavender bg for chat area */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1, backgroundColor: BG }}
+          contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 16, paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map(msg => {
             const isMe = msg.sender === 'me';
             return (
-              <View key={msg.id} className={`mb-4 flex-row ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <View className={`max-w-[80%] rounded-2xl p-3 ${isMe ? 'bg-purple rounded-br-sm' : 'bg-purple-soft/50 rounded-bl-sm'}`}>
-                  <Text className={`text-[15px] ${isMe ? 'text-white' : 'text-ink'}`}>{msg.text}</Text>
-                  <Text className={`text-[10px] mt-1 text-right ${isMe ? 'text-white/70' : 'text-ink-soft'}`}>{msg.time}</Text>
+              <View key={msg.id} style={{ marginBottom: 10, flexDirection: 'row', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                {/* Group chat sender avatar */}
+                {!isMe && chat.isGroupChat && (
+                  <View style={{ width: 24, height: 24, borderRadius: 99, backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center', marginRight: 6, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
+                    <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 8 }}>
+                      {msg.senderName ? getInitials(msg.senderName) : 'U'}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={{
+                  maxWidth: '75%',
+                  borderRadius: 18,
+                  borderBottomRightRadius: isMe ? 4 : 18,
+                  borderBottomLeftRadius: isMe ? 18 : 4,
+                  paddingHorizontal: 14,
+                  paddingTop: 10,
+                  paddingBottom: 8,
+                  backgroundColor: isMe ? PURPLE : '#ffffff',
+                  shadowColor: isMe ? PURPLE : '#000',
+                  shadowOpacity: isMe ? 0.2 : 0.04,
+                  shadowRadius: 6,
+                  shadowOffset: { width: 0, height: 2 },
+                  elevation: 2,
+                }}>
+                  {!isMe && chat.isGroupChat && msg.senderName && (
+                    <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, marginBottom: 3 }}>
+                      {msg.senderName}
+                    </Text>
+                  )}
+                  <Text style={{ fontSize: 14.5, lineHeight: 22, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK }}>
+                    {msg.text}
+                  </Text>
+                  <Text style={{ fontSize: 9.5, fontFamily: 'Poppins_400Regular', marginTop: 4, textAlign: 'right', color: isMe ? 'rgba(255,255,255,0.65)' : INK_SOFT }}>
+                    {msg.time}
+                  </Text>
                 </View>
               </View>
             );
           })}
+
+          {/* Typing bubble */}
+          {chat.status === 'typing' && (
+            <View style={{ marginBottom: 10, flexDirection: 'row', justifyContent: 'flex-start' }}>
+              <View style={{ borderRadius: 18, borderBottomLeftRadius: 4, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }}>
+                <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+                  {[0, 1, 2].map(i => (
+                    <View key={i} style={{ width: 6, height: 6, borderRadius: 99, backgroundColor: PURPLE_SOFT }} />
+                  ))}
+                  <Text style={{ fontSize: 12, color: PURPLE, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>typing…</Text>
+                </View>
+              </View>
+            </View>
+          )}
         </ScrollView>
 
-        {/* Input Area */}
-        <View className="px-4 py-3 border-t border-black/5 bg-white flex-row items-end">
-          <TouchableOpacity className="p-2 mr-1">
-            <Paperclip color="#9a9aab" size={20} />
+        {/* ── Input Bar ── */}
+        <View style={{
+          flexDirection: 'row', alignItems: 'flex-end',
+          paddingHorizontal: 12, paddingVertical: 10,
+          borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)',
+          backgroundColor: '#ffffff',
+        }}>
+          <TouchableOpacity style={{ padding: 8, marginRight: 2 }}>
+            <Paperclip size={20} color={INK_SOFT} />
           </TouchableOpacity>
-          
-          <View className="flex-1 flex-row items-center bg-purple-soft/30 rounded-2xl px-3 py-2 min-h-[44px] max-h-[120px]">
-            <TouchableOpacity className="mr-2">
-              <Smile color="#9a9aab" size={20} />
+
+          <View style={{
+            flex: 1, flexDirection: 'row', alignItems: 'flex-end',
+            backgroundColor: 'rgba(108,92,231,0.07)',
+            borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8,
+            minHeight: 44, maxHeight: 120,
+          }}>
+            <TouchableOpacity style={{ marginRight: 8, paddingBottom: 2 }}>
+              <Smile size={20} color={INK_SOFT} />
             </TouchableOpacity>
             <TextInput
-              className="flex-1 text-[15px] text-ink pt-0 pb-0"
+              style={{ flex: 1, fontSize: 14.5, fontFamily: 'Poppins_400Regular', color: INK, paddingTop: 0, paddingBottom: 0 }}
               placeholder="Type a message..."
-              placeholderTextColor="#9a9aab"
+              placeholderTextColor={INK_SOFT}
               multiline
-              value={message}
-              onChangeText={setMessage}
+              value={messageText}
+              onChangeText={setMessageText}
             />
           </View>
 
-          {message.trim().length > 0 ? (
-            <TouchableOpacity className="w-11 h-11 bg-purple rounded-full items-center justify-center ml-2 shadow-sm">
-              <Send color="#fff" size={18} className="ml-1" />
+          {messageText.trim().length > 0 ? (
+            <TouchableOpacity
+              onPress={handleSend}
+              style={{ width: 44, height: 44, borderRadius: 99, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center', marginLeft: 8, shadowColor: PURPLE, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
+            >
+              <Send size={18} color="#fff" />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity className="p-3 ml-1">
-              <Mic color="#6c5ce7" size={22} />
+            <TouchableOpacity style={{ padding: 10, marginLeft: 4 }}>
+              <Mic size={22} color={PURPLE} />
             </TouchableOpacity>
           )}
         </View>
       </KeyboardAvoidingView>
 
-      {/* Information Section Modal (White Background) */}
+      {/* ── Info Modal ── */}
       <Modal visible={isInfoOpen} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-          {/* Info Modal Header */}
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
+          {/* Modal Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}>
             <View>
-              <Text className="text-xl font-bold text-ink">Information</Text>
-              <Text className="text-xs text-ink-soft">{isGroup ? 'Group Details' : 'Contact Details'}</Text>
+              <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Information</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>
+                {chat.isGroupChat ? 'Group Details' : 'Contact Details'}
+              </Text>
             </View>
-            <TouchableOpacity onPress={() => setIsInfoOpen(false)} className="p-1">
-              <X color="#1f2030" size={24} />
+            <TouchableOpacity onPress={() => setIsInfoOpen(false)} style={{ padding: 6 }}>
+              <X size={20} color={PURPLE} />
             </TouchableOpacity>
           </View>
-          
-          <ScrollView className="flex-1 px-6 pt-6" showsVerticalScrollIndicator={false}>
-            {/* Centered User/Group Info */}
-            <View className="items-center bg-purple-soft/20 rounded-3xl p-6 border border-black/5 shadow-sm mb-6">
-              <View className="w-20 h-20 rounded-3xl bg-purple/10 items-center justify-center mb-4 border border-purple/5 shadow-sm">
-                {isGroup ? (
-                  <Text className="text-purple font-bold text-2xl">{getInitials(chatName)}</Text>
+
+          <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+            {/* Profile Card */}
+            <View style={{ alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+              <View style={{ width: 76, height: 76, borderRadius: 22, overflow: 'hidden', backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                {chat.avatar ? (
+                  <Image source={{ uri: chat.avatar }} style={{ width: 76, height: 76 }} />
                 ) : (
-                  <User color="#6c5ce7" size={36} />
+                  <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 24 }}>{getInitials(chat.name)}</Text>
                 )}
               </View>
-              <Text className="text-[20px] font-bold text-ink text-center leading-tight">{chatName}</Text>
-              <Text className="text-[14px] font-bold text-purple mt-1">@{username}</Text>
-              <Text className="text-[13px] text-ink-soft text-center mt-3 leading-relaxed px-4">{bio}</Text>
+              <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>{chat.name}</Text>
+              <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>
+                @{chat.isGroupChat ? 'group_' + chat.name.toLowerCase().replace(/\s/g, '_') : chat.name.toLowerCase().replace(/\s/g, '_')}
+              </Text>
+              <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: INK_SOFT, textAlign: 'center', marginTop: 10, lineHeight: 20, paddingHorizontal: 10 }}>
+                {chat.bio}
+              </Text>
             </View>
 
-            {/* Detailed Cards */}
-            <View className="space-y-4">
-              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
-                <Mail color="#6c5ce7" size={20} />
-                <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Email Address</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5">{email}</Text>
-                </View>
-              </View>
+            {/* Info Cards */}
+            <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={chat.email} />
+            {!chat.isGroupChat && <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={chat.phone} />}
+            <InfoCard icon={<Briefcase size={19} color={PURPLE} />} label="Organization & Role" value={`${chat.organization} · ${chat.org_role}`} />
 
-              {!isGroup && (
-                <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
-                  <Phone color="#6c5ce7" size={20} />
-                  <View className="ml-3 flex-1">
-                    <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Phone Number</Text>
-                    <Text className="text-sm font-semibold text-ink mt-0.5">{phone}</Text>
-                  </View>
-                </View>
-              )}
-
-              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
-                <Briefcase color="#6c5ce7" size={20} />
-                <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Organization</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5">Bubblespace (Staff)</Text>
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setIsInfoOpen(false)}
-              className="mt-8 bg-purple py-4 rounded-2xl items-center shadow-md shadow-purple/20 mb-8"
+              style={{ marginTop: 28, backgroundColor: PURPLE, paddingVertical: 16, borderRadius: 18, alignItems: 'center', shadowColor: PURPLE, shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5, marginBottom: 32 }}
             >
-              <Text className="text-white font-bold text-sm">Close Information</Text>
+              <Text style={{ color: '#ffffff', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Close</Text>
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function IconBtn({ icon, onPress }: { icon: React.ReactNode; onPress?: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 10 }}>
+      {icon}
+    </TouchableOpacity>
+  );
+}
+
+function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 10 }}>
+      {icon}
+      <View style={{ marginLeft: 12, flex: 1 }}>
+        <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</Text>
+        <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: '#1f2030', marginTop: 2 }}>{value}</Text>
+      </View>
+    </View>
   );
 }

@@ -36,6 +36,10 @@ module.exports = {
         input: "var(--input)",
         ring: "var(--ring)",
       },
+      fontFamily: {
+        sans: ["Poppins_400Regular", "Poppins_500Medium", "Poppins_600SemiBold", "Poppins_700Bold", "System", "sans-serif"],
+        display: ["SpaceGrotesk_700Bold", "System", "sans-serif"],
+      },
       borderRadius: {
         lg: "16px",
         md: "14px",

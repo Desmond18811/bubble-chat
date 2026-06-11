@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
 import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 // Helper to get calendar cells
 const getCalendarCells = (currentDate: Date) => {
@@ -67,40 +68,57 @@ export default function UpdatesScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5">
         <View>
-          <Text className="text-xl font-bold text-ink">Updates</Text>
-          <Text className="text-xs text-ink-soft">Plan and sync team agendas</Text>
+          <Svg height="36" width="140">
+            <Defs>
+              <LinearGradient id="updatesGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#6c5ce7" />
+                <Stop offset="100%" stopColor="rgba(108,92,231,0.6)" />
+              </LinearGradient>
+            </Defs>
+            <SvgText
+              fill="url(#updatesGrad)"
+              fontSize="26"
+              fontFamily="SpaceGrotesk_700Bold"
+              x="0"
+              y="26"
+              letterSpacing="-0.5"
+            >
+              Updates
+            </SvgText>
+          </Svg>
+          <Text className="text-xs text-ink-soft font-sans mt-0.5">Plan and sync team agendas</Text>
         </View>
         <TouchableOpacity
           onPress={() => setIsModalOpen(true)}
-          className="flex-row items-center bg-purple px-4 py-2 rounded-xl"
+          className="flex-row items-center bg-purple px-4 py-2.5 rounded-xl shadow-sm"
         >
           <Plus color="#fff" size={16} />
-          <Text className="text-white text-xs font-bold ml-1">Add Event</Text>
+          <Text className="text-white text-xs font-bold font-sans ml-1">Add Event</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-lg font-bold text-ink">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
+            <Text className="text-lg font-bold text-ink font-sans">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
             <View className="flex-row gap-2">
               <TouchableOpacity onPress={prevMonth} className="p-2 border border-black/5 rounded-xl bg-white">
-                <ChevronLeft color="#1f2030" size={16} />
+                <ChevronLeft color="#6c5ce7" size={16} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setCurrentDate(new Date())} className="px-3 py-2 border border-black/5 rounded-xl bg-white">
-                <Text className="text-xs font-bold text-ink">Today</Text>
+                <Text className="text-xs font-bold text-ink font-sans">Today</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={nextMonth} className="p-2 border border-black/5 rounded-xl bg-white">
-                <ChevronRight color="#1f2030" size={16} />
+                <ChevronRight color="#6c5ce7" size={16} />
               </TouchableOpacity>
             </View>
           </View>
 
           <View className="flex-row justify-between mb-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <Text key={day} className="text-[10px] font-bold text-black/30 uppercase flex-1 text-center">{day}</Text>
+              <Text key={day} className="text-[10px] font-bold text-black/30 uppercase flex-1 text-center font-sans">{day}</Text>
             ))}
           </View>
 
@@ -121,7 +139,7 @@ export default function UpdatesScreen() {
                     today ? 'border-purple/50 bg-purple/5' : 
                     cell.isCurrentMonth ? 'bg-white border-black/5' : 'bg-slate-50 border-black/5 opacity-50'
                   }`}>
-                    <Text className={`text-xs font-bold ${selected ? 'text-white' : 'text-ink'}`}>
+                    <Text className={`text-xs font-bold font-sans ${selected ? 'text-white' : 'text-ink'}`}>
                       {cell.date.getDate()}
                     </Text>
                     {hasMeeting && (
@@ -135,25 +153,25 @@ export default function UpdatesScreen() {
         </View>
 
         <View className="p-6">
-          <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1">Agenda for</Text>
-          <Text className="text-lg font-bold text-ink mb-4">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
+          <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1 font-sans">Agenda for</Text>
+          <Text className="text-lg font-bold text-ink mb-4 font-sans">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
 
           {selectedDayTasks.length === 0 ? (
             <View className="py-10 border-2 border-dashed border-black/5 rounded-[24px] bg-white/50 items-center justify-center">
-              <Calendar color="#1f2030" size={24} opacity={0.2} className="mb-2" />
-              <Text className="text-sm text-ink-soft font-medium">No events scheduled.</Text>
+              <Calendar color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
+              <Text className="text-sm text-ink-soft font-medium font-sans">No events scheduled.</Text>
             </View>
           ) : (
             selectedDayTasks.map(task => (
               <View key={task._id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
                 <View className="flex-row items-center gap-2 mb-2">
-                  <Text className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-600 uppercase">Meeting</Text>
-                  <Text className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-yellow-50 text-yellow-600">{task.priority}</Text>
+                  <Text className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-600 uppercase font-sans">Meeting</Text>
+                  <Text className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-yellow-50 text-yellow-600 font-sans">{task.priority}</Text>
                 </View>
-                <Text className="font-bold text-ink text-sm mb-2">{task.title}</Text>
+                <Text className="font-bold text-ink text-sm mb-2 font-sans">{task.title}</Text>
                 <View className="flex-row items-center gap-1.5">
                   <Clock color="#6c5ce7" size={14} />
-                  <Text className="text-[11px] text-ink-soft font-medium">
+                  <Text className="text-[11px] text-ink-soft font-medium font-sans">
                     {new Date(task.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </Text>
                 </View>
@@ -170,7 +188,7 @@ export default function UpdatesScreen() {
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-lg font-bold text-ink">Schedule Event</Text>
               <TouchableOpacity onPress={() => setIsModalOpen(false)}>
-                <X color="#9a9aab" size={20} />
+                <X color="#6c5ce7" size={18} />
               </TouchableOpacity>
             </View>
             <View className="space-y-4">

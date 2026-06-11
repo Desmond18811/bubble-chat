@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Phone, Video, Users, User } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 export default function CallsScreen() {
   // Dummy data mirroring the web version
@@ -17,13 +18,30 @@ export default function CallsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5">
         <View>
-          <Text className="text-xl font-bold text-ink">Calls</Text>
-          <Text className="text-xs text-ink-soft">Experience seamless communication</Text>
+          <Svg height="36" width="100">
+            <Defs>
+              <LinearGradient id="callsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#6c5ce7" />
+                <Stop offset="100%" stopColor="rgba(108,92,231,0.6)" />
+              </LinearGradient>
+            </Defs>
+            <SvgText
+              fill="url(#callsGrad)"
+              fontSize="26"
+              fontFamily="SpaceGrotesk_700Bold"
+              x="0"
+              y="26"
+              letterSpacing="-0.5"
+            >
+              Calls
+            </SvgText>
+          </Svg>
+          <Text className="text-xs text-ink-soft mt-0.5 font-sans">Experience seamless communication</Text>
         </View>
-        <TouchableOpacity className="bg-purple px-4 py-2 rounded-xl shadow-sm">
-          <Text className="text-white text-xs font-bold">Start New Meeting</Text>
+        <TouchableOpacity className="bg-purple px-4 py-2.5 rounded-xl shadow-sm">
+          <Text className="text-white text-xs font-bold font-sans">New Meet</Text>
         </TouchableOpacity>
       </View>
 
@@ -31,24 +49,24 @@ export default function CallsScreen() {
         {/* Live Collaborative Spaces (Active Rooms) */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4 px-1">
-            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic">Live Collaborative Spaces</Text>
+            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Live Collaborative Spaces</Text>
             <View className="flex-row items-center bg-emerald-500/10 px-3 py-1 rounded-full">
               <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-              <Text className="text-[10px] font-bold text-emerald-600">{activeRooms.length} ACTIVE ROOMS</Text>
+              <Text className="text-[10px] font-bold text-emerald-600 font-sans">{activeRooms.length} ACTIVE ROOMS</Text>
             </View>
           </View>
 
           <View className="space-y-4">
             {activeRooms.map(room => (
               <TouchableOpacity key={room.id} className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm">
-                <Text className="text-[17px] font-bold text-ink">{room.title}</Text>
-                <Text className="text-[11px] text-ink-soft font-medium uppercase mt-1">{room.members} members joined</Text>
+                <Text className="text-[17px] font-bold text-ink font-sans">{room.title}</Text>
+                <Text className="text-[11px] text-ink-soft font-medium uppercase font-sans mt-1">{room.members} members joined</Text>
                 
                 <View className="flex-row items-end justify-between mt-6">
                   <View className="flex-row -space-x-3">
                     {room.callers.map((c, i) => (
                       <View key={i} className="w-10 h-10 rounded-full border-2 border-white bg-purple items-center justify-center shadow-sm">
-                        <Text className="text-white text-[12px] font-bold">{c}</Text>
+                        <Text className="text-white text-[12px] font-bold font-sans">{c}</Text>
                       </View>
                     ))}
                   </View>
@@ -64,9 +82,9 @@ export default function CallsScreen() {
         {/* People in the Office */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4 px-1">
-            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic">People in the office</Text>
+            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">People in the office</Text>
             <View className="bg-purple/10 px-2 py-0.5 rounded-full">
-              <Text className="text-[10px] font-bold text-purple uppercase">All Active Staff</Text>
+              <Text className="text-[10px] font-bold text-purple uppercase font-sans">All Active Staff</Text>
             </View>
           </View>
 
@@ -81,9 +99,9 @@ export default function CallsScreen() {
                     <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />
                   )}
                 </View>
-                <Text className="text-[15px] font-bold text-ink mt-4 text-center w-full" numberOfLines={1}>{worker.full_name}</Text>
-                <Text className="text-[10px] font-bold text-purple uppercase italic mt-1 text-center w-full" numberOfLines={1}>{worker.org_role}</Text>
-                <Text className="text-[9px] text-ink-soft font-medium text-center mt-0.5 w-full" numberOfLines={1}>{worker.organization}</Text>
+                <Text className="text-[15px] font-bold text-ink mt-4 text-center w-full font-sans" numberOfLines={1}>{worker.full_name}</Text>
+                <Text className="text-[10px] font-bold text-purple uppercase italic mt-1 text-center w-full font-sans" numberOfLines={1}>{worker.org_role}</Text>
+                <Text className="text-[9px] text-ink-soft font-medium text-center mt-0.5 w-full font-sans" numberOfLines={1}>{worker.organization}</Text>
 
                 <View className="flex-row items-center justify-center gap-2 mt-5">
                   <TouchableOpacity className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center">

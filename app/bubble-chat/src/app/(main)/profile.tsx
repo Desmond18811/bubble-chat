@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
 import { User, Pencil, Mail, Phone, Briefcase, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
@@ -26,34 +27,51 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5">
         <View>
-          <Text className="text-xl font-bold text-ink">Profile</Text>
-          <Text className="text-xs text-ink-soft">Manage your account</Text>
+          <Svg height="36" width="140">
+            <Defs>
+              <LinearGradient id="profileGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#6c5ce7" />
+                <Stop offset="100%" stopColor="rgba(108,92,231,0.6)" />
+              </LinearGradient>
+            </Defs>
+            <SvgText
+              fill="url(#profileGrad)"
+              fontSize="26"
+              fontFamily="SpaceGrotesk_700Bold"
+              x="0"
+              y="26"
+              letterSpacing="-0.5"
+            >
+              Profile
+            </SvgText>
+          </Svg>
+          <Text className="text-xs text-ink-soft font-sans mt-0.5">Manage your account</Text>
         </View>
       </View>
 
-      <ScrollView className="flex-1">
-        <View className="w-full">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="w-full bg-purple-soft/5">
           {/* Hero Card */}
-          <View className="bg-purple-soft/30 items-center shadow-sm w-full p-6 rounded-none">
+          <View className="bg-purple-soft/20 items-center w-full p-6 border-b border-black/5">
             <View className="w-24 h-24 rounded-3xl bg-purple/10 items-center justify-center mb-4 shadow-sm border border-purple/5">
               <User color="#6c5ce7" size={40} />
             </View>
-            <Text className="text-[22px] font-bold text-ink leading-tight">{user.full_name}</Text>
-            <Text className="text-[14px] font-bold text-purple mt-1.5">@{user.username}</Text>
-            <Text className="text-[14px] font-semibold text-ink-soft mt-1.5">{user.org_role}</Text>
-            <Text className="text-[14px] text-ink-soft text-center mt-4 leading-relaxed max-w-sm">{user.bio}</Text>
+            <Text className="text-[22px] font-bold text-ink leading-tight font-sans">{user.full_name}</Text>
+            <Text className="text-[14px] font-bold text-purple mt-1.5 font-sans">@{user.username}</Text>
+            <Text className="text-[14px] font-semibold text-ink-soft mt-1.5 font-sans">{user.org_role}</Text>
+            <Text className="text-[14px] text-ink-soft text-center mt-4 leading-relaxed max-w-sm font-sans">{user.bio}</Text>
 
             {/* Stats row */}
             <View className="flex-row w-full items-center justify-around rounded-2xl bg-white shadow-sm py-4 mt-6 max-w-sm border border-black/5">
               <View className="items-center px-6">
-                <Text className="text-[20px] font-bold text-purple">{user.chatsCount}</Text>
-                <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5">Chats</Text>
+                <Text className="text-[20px] font-bold text-purple font-sans">{user.chatsCount}</Text>
+                <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5 font-sans">Chats</Text>
               </View>
               <View className="items-center px-6 border-l border-black/5">
-                <Text className="text-[20px] font-bold text-purple">{user.filesCount}</Text>
-                <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5">Files</Text>
+                <Text className="text-[20px] font-bold text-purple font-sans">{user.filesCount}</Text>
+                <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5 font-sans">Files</Text>
               </View>
             </View>
 
@@ -62,39 +80,39 @@ export default function ProfileScreen() {
               className="flex-row items-center justify-center rounded-2xl bg-purple px-6 py-3 mt-6 shadow-lg shadow-purple/20"
             >
               <Pencil color="#fff" size={14} />
-              <Text className="text-white text-[14px] font-bold ml-2">Edit profile</Text>
+              <Text className="text-white text-[14px] font-bold ml-2 font-sans">Edit profile</Text>
             </TouchableOpacity>
           </View>
 
           {/* Contact Details Card */}
-          <View className="bg-purple-soft/30 w-full p-6 rounded-none shadow-sm mt-6">
-            <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5">
+          <View className="bg-white w-full p-6 border-b border-black/5">
+            <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5 font-sans">
               Contact details
             </Text>
             
             <View className="space-y-4">
-              <View className="flex-row items-center bg-white/60 p-4 rounded-2xl border border-black/5 mb-3">
+              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
                 <Mail color="#6c5ce7" size={20} />
                 <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Email</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5">{user.email}</Text>
+                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider font-sans">Email</Text>
+                  <Text className="text-sm font-semibold text-ink mt-0.5 font-sans">{user.email}</Text>
                 </View>
               </View>
               
-              <View className="flex-row items-center bg-white/60 p-4 rounded-2xl border border-black/5 mb-3">
+              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
                 <Phone color="#6c5ce7" size={20} />
                 <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Phone</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5">{user.phone_number}</Text>
+                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider font-sans">Phone</Text>
+                  <Text className="text-sm font-semibold text-ink mt-0.5 font-sans">{user.phone_number}</Text>
                 </View>
               </View>
               
               {user.organization && (
-                <View className="flex-row items-center bg-white/60 p-4 rounded-2xl border border-black/5">
+                <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
                   <Briefcase color="#6c5ce7" size={20} />
                   <View className="ml-3 flex-1">
-                    <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider">Organization</Text>
-                    <Text className="text-sm font-semibold text-ink mt-0.5">{user.organization} ({user.org_role})</Text>
+                    <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider font-sans">Organization</Text>
+                    <Text className="text-sm font-semibold text-ink mt-0.5 font-sans">{user.organization} ({user.org_role})</Text>
                   </View>
                 </View>
               )}
@@ -112,7 +130,7 @@ export default function ProfileScreen() {
               <Text className="text-xs text-ink-soft">Update your information</Text>
             </View>
             <TouchableOpacity onPress={() => { setFormData(user); setIsEditing(false); }}>
-              <X color="#1f2030" size={24} />
+              <X color="#6c5ce7" size={20} />
             </TouchableOpacity>
           </View>
           
