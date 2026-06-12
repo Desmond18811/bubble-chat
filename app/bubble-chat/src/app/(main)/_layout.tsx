@@ -2,97 +2,107 @@ import { Tabs } from "expo-router";
 import { MessageSquare, User, Calendar, Users, Plus, Share2 } from "lucide-react-native";
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
+import { triggerPlusButton } from "../../lib/mockData";
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
+  const currentRouteName = state.routes[state.index].name;
+  if (currentRouteName === "chat/[id]") {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      {/* Pill Container for the Main Tabs */}
-      <View style={styles.pillContainer}>
-        {state.routes.map((route: any, index: number) => {
-          // Exclude Calls tab and Chat detail sub-route from the navbar
-          if (route.name === "calls" || route.name === "chat/[id]") return null;
+    <View style={styles.tabBarWrapper}>
+      {/* Full-width native blur panel behind the tabs */}
+      <BlurView intensity={75} tint="light" style={StyleSheet.absoluteFill} />
+      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(248, 247, 255, 0.78)" }} />
 
-          const { options } = descriptors[route.key];
-          const label =
-            options.tabBarLabel !== undefined
-              ? options.tabBarLabel
-              : options.title !== undefined
-              ? options.title
-              : route.name;
+      {/* Row containing capsule tabs and FAB */}
+      <View style={styles.container}>
+        {/* Pill Container for the Main Tabs */}
+        <View style={styles.pillContainer}>
+          {state.routes.map((route: any, index: number) => {
+            if (route.name === "calls" || route.name === "chat/[id]") return null;
 
-          const isFocused = state.index === index;
+            const { options } = descriptors[route.key];
+            const label =
+              options.tabBarLabel !== undefined
+                ? options.tabBarLabel
+                : options.title !== undefined
+                ? options.title
+                : route.name;
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
+            const isFocused = state.index === index;
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+            const onPress = () => {
+              const event = navigation.emit({
+                type: "tabPress",
+                target: route.key,
+                canPreventDefault: true,
+              });
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+
+            // Icon and Label Mapping
+            let displayName = label;
+            let iconComponent = null;
+            const iconSize = 20;
+            const activeColor = "#6c5ce7";
+            const inactiveColor = "#9a9aab";
+            const color = isFocused ? activeColor : inactiveColor;
+
+            if (route.name === "messages") {
+              displayName = "Chats";
+              iconComponent = <MessageSquare color={color} size={iconSize} />;
+            } else if (route.name === "people") {
+              displayName = "People";
+              iconComponent = <Users color={color} size={iconSize} />;
+            } else if (route.name === "updates") {
+              displayName = "Updates";
+              iconComponent = <Share2 color={color} size={iconSize} />;
+            } else if (route.name === "profile") {
+              displayName = "Profile";
+              iconComponent = <User color={color} size={iconSize} />;
             }
-          };
 
-          // Icon and Label Mapping
-          let displayName = label;
-          let iconComponent = null;
-          const iconSize = 20;
-          const activeColor = "#6c5ce7";
-          const inactiveColor = "#9a9aab";
-          const color = isFocused ? activeColor : inactiveColor;
-
-          if (route.name === "messages") {
-            displayName = "Chats";
-            iconComponent = <MessageSquare color={color} size={iconSize} />;
-          } else if (route.name === "people") {
-            displayName = "People";
-            iconComponent = <Users color={color} size={iconSize} />;
-          } else if (route.name === "updates") {
-            displayName = "Updates";
-            iconComponent = <Share2 color={color} size={iconSize} />;
-          } else if (route.name === "profile") {
-            displayName = "Profile";
-            iconComponent = <User color={color} size={iconSize} />;
-          } else {
-            iconComponent = <MessageSquare color={color} size={iconSize} />;
-          }
-
-          return (
-            <TouchableOpacity
-              key={route.key}
-              onPress={onPress}
-              style={styles.tabItem}
-              activeOpacity={0.75}
-            >
-              {iconComponent}
-              <Text
-                style={[
-                  styles.tabLabel,
-                  {
-                    color,
-                    fontFamily: isFocused ? "Poppins_600SemiBold" : "Poppins_500Medium",
-                  },
-                ]}
+            return (
+              <TouchableOpacity
+                key={route.key}
+                onPress={onPress}
+                style={styles.tabItem}
+                activeOpacity={0.75}
               >
-                {displayName}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                {iconComponent}
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color,
+                      fontFamily: isFocused ? "Poppins_600SemiBold" : "Poppins_500Medium",
+                    },
+                  ]}
+                >
+                  {displayName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      {/* Floating Action Button (FAB) on the Right */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.8}
-        onPress={() => {
-          // Quick navigation to search/add contacts in People screen
-          navigation.navigate("people");
-        }}
-      >
-        <Plus color="#1f2030" size={24} />
-      </TouchableOpacity>
+        {/* Floating Action Button (FAB) on the Right */}
+        <TouchableOpacity
+          style={styles.fab}
+          activeOpacity={0.8}
+          onPress={() => {
+            triggerPlusButton(); // Triggers the popup modal in messages.tsx
+          }}
+        >
+          <Plus color="#1f2030" size={24} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -129,7 +139,6 @@ export default function TabsLayout() {
           title: "Profile",
         }}
       />
-      {/* Hide the calls tab completely from navigation */}
       <Tabs.Screen
         name="calls"
         options={{
@@ -147,11 +156,19 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  tabBarWrapper: {
     position: "absolute",
-    bottom: 24,
-    left: 16,
-    right: 16,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 105,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  container: {
+    width: "100%",
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "transparent",
@@ -165,12 +182,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginRight: 12,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 8,
     borderWidth: 1,
-    borderColor: "rgba(108,92,231,0.06)",
+    borderColor: "rgba(108,92,231,0.05)",
   },
   tabItem: {
     flex: 1,
@@ -189,11 +206,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 8,
     borderWidth: 1,
-    borderColor: "rgba(108,92,231,0.06)",
+    borderColor: "rgba(108,92,231,0.05)",
   },
 });

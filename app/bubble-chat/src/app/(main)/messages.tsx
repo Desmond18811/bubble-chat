@@ -6,34 +6,92 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Modal,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Link } from "expo-router";
-import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus } from "lucide-react-native";
+import { Link, useNavigation } from "expo-router";
+import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus, UserPlus, FolderPlus, X } from "lucide-react-native";
 import { Image } from "expo-image";
-import { getChats, getContacts, subscribeToChats, Chat, Contact } from "../../lib/mockData";
+import { 
+  getChats, 
+  getContacts, 
+  subscribeToChats, 
+  Chat, 
+  Contact,
+  subscribeToPlusButton,
+  getFolders,
+  addFolder,
+  addMockContact
+} from "../../lib/mockData";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
-import { BlurView } from "expo-blur";
-
-const FILTERS = ["All", "Unread", "Friends", "Work", "Archive"];
 
 export default function Messages() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [chatsList, setChatsList] = useState<Chat[]>([]);
   const [contactsList, setContactsList] = useState<Contact[]>([]);
+  const [foldersList, setFoldersList] = useState<string[]>([]);
+
+  // FAB Menu States
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [isCreateTabOpen, setIsCreateTabOpen] = useState(false);
+
+  // New Contact Inputs
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactCategory, setNewContactCategory] = useState("Friends");
+
+  // New Tab Inputs
+  const [newTabName, setNewTabName] = useState("");
+
+  const navigation = useNavigation();
+  const [isFocused, setIsFocused] = useState(navigation.isFocused());
+
+  useEffect(() => {
+    const unsubscribeFocus = navigation.addListener("focus", () => {
+      setIsFocused(true);
+    });
+    const unsubscribeBlur = navigation.addListener("blur", () => {
+      setIsFocused(false);
+    });
+    setIsFocused(navigation.isFocused());
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [navigation]);
 
   useEffect(() => {
     setChatsList(getChats());
     setContactsList(getContacts());
+    setFoldersList(getFolders());
 
     const unsubscribe = subscribeToChats(() => {
       setChatsList(getChats());
       setContactsList(getContacts());
+      setFoldersList(getFolders());
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setIsFabMenuOpen(false);
+      return;
+    }
+
+    const unsubscribePlus = subscribeToPlusButton(() => {
+      setIsFabMenuOpen(prev => !prev);
+    });
+
+    return () => {
+      unsubscribePlus();
+    };
+  }, [isFocused]);
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -45,7 +103,13 @@ export default function Messages() {
     if (activeFilter === "Unread") return c.unreadCount > 0;
     if (activeFilter === "Work") return c.isGroupChat;
     if (activeFilter === "Archive") return !!c.isMuted;
-    if (activeFilter === "Friends") return !!c.isFriend; // show friend DMs
+    if (activeFilter === "Friends") return !!c.isFriend;
+
+    if (activeFilter !== "All") {
+      const contact = contactsList.find(con => con.id === c.id);
+      if (contact && contact.category?.toLowerCase() === activeFilter.toLowerCase()) return true;
+      return false;
+    }
     return true; // "All"
   });
 
@@ -56,7 +120,8 @@ export default function Messages() {
     if (activeFilter === "All") return true;
     if (activeFilter === "Friends") return c.category === "friend" || c.category === "other";
     if (activeFilter === "Work") return c.category === "work";
-    return false;
+    
+    return c.category?.toLowerCase() === activeFilter.toLowerCase();
   });
 
   const isEmpty = filteredChats.length === 0 && filteredContacts.length === 0;
@@ -70,8 +135,8 @@ export default function Messages() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingTop: headerHeight - 45, // Starts 45px under the header bottom, so the first contact starts blurred!
-          paddingBottom: 120, // Leave room for the floating tab bar
+          paddingTop: headerHeight + 10, // Starts below the header, clean solid layout!
+          paddingBottom: 125, // Leave room for the bottom blurred tab bar
           paddingHorizontal: 8,
         }}
         showsVerticalScrollIndicator={false}
@@ -123,7 +188,7 @@ export default function Messages() {
         )}
       </ScrollView>
 
-      {/* ── Floating Blur Header Overlay ── */}
+      {/* ── Fixed Solid Header Overlay ── */}
       <View
         style={{
           position: "absolute",
@@ -131,36 +196,28 @@ export default function Messages() {
           left: 0,
           right: 0,
           height: headerHeight,
+          backgroundColor: "#f8f7ff", // Solid background to prevent overlap issues
+          borderBottomWidth: 1,
+          borderBottomColor: "rgba(108,92,231,0.06)",
           zIndex: 10,
-          overflow: "hidden",
         }}
       >
-        <BlurView intensity={70} tint="light" style={StyleSheet.absoluteFill} />
-        <View
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            backgroundColor: "rgba(248, 247, 255, 0.82)", // Semi-transparent matching app background
-            borderBottomWidth: 1,
-            borderBottomColor: "rgba(108,92,231,0.06)",
-          }}
-        />
-
         <View style={{ paddingTop: insets.top }}>
-          {/* Header Title */}
+          {/* Header Title with Deep Indigo/Purple Gradient */}
           <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
             <Svg height="36" width="160">
               <Defs>
                 <LinearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <Stop offset="0%" stopColor="#6c5ce7" />
-                  <Stop offset="100%" stopColor="rgba(108,92,231,0.6)" />
+                  <Stop offset="0%" stopColor="#5e52e6" />
+                  <Stop offset="100%" stopColor="#8a7bf3" />
                 </LinearGradient>
               </Defs>
               <SvgText
                 fill="url(#textGrad)"
-                fontSize="26"
+                fontSize="28"
                 fontFamily="SpaceGrotesk_700Bold"
                 x="0"
-                y="26"
+                y="27"
                 letterSpacing="-0.5"
               >
                 Messages
@@ -188,7 +245,7 @@ export default function Messages() {
           {/* Filter Tabs */}
           <View className="pb-2">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
-              {FILTERS.map((filter) => {
+              {foldersList.map((filter) => {
                 const isActive = activeFilter === filter;
                 return (
                   <TouchableOpacity
@@ -219,6 +276,126 @@ export default function Messages() {
           </View>
         </View>
       </View>
+
+      {/* ── FAB Side Popover Menu ── */}
+      {isFabMenuOpen && (
+        <View style={styles.fabMenu}>
+          <TouchableOpacity
+            style={styles.fabMenuItem}
+            onPress={() => {
+              setIsFabMenuOpen(false);
+              setIsAddContactOpen(true);
+            }}
+          >
+            <UserPlus size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
+            <Text style={styles.fabMenuText}>Add Contact</Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.fabMenuItem}
+            onPress={() => {
+              setIsFabMenuOpen(false);
+              setIsCreateTabOpen(true);
+            }}
+          >
+            <FolderPlus size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
+            <Text style={styles.fabMenuText}>New Folder Tab</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── Add Contact Modal ── */}
+      <Modal visible={isAddContactOpen} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Contact</Text>
+              <TouchableOpacity onPress={() => setIsAddContactOpen(false)}>
+                <X size={20} color="#6c5ce7" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.inputLabel}>Full Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. John Doe"
+              value={newContactName}
+              onChangeText={setNewContactName}
+              placeholderTextColor="#9a9aab"
+            />
+
+            <Text style={styles.inputLabel}>Category / Folder</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }} contentContainerStyle={{ gap: 6 }}>
+              {foldersList.filter(f => f !== "All" && f !== "Unread" && f !== "Archive").map((cat) => {
+                const isSelected = newContactCategory === cat;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    onPress={() => setNewContactCategory(cat)}
+                    style={[
+                      styles.catBtn,
+                      isSelected && { backgroundColor: "#6c5ce7", borderColor: "#6c5ce7" }
+                    ]}
+                  >
+                    <Text style={[styles.catBtnText, isSelected && { color: "#ffffff" }]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={() => {
+                if (!newContactName.trim()) return;
+                addMockContact(newContactName.trim(), newContactCategory);
+                setNewContactName("");
+                setIsAddContactOpen(false);
+              }}
+            >
+              <Text style={styles.saveBtnText}>Save Contact</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Create Folder Tab Modal ── */}
+      <Modal visible={isCreateTabOpen} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>New Folder Tab</Text>
+              <TouchableOpacity onPress={() => setIsCreateTabOpen(false)}>
+                <X size={20} color="#6c5ce7" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={styles.inputLabel}>Folder Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="e.g. VIP or Personal"
+              value={newTabName}
+              onChangeText={setNewTabName}
+              placeholderTextColor="#9a9aab"
+              autoFocus
+            />
+
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={() => {
+                if (!newTabName.trim()) return;
+                addFolder(newTabName.trim());
+                setActiveFilter(newTabName.trim());
+                setNewTabName("");
+                setIsCreateTabOpen(false);
+              }}
+            >
+              <Text style={styles.saveBtnText}>Create Tab</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -335,3 +512,114 @@ function ContactRow({ contact, getInitials }: { contact: Contact; getInitials: (
     </Link>
   );
 }
+
+const styles = StyleSheet.create({
+  fabMenu: {
+    position: "absolute",
+    bottom: 96,
+    right: 16,
+    width: 175,
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    paddingVertical: 6,
+    shadowColor: "#6c5ce7",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: "rgba(108,92,231,0.08)",
+    zIndex: 100,
+  },
+  fabMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  fabMenuText: {
+    fontSize: 13,
+    color: "#1f2030",
+    fontFamily: "Poppins_500Medium",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(31,32,48,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 320,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontFamily: "SpaceGrotesk_700Bold",
+    color: "#1f2030",
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontFamily: "Poppins_700Bold",
+    color: "#9a9aab",
+    textTransform: "uppercase",
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  textInput: {
+    width: "100%",
+    backgroundColor: "rgba(108,92,231,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(108,92,231,0.08)",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    color: "#1f2030",
+    marginBottom: 16,
+  },
+  catBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(108,92,231,0.15)",
+    backgroundColor: "transparent",
+  },
+  catBtnText: {
+    fontSize: 12,
+    fontFamily: "Poppins_500Medium",
+    color: "#9a9aab",
+  },
+  saveBtn: {
+    backgroundColor: "#6c5ce7",
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  saveBtnText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontFamily: "Poppins_700Bold",
+  },
+});

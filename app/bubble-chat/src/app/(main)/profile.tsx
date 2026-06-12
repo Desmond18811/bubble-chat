@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
 import { User, Pencil, Mail, Phone, Briefcase, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from 'expo-router';
+import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 export default function ProfileScreen() {
@@ -17,6 +19,36 @@ export default function ProfileScreen() {
     chatsCount: 142,
     filesCount: 38
   });
+
+  const navigation = useNavigation();
+  const [isFocused, setIsFocused] = useState(navigation.isFocused());
+
+  useEffect(() => {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      setIsFocused(true);
+    });
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      setIsFocused(false);
+    });
+    setIsFocused(navigation.isFocused());
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [navigation]);
+
+  useEffect(() => {
+    if (!isFocused) return;
+
+    const unsubscribePlus = subscribeToPlusButton(() => {
+      setIsEditing(true);
+    });
+
+    return () => {
+      unsubscribePlus();
+    };
+  }, [isFocused]);
 
   const [formData, setFormData] = useState({ ...user });
 

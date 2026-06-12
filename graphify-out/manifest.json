@@ -1645,8 +1645,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/_layout.tsx": {
-    "mtime": 1781221897.8860643,
-    "ast_hash": "cbd2d56ecc8837f4bef40b72d28b46e5",
+    "mtime": 1781222877.6967509,
+    "ast_hash": "f59f9f741f8987fa1fdc330e6ae56296",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/calls.tsx": {
@@ -1655,13 +1655,13 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/messages.tsx": {
-    "mtime": 1781221945.8871682,
-    "ast_hash": "953d19e712d64104cd8931e650b39fe0",
+    "mtime": 1781223050.1665652,
+    "ast_hash": "dae72640bb76539404e7c2e9782917c6",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/profile.tsx": {
-    "mtime": 1781221531.8495402,
-    "ast_hash": "64c78cf5c12c3f9289b75aaf77bdb0fe",
+    "mtime": 1781223093.3232353,
+    "ast_hash": "86558c6d57230324ad8a5f8307c9553d",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/login.tsx": {
@@ -1705,13 +1705,13 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1781221273.06479,
-    "ast_hash": "65bd8e7a9857360ecc68ce28c0e594c2",
+    "mtime": 1781222917.1443055,
+    "ast_hash": "39ff8d2b9fd4ce566b8694e96079f919",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
-    "mtime": 1781221517.047431,
-    "ast_hash": "32f522d783ceb15af6175bb6d5c1d368",
+    "mtime": 1781223081.342498,
+    "ast_hash": "5aeb84ce1400e76251cdb7ec6d0a2114",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/api.ts": {
@@ -1725,13 +1725,13 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/people.tsx": {
-    "mtime": 1781221512.0956097,
-    "ast_hash": "93471ae5ae2bb4cc37a85a5186677185",
+    "mtime": 1781223066.7348993,
+    "ast_hash": "803c3350900712bdc4ce907315985013",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/mockData.ts": {
-    "mtime": 1781221175.1013138,
-    "ast_hash": "5d61d7ea9e77176d81b24fa3970b6424",
+    "mtime": 1781222927.568009,
+    "ast_hash": "daa7040633ef6efa1c1ac9850affdb3e",
     "semantic_hash": ""
   },
   "app/bubble-chat/assets/icon.png": {

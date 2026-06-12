@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronLeft, Phone, Video, Search, MoreVertical,
   Smile, Paperclip, Mic, Send, X, Mail, Briefcase,
+  Camera, FileText, Image as ImageIcon,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { getChatById, sendMessage, subscribeToChats, Message } from '../../../lib/mockData';
@@ -24,6 +25,9 @@ export default function ChatScreen() {
   const [messageText, setMessageText] = useState('');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
+  const [isEmojiOpen, setIsEmojiOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; type: string; url?: string } | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const chat = getChatById(id as string);
@@ -64,9 +68,18 @@ export default function ChatScreen() {
     name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
   const handleSend = () => {
-    if (!messageText.trim()) return;
-    sendMessage(chat.id, messageText.trim());
+    let text = messageText.trim();
+    if (selectedFile) {
+      const icon = selectedFile.type === 'image' ? '🖼️' : selectedFile.type === 'video' ? '🎥' : '📄';
+      const fileStr = `${icon} ${selectedFile.name} (${selectedFile.size})`;
+      text = text ? `${fileStr}\n${text}` : fileStr;
+    }
+    if (!text) return;
+    sendMessage(chat.id, text);
     setMessageText('');
+    setSelectedFile(null);
+    setIsAttachmentOpen(false);
+    setIsEmojiOpen(false);
   };
 
   const statusLine = chat.status === 'typing'
@@ -201,46 +214,260 @@ export default function ChatScreen() {
 
         {/* ── Input Bar ── */}
         <View style={{
-          flexDirection: 'row', alignItems: 'flex-end',
-          paddingHorizontal: 12, paddingVertical: 10,
-          borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)',
+          position: 'relative',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
           backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(0,0,0,0.05)',
         }}>
-          <TouchableOpacity style={{ padding: 8, marginRight: 2 }}>
-            <Paperclip size={20} color={INK_SOFT} />
-          </TouchableOpacity>
-
-          <View style={{
-            flex: 1, flexDirection: 'row', alignItems: 'flex-end',
-            backgroundColor: 'rgba(108,92,231,0.07)',
-            borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8,
-            minHeight: 44, maxHeight: 120,
-          }}>
-            <TouchableOpacity style={{ marginRight: 8, paddingBottom: 2 }}>
-              <Smile size={20} color={INK_SOFT} />
-            </TouchableOpacity>
-            <TextInput
-              style={{ flex: 1, fontSize: 14.5, fontFamily: 'Poppins_400Regular', color: INK, paddingTop: 0, paddingBottom: 0 }}
-              placeholder="Type a message..."
-              placeholderTextColor={INK_SOFT}
-              multiline
-              value={messageText}
-              onChangeText={setMessageText}
-            />
-          </View>
-
-          {messageText.trim().length > 0 ? (
-            <TouchableOpacity
-              onPress={handleSend}
-              style={{ width: 44, height: 44, borderRadius: 99, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center', marginLeft: 8, shadowColor: PURPLE, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
-            >
-              <Send size={18} color="#fff" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={{ padding: 10, marginLeft: 4 }}>
-              <Mic size={22} color={PURPLE} />
-            </TouchableOpacity>
+          {/* ── Attachment popover menu ── */}
+          {isAttachmentOpen && (
+            <View style={{
+              position: 'absolute',
+              bottom: 70,
+              left: 16,
+              width: 190,
+              backgroundColor: '#ffffff',
+              borderRadius: 18,
+              padding: 8,
+              borderWidth: 1,
+              borderColor: 'rgba(108,92,231,0.08)',
+              shadowColor: '#6c5ce7',
+              shadowOpacity: 0.12,
+              shadowRadius: 10,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 8,
+              zIndex: 100,
+            }}>
+              <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', paddingHorizontal: 12, paddingVertical: 6, letterSpacing: 0.8 }}>
+                Upload attachment
+              </Text>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedFile({ name: 'IMG_4829.jpg', size: '1.4 MB', type: 'image', url: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=200' });
+                  setIsAttachmentOpen(false);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
+              >
+                <ImageIcon size={16} color={PURPLE} style={{ marginRight: 10 }} />
+                <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: INK }}>Photo & Video</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedFile({ name: 'screen_record.mov', size: '12.8 MB', type: 'video' });
+                  setIsAttachmentOpen(false);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
+              >
+                <Video size={16} color={PURPLE} style={{ marginRight: 10 }} />
+                <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: INK }}>Video Clip</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedFile({ name: 'project_spec.pdf', size: '2.1 MB', type: 'file' });
+                  setIsAttachmentOpen(false);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12 }}
+              >
+                <FileText size={16} color={PURPLE} style={{ marginRight: 10 }} />
+                <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: INK }}>Document File</Text>
+              </TouchableOpacity>
+            </View>
           )}
+
+          {/* ── Emoji reactions quick-select ── */}
+          {isEmojiOpen && (
+            <View style={{
+              position: 'absolute',
+              bottom: 70,
+              right: 16,
+              backgroundColor: '#ffffff',
+              borderRadius: 20,
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderWidth: 1,
+              borderColor: 'rgba(108,92,231,0.08)',
+              shadowColor: '#6c5ce7',
+              shadowOpacity: 0.12,
+              shadowRadius: 10,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 8,
+              zIndex: 100,
+              flexDirection: 'row',
+              gap: 8,
+            }}>
+              {['👍', '❤️', '😂', '😮', '😢', '🔥', '👎', '🎉'].map((emoji) => (
+                <TouchableOpacity
+                  key={emoji}
+                  onPress={() => {
+                    setMessageText(prev => prev + emoji);
+                    setIsEmojiOpen(false);
+                  }}
+                  style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ fontSize: 20 }}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* ── Selected Attachment Preview Card ── */}
+          {selectedFile && (
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'rgba(108,92,231,0.05)',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(108,92,231,0.1)',
+              padding: 10,
+              marginBottom: 10,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                {selectedFile.type === 'image' && selectedFile.url ? (
+                  <Image source={{ uri: selectedFile.url }} style={{ width: 40, height: 40, borderRadius: 8, marginRight: 10 }} />
+                ) : (
+                  <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: 'rgba(108,92,231,0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                    {selectedFile.type === 'video' ? <Video size={18} color={PURPLE} /> : <FileText size={18} color={PURPLE} />}
+                  </View>
+                )}
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>
+                    {selectedFile.name}
+                  </Text>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: INK_SOFT }}>
+                    {selectedFile.size} · {selectedFile.type.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSelectedFile(null)}
+                style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={12} color={INK} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Main Input Bar Row with Glow State ── */}
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}>
+            {/* Paperclip icon */}
+            <TouchableOpacity
+              onPress={() => {
+                setIsAttachmentOpen(prev => !prev);
+                setIsEmojiOpen(false);
+              }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: 'rgba(108,92,231,0.07)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 8,
+              }}
+            >
+              <Paperclip size={20} color={isAttachmentOpen ? PURPLE : INK_SOFT} />
+            </TouchableOpacity>
+
+            {/* Input Capsule with Shadow Glow */}
+            <View style={{
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#ffffff',
+              borderRadius: 22,
+              borderWidth: 1,
+              borderColor: 'rgba(108,92,231,0.15)',
+              paddingHorizontal: 12,
+              paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+              minHeight: 44,
+              maxHeight: 120,
+              // Shadow glow effect
+              shadowColor: '#6c5ce7',
+              shadowOpacity: 0.12,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 3 },
+              elevation: 4,
+            }}>
+              <TextInput
+                style={{
+                  flex: 1,
+                  fontSize: 14.5,
+                  fontFamily: 'Poppins_400Regular',
+                  color: INK,
+                  maxHeight: 100,
+                  paddingTop: 0,
+                  paddingBottom: 0,
+                }}
+                placeholder={selectedFile ? "Add a caption..." : "Type a message..."}
+                placeholderTextColor={INK_SOFT}
+                multiline
+                value={messageText}
+                onChangeText={setMessageText}
+              />
+
+              {/* Smile Emoji button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setIsEmojiOpen(prev => !prev);
+                  setIsAttachmentOpen(false);
+                }}
+                style={{ padding: 6, marginLeft: 4 }}
+              >
+                <Smile size={20} color={isEmojiOpen ? PURPLE : INK_SOFT} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Send / Mic button */}
+            {messageText.trim().length > 0 || selectedFile ? (
+              <TouchableOpacity
+                onPress={handleSend}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: PURPLE,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: 8,
+                  // Send button glow shadow
+                  shadowColor: PURPLE,
+                  shadowOpacity: 0.35,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 5,
+                }}
+              >
+                <Send size={18} color="#fff" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  sendMessage(chat.id, "🎤 [Voice Memo - 0:14]");
+                }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: 'rgba(108,92,231,0.07)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginLeft: 8,
+                }}
+              >
+                <Mic size={20} color={PURPLE} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </KeyboardAvoidingView>
 

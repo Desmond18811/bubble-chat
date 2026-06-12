@@ -20,9 +20,18 @@ import {
   X,
   Check,
 } from 'lucide-react-native';
-import { Link } from 'expo-router';
+import { Link, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
-import { getContacts, getChats, subscribeToChats, Contact, Chat } from '../../lib/mockData';
+import {
+  getContacts,
+  getChats,
+  subscribeToChats,
+  Contact,
+  Chat,
+  addMockContact,
+  createMockGroupChat,
+  subscribeToPlusButton,
+} from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 // ─────────────────────────────────────────────
@@ -84,9 +93,14 @@ function Avatar({
 // ─────────────────────────────────────────────
 // Contacts Sub-Tab
 // ─────────────────────────────────────────────
-function ContactsTab() {
+function ContactsTab({
+  showAddModal,
+  setShowAddModal,
+}: {
+  showAddModal: boolean;
+  setShowAddModal: (v: boolean) => void;
+}) {
   const [search, setSearch] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
 
@@ -103,6 +117,9 @@ function ContactsTab() {
   );
 
   const handleAdd = () => {
+    if (addIdentifier.trim()) {
+      addMockContact(addIdentifier.trim(), 'work');
+    }
     setAddIdentifier('');
     setShowAddModal(false);
   };
@@ -425,6 +442,43 @@ type TabType = (typeof TABS)[number];
 
 export default function PeopleScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('Contacts');
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+
+  const navigation = useNavigation();
+  const [isFocused, setIsFocused] = useState(navigation.isFocused());
+
+  useEffect(() => {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      setIsFocused(true);
+    });
+    const unsubscribeBlur = navigation.addListener('blur', () => {
+      setIsFocused(false);
+    });
+    setIsFocused(navigation.isFocused());
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeBlur();
+    };
+  }, [navigation]);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setIsFabMenuOpen(false);
+      return;
+    }
+
+    const unsubscribePlus = subscribeToPlusButton(() => {
+      setIsFabMenuOpen(prev => !prev);
+    });
+
+    return () => {
+      unsubscribePlus();
+    };
+  }, [isFocused]);
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
@@ -479,8 +533,90 @@ export default function PeopleScreen() {
 
       {/* Tab Content */}
       <View className="flex-1 pt-3 bg-purple-soft/5">
-        {activeTab === 'Contacts' ? <ContactsTab /> : <WorkroomTab />}
+        {activeTab === 'Contacts' ? (
+          <ContactsTab showAddModal={showAddModal} setShowAddModal={setShowAddModal} />
+        ) : (
+          <WorkroomTab />
+        )}
       </View>
+
+      {/* ── FAB Side Popover Menu ── */}
+      {isFabMenuOpen && (
+        <View style={{
+          position: "absolute",
+          bottom: 96,
+          right: 16,
+          width: 175,
+          backgroundColor: "#ffffff",
+          borderRadius: 18,
+          paddingVertical: 6,
+          shadowColor: "#6c5ce7",
+          shadowOpacity: 0.12,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 10,
+          borderWidth: 1,
+          borderColor: "rgba(108,92,231,0.08)",
+          zIndex: 100,
+        }}>
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 14 }}
+            onPress={() => {
+              setIsFabMenuOpen(false);
+              setShowAddModal(true);
+            }}
+          >
+            <UserPlus size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
+            <Text style={{ fontSize: 13, color: "#1f2030", fontFamily: "Poppins_500Medium" }}>Add Contact</Text>
+          </TouchableOpacity>
+          <View style={{ height: 1, backgroundColor: "rgba(0,0,0,0.05)" }} />
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 14 }}
+            onPress={() => {
+              setIsFabMenuOpen(false);
+              setShowCreateGroupModal(true);
+            }}
+          >
+            <Users size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
+            <Text style={{ fontSize: 13, color: "#1f2030", fontFamily: "Poppins_500Medium" }}>Create Group</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── Create Group Chat Modal ── */}
+      <Modal visible={showCreateGroupModal} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: "rgba(31,32,48,0.4)", justifyContent: "center", alignItems: "center", padding: 20 }}>
+          <View style={{ width: "100%", maxWidth: 320, backgroundColor: "#ffffff", borderRadius: 24, padding: 20, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <Text style={{ fontSize: 17, fontFamily: "SpaceGrotesk_700Bold", color: "#1f2030" }}>Create Group Chat</Text>
+              <TouchableOpacity onPress={() => setShowCreateGroupModal(false)}>
+                <X size={20} color="#6c5ce7" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={{ fontSize: 11, fontFamily: "Poppins_700Bold", color: "#9a9aab", textTransform: "uppercase", marginBottom: 6, letterSpacing: 0.5 }}>Group Name</Text>
+            <TextInput
+              style={{ width: "100%", backgroundColor: "rgba(108,92,231,0.05)", borderWidth: 1, borderColor: "rgba(108,92,231,0.08)", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: "Poppins_400Regular", color: "#1f2030", marginBottom: 16 }}
+              placeholder="e.g. Design Sync"
+              value={newGroupName}
+              onChangeText={setNewGroupName}
+              placeholderTextColor="#9a9aab"
+            />
+
+            <TouchableOpacity
+              style={{ backgroundColor: "#6c5ce7", borderRadius: 14, paddingVertical: 12, alignItems: "center", marginTop: 4 }}
+              onPress={() => {
+                if (!newGroupName.trim()) return;
+                createMockGroupChat(newGroupName.trim());
+                setNewGroupName("");
+                setShowCreateGroupModal(false);
+              }}
+            >
+              <Text style={{ color: "#ffffff", fontSize: 13, fontFamily: "Poppins_700Bold" }}>Create Group</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

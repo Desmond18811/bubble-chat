@@ -504,3 +504,100 @@ const simulateReply = (chat: Chat) => {
     }, 2000);
   }, 1000);
 };
+
+// ─── Custom Folder Tabs ───────────────────────────────────────────────────────
+
+let folders: string[] = ["All", "Unread", "Friends", "Work", "Archive"];
+
+export const getFolders = (): string[] => [...folders];
+
+export const addFolder = (name: string) => {
+  if (name && !folders.includes(name)) {
+    folders.push(name);
+    notifySubscribers();
+  }
+};
+
+// ─── Contact Creator ─────────────────────────────────────────────────────────
+
+export const addMockContact = (name: string, category: string): Contact => {
+  const id = Math.random().toString(36).substring(7);
+  const username = name.toLowerCase().replace(/\s/g, "_");
+  
+  const avatars = [
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=160&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=160&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop",
+    null
+  ];
+  const avatar = avatars[Math.floor(Math.random() * avatars.length)];
+
+  const newContact: Contact = {
+    id,
+    name,
+    avatar,
+    isOnline: Math.random() > 0.5,
+    username,
+    bio: `Workspace participant focusing on ${category} projects.`,
+    email: `${username}@bubblespace.co`,
+    phone: `+1 (555) 033-${Math.floor(1000 + Math.random() * 9000)}`,
+    org_role: "Team Collaborator",
+    category: category.toLowerCase() as any,
+  };
+
+  contacts.push(newContact);
+
+  AUTO_RESPONSES[id] = [
+    `Hi! Thanks for messaging. Let's collaborate on this new ${category} folder.`,
+    `Awesome, I'm online now. Let me know what you need.`,
+    `Received! Will check and reply in a bit.`
+  ];
+
+  notifySubscribers();
+  return newContact;
+};
+
+export const createMockGroupChat = (name: string): Chat => {
+  const id = Math.random().toString(36).substring(7);
+  const newChat: Chat = {
+    id,
+    name,
+    avatar: null,
+    isGroupChat: true,
+    latestMessage: "Group created! Start collaborating.",
+    time: "Now",
+    unreadCount: 0,
+    isPinned: false,
+    isOnline: false,
+    typingUser: null,
+    status: 'read_own',
+    updatedAt: new Date(),
+    bio: `Collaborative space for the ${name} team.`,
+    email: `${name.toLowerCase().replace(/\s/g, "_")}@bubblespace.co`,
+    phone: 'N/A',
+    organization: 'Bubblespace',
+    org_role: 'Group Chat',
+    messages: [
+      { id: Math.random().toString(36).substring(7), text: `Welcome to the ${name} group!`, sender: 'other', senderName: 'System', time: 'Now', timestamp: new Date() }
+    ],
+  };
+
+  chats.push(newChat);
+  notifySubscribers();
+  return newChat;
+};
+
+// ─── Plus Button Event Bus ────────────────────────────────────────────────────
+
+type PlusButtonListener = () => void;
+const plusListeners: Set<PlusButtonListener> = new Set();
+
+export const subscribeToPlusButton = (callback: PlusButtonListener) => {
+  plusListeners.add(callback);
+  return () => { plusListeners.delete(callback); };
+};
+
+export const triggerPlusButton = () => {
+  plusListeners.forEach(cb => cb());
+};
