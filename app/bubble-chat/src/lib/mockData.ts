@@ -603,3 +603,20 @@ export const subscribeToPlusButton = (callback: PlusButtonListener) => {
 export const triggerPlusButton = () => {
   plusListeners.forEach(cb => cb());
 };
+
+export const deleteChat = (id: string) => {
+  const index = chats.findIndex(c => c.id === id);
+  if (index !== -1) {
+    chats.splice(index, 1);
+    notifySubscribers();
+  }
+};
+
+export const deleteContact = (id: string) => {
+  const index = contacts.findIndex(c => c.id === id);
+  if (index !== -1) {
+    contacts.splice(index, 1);
+    notifySubscribers();
+  }
+};
+
