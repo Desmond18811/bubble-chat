@@ -222,7 +222,7 @@ export default function Messages() {
         showsVerticalScrollIndicator={false}
       >
         {isEmpty ? (
-          <View className="items-center justify-center py-20">
+          <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 80 }}>
             <MessageSquarePlus size={36} color="rgba(31,32,48,0.12)" />
             <Text style={{ marginTop: 12, fontSize: 14, fontFamily: "Poppins_500Medium", color: "rgba(31,32,48,0.3)" }}>
               No conversations yet
@@ -235,8 +235,8 @@ export default function Messages() {
           <>
             {/* Recent Messages */}
             {filteredChats.length > 0 && (
-              <View className="mb-5">
-                <View className="flex-row items-center px-3 mb-2">
+              <View style={{ marginBottom: 20 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, marginBottom: 8 }}>
                   <Text style={{ fontSize: 10, fontFamily: "Poppins_700Bold", color: "rgba(31,32,48,0.3)", letterSpacing: 1.5, fontStyle: "italic", textTransform: "uppercase" }}>
                     RECENT MESSAGES
                   </Text>
@@ -266,8 +266,8 @@ export default function Messages() {
 
             {/* Contacts */}
             {filteredContacts.length > 0 && (
-              <View className="mb-8">
-                <View className="flex-row items-center px-3 mb-2">
+              <View style={{ marginBottom: 32 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, marginBottom: 8 }}>
                   <Text style={{ fontSize: 10, fontFamily: "Poppins_700Bold", color: "rgba(31,32,48,0.3)", letterSpacing: 1.5, fontStyle: "italic", textTransform: "uppercase" }}>
                     CONTACTS
                   </Text>
@@ -314,7 +314,7 @@ export default function Messages() {
       >
         <View style={{ paddingTop: insets.top }}>
           {/* Header Title with Deep Indigo/Purple Gradient */}
-          <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}>
             <Svg height="36" width="160">
               <Defs>
                 <LinearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -336,10 +336,18 @@ export default function Messages() {
           </View>
 
           {/* Search */}
-          <View className="px-5 pb-3">
+          <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
             <View
-              className="flex-row items-center rounded-[24px] px-4 py-3"
-              style={{ backgroundColor: "rgba(108,92,231,0.08)", borderWidth: 1, borderColor: "rgba(108,92,231,0.08)" }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                borderRadius: 24,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                backgroundColor: "rgba(108,92,231,0.08)",
+                borderWidth: 1,
+                borderColor: "rgba(108,92,231,0.08)",
+              }}
             >
               <Search size={18} color="#6c5ce7" style={{ marginRight: 10, flexShrink: 0 }} />
               <TextInput
@@ -353,7 +361,7 @@ export default function Messages() {
           </View>
 
           {/* Filter Tabs */}
-          <View className="pb-2">
+          <View style={{ paddingBottom: 8 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}>
               {foldersList.map((filter) => {
                 const isActive = activeFilter === filter;

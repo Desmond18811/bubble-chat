@@ -1,24 +1,33 @@
 /**
  * Centralized API utility for interacting with the Bubble Chat Backend.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
-const inMemoryStorage: Record<string, string> = {};
-const appStorage = {
-    getItem: (key: string) => typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : inMemoryStorage[key] || null,
-    setItem: (key: string, value: string) => { 
-        if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem(key, value);
-        inMemoryStorage[key] = value; 
-    },
-    removeItem: (key: string) => { 
-        if (typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem(key);
-        delete inMemoryStorage[key]; 
+// In-memory cache — seeded from AsyncStorage at startup via initApiFromStorage()
+const tokenCache: { accessToken: string | null } = { accessToken: null };
+
+/**
+ * Call this once at app root (e.g. _layout.tsx) to pre-load the stored token
+ * into the in-memory cache so getAuthHeaders() remains synchronous.
+ */
+export const initApiFromStorage = async (): Promise<void> => {
+    try {
+        const token = await AsyncStorage.getItem('bubble_access_token');
+        tokenCache.accessToken = token;
+    } catch {
+        tokenCache.accessToken = null;
     }
 };
 
+/** Called by authStorage.setSession() to keep cache in sync */
+export const setApiToken = (token: string | null): void => {
+    tokenCache.accessToken = token;
+};
+
 export const getAuthHeaders = () => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     return {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -295,7 +304,7 @@ export const sendMediaMessage = async (
         media_duration?: number;
     }
 ) => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     const formData = new FormData();
     formData.append('chatId', chatId);
     if (opts?.content) formData.append('content', opts.content);
@@ -475,7 +484,7 @@ export const uploadStory = async (
     textContent?: string,
     opts?: { bg_gradient?: string; text_color?: string }
 ) => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     const formData = new FormData();
     if (textContent) formData.append('textContent', textContent);
     if (opts?.bg_gradient) formData.append('bg_gradient', opts.bg_gradient);
@@ -531,7 +540,7 @@ export const uploadWorkspaceFile = async (
         linkUrl?: string;
     }
 ) => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     const formData = new FormData();
     if (file) formData.append('file', file);
     if (opts?.linkUrl) formData.append('linkUrl', opts.linkUrl);
@@ -714,7 +723,7 @@ export const getFollowingFeedPosts = async (page = 1, limit = 20) => {
 };
 
 export const createFeedPost = async (content: string, file?: File) => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     const formData = new FormData();
     formData.append('content', content);
     if (file) formData.append('file', file);
@@ -1519,7 +1528,7 @@ export const getMyFollowing = async (userId: string) => {
 // ─── Profile: Avatar Upload ───────────────────────────────────────────────────
 
 export const uploadAvatar = async (file: File) => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch(`${BASE_URL}/profile/avatar`, {
@@ -1531,7 +1540,7 @@ export const uploadAvatar = async (file: File) => {
 };
 
 export const uploadBackground = async (file: File) => {
-    const token = appStorage.getItem('access_token');
+    const token = tokenCache.accessToken;
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch(`${BASE_URL}/profile/background`, {

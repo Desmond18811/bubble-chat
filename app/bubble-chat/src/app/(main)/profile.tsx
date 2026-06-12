@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { authStorage } from '../../lib/authStorage';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState({
     full_name: 'John Doe',
@@ -55,6 +57,24 @@ export default function ProfileScreen() {
   const handleSave = () => {
     setUser({ ...formData });
     setIsEditing(false);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            await authStorage.clearSession();
+            router.replace('/splash' as any);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -149,6 +169,17 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
+          </View>
+
+          {/* Logout */}
+          <View className="bg-white w-full p-6">
+            <TouchableOpacity
+              onPress={handleLogout}
+              className="flex-row items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-6 py-4"
+            >
+              <LogOut color="#ef4444" size={18} />
+              <Text className="text-red-500 text-[15px] font-bold ml-2 font-sans">Log Out</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
