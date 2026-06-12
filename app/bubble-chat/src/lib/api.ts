@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
+import { initSocket, disconnectSocket } from './socket';
+
 // In-memory cache — seeded from AsyncStorage at startup via initApiFromStorage()
 const tokenCache: { accessToken: string | null } = { accessToken: null };
 
@@ -16,6 +18,9 @@ export const initApiFromStorage = async (): Promise<void> => {
     try {
         const token = await AsyncStorage.getItem('bubble_access_token');
         tokenCache.accessToken = token;
+        if (token) {
+            initSocket(token);
+        }
     } catch {
         tokenCache.accessToken = null;
     }
@@ -24,6 +29,11 @@ export const initApiFromStorage = async (): Promise<void> => {
 /** Called by authStorage.setSession() to keep cache in sync */
 export const setApiToken = (token: string | null): void => {
     tokenCache.accessToken = token;
+    if (token) {
+        initSocket(token);
+    } else {
+        disconnectSocket();
+    }
 };
 
 export const getAuthHeaders = () => {

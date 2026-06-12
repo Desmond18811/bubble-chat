@@ -6,7 +6,7 @@ import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-s
 import { searchUsers, fetchTasks, createTaskFull } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Calendar cells helper
+// Calendar cells generator
 const getCalendarCells = (currentDate: Date) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -15,18 +15,21 @@ const getCalendarCells = (currentDate: Date) => {
   const prevMonthDays = new Date(year, month, 0).getDate();
 
   const cells = [];
+  // Previous month overflow
   for (let i = firstDay - 1; i >= 0; i--) {
     cells.push({
       date: new Date(year, month - 1, prevMonthDays - i),
       isCurrentMonth: false,
     });
   }
+  // Current month
   for (let i = 1; i <= daysInMonth; i++) {
     cells.push({
       date: new Date(year, month, i),
       isCurrentMonth: true,
     });
   }
+  // Next month overflow
   const remainingCells = 42 - cells.length;
   for (let i = 1; i <= remainingCells; i++) {
     cells.push({
@@ -50,26 +53,14 @@ function getInitials(name: string) {
 export default function CallsScreen() {
   const [callsTab, setCallsTab] = useState<'meet' | 'calendar'>('meet');
 
-  // Meet Tab states
+  // Live collaborative spaces (mock rooms for meeting coordination)
   const [activeRooms] = useState([
     { id: '1', title: 'Design Sync', members: 4, callers: ['A', 'B', 'C'] },
     { id: '2', title: 'Engineering Standup', members: 12, callers: ['D', 'E', 'F'] }
   ]);
+
   const [coworkers, setCoworkers] = useState<any[]>([]);
-
-  // Calendar Tab states
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [tasks, setTasks] = useState<any[]>([]);
-
-  // Form states
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [startTimeText, setStartTimeText] = useState('10:00');
-  const [endTimeText, setEndTimeText] = useState('11:00');
-  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
-  const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
 
   // Calling states
   const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
@@ -77,44 +68,61 @@ export default function CallsScreen() {
   const [isCallMuted, setIsCallMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
 
-  const fetchCoworkers = async () => {
+  // Calendar agenda states
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // New Event form states
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [startTimeText, setStartTimeText] = useState('10:00');
+  const [endTimeText, setEndTimeText] = useState('11:00');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const loadCache = async () => {
     try {
-      const response = await searchUsers('');
-      const list = response?.users || [];
-      setCoworkers(list);
+      const cachedTasks = await AsyncStorage.getItem('bubble_cached_tasks');
+      if (cachedTasks) {
+        setTasks(JSON.parse(cachedTasks));
+      }
+      const cachedCoworkers = await AsyncStorage.getItem('bubble_cached_coworkers');
+      if (cachedCoworkers) {
+        setCoworkers(JSON.parse(cachedCoworkers));
+      }
     } catch (err) {
-      console.warn("Failed to fetch coworkers in calls.tsx:", err);
+      console.warn("Failed to load cached calls screen data:", err);
     }
   };
 
-  const loadCachedTasks = async () => {
+  const syncData = async () => {
     try {
-      const raw = await AsyncStorage.getItem('bubble_cached_tasks');
-      if (raw) setTasks(JSON.parse(raw));
-    } catch {}
-  };
+      // Fetch coworkers
+      const coworkersRes = await searchUsers('');
+      const coworkersList = coworkersRes?.users || [];
+      setCoworkers(coworkersList);
+      await AsyncStorage.setItem('bubble_cached_coworkers', JSON.stringify(coworkersList));
 
-  const syncTasks = async () => {
-    try {
-      const response = await fetchTasks();
-      const list = Array.isArray(response) ? response : (response?.data || []);
-      setTasks(list);
-      await AsyncStorage.setItem('bubble_cached_tasks', JSON.stringify(list));
+      // Fetch tasks/agenda
+      const tasksRes = await fetchTasks();
+      const tasksList = Array.isArray(tasksRes) ? tasksRes : (tasksRes?.data || []);
+      setTasks(tasksList);
+      await AsyncStorage.setItem('bubble_cached_tasks', JSON.stringify(tasksList));
     } catch (err) {
-      console.warn("Failed to sync tasks in calls.tsx:", err);
+      console.warn("Failed to sync calls screen data:", err);
     }
   };
 
   useEffect(() => {
-    fetchCoworkers();
-    loadCachedTasks();
-    syncTasks();
+    loadCache();
+    syncData();
+  }, []);
 
-    const interval = setInterval(() => {
-      fetchCoworkers();
-      syncTasks();
-    }, 7000);
-
+  useEffect(() => {
+    const interval = setInterval(syncData, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -163,6 +171,7 @@ export default function CallsScreen() {
 
       await createTaskFull(payload);
       
+      // Reset form
       setTitle('');
       setDescription('');
       setStartTimeText('10:00');
@@ -171,7 +180,7 @@ export default function CallsScreen() {
       setType('meeting');
       
       setIsModalOpen(false);
-      await syncTasks();
+      await syncData();
 
       if ((payload.priority === 'high' || payload.priority === 'urgent') && payload.type === 'meeting') {
         Alert.alert(
@@ -196,14 +205,13 @@ export default function CallsScreen() {
     }
   };
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const cells = getCalendarCells(currentDate);
-
+  // Calendar Helpers
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   const isSelected = (date: Date) => date.toDateString() === selectedDate.toDateString();
   const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
 
+  const cells = getCalendarCells(currentDate);
   const selectedDayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === selectedDate.toDateString());
 
   return (
@@ -211,7 +219,7 @@ export default function CallsScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 pt-5 pb-3">
         <View>
-          <Svg height="36" width="200">
+          <Svg height="36" width="160">
             <Defs>
               <LinearGradient id="callsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <Stop offset="0%" stopColor="#6c5ce7" />
@@ -226,57 +234,68 @@ export default function CallsScreen() {
               y="26"
               letterSpacing="-0.5"
             >
-              {callsTab === 'meet' ? 'Events & Meets' : 'Calendar'}
+              {callsTab === 'meet' ? "Calls" : "Calendar"}
             </SvgText>
           </Svg>
           <Text className="text-xs text-ink-soft mt-0.5 font-sans">
-            {callsTab === 'meet' ? 'Experience seamless communication' : 'Organize team meetings & business events'}
+            {callsTab === 'meet' ? "Experience seamless communication" : "Organize team meetings & agendas"}
           </Text>
         </View>
-        <TouchableOpacity 
-          onPress={() => {
-            if (callsTab === 'meet') {
+
+        {callsTab === 'meet' ? (
+          <TouchableOpacity 
+            onPress={() => {
               setActiveCall({
                 user: { name: 'Quick Meet Room', avatar: null },
                 type: 'video'
               });
-            } else {
-              setIsModalOpen(true);
-            }
-          }}
-          className="bg-purple px-4 py-2.5 rounded-xl shadow-sm"
-        >
-          <Text className="text-white text-xs font-bold font-sans">
-            {callsTab === 'meet' ? 'New Meet' : 'Add Event'}
-          </Text>
-        </TouchableOpacity>
+            }}
+            className="bg-purple px-4 py-2.5 rounded-xl shadow-sm"
+          >
+            <Text className="text-white text-xs font-bold font-sans">New Meet</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => setIsModalOpen(true)}
+            className="flex-row items-center bg-purple px-4 py-2.5 rounded-xl shadow-sm"
+          >
+            <Plus color="#fff" size={15} />
+            <Text className="text-white text-xs font-bold font-sans ml-1">Add Event</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Navigation Tab Bar */}
-      <View className="flex-row px-6 border-b border-black/5 bg-white gap-6">
+      {/* Tab Switcher */}
+      <View className="flex-row px-6 pb-2 border-b border-black/5">
         <TouchableOpacity
           onPress={() => setCallsTab('meet')}
-          style={{ borderBottomWidth: 2, borderBottomColor: callsTab === 'meet' ? '#6c5ce7' : 'transparent' }}
-          className="pb-3 pt-1"
+          className={`mr-6 pb-3 pt-1 border-b-2 ${
+            callsTab === 'meet' ? 'border-purple' : 'border-transparent'
+          }`}
         >
-          <Text className={`text-sm font-bold font-sans ${callsTab === 'meet' ? 'text-purple' : 'text-ink-soft'}`}>
+          <Text className={`text-sm font-bold font-sans ${
+            callsTab === 'meet' ? 'text-purple' : 'text-ink-soft'
+          }`}>
             Live Meetings
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setCallsTab('calendar')}
-          style={{ borderBottomWidth: 2, borderBottomColor: callsTab === 'calendar' ? '#6c5ce7' : 'transparent' }}
-          className="pb-3 pt-1"
+          className={`mr-6 pb-3 pt-1 border-b-2 ${
+            callsTab === 'calendar' ? 'border-purple' : 'border-transparent'
+          }`}
         >
-          <Text className={`text-sm font-bold font-sans ${callsTab === 'calendar' ? 'text-purple' : 'text-ink-soft'}`}>
+          <Text className={`text-sm font-bold font-sans ${
+            callsTab === 'calendar' ? 'text-purple' : 'text-ink-soft'
+          }`}>
             Business Calendar
           </Text>
         </TouchableOpacity>
       </View>
 
       {callsTab === 'meet' ? (
-        <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-          {/* Live Collaborative Spaces */}
+        <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false}>
+          {/* Live Collaborative Spaces (Active Rooms) */}
           <View className="mb-8">
             <View className="flex-row items-center justify-between mb-4 px-1">
               <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Live Collaborative Spaces</Text>
@@ -319,7 +338,7 @@ export default function CallsScreen() {
           </View>
 
           {/* People in the Office */}
-          <View className="mb-8">
+          <View className="mb-24">
             <View className="flex-row items-center justify-between mb-4 px-1">
               <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">People in the office</Text>
               <View className="bg-purple/10 px-2 py-0.5 rounded-full">
@@ -383,8 +402,8 @@ export default function CallsScreen() {
           </View>
         </ScrollView>
       ) : (
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* Calendar Grid View */}
+        <ScrollView className="flex-1 bg-purple-soft/5" showsVerticalScrollIndicator={false}>
+          {/* Calendar Widget */}
           <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-lg font-bold text-ink font-sans">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
@@ -445,14 +464,14 @@ export default function CallsScreen() {
             </View>
           </View>
 
-          {/* Selected Agenda list */}
-          <View className="p-6">
+          {/* Agenda view */}
+          <View className="p-6 mb-24">
             <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1 font-sans">Agenda for</Text>
             <Text className="text-lg font-bold text-ink mb-4 font-sans">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
 
             {selectedDayTasks.length === 0 ? (
               <View className="py-10 border-2 border-dashed border-black/5 rounded-[24px] bg-white/50 items-center justify-center">
-                <Clock color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
+                <Calendar color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
                 <Text className="text-sm text-ink-soft font-medium font-sans">No events scheduled.</Text>
               </View>
             ) : (
@@ -471,13 +490,25 @@ export default function CallsScreen() {
                     </View>
                     <Text className="font-bold text-ink text-sm mb-2 font-sans">{task.title}</Text>
                     {task.description ? (
-                      <Text className="text-[12px] text-ink-soft mb-2 font-sans">{task.description}</Text>
+                      <Text className="text-[12px] text-ink-soft mb-2 font-sans" numberOfLines={2}>{task.description}</Text>
                     ) : null}
-                    <View className="flex-row items-center gap-1.5">
-                      <Clock color="#6c5ce7" size={14} />
-                      <Text className="text-[11px] text-ink-soft font-medium font-sans">
-                        {new Date(task.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(task.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </Text>
+                    <View className="flex-row items-center gap-4">
+                      <View className="flex-row items-center gap-1.5">
+                        <Clock color="#6c5ce7" size={14} />
+                        <Text className="text-[11px] text-ink-soft font-medium font-sans">
+                          {new Date(task.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(task.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </Text>
+                      </View>
+                      {(task.type === 'meeting' || task.priority === 'high' || task.priority === 'urgent') && (
+                        <TouchableOpacity 
+                          onPress={() => {
+                            setActiveCall({ user: { name: task.title, avatar: null }, type: 'voice' });
+                          }}
+                          className="bg-purple/10 px-2.5 py-1 rounded-lg"
+                        >
+                          <Text className="text-[10px] font-bold text-purple font-sans">Call room</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 );
@@ -497,7 +528,7 @@ export default function CallsScreen() {
           <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl p-6 pb-12 shadow-2xl">
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <View>
-                <Text className="text-lg font-bold text-ink">Schedule Event</Text>
+                <Text className="text-lg font-bold text-ink">Schedule Agenda</Text>
                 <Text className="text-xs text-ink-soft">Plan for {selectedDate.toLocaleDateString('en-US', { dateStyle: 'short' })}</Text>
               </View>
               <TouchableOpacity onPress={() => setIsModalOpen(false)} style={{ padding: 4 }}>
@@ -609,7 +640,7 @@ export default function CallsScreen() {
               className="bg-purple py-4 rounded-xl items-center flex-row justify-center mt-6 shadow-md"
             >
               <Check color="#fff" size={16} />
-              <Text className="text-white font-bold ml-2">Schedule Agenda Event</Text>
+              <Text className="text-white font-bold ml-2">Create Agenda Event</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

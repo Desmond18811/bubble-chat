@@ -16,6 +16,7 @@ import {
 import { Image } from 'expo-image';
 import { Message } from '../../../lib/mockData';
 import { chatCache } from '../../../lib/chatCache';
+import { getSocket } from '../../../lib/socket';
 import {
   sendTextMessage,
   sendMediaMessage,
@@ -108,6 +109,51 @@ export default function ChatScreen() {
     };
     fetchSuggestions();
   }, [messages, id]);
+
+  const typingTimer = useRef<any>(null);
+
+  const handleTextChange = (text: string) => {
+    setMessageText(text);
+
+    const socket = getSocket();
+    if (socket && chat) {
+      const targetUserId = chat.otherUserId;
+      socket.emit('typing_start', { toUserId: targetUserId, chatId: chat.id });
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      typingTimer.current = setTimeout(() => {
+        socket.emit('typing_stop', { toUserId: targetUserId, chatId: chat.id });
+      }, 2000);
+    }
+  };
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const onTypingStart = (data: { fromUserId: string; chatId: string }) => {
+      if (String(data.chatId) === String(id)) {
+        setChat((prev: any) => prev ? { ...prev, status: 'typing' } : prev);
+      }
+    };
+
+    const onTypingStop = (data: { fromUserId: string; chatId: string }) => {
+      if (String(data.chatId) === String(id)) {
+        setChat((prev: any) => prev ? { ...prev, status: 'read_own' } : prev);
+      }
+    };
+
+    socket.emit('join_room', id);
+
+    socket.on('typing_start', onTypingStart);
+    socket.on('typing_stop', onTypingStop);
+
+    return () => {
+      socket.emit('leave_room', id);
+      socket.off('typing_start', onTypingStart);
+      socket.off('typing_stop', onTypingStop);
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+    };
+  }, [id]);
 
   // Header Dropdown Actions states
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -409,7 +455,7 @@ export default function ChatScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}
               >
                 <View style={{ position: 'relative', flexShrink: 0, marginRight: 10 }}>
-                  {chat.avatar && !chat.isGroupChat ? (
+                  {chat.avatar ? (
                     <Image source={{ uri: chat.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
                   ) : (
                     <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: chat.isGroupChat ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
@@ -1041,7 +1087,7 @@ export default function ChatScreen() {
                   placeholderTextColor="rgba(31,32,48,0.35)"
                   multiline
                   value={messageText}
-                  onChangeText={setMessageText}
+                  onChangeText={handleTextChange}
                 />
 
                 {/* Smile Emoji button inside the capsule */}

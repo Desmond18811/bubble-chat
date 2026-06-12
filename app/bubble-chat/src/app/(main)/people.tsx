@@ -32,6 +32,7 @@ import {
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
 import { addContact, createGroupChat, searchUsers } from '../../lib/api';
+import { getSocket } from '../../lib/socket';
 import { Alert } from 'react-native';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
@@ -74,7 +75,7 @@ function Avatar({
 }) {
   return (
     <View style={{ width: size, height: size }} className="relative shrink-0">
-      {avatar && !isGroup ? (
+      {avatar ? (
         <Image
           source={{ uri: avatar }}
           style={{ width: size, height: size, borderRadius: size * 0.38 }}
@@ -118,6 +119,7 @@ function ContactsTab({
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [chats, setChats] = useState<any[]>([]);
+  const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
 
   const loadCache = async () => {
     const cached = await chatCache.getCachedContacts();
@@ -145,6 +147,26 @@ function ContactsTab({
   useEffect(() => {
     const interval = setInterval(syncContacts, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleTypingStart = (data: { chatId: string }) => {
+      if (data.chatId) setTypingChats(prev => ({ ...prev, [data.chatId]: true }));
+    };
+    const handleTypingStop = (data: { chatId: string }) => {
+      if (data.chatId) setTypingChats(prev => ({ ...prev, [data.chatId]: false }));
+    };
+
+    socket.on('typing_start', handleTypingStart);
+    socket.on('typing_stop', handleTypingStop);
+
+    return () => {
+      socket.off('typing_start', handleTypingStart);
+      socket.off('typing_stop', handleTypingStop);
+    };
   }, []);
 
   const filtered = contacts.filter((c) =>
@@ -231,7 +253,7 @@ function ContactsTab({
         ) : (
           filtered.map((contact) => {
             const matchingChat = chats.find(c => String(c.otherUserId) === String(contact.id) || String(c.id) === String(contact.id));
-            const isTyping = matchingChat?.status === 'typing';
+            const isTyping = matchingChat && !!typingChats[matchingChat.id];
 
             return (
               <View

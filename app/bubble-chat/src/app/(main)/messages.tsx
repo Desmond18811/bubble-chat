@@ -19,6 +19,7 @@ import {
   subscribeToPlusButton,
 } from "../../lib/mockData";
 import { chatCache } from "../../lib/chatCache";
+import { getSocket } from "../../lib/socket";
 import { 
   addContact,
   toggleChatPin,
@@ -199,7 +200,33 @@ export default function Messages() {
     syncWithBackend();
   }, []);
 
+  // Real-time socket typing states
+  const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleTypingStart = (data: { chatId: string }) => {
+      if (data.chatId) {
+        setTypingChats(prev => ({ ...prev, [data.chatId]: true }));
+      }
+    };
+
+    const handleTypingStop = (data: { chatId: string }) => {
+      if (data.chatId) {
+        setTypingChats(prev => ({ ...prev, [data.chatId]: false }));
+      }
+    };
+
+    socket.on('typing_start', handleTypingStart);
+    socket.on('typing_stop', handleTypingStop);
+
+    return () => {
+      socket.off('typing_start', handleTypingStart);
+      socket.off('typing_stop', handleTypingStop);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isFocused) return;
@@ -317,6 +344,7 @@ export default function Messages() {
                         getInitials={getInitials}
                         isSelectionMode={isSelectionMode}
                         isSelected={isSelected}
+                        isTyping={!!typingChats[chat.id]}
                         onPress={() => handlePressItem('chat', chat.id)}
                         onLongPress={() => handleLongPressItem('chat', chat.id, chat.name, chat.isPinned, !!chat.isMuted)}
                       />
@@ -342,7 +370,7 @@ export default function Messages() {
                 {filteredContacts.map((contact, index) => {
                   const isSelected = selectedItemIds.includes(contact.id);
                   const matchingChat = chatsList.find(c => String(c.otherUserId) === String(contact.id) || String(c.id) === String(contact.id));
-                  const isTyping = matchingChat?.status === 'typing';
+                  const isTyping = matchingChat && !!typingChats[matchingChat.id];
 
                   return (
                     <React.Fragment key={contact.id}>
@@ -890,6 +918,7 @@ function ChatRow({
   getInitials,
   isSelectionMode,
   isSelected,
+  isTyping,
   onPress,
   onLongPress
 }: {
@@ -897,6 +926,7 @@ function ChatRow({
   getInitials: (n: string) => string;
   isSelectionMode: boolean;
   isSelected: boolean;
+  isTyping: boolean;
   onPress: () => void;
   onLongPress: () => void;
 }) {
@@ -935,7 +965,7 @@ function ChatRow({
 
       {/* Avatar */}
       <View style={{ position: "relative", flexShrink: 0 }}>
-        {chat.avatar && !chat.isGroupChat ? (
+        {chat.avatar ? (
           <Image source={{ uri: chat.avatar }} style={{ width: 52, height: 52, borderRadius: 14 }} />
         ) : (
           <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: chat.isGroupChat ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
@@ -964,7 +994,7 @@ function ChatRow({
         </View>
 
         <View style={{ marginTop: 3, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          {chat.status === "typing" ? (
+          {isTyping ? (
             <Text style={{ fontSize: 13, color: "#6c5ce7", fontFamily: "Poppins_600SemiBold" }}>
               typing…
             </Text>
