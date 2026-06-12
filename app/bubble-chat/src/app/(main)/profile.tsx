@@ -7,6 +7,8 @@ import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { authStorage } from '../../lib/authStorage';
 
+import { getMyProfile, updateProfile } from '../../lib/api';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -18,8 +20,8 @@ export default function ProfileScreen() {
     bio: 'Passionate about building scalable mobile experiences.',
     email: 'john.doe@example.com',
     phone_number: '+1 234 567 8900',
-    chatsCount: 142,
-    filesCount: 38
+    chatsCount: 0,
+    filesCount: 0
   });
 
   const navigation = useNavigation();
@@ -40,8 +42,55 @@ export default function ProfileScreen() {
     };
   }, [navigation]);
 
+  const [formData, setFormData] = useState({ ...user });
+
   useEffect(() => {
     if (!isFocused) return;
+
+    async function loadUser() {
+      try {
+        const stored = await authStorage.getUser();
+        if (stored) {
+          const mapped = {
+            ...user,
+            ...stored,
+            email: stored.email || user.email,
+            phone_number: stored.phone_number || user.phone_number,
+            full_name: stored.full_name || user.full_name,
+            username: stored.username || user.username,
+            bio: stored.bio || user.bio,
+            org_role: stored.org_role || user.org_role,
+            organization: stored.organization || user.organization,
+          };
+          setUser(mapped);
+          setFormData(mapped);
+        }
+        
+        const fresh = await getMyProfile();
+        if (fresh?.data) {
+          const u = fresh.data;
+          await authStorage.updateUser(u);
+          const mappedFresh = {
+            ...user,
+            ...u,
+            email: u.email || user.email,
+            phone_number: u.phone_number || user.phone_number,
+            full_name: u.full_name || user.full_name,
+            username: u.username || user.username,
+            bio: u.bio || user.bio,
+            org_role: u.org_role || user.org_role,
+            organization: u.organization || user.organization,
+            chatsCount: u.chatsCount ?? user.chatsCount,
+            filesCount: u.filesCount ?? user.filesCount,
+          };
+          setUser(mappedFresh);
+          setFormData(mappedFresh);
+        }
+      } catch (e) {
+        console.warn("Failed to load user profile in ProfileScreen:", e);
+      }
+    }
+    loadUser();
 
     const unsubscribePlus = subscribeToPlusButton(() => {
       setIsEditing(true);
@@ -52,11 +101,33 @@ export default function ProfileScreen() {
     };
   }, [isFocused]);
 
-  const [formData, setFormData] = useState({ ...user });
-
-  const handleSave = () => {
-    setUser({ ...formData });
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const res = await updateProfile({
+        full_name: formData.full_name.trim(),
+        username: formData.username.trim().toLowerCase(),
+        bio: formData.bio.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone_number: formData.phone_number.trim(),
+      });
+      if (res?.data) {
+        const u = res.data;
+        await authStorage.updateUser(u);
+        const updatedUser = {
+          ...user,
+          ...u,
+          full_name: u.full_name || user.full_name,
+          username: u.username || user.username,
+          bio: u.bio || user.bio,
+          email: u.email || user.email,
+          phone_number: u.phone_number || user.phone_number,
+        };
+        setUser(updatedUser);
+      }
+      setIsEditing(false);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update profile.");
+    }
   };
 
   const handleLogout = () => {
