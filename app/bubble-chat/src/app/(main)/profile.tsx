@@ -1,10 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Image } from 'react-native';
 import { User, Pencil, Mail, Phone, Briefcase, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { appStorage, getMyProfile, updateProfile } from '../../lib/api';
+
+const AVATAR_OPTIONS = [
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=160&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=160&auto=format&fit=crop",
+];
+
+const getInitials = (name?: string) => {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
 
 export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
@@ -16,12 +38,14 @@ export default function ProfileScreen() {
     bio: 'Passionate about building scalable mobile experiences.',
     email: 'john.doe@example.com',
     phone_number: '+1 234 567 8900',
+    avatar: '',
     chatsCount: 142,
     filesCount: 38
   });
 
   const navigation = useNavigation();
   const [isFocused, setIsFocused] = useState(navigation.isFocused());
+  const [formData, setFormData] = useState({ ...user });
 
   useEffect(() => {
     const unsubscribeFocus = navigation.addListener('focus', () => {
@@ -39,6 +63,39 @@ export default function ProfileScreen() {
   }, [navigation]);
 
   useEffect(() => {
+    const loadProfile = async () => {
+      // 1. Sync from local cache immediately
+      const cached = appStorage.getItem('user_data');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setUser(prev => ({ ...prev, ...parsed }));
+          setFormData(prev => ({ ...prev, ...parsed }));
+        } catch (e) {
+          console.log("Error parsing cached profile:", e);
+        }
+      }
+
+      // 2. Fetch fresh details from API
+      try {
+        const res = await getMyProfile();
+        if (res && res.data) {
+          const freshData = res.data;
+          setUser(prev => ({ ...prev, ...freshData }));
+          setFormData(prev => ({ ...prev, ...freshData }));
+          appStorage.setItem('user_data', JSON.stringify(freshData));
+        }
+      } catch (err) {
+        console.log("Error loading profile from API:", err);
+      }
+    };
+
+    if (isFocused) {
+      loadProfile();
+    }
+  }, [isFocused]);
+
+  useEffect(() => {
     if (!isFocused) return;
 
     const unsubscribePlus = subscribeToPlusButton(() => {
@@ -50,10 +107,24 @@ export default function ProfileScreen() {
     };
   }, [isFocused]);
 
-  const [formData, setFormData] = useState({ ...user });
-
-  const handleSave = () => {
-    setUser({ ...formData });
+  const handleSave = async () => {
+    try {
+      const res = await updateProfile({
+        full_name: formData.full_name,
+        username: formData.username,
+        bio: formData.bio,
+        email: formData.email,
+        phone_number: formData.phone_number,
+        avatar: formData.avatar,
+      });
+      if (res && res.data) {
+        setUser(prev => ({ ...prev, ...res.data }));
+        appStorage.setItem('user_data', JSON.stringify(res.data));
+      }
+    } catch (err: any) {
+      console.error("Failed to update profile via API:", err);
+      setUser(prev => ({ ...prev, ...formData }));
+    }
     setIsEditing(false);
   };
 
@@ -87,8 +158,14 @@ export default function ProfileScreen() {
         <View className="w-full bg-purple-soft/5">
           {/* Hero Card */}
           <View className="bg-purple-soft/20 items-center w-full p-6 border-b border-black/5">
-            <View className="w-24 h-24 rounded-3xl bg-purple/10 items-center justify-center mb-4 shadow-sm border border-purple/5">
-              <User color="#6c5ce7" size={40} />
+            <View className="w-24 h-24 rounded-3xl bg-purple/10 overflow-hidden items-center justify-center mb-4 shadow-sm border border-purple/5">
+              {user.avatar ? (
+                <Image source={{ uri: user.avatar }} style={{ width: 96, height: 96 }} />
+              ) : (
+                <Text style={{ fontSize: 32, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>
+                  {getInitials(user.full_name)}
+                </Text>
+              )}
             </View>
             <Text className="text-[22px] font-bold text-ink leading-tight font-sans">{user.full_name}</Text>
             <Text className="text-[14px] font-bold text-purple mt-1.5 font-sans">@{user.username}</Text>
@@ -168,6 +245,44 @@ export default function ProfileScreen() {
           
           <ScrollView className="flex-1 px-6 pt-6">
             <View className="bg-purple-soft/30 rounded-3xl border border-black/5 p-6 mb-8">
+              {/* Avatar Picker Section */}
+              <View className="items-center mb-6">
+                <View className="w-20 h-20 rounded-2xl bg-purple/10 overflow-hidden mb-3 border border-purple/15">
+                  {formData.avatar ? (
+                    <Image source={{ uri: formData.avatar }} style={{ width: 80, height: 80 }} />
+                  ) : (
+                    <View className="flex-1 items-center justify-center">
+                      <User color="#6c5ce7" size={32} />
+                    </View>
+                  )}
+                </View>
+                <Text className="text-xs font-bold text-purple mb-2.5 uppercase tracking-wider font-sans">
+                  Choose a Profile Avatar
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row py-1">
+                  {AVATAR_OPTIONS.map((url, idx) => {
+                    const isSelected = formData.avatar === url;
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => setFormData({ ...formData, avatar: url })}
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 10,
+                          borderWidth: 2,
+                          borderColor: isSelected ? "#6c5ce7" : "transparent",
+                          overflow: "hidden",
+                          marginHorizontal: 4,
+                        }}
+                      >
+                        <Image source={{ uri: url }} style={{ width: 40, height: 40 }} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+
               <View className="mb-4">
                 <Text className="text-xs font-bold text-ink uppercase mb-1">Full Name</Text>
                 <TextInput

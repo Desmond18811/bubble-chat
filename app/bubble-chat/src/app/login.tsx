@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Text, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Text, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
+import { login, appStorage } from "../lib/api";
 
 export default function Login() {
   const router = useRouter();
@@ -10,13 +11,40 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Required Fields", "Please enter both your email and password.");
+      return;
+    }
     setLoading(true);
-    // Mock login and navigate to dashboard messages screen
-    setTimeout(() => {
+    try {
+      const res = await login({ email: email.trim(), password: password.trim() });
+      if (res && res.data) {
+        if (res.data.accessToken) {
+          appStorage.setItem("access_token", res.data.accessToken);
+          if (res.data.refreshToken) {
+            appStorage.setItem("refresh_token", res.data.refreshToken);
+          }
+          if (res.data.user) {
+            appStorage.setItem("user_data", JSON.stringify(res.data.user));
+          }
+          router.replace("/messages");
+        } else if (res.data.requiresVerification) {
+          // Redirect to OTP verification page if not verified yet
+          router.push(`/verify?email=${encodeURIComponent(email.trim())}`);
+        } else {
+          Alert.alert("Success", res.message || "Logged in successfully!");
+          router.replace("/messages");
+        }
+      } else {
+        Alert.alert("Authentication Failed", "Invalid server response.");
+      }
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      Alert.alert("Login Failed", err.message || "Invalid credentials. Please try again.");
+    } finally {
       setLoading(false);
-      router.replace("/messages");
-    }, 1000);
+    }
   };
 
   return (

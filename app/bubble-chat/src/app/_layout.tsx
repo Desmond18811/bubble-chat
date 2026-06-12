@@ -1,15 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk";
 import * as SplashScreen from "expo-splash-screen";
+import { initAuthStorage } from "../lib/api";
 import "../global.css";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const [authInitialized, setAuthInitialized] = useState(false);
   const [loaded, error] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -19,12 +21,18 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded || error) {
+    initAuthStorage()
+      .catch((err) => console.error("Error initializing auth storage in layout:", err))
+      .finally(() => setAuthInitialized(true));
+  }, []);
+
+  useEffect(() => {
+    if ((loaded || error) && authInitialized) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [loaded, error]);
+  }, [loaded, error, authInitialized]);
 
-  if (!loaded && !error) {
+  if ((!loaded && !error) || !authInitialized) {
     return null;
   }
 

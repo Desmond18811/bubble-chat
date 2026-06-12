@@ -234,7 +234,8 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     'full_name', 'bio', 'blog', 'links', 'status_message', 'mood_emoji',
     'gender', 'date_of_birth', 'hobbies', 'location',
     'notification_settings', 'privacy_settings', 'username',
-    'phone_number', 'organization', 'org_role', 'app_background', 'custom_background'
+    'phone_number', 'organization', 'org_role', 'app_background', 'custom_background',
+    'avatar'
   ];
 
   // Check username uniqueness if being updated

@@ -4,16 +4,35 @@
 
 const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const inMemoryStorage: Record<string, string> = {};
-const appStorage = {
-    getItem: (key: string) => typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : inMemoryStorage[key] || null,
-    setItem: (key: string, value: string) => { 
-        if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem(key, value);
-        inMemoryStorage[key] = value; 
+
+export const appStorage = {
+    getItem: (key: string) => {
+        return inMemoryStorage[key] || null;
     },
-    removeItem: (key: string) => { 
-        if (typeof window !== 'undefined' && window.localStorage) window.localStorage.removeItem(key);
-        delete inMemoryStorage[key]; 
+    setItem: (key: string, value: string) => {
+        inMemoryStorage[key] = value;
+        AsyncStorage.setItem(key, value).catch(err => console.error('AsyncStorage setItem error:', err));
+    },
+    removeItem: (key: string) => {
+        delete inMemoryStorage[key];
+        AsyncStorage.removeItem(key).catch(err => console.error('AsyncStorage removeItem error:', err));
+    }
+};
+
+export const initAuthStorage = async () => {
+    try {
+        const keys = ['access_token', 'refresh_token', 'user_data'];
+        for (const key of keys) {
+            const val = await AsyncStorage.getItem(key);
+            if (val) {
+                inMemoryStorage[key] = val;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to initialize persistent auth storage:', e);
     }
 };
 
@@ -77,6 +96,15 @@ export const logoutUser = async () => {
     const res = await fetch(`${BASE_URL}/auth/logout`, {
         method: 'POST',
         headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+export const refreshToken = async (rToken: string) => {
+    const res = await fetch(`${BASE_URL}/auth/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: rToken }),
     });
     return handleResponse(res);
 };

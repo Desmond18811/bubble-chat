@@ -1,11 +1,13 @@
-import React, { useEffect, useRef } from "react";
-import { Text, View, TouchableOpacity, Animated, Dimensions } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Text, View, TouchableOpacity, Animated, Dimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
+import { appStorage, getMyProfile, refreshToken } from "../lib/api";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function Splash() {
   const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Animated values for bubbles
   const bubble1Y = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -19,6 +21,53 @@ export default function Splash() {
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    const checkSession = async () => {
+      const token = appStorage.getItem("access_token");
+      if (token) {
+        try {
+          // Verify current access token by loading user profile
+          const profileRes = await getMyProfile();
+          if (profileRes && profileRes.data) {
+            // Save the user data locally
+            appStorage.setItem("user_data", JSON.stringify(profileRes.data));
+            router.replace("/messages");
+            return;
+          }
+        } catch (err) {
+          console.log("Access token invalid, attempting silent refresh...", err);
+          const rToken = appStorage.getItem("refresh_token");
+          if (rToken) {
+            try {
+              const refreshRes = await refreshToken(rToken);
+              if (refreshRes && refreshRes.data) {
+                appStorage.setItem("access_token", refreshRes.data.accessToken);
+                if (refreshRes.data.refreshToken) {
+                  appStorage.setItem("refresh_token", refreshRes.data.refreshToken);
+                }
+                // Fetch profile with new token to cache user data
+                const profileRes = await getMyProfile();
+                if (profileRes && profileRes.data) {
+                  appStorage.setItem("user_data", JSON.stringify(profileRes.data));
+                }
+                router.replace("/messages");
+                return;
+              }
+            } catch (refreshErr) {
+              console.log("Token refresh failed:", refreshErr);
+            }
+          }
+        }
+      }
+      // No active session or token invalid; show onboarding UI
+      setCheckingAuth(false);
+    };
+
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (checkingAuth) return;
+
     // Animate bubbles floating upwards
     const animateBubble = (value: Animated.Value, delay: number, duration: number) => {
       Animated.loop(
@@ -67,7 +116,15 @@ export default function Splash() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [checkingAuth]);
+
+  if (checkingAuth) {
+    return (
+      <View className="flex-1 bg-canvas items-center justify-center">
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-canvas justify-between py-16 px-6 relative overflow-hidden">
