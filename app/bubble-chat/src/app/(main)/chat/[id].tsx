@@ -11,6 +11,7 @@ import {
   Camera, FileText, Image as ImageIcon,
   Info, Sparkles, BellOff, EyeOff, Archive, Trash2,
   Copy, Pin, Edit2, Check, CheckCheck,
+  MicOff, PhoneOff, Volume2,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { Message } from '../../../lib/mockData';
@@ -27,6 +28,7 @@ import {
   clearChat,
   toggleChatPin,
   deleteChat,
+  getAidaWritingSuggestions,
 } from '../../../lib/api';
 
 const PURPLE = '#6c5ce7';
@@ -46,6 +48,66 @@ export default function ChatScreen() {
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; type: string; url?: string } | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Call state
+  const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
+  const [callDuration, setCallDuration] = useState(0);
+  const [isCallMuted, setIsCallMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+
+  // Aida Suggestions state
+  const [aidaSuggestions, setAidaSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    let timer: any;
+    if (activeCall) {
+      setCallDuration(0);
+      timer = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeCall]);
+
+  const handleStartCall = (type: 'voice' | 'video') => {
+    setActiveCall({ user: chat, type });
+  };
+
+  const formatDuration = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  useEffect(() => {
+    if (!chat || messages.length === 0) return;
+    
+    // Find the last received message (sender !== 'me')
+    const lastReceived = [...messages].reverse().find(m => m.sender !== 'me');
+    if (!lastReceived) {
+      setAidaSuggestions([]);
+      return;
+    }
+
+    const fetchSuggestions = async () => {
+      try {
+        const response = await getAidaWritingSuggestions(lastReceived.text, String(id));
+        const suggestionsList = response?.suggestions || response?.data || [];
+        setAidaSuggestions(suggestionsList);
+      } catch (err) {
+        // Fallback suggestions
+        setAidaSuggestions([
+          "Sounds good!",
+          "Let's sync up later.",
+          "Can you share the file?",
+          "Got it, thanks!"
+        ]);
+      }
+    };
+    fetchSuggestions();
+  }, [messages, id]);
 
   // Header Dropdown Actions states
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -125,6 +187,15 @@ export default function ChatScreen() {
 
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+  const getGroupInitials = (name: string) => {
+    const clean = name.trim().replace(/\s+/g, ' ');
+    const parts = clean.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return clean.slice(0, 2).toUpperCase();
+  };
 
   const handleSend = async () => {
     let text = messageText.trim();
@@ -338,11 +409,13 @@ export default function ChatScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 }}
               >
                 <View style={{ position: 'relative', flexShrink: 0, marginRight: 10 }}>
-                  {chat.avatar ? (
+                  {chat.avatar && !chat.isGroupChat ? (
                     <Image source={{ uri: chat.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
                   ) : (
-                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>{getInitials(chat.name)}</Text>
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: chat.isGroupChat ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: chat.isGroupChat ? '#ffffff' : PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>
+                        {chat.isGroupChat ? getGroupInitials(chat.name) : getInitials(chat.name)}
+                      </Text>
                     </View>
                   )}
                   {chat.isOnline && (
@@ -367,8 +440,8 @@ export default function ChatScreen() {
             {/* Action Icons */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               <IconBtn icon={<Search size={18} color={INK_SOFT} />} onPress={() => setIsSearching(true)} />
-              <IconBtn icon={<Phone size={18} color={INK_SOFT} />} />
-              <IconBtn icon={<Video size={18} color={INK_SOFT} />} />
+              <IconBtn icon={<Phone size={18} color={INK_SOFT} />} onPress={() => handleStartCall('voice')} />
+              <IconBtn icon={<Video size={18} color={INK_SOFT} />} onPress={() => handleStartCall('video')} />
               <IconBtn icon={<Info size={18} color={INK_SOFT} />} onPress={() => setIsInfoOpen(true)} />
               <IconBtn icon={<MoreVertical size={18} color={INK_SOFT} />} onPress={() => setIsMenuOpen(prev => !prev)} />
             </View>
@@ -891,6 +964,40 @@ export default function ChatScreen() {
                 </View>
               )}
 
+              {/* Aida Writing Suggestions Chips */}
+              {aidaSuggestions.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingBottom: 8 }}
+                >
+                  {aidaSuggestions.map((suggestion, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => {
+                        setMessageText(suggestion);
+                        setAidaSuggestions([]);
+                      }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(108,92,231,0.08)',
+                        borderColor: 'rgba(108,92,231,0.15)',
+                        borderWidth: 1,
+                        borderRadius: 100,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                      }}
+                    >
+                      <Sparkles size={11} color={PURPLE} style={{ marginRight: 4 }} />
+                      <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: PURPLE }}>
+                        {suggestion}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+
               {/* ── Main Input Bar Row styled as a single continuous capsule ── */}
               <View style={{
                 flexDirection: 'row',
@@ -1210,6 +1317,83 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
+      </Modal>
+
+      {/* ── Call Overlay Modal ── */}
+      <Modal visible={activeCall !== null} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: '#1f2030' }} className="items-center justify-between py-16 px-6">
+          {/* Header */}
+          <View className="items-center mt-8">
+            <Text className="text-white/60 text-xs font-bold font-sans uppercase tracking-widest mb-2">
+              BUBBLE {activeCall?.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
+            </Text>
+            <Text className="text-white text-2xl font-bold font-sans mt-2">
+              {activeCall?.user?.name || 'Unknown Colleague'}
+            </Text>
+            <Text className="text-[#6c5ce7] text-sm font-semibold font-sans mt-2">
+              {callDuration === 0 ? 'Ringing...' : `Connected • ${formatDuration(callDuration)}`}
+            </Text>
+          </View>
+
+          {/* Avatar / Video Preview area */}
+          <View className="items-center justify-center my-8">
+            {activeCall?.type === 'video' ? (
+              <View style={{ width: 220, height: 320, borderRadius: 28, backgroundColor: '#000', overflow: 'hidden' }} className="relative shadow-2xl">
+                {activeCall?.user?.avatar ? (
+                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: '100%', height: '100%', opacity: 0.8 }} />
+                ) : (
+                  <View className="flex-1 items-center justify-center bg-purple/20">
+                    <Text className="text-white text-5xl font-bold font-sans">
+                      {getInitials(activeCall?.user?.name || 'UC')}
+                    </Text>
+                  </View>
+                )}
+                {/* Small Self Video Preview overlay */}
+                <View style={{ position: 'absolute', bottom: 16, right: 16, width: 70, height: 100, borderRadius: 12, backgroundColor: '#2d3748', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' }}>
+                  <View className="flex-1 items-center justify-center bg-purple/40">
+                    <Text className="text-white/80 text-[10px] font-bold">You</Text>
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(108,92,231,0.15)', borderWidth: 4, borderColor: '#6c5ce7' }} className="items-center justify-center shadow-lg">
+                {activeCall?.user?.avatar ? (
+                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: 132, height: 132, borderRadius: 66 }} />
+                ) : (
+                  <Text className="text-white text-4xl font-bold font-sans">
+                    {getInitials(activeCall?.user?.name || 'UC')}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Action buttons */}
+          <View className="w-full flex-row justify-around items-center px-4 mb-4">
+            <TouchableOpacity 
+              onPress={() => setIsCallMuted(!isCallMuted)}
+              style={{ backgroundColor: isCallMuted ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
+              className="w-14 h-14 rounded-full items-center justify-center"
+            >
+              <MicOff color={isCallMuted ? '#fff' : '#9a9aab'} size={22} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setActiveCall(null)}
+              className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg shadow-red-500/30"
+            >
+              <PhoneOff color="#fff" size={24} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setIsSpeakerOn(!isSpeakerOn)}
+              style={{ backgroundColor: isSpeakerOn ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
+              className="w-14 h-14 rounded-full items-center justify-center"
+            >
+              <Volume2 color={isSpeakerOn ? '#fff' : '#9a9aab'} size={22} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

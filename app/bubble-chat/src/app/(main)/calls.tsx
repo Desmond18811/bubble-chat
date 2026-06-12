@@ -1,26 +1,217 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { Phone, Video, Users, User } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert } from 'react-native';
+import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { searchUsers, fetchTasks, createTaskFull } from '../../lib/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Calendar cells helper
+const getCalendarCells = (currentDate: Date) => {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+
+  const cells = [];
+  for (let i = firstDay - 1; i >= 0; i--) {
+    cells.push({
+      date: new Date(year, month - 1, prevMonthDays - i),
+      isCurrentMonth: false,
+    });
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    cells.push({
+      date: new Date(year, month, i),
+      isCurrentMonth: true,
+    });
+  }
+  const remainingCells = 42 - cells.length;
+  for (let i = 1; i <= remainingCells; i++) {
+    cells.push({
+      date: new Date(year, month + 1, i),
+      isCurrentMonth: false,
+    });
+  }
+  return cells;
+};
+
+function getInitials(name: string) {
+  if (!name) return 'UC';
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 export default function CallsScreen() {
-  // Dummy data mirroring the web version
+  const [callsTab, setCallsTab] = useState<'meet' | 'calendar'>('meet');
+
+  // Meet Tab states
   const [activeRooms] = useState([
     { id: '1', title: 'Design Sync', members: 4, callers: ['A', 'B', 'C'] },
     { id: '2', title: 'Engineering Standup', members: 12, callers: ['D', 'E', 'F'] }
   ]);
-  const [coworkers] = useState([
-    { id: '1', full_name: 'Alice Johnson', org_role: 'Lead Designer', organization: 'Bubble', isOnline: true },
-    { id: '2', full_name: 'Bob Smith', org_role: 'Engineer', organization: 'Bubble', isOnline: false },
-    { id: '3', full_name: 'Charlie Davis', org_role: 'Product Manager', organization: 'Bubble', isOnline: true },
-  ]);
+  const [coworkers, setCoworkers] = useState<any[]>([]);
+
+  // Calendar Tab states
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tasks, setTasks] = useState<any[]>([]);
+
+  // Form states
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [startTimeText, setStartTimeText] = useState('10:00');
+  const [endTimeText, setEndTimeText] = useState('11:00');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
+
+  // Calling states
+  const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
+  const [callDuration, setCallDuration] = useState(0);
+  const [isCallMuted, setIsCallMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+
+  const fetchCoworkers = async () => {
+    try {
+      const response = await searchUsers('');
+      const list = response?.users || [];
+      setCoworkers(list);
+    } catch (err) {
+      console.warn("Failed to fetch coworkers in calls.tsx:", err);
+    }
+  };
+
+  const loadCachedTasks = async () => {
+    try {
+      const raw = await AsyncStorage.getItem('bubble_cached_tasks');
+      if (raw) setTasks(JSON.parse(raw));
+    } catch {}
+  };
+
+  const syncTasks = async () => {
+    try {
+      const response = await fetchTasks();
+      const list = Array.isArray(response) ? response : (response?.data || []);
+      setTasks(list);
+      await AsyncStorage.setItem('bubble_cached_tasks', JSON.stringify(list));
+    } catch (err) {
+      console.warn("Failed to sync tasks in calls.tsx:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCoworkers();
+    loadCachedTasks();
+    syncTasks();
+
+    const interval = setInterval(() => {
+      fetchCoworkers();
+      syncTasks();
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let timer: any;
+    if (activeCall) {
+      setCallDuration(0);
+      timer = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeCall]);
+
+  const formatDuration = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleCreateEvent = async () => {
+    if (!title.trim()) {
+      Alert.alert('Validation Error', 'Please enter a title for the event.');
+      return;
+    }
+
+    try {
+      const start = new Date(selectedDate);
+      const [sH, sM] = startTimeText.split(':').map(Number);
+      start.setHours(sH || 10, sM || 0, 0, 0);
+
+      const end = new Date(selectedDate);
+      const [eH, eM] = endTimeText.split(':').map(Number);
+      end.setHours(eH || 11, eM || 0, 0, 0);
+
+      const payload = {
+        title: title.trim(),
+        description: description.trim(),
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        priority,
+        type,
+      };
+
+      await createTaskFull(payload);
+      
+      setTitle('');
+      setDescription('');
+      setStartTimeText('10:00');
+      setEndTimeText('11:00');
+      setPriority('medium');
+      setType('meeting');
+      
+      setIsModalOpen(false);
+      await syncTasks();
+
+      if ((payload.priority === 'high' || payload.priority === 'urgent') && payload.type === 'meeting') {
+        Alert.alert(
+          'Priority Meeting Scheduled',
+          'Everybody in the group is notified to come online for this call.',
+          [
+            { text: 'Later', style: 'cancel' },
+            { 
+              text: 'Start Call Now', 
+              onPress: () => {
+                setActiveCall({
+                  user: { name: payload.title, avatar: null },
+                  type: 'voice'
+                });
+              } 
+            }
+          ]
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to create event.');
+    }
+  };
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const cells = getCalendarCells(currentDate);
+
+  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const isSelected = (date: Date) => date.toDateString() === selectedDate.toDateString();
+  const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
+
+  const selectedDayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === selectedDate.toDateString());
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5">
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-6 pt-5 pb-3">
         <View>
-          <Svg height="36" width="100">
+          <Svg height="36" width="200">
             <Defs>
               <LinearGradient id="callsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <Stop offset="0%" stopColor="#6c5ce7" />
@@ -35,87 +226,471 @@ export default function CallsScreen() {
               y="26"
               letterSpacing="-0.5"
             >
-              Calls
+              {callsTab === 'meet' ? 'Events & Meets' : 'Calendar'}
             </SvgText>
           </Svg>
-          <Text className="text-xs text-ink-soft mt-0.5 font-sans">Experience seamless communication</Text>
+          <Text className="text-xs text-ink-soft mt-0.5 font-sans">
+            {callsTab === 'meet' ? 'Experience seamless communication' : 'Organize team meetings & business events'}
+          </Text>
         </View>
-        <TouchableOpacity className="bg-purple px-4 py-2.5 rounded-xl shadow-sm">
-          <Text className="text-white text-xs font-bold font-sans">New Meet</Text>
+        <TouchableOpacity 
+          onPress={() => {
+            if (callsTab === 'meet') {
+              setActiveCall({
+                user: { name: 'Quick Meet Room', avatar: null },
+                type: 'video'
+              });
+            } else {
+              setIsModalOpen(true);
+            }
+          }}
+          className="bg-purple px-4 py-2.5 rounded-xl shadow-sm"
+        >
+          <Text className="text-white text-xs font-bold font-sans">
+            {callsTab === 'meet' ? 'New Meet' : 'Add Event'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
-        {/* Live Collaborative Spaces (Active Rooms) */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4 px-1">
-            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Live Collaborative Spaces</Text>
-            <View className="flex-row items-center bg-emerald-500/10 px-3 py-1 rounded-full">
-              <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-              <Text className="text-[10px] font-bold text-emerald-600 font-sans">{activeRooms.length} ACTIVE ROOMS</Text>
+      {/* Navigation Tab Bar */}
+      <View className="flex-row px-6 border-b border-black/5 bg-white gap-6">
+        <TouchableOpacity
+          onPress={() => setCallsTab('meet')}
+          style={{ borderBottomWidth: 2, borderBottomColor: callsTab === 'meet' ? '#6c5ce7' : 'transparent' }}
+          className="pb-3 pt-1"
+        >
+          <Text className={`text-sm font-bold font-sans ${callsTab === 'meet' ? 'text-purple' : 'text-ink-soft'}`}>
+            Live Meetings
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setCallsTab('calendar')}
+          style={{ borderBottomWidth: 2, borderBottomColor: callsTab === 'calendar' ? '#6c5ce7' : 'transparent' }}
+          className="pb-3 pt-1"
+        >
+          <Text className={`text-sm font-bold font-sans ${callsTab === 'calendar' ? 'text-purple' : 'text-ink-soft'}`}>
+            Business Calendar
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {callsTab === 'meet' ? (
+        <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
+          {/* Live Collaborative Spaces */}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between mb-4 px-1">
+              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Live Collaborative Spaces</Text>
+              <View className="flex-row items-center bg-emerald-500/10 px-3 py-1 rounded-full">
+                <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
+                <Text className="text-[10px] font-bold text-emerald-600 font-sans">{activeRooms.length} ACTIVE ROOMS</Text>
+              </View>
+            </View>
+
+            <View className="space-y-4">
+              {activeRooms.map(room => (
+                <TouchableOpacity 
+                  key={room.id} 
+                  onPress={() => {
+                    setActiveCall({
+                      user: { name: room.title, avatar: null },
+                      type: 'voice'
+                    });
+                  }}
+                  className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm mb-3"
+                >
+                  <Text className="text-[17px] font-bold text-ink font-sans">{room.title}</Text>
+                  <Text className="text-[11px] text-ink-soft font-medium uppercase font-sans mt-1">{room.members} members joined</Text>
+                  
+                  <View className="flex-row items-end justify-between mt-6">
+                    <View className="flex-row -space-x-3">
+                      {room.callers.map((c, i) => (
+                        <View key={i} className="w-10 h-10 rounded-full border-2 border-white bg-purple items-center justify-center shadow-sm">
+                          <Text className="text-white text-[12px] font-bold font-sans">{c}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    <View className="w-12 h-12 rounded-2xl bg-purple items-center justify-center shadow-lg shadow-purple/20">
+                      <Video color="#fff" size={20} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
-          <View className="space-y-4">
-            {activeRooms.map(room => (
-              <TouchableOpacity key={room.id} className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm">
-                <Text className="text-[17px] font-bold text-ink font-sans">{room.title}</Text>
-                <Text className="text-[11px] text-ink-soft font-medium uppercase font-sans mt-1">{room.members} members joined</Text>
-                
-                <View className="flex-row items-end justify-between mt-6">
-                  <View className="flex-row -space-x-3">
-                    {room.callers.map((c, i) => (
-                      <View key={i} className="w-10 h-10 rounded-full border-2 border-white bg-purple items-center justify-center shadow-sm">
-                        <Text className="text-white text-[12px] font-bold font-sans">{c}</Text>
+          {/* People in the Office */}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between mb-4 px-1">
+              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">People in the office</Text>
+              <View className="bg-purple/10 px-2 py-0.5 rounded-full">
+                <Text className="text-[10px] font-bold text-purple uppercase font-sans">All Active Staff</Text>
+              </View>
+            </View>
+
+            {coworkers.length === 0 ? (
+              <View className="py-8 items-center justify-center">
+                <Text className="text-xs text-ink-soft font-sans">No staff online currently</Text>
+              </View>
+            ) : (
+              <View className="flex-row flex-wrap justify-between">
+                {coworkers.map(worker => {
+                  const displayName = worker.full_name || worker.name || worker.username || 'Unknown staff';
+                  return (
+                    <View key={worker.id} style={{ width: '48%' }} className="bg-white border border-black/5 rounded-[32px] p-5 mb-4 items-center shadow-sm relative overflow-hidden">
+                      <View className="relative">
+                        {worker.avatar ? (
+                          <Image source={{ uri: worker.avatar }} style={{ width: 80, height: 80, borderRadius: 24 }} />
+                        ) : (
+                          <View className="w-20 h-20 rounded-[24px] bg-purple-soft items-center justify-center shadow-md">
+                            <Text className="text-purple text-xl font-bold font-sans">
+                              {getInitials(displayName)}
+                            </Text>
+                          </View>
+                        )}
+                        {worker.isOnline && (
+                          <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />
+                        )}
                       </View>
-                    ))}
-                  </View>
-                  <View className="w-12 h-12 rounded-2xl bg-purple items-center justify-center shadow-lg shadow-purple/20">
-                    <Video color="#fff" size={20} />
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+                      <Text className="text-[15px] font-bold text-ink mt-4 text-center w-full font-sans" numberOfLines={1}>
+                        {displayName}
+                      </Text>
+                      <Text className="text-[10px] font-bold text-purple uppercase italic mt-1 text-center w-full font-sans" numberOfLines={1}>
+                        {worker.org_role || 'Staff Member'}
+                      </Text>
+                      <Text className="text-[9px] text-ink-soft font-medium text-center mt-0.5 w-full font-sans" numberOfLines={1}>
+                        {worker.organization || 'Bubble Chat'}
+                      </Text>
 
-        {/* People in the Office */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4 px-1">
-            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">People in the office</Text>
-            <View className="bg-purple/10 px-2 py-0.5 rounded-full">
-              <Text className="text-[10px] font-bold text-purple uppercase font-sans">All Active Staff</Text>
+                      <View className="flex-row items-center justify-center gap-2 mt-5">
+                        <TouchableOpacity 
+                          onPress={() => setActiveCall({ user: worker, type: 'voice' })}
+                          className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center"
+                        >
+                          <Phone color="#6c5ce7" size={16} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          onPress={() => setActiveCall({ user: worker, type: 'video' })}
+                          className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center"
+                        >
+                          <Video color="#6c5ce7" size={16} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      ) : (
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          {/* Calendar Grid View */}
+          <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="text-lg font-bold text-ink font-sans">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
+              <View className="flex-row gap-2">
+                <TouchableOpacity onPress={prevMonth} className="p-2 border border-black/5 rounded-xl bg-white">
+                  <ChevronLeft color="#6c5ce7" size={16} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setCurrentDate(new Date())} className="px-3 py-2 border border-black/5 rounded-xl bg-white">
+                  <Text className="text-xs font-bold text-ink font-sans">Today</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={nextMonth} className="p-2 border border-black/5 rounded-xl bg-white">
+                  <ChevronRight color="#6c5ce7" size={16} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View className="flex-row justify-between mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <Text key={day} className="text-[10px] font-bold text-black/30 uppercase flex-1 text-center font-sans">{day}</Text>
+              ))}
+            </View>
+
+            <View className="flex-row flex-wrap">
+              {cells.map((cell, idx) => {
+                const selected = isSelected(cell.date);
+                const today = isToday(cell.date);
+                const dayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === cell.date.toDateString());
+                const hasMeeting = dayTasks.length > 0;
+
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => setSelectedDate(cell.date)}
+                    className="w-[14.28%] aspect-square p-1"
+                  >
+                    <View className={`flex-1 rounded-[14px] p-1.5 justify-between border ${
+                      selected ? 'bg-purple border-purple' : 
+                      today ? 'border-purple/50 bg-purple/5' : 
+                      cell.isCurrentMonth ? 'bg-white border-black/5' : 'bg-slate-50 border-black/5 opacity-50'
+                    }`}>
+                      <Text className={`text-xs font-bold font-sans ${selected ? 'text-white' : 'text-ink'}`}>
+                        {cell.date.getDate()}
+                      </Text>
+                      {hasMeeting && (
+                        <View className="flex-row gap-0.5 mt-auto flex-wrap">
+                          {dayTasks.map(t => {
+                            const dotColor = t.priority === 'urgent' || t.priority === 'high' ? 'bg-red-500' : 'bg-emerald-500';
+                            return (
+                              <View key={t._id} className={`w-1.5 h-1.5 rounded-full ${selected ? 'bg-white' : dotColor}`} />
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
-          <View className="flex-row flex-wrap justify-between">
-            {coworkers.map(worker => (
-              <View key={worker.id} className="w-[48%] bg-white border border-black/5 rounded-[32px] p-5 mb-4 items-center shadow-sm relative overflow-hidden">
-                <View className="relative">
-                  <View className="w-20 h-20 rounded-[24px] bg-purple-soft items-center justify-center shadow-md">
-                    <User color="#6c5ce7" size={32} />
-                  </View>
-                  {worker.isOnline && (
-                    <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />
-                  )}
-                </View>
-                <Text className="text-[15px] font-bold text-ink mt-4 text-center w-full font-sans" numberOfLines={1}>{worker.full_name}</Text>
-                <Text className="text-[10px] font-bold text-purple uppercase italic mt-1 text-center w-full font-sans" numberOfLines={1}>{worker.org_role}</Text>
-                <Text className="text-[9px] text-ink-soft font-medium text-center mt-0.5 w-full font-sans" numberOfLines={1}>{worker.organization}</Text>
+          {/* Selected Agenda list */}
+          <View className="p-6">
+            <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1 font-sans">Agenda for</Text>
+            <Text className="text-lg font-bold text-ink mb-4 font-sans">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
 
-                <View className="flex-row items-center justify-center gap-2 mt-5">
-                  <TouchableOpacity className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center">
-                    <Phone color="#6c5ce7" size={16} />
-                  </TouchableOpacity>
-                  <TouchableOpacity className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center">
-                    <Video color="#6c5ce7" size={16} />
-                  </TouchableOpacity>
+            {selectedDayTasks.length === 0 ? (
+              <View className="py-10 border-2 border-dashed border-black/5 rounded-[24px] bg-white/50 items-center justify-center">
+                <Clock color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
+                <Text className="text-sm text-ink-soft font-medium font-sans">No events scheduled.</Text>
+              </View>
+            ) : (
+              selectedDayTasks.map(task => {
+                const labelColor = task.type === 'meeting' ? 'bg-emerald-100 text-emerald-600' : task.type === 'event' ? 'bg-purple/10 text-purple' : 'bg-blue-100 text-blue-600';
+                const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
+                return (
+                  <View key={task._id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
+                    <View className="flex-row items-center gap-2 mb-2">
+                      <Text className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase font-sans ${labelColor}`}>
+                        {task.type || 'task'}
+                      </Text>
+                      <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${pColor}`}>
+                        {task.priority || 'medium'}
+                      </Text>
+                    </View>
+                    <Text className="font-bold text-ink text-sm mb-2 font-sans">{task.title}</Text>
+                    {task.description ? (
+                      <Text className="text-[12px] text-ink-soft mb-2 font-sans">{task.description}</Text>
+                    ) : null}
+                    <View className="flex-row items-center gap-1.5">
+                      <Clock color="#6c5ce7" size={14} />
+                      <Text className="text-[11px] text-ink-soft font-medium font-sans">
+                        {new Date(task.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(task.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Advanced Create Event Modal */}
+      <Modal visible={isModalOpen} transparent animationType="slide">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsModalOpen(false)}
+          className="flex-1 bg-black/60 justify-end"
+        >
+          <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl p-6 pb-12 shadow-2xl">
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <View>
+                <Text className="text-lg font-bold text-ink">Schedule Event</Text>
+                <Text className="text-xs text-ink-soft">Plan for {selectedDate.toLocaleDateString('en-US', { dateStyle: 'short' })}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsModalOpen(false)} style={{ padding: 4 }}>
+                <X color="#6c5ce7" size={20} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+              <View>
+                <Text className="text-xs font-bold text-ink uppercase mb-1">Title</Text>
+                <TextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="e.g. Design Sync Meeting"
+                  className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
+                />
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold text-ink uppercase mb-1">Description</Text>
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Agenda notes..."
+                  className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
+                  multiline
+                  numberOfLines={2}
+                />
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text className="text-xs font-bold text-ink uppercase mb-1">Start Time (HH:MM)</Text>
+                  <TextInput
+                    value={startTimeText}
+                    onChangeText={setStartTimeText}
+                    placeholder="10:00"
+                    className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text className="text-xs font-bold text-ink uppercase mb-1">End Time (HH:MM)</Text>
+                  <TextInput
+                    value={endTimeText}
+                    onChangeText={setEndTimeText}
+                    placeholder="11:00"
+                    className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
+                  />
                 </View>
               </View>
-            ))}
+
+              {/* Type Select Tabs */}
+              <View>
+                <Text className="text-xs font-bold text-ink uppercase mb-1.5">Event Type</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {['meeting', 'task', 'event'].map(t => {
+                    const active = type === t;
+                    return (
+                      <TouchableOpacity
+                        key={t}
+                        onPress={() => setType(t as any)}
+                        style={{
+                          flex: 1,
+                          backgroundColor: active ? '#6c5ce7' : 'rgba(108,92,231,0.08)',
+                          borderRadius: 12,
+                          paddingVertical: 10,
+                          alignItems: 'center'
+                        }}
+                      >
+                        <Text style={{ color: active ? '#fff' : '#9a9aab', fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' }}>
+                          {t}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Priority Select Tabs */}
+              <View>
+                <Text className="text-xs font-bold text-ink uppercase mb-1.5">Priority</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {['low', 'medium', 'high', 'urgent'].map(p => {
+                    const active = priority === p;
+                    return (
+                      <TouchableOpacity
+                        key={p}
+                        onPress={() => setPriority(p as any)}
+                        style={{
+                          flex: 1,
+                          backgroundColor: active ? '#6c5ce7' : 'rgba(108,92,231,0.08)',
+                          borderRadius: 12,
+                          paddingVertical: 10,
+                          alignItems: 'center'
+                        }}
+                      >
+                        <Text style={{ color: active ? '#fff' : '#9a9aab', fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' }}>
+                          {p}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              onPress={handleCreateEvent}
+              className="bg-purple py-4 rounded-xl items-center flex-row justify-center mt-6 shadow-md"
+            >
+              <Check color="#fff" size={16} />
+              <Text className="text-white font-bold ml-2">Schedule Agenda Event</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── Call Overlay Modal ── */}
+      <Modal visible={activeCall !== null} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: '#1f2030' }} className="items-center justify-between py-16 px-6">
+          {/* Header */}
+          <View className="items-center mt-8">
+            <Text className="text-white/60 text-xs font-bold font-sans uppercase tracking-widest mb-2">
+              BUBBLE {activeCall?.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
+            </Text>
+            <Text className="text-white text-2xl font-bold font-sans mt-2">
+              {activeCall?.user?.full_name || activeCall?.user?.name || activeCall?.user?.username || 'Unknown Colleague'}
+            </Text>
+            <Text className="text-[#6c5ce7] text-sm font-semibold font-sans mt-2">
+              {callDuration === 0 ? 'Ringing...' : `Connected • ${formatDuration(callDuration)}`}
+            </Text>
+          </View>
+
+          {/* Avatar / Video Preview area */}
+          <View className="items-center justify-center my-8">
+            {activeCall?.type === 'video' ? (
+              <View style={{ width: 220, height: 320, borderRadius: 28, backgroundColor: '#000', overflow: 'hidden' }} className="relative shadow-2xl">
+                {activeCall?.user?.avatar ? (
+                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: '100%', height: '100%', opacity: 0.8 }} />
+                ) : (
+                  <View className="flex-1 items-center justify-center bg-purple/20">
+                    <Text className="text-white text-5xl font-bold font-sans">
+                      {getInitials(activeCall?.user?.full_name || activeCall?.user?.name || 'UC')}
+                    </Text>
+                  </View>
+                )}
+                {/* Small Self Video Preview overlay */}
+                <View style={{ position: 'absolute', bottom: 16, right: 16, width: 70, height: 100, borderRadius: 12, backgroundColor: '#2d3748', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' }}>
+                  <View className="flex-1 items-center justify-center bg-purple/40">
+                    <Text className="text-white/80 text-[10px] font-bold">You</Text>
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(108,92,231,0.15)', borderWidth: 4, borderColor: '#6c5ce7' }} className="items-center justify-center shadow-lg">
+                {activeCall?.user?.avatar ? (
+                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: 132, height: 132, borderRadius: 66 }} />
+                ) : (
+                  <Text className="text-white text-4xl font-bold font-sans">
+                    {getInitials(activeCall?.user?.full_name || activeCall?.user?.name || 'UC')}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Action buttons */}
+          <View className="w-full flex-row justify-around items-center px-4 mb-4">
+            <TouchableOpacity 
+              onPress={() => setIsCallMuted(!isCallMuted)}
+              style={{ backgroundColor: isCallMuted ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
+              className="w-14 h-14 rounded-full items-center justify-center"
+            >
+              <MicOff color={isCallMuted ? '#fff' : '#9a9aab'} size={22} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setActiveCall(null)}
+              className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg shadow-red-500/30"
+            >
+              <PhoneOff color="#fff" size={24} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setIsSpeakerOn(!isSpeakerOn)}
+              style={{ backgroundColor: isSpeakerOn ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
+              className="w-14 h-14 rounded-full items-center justify-center"
+            >
+              <Volume2 color={isSpeakerOn ? '#fff' : '#9a9aab'} size={22} />
+            </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+      </Modal>
     </SafeAreaView>
   );
 }

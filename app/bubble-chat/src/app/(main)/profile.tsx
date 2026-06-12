@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Image } from 'react-native';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Image, Clipboard } from 'react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
@@ -24,6 +24,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
   const [user, setUser] = useState({
     full_name: 'John Doe',
     username: 'johndoe123',
@@ -34,7 +36,8 @@ export default function ProfileScreen() {
     phone_number: '+1 234 567 8900',
     chatsCount: 0,
     filesCount: 0,
-    avatar: ''
+    avatar: '',
+    uniqueTag: '',
   });
 
   const navigation = useNavigation();
@@ -74,6 +77,7 @@ export default function ProfileScreen() {
             bio: stored.bio || user.bio,
             org_role: stored.org_role || user.org_role,
             organization: stored.organization || user.organization,
+            uniqueTag: stored.uniqueTag || user.uniqueTag,
           };
           setUser(mapped);
           setFormData(mapped);
@@ -95,6 +99,7 @@ export default function ProfileScreen() {
             organization: u.organization || user.organization,
             chatsCount: u.chatsCount ?? user.chatsCount,
             filesCount: u.filesCount ?? user.filesCount,
+            uniqueTag: u.uniqueTag || user.uniqueTag,
           };
           setUser(mappedFresh);
           setFormData(mappedFresh);
@@ -277,13 +282,23 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              onPress={() => setIsEditing(true)}
-              className="flex-row items-center justify-center rounded-2xl bg-purple px-6 py-3 mt-6 shadow-lg shadow-purple/20"
-            >
-              <Pencil color="#fff" size={14} />
-              <Text className="text-white text-[14px] font-bold ml-2 font-sans">Edit profile</Text>
-            </TouchableOpacity>
+            {/* Buttons Row */}
+            <View className="flex-row gap-3 mt-6 w-full max-w-sm justify-center">
+              <TouchableOpacity
+                onPress={() => setIsEditing(true)}
+                className="flex-1 flex-row items-center justify-center rounded-2xl bg-purple py-3 shadow-lg shadow-purple/20"
+              >
+                <Pencil color="#fff" size={14} />
+                <Text className="text-white text-[14px] font-bold ml-2 font-sans">Edit profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setIsQrModalOpen(true)}
+                className="flex-1 flex-row items-center justify-center rounded-2xl bg-purple py-3 shadow-lg shadow-purple/20"
+              >
+                <Share color="#fff" size={14} />
+                <Text className="text-white text-[14px] font-bold ml-2 font-sans">Share Info</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Contact Details Card */}
@@ -459,6 +474,91 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* QR Info Share Modal */}
+      <Modal visible={isQrModalOpen} transparent animationType="slide">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsQrModalOpen(false)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(31,32,48,0.4)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={{
+              width: '100%',
+              maxWidth: 320,
+              backgroundColor: '#ffffff',
+              borderRadius: 28,
+              padding: 24,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOpacity: 0.1,
+              shadowRadius: 10,
+              elevation: 8,
+            }}
+          >
+            <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }}>
+                Share Contact Info
+              </Text>
+              <TouchableOpacity onPress={() => setIsQrModalOpen(false)} style={{ padding: 4 }}>
+                <X color={PURPLE} size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_500Medium', textAlign: 'center', marginBottom: 16 }}>
+              Let others scan this QR to instantly add you on Bubble Chat.
+            </Text>
+
+            <View style={{ width: 220, height: 220, borderRadius: 20, backgroundColor: '#f8f7ff', borderWidth: 1, borderColor: 'rgba(108,92,231,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 20, overflow: 'hidden' }}>
+              <Image 
+                source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=6c5ce7&data=${encodeURIComponent(user.uniqueTag || user.email || user.username || 'unknown')}` }} 
+                style={{ width: 200, height: 200 }} 
+              />
+            </View>
+
+            <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#9a9aab', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.5 }}>
+              Your Bubble ID
+            </Text>
+            
+            <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.05)', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 20 }}>
+              <Text style={{ flex: 1, fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#1f2030' }} numberOfLines={1}>
+                {user.uniqueTag || user.email || user.username || 'N/A'}
+              </Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  const tag = user.uniqueTag || user.email || user.username || '';
+                  Clipboard.setString(tag);
+                  setCopiedText(true);
+                  setTimeout(() => setCopiedText(false), 2000);
+                }}
+                style={{ padding: 4 }}
+              >
+                <Copy color={PURPLE} size={16} />
+              </TouchableOpacity>
+            </View>
+
+            {copiedText && (
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: '#22c55e', marginBottom: 12 }}>
+                Copied to Clipboard!
+              </Text>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setIsQrModalOpen(false)}
+              style={{ width: '100%', backgroundColor: PURPLE, borderRadius: 14, paddingVertical: 12, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 13, fontFamily: 'Poppins_700Bold' }}>Dismiss</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>

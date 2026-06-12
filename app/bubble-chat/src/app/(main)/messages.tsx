@@ -199,6 +199,8 @@ export default function Messages() {
     syncWithBackend();
   }, []);
 
+
+
   useEffect(() => {
     if (!isFocused) return;
     
@@ -339,6 +341,9 @@ export default function Messages() {
 
                 {filteredContacts.map((contact, index) => {
                   const isSelected = selectedItemIds.includes(contact.id);
+                  const matchingChat = chatsList.find(c => String(c.otherUserId) === String(contact.id) || String(c.id) === String(contact.id));
+                  const isTyping = matchingChat?.status === 'typing';
+
                   return (
                     <React.Fragment key={contact.id}>
                       <ContactRow
@@ -346,6 +351,7 @@ export default function Messages() {
                         getInitials={getInitials}
                         isSelectionMode={isSelectionMode}
                         isSelected={isSelected}
+                        isTyping={isTyping}
                         onPress={() => handlePressItem('contact', contact.id)}
                         onLongPress={() => handleLongPressItem('contact', contact.id, contact.name, false, false)}
                       />
@@ -894,6 +900,15 @@ function ChatRow({
   onPress: () => void;
   onLongPress: () => void;
 }) {
+  const getGroupInitials = (name: string) => {
+    const clean = name.trim().replace(/\s+/g, ' ');
+    const parts = clean.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return clean.slice(0, 2).toUpperCase();
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -920,16 +935,16 @@ function ChatRow({
 
       {/* Avatar */}
       <View style={{ position: "relative", flexShrink: 0 }}>
-        {chat.avatar ? (
+        {chat.avatar && !chat.isGroupChat ? (
           <Image source={{ uri: chat.avatar }} style={{ width: 52, height: 52, borderRadius: 14 }} />
         ) : (
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
-              {getInitials(chat.name)}
+          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: chat.isGroupChat ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: chat.isGroupChat ? "#ffffff" : "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
+              {chat.isGroupChat ? getGroupInitials(chat.name) : getInitials(chat.name)}
             </Text>
           </View>
         )}
-        {chat.isOnline && (
+        {chat.isOnline && !chat.isGroupChat && (
           <View style={{ position: "absolute", bottom: -1, right: -1, width: 13, height: 13, borderRadius: 99, backgroundColor: "#22c55e", borderWidth: 2, borderColor: "#f8f7ff" }} />
         )}
       </View>
@@ -939,7 +954,7 @@ function ChatRow({
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0 }}>
             {chat.isPinned && <Pin size={11} color="#6c5ce7" style={{ marginRight: 4 }} />}
-            <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Poppins_600SemiBold", color: "#1f2030", flex: 1 }}>
+            <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: chat.unreadCount > 0 ? "Poppins_700Bold" : "Poppins_600SemiBold", color: "#1f2030", flex: 1 }}>
               {chat.name}
             </Text>
           </View>
@@ -989,6 +1004,7 @@ function ContactRow({
   getInitials,
   isSelectionMode,
   isSelected,
+  isTyping,
   onPress,
   onLongPress
 }: {
@@ -996,6 +1012,7 @@ function ContactRow({
   getInitials: (n: string) => string;
   isSelectionMode: boolean;
   isSelected: boolean;
+  isTyping?: boolean;
   onPress: () => void;
   onLongPress: () => void;
 }) {
@@ -1042,9 +1059,15 @@ function ContactRow({
         <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Poppins_600SemiBold", color: "rgba(31,32,48,0.65)" }}>
           {contact.name}
         </Text>
-        <Text style={{ fontSize: 12, fontFamily: "Poppins_400Regular", color: "rgba(31,32,48,0.3)", fontStyle: "italic", marginTop: 2 }}>
-          Not messaged yet • Tap to chat
-        </Text>
+        {isTyping ? (
+          <Text style={{ fontSize: 12, fontFamily: "Poppins_600SemiBold", color: "#6c5ce7", marginTop: 2 }}>
+            typing…
+          </Text>
+        ) : (
+          <Text style={{ fontSize: 12, fontFamily: "Poppins_400Regular", color: "rgba(31,32,48,0.3)", fontStyle: "italic", marginTop: 2 }}>
+            Not messaged yet • Tap to chat
+          </Text>
+        )}
       </View>
 
       <MessageSquarePlus size={16} color="#6c5ce7" style={{ opacity: 0.4, marginLeft: 8, flexShrink: 0 }} />

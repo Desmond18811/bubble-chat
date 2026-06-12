@@ -34,6 +34,7 @@ export interface Chat {
   messages: Message[];
   /** Used for Friends tab */
   isFriend?: boolean;
+  otherUserId?: string | null;
 }
 
 export interface Contact {

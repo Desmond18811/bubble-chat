@@ -19,6 +19,9 @@ import {
   Briefcase,
   X,
   Check,
+  PhoneOff,
+  MicOff,
+  Volume2,
 } from 'lucide-react-native';
 import { Link, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
@@ -28,7 +31,7 @@ import {
   subscribeToPlusButton,
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
-import { addContact, createGroupChat } from '../../lib/api';
+import { addContact, createGroupChat, searchUsers } from '../../lib/api';
 import { Alert } from 'react-native';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
@@ -44,6 +47,15 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+function getGroupInitials(name: string) {
+  const clean = name.trim().replace(/\s+/g, ' ');
+  const parts = clean.split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
+
 // ─────────────────────────────────────────────
 // Avatar Component
 // ─────────────────────────────────────────────
@@ -52,33 +64,35 @@ function Avatar({
   avatar,
   size = 52,
   isOnline,
+  isGroup = false,
 }: {
   name: string;
   avatar?: string | null;
   size?: number;
   isOnline?: boolean;
+  isGroup?: boolean;
 }) {
   return (
     <View style={{ width: size, height: size }} className="relative shrink-0">
-      {avatar ? (
+      {avatar && !isGroup ? (
         <Image
           source={{ uri: avatar }}
           style={{ width: size, height: size, borderRadius: size * 0.38 }}
         />
       ) : (
         <View
-          style={{ width: size, height: size, borderRadius: size * 0.38 }}
-          className="bg-purple/10 items-center justify-center"
+          style={{ width: size, height: size, borderRadius: size * 0.38, backgroundColor: isGroup ? '#000000' : 'rgba(108,92,231,0.1)' }}
+          className="items-center justify-center"
         >
           <Text
-            style={{ fontSize: size * 0.33 }}
-            className="text-purple font-bold font-sans"
+            style={{ fontSize: size * 0.33, color: isGroup ? '#ffffff' : '#6c5ce7' }}
+            className="font-bold font-sans"
           >
-            {getInitials(name)}
+            {isGroup ? getGroupInitials(name) : getInitials(name)}
           </Text>
         </View>
       )}
-      {isOnline && (
+      {isOnline && !isGroup && (
         <View
           className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 rounded-full border-2 border-white shadow-xs"
           style={{ width: size * 0.27, height: size * 0.27 }}
@@ -94,23 +108,30 @@ function Avatar({
 function ContactsTab({
   showAddModal,
   setShowAddModal,
+  onStartCall,
 }: {
   showAddModal: boolean;
   setShowAddModal: (v: boolean) => void;
+  onStartCall: (user: any, type: 'voice' | 'video') => void;
 }) {
   const [search, setSearch] = useState('');
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [chats, setChats] = useState<any[]>([]);
 
   const loadCache = async () => {
     const cached = await chatCache.getCachedContacts();
     setContacts(cached);
+    const cachedChats = await chatCache.getCachedChats();
+    setChats(cachedChats);
   };
 
   const syncContacts = async () => {
     try {
       const fresh = await chatCache.syncContactsWithBackend();
       setContacts(fresh);
+      const freshChats = await chatCache.syncChatsWithBackend();
+      setChats(freshChats);
     } catch (err) {
       console.warn("Silent sync failed in ContactsTab:", err);
     }
@@ -119,6 +140,11 @@ function ContactsTab({
   useEffect(() => {
     loadCache();
     syncContacts();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(syncContacts, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = contacts.filter((c) =>
@@ -203,37 +229,64 @@ function ContactsTab({
             )}
           </View>
         ) : (
-          filtered.map((contact) => (
-            <Link href={`/chat/${contact.id}`} key={contact.id} asChild>
-              <TouchableOpacity
-                activeOpacity={0.75}
+          filtered.map((contact) => {
+            const matchingChat = chats.find(c => String(c.otherUserId) === String(contact.id) || String(c.id) === String(contact.id));
+            const isTyping = matchingChat?.status === 'typing';
+
+            return (
+              <View
+                key={contact.id}
                 className="flex-row items-center bg-white border border-black/5 rounded-2xl px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
               >
-                <Avatar name={contact.name} avatar={contact.avatar} size={50} isOnline={contact.isOnline} />
+                <Link href={`/chat/${contact.id}`} asChild>
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    className="flex-1 flex-row items-center"
+                  >
+                    <Avatar name={contact.name} avatar={contact.avatar} size={50} isOnline={contact.isOnline} />
 
-                {/* Info */}
-                <View className="flex-1 min-w-0 ml-3">
-                  <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
-                    {contact.name}
-                  </Text>
-                  <Text className="text-[11px] text-ink-soft mt-0.5 font-sans" numberOfLines={1}>
-                    @{contact.username}
-                    {contact.org_role ? ` · ${contact.org_role}` : ''}
-                  </Text>
-                </View>
+                    {/* Info */}
+                    <View className="flex-1 min-w-0 ml-3">
+                      <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+                        {contact.name}
+                      </Text>
+                      {isTyping ? (
+                        <Text className="text-[11px] font-semibold text-purple mt-0.5 font-sans">
+                          typing…
+                        </Text>
+                      ) : (
+                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans" numberOfLines={1}>
+                          @{contact.username}
+                          {contact.org_role ? ` · ${contact.org_role}` : ''}
+                        </Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </Link>
 
                 {/* Action Buttons */}
                 <View className="flex-row items-center gap-2 ml-2">
-                  <TouchableOpacity className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center">
+                  <Link href={`/chat/${contact.id}`} asChild>
+                    <TouchableOpacity className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center">
+                      <MessageSquare color="#6c5ce7" size={14} />
+                    </TouchableOpacity>
+                  </Link>
+                  <TouchableOpacity
+                    onPress={() => onStartCall(contact, 'voice')}
+                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                  >
                     <Phone color="#6c5ce7" size={14} />
                   </TouchableOpacity>
-                  <TouchableOpacity className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center">
+                  <TouchableOpacity
+                    onPress={() => onStartCall(contact, 'video')}
+                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                  >
                     <Video color="#6c5ce7" size={14} />
                   </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            </Link>
-          ))
+              </View>
+            );
+          })
         )}
       </ScrollView>
 
@@ -309,24 +362,27 @@ function ContactsTab({
 // ─────────────────────────────────────────────
 // Workroom Sub-Tab
 // ─────────────────────────────────────────────
-function WorkroomTab() {
+function WorkroomTab({
+  onStartCall,
+}: {
+  onStartCall: (user: any, type: 'voice' | 'video') => void;
+}) {
   const [search, setSearch] = useState('');
   const [chats, setChats] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
 
   const loadCacheAndSync = async () => {
     const cachedChats = await chatCache.getCachedChats();
-    const cachedContacts = await chatCache.getCachedContacts();
     setChats(cachedChats);
-    setContacts(cachedContacts);
 
     try {
-      const freshChats = await chatCache.syncChatsWithBackend();
-      const freshContacts = await chatCache.syncContactsWithBackend();
-      setChats(freshChats);
-      setContacts(freshContacts);
+      const response = await searchUsers('');
+      const coworkersList = response?.users || [];
+      setContacts(coworkersList);
     } catch (err) {
-      console.warn("Silent sync failed in WorkroomTab:", err);
+      console.warn("Workroom coworker fetch failed, fallback to cache:", err);
+      const cachedContacts = await chatCache.getCachedContacts();
+      setContacts(cachedContacts);
     }
   };
 
@@ -341,28 +397,9 @@ function WorkroomTab() {
     (c) => c.isGroupChat && c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const filteredMembers = chats
-    .filter((c) => !c.isGroupChat)
-    .map((c) => ({
-      id: c.id,
-      name: c.name,
-      avatar: c.avatar,
-      isOnline: c.isOnline,
-      org_role: c.org_role,
-      username: c.name.toLowerCase().replace(' ', '_'),
-    }))
-    .concat(
-      contacts.map((c) => ({
-        id: c.id,
-        name: c.name,
-        avatar: c.avatar,
-        isOnline: c.isOnline,
-        org_role: c.org_role,
-        username: c.username,
-      }))
-    )
-    .filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i) // Deduplicate
-    .filter((m) => (m.name + (m.org_role || '')).toLowerCase().includes(search.toLowerCase()));
+  const filteredMembers = contacts.filter((m) =>
+    (m.name + (m.org_role || '')).toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <View className="flex-1">
@@ -402,7 +439,7 @@ function WorkroomTab() {
                   activeOpacity={0.75}
                   className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-4 mb-2.5 shadow-sm shadow-purple/5"
                 >
-                  <Avatar name={group.name} avatar={group.avatar} size={50} isOnline={false} />
+                  <Avatar name={group.name} avatar={group.avatar} size={50} isOnline={false} isGroup={true} />
                   <View className="flex-1 min-w-0 ml-3">
                     <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
                       {group.name}
@@ -432,35 +469,57 @@ function WorkroomTab() {
             </View>
 
             {filteredMembers.map((member) => (
-              <Link href={`/chat/${member.id}`} key={member.id} asChild>
-                <TouchableOpacity
-                  activeOpacity={0.75}
-                  className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
-                >
-                  <Avatar name={member.name} avatar={member.avatar} size={50} isOnline={member.isOnline} />
-                  <View className="flex-1 min-w-0 ml-3">
-                    <View className="flex-row items-center gap-1.5 flex-wrap">
-                      <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
-                        {member.name}
+              <View
+                key={member.id}
+                className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
+              >
+                <Link href={`/chat/${member.id}`} asChild>
+                  <TouchableOpacity
+                    activeOpacity={0.75}
+                    className="flex-1 flex-row items-center"
+                  >
+                    <Avatar name={member.name} avatar={member.avatar} size={50} isOnline={member.isOnline} />
+                    <View className="flex-1 min-w-0 ml-3">
+                      <View className="flex-row items-center gap-1.5 flex-wrap">
+                        <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+                          {member.name}
+                        </Text>
+                        {member.org_role && (
+                          <View className="bg-purple/10 px-1.5 py-0.5 rounded-full">
+                            <Text className="text-[9px] font-bold text-purple uppercase tracking-wider font-sans">
+                              {member.org_role}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text className="text-[11px] text-ink-soft mt-0.5 font-sans">
+                        @{member.username}
                       </Text>
-                      {member.org_role && (
-                        <View className="bg-purple/10 px-1.5 py-0.5 rounded-full">
-                          <Text className="text-[9px] font-bold text-purple uppercase tracking-wider font-sans">
-                            {member.org_role}
-                          </Text>
-                        </View>
-                      )}
                     </View>
-                    <Text className="text-[11px] text-ink-soft mt-0.5 font-sans">
-                      @{member.username}
-                    </Text>
-                  </View>
-                  <View className="h-8 flex-row items-center bg-purple/10 border border-purple/20 px-3.5 rounded-xl gap-1">
-                    <MessageSquare color="#6c5ce7" size={13} />
-                    <Text className="text-purple text-[11px] font-bold font-sans">Chat</Text>
-                  </View>
-                </TouchableOpacity>
-              </Link>
+                  </TouchableOpacity>
+                </Link>
+
+                {/* Action Buttons */}
+                <View className="flex-row items-center gap-2 ml-2">
+                  <Link href={`/chat/${member.id}`} asChild>
+                    <TouchableOpacity className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center">
+                      <MessageSquare color="#6c5ce7" size={14} />
+                    </TouchableOpacity>
+                  </Link>
+                  <TouchableOpacity
+                    onPress={() => onStartCall(member, 'voice')}
+                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                  >
+                    <Phone color="#6c5ce7" size={14} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => onStartCall(member, 'video')}
+                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                  >
+                    <Video color="#6c5ce7" size={14} />
+                  </TouchableOpacity>
+                </View>
+              </View>
             ))}
           </View>
         )}
@@ -481,6 +540,35 @@ export default function PeopleScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+
+  // Call state
+  const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
+  const [callDuration, setCallDuration] = useState(0);
+  const [isCallMuted, setIsCallMuted] = useState(false);
+  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (activeCall) {
+      setCallDuration(0);
+      timer = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeCall]);
+
+  const handleStartCall = (user: any, type: 'voice' | 'video') => {
+    setActiveCall({ user, type });
+  };
+
+  const formatDuration = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const navigation = useNavigation();
   const [isFocused, setIsFocused] = useState(navigation.isFocused());
@@ -569,9 +657,9 @@ export default function PeopleScreen() {
       {/* Tab Content */}
       <View className="flex-1 pt-3 bg-purple-soft/5">
         {activeTab === 'Contacts' ? (
-          <ContactsTab showAddModal={showAddModal} setShowAddModal={setShowAddModal} />
+          <ContactsTab showAddModal={showAddModal} setShowAddModal={setShowAddModal} onStartCall={handleStartCall} />
         ) : (
-          <WorkroomTab />
+          <WorkroomTab onStartCall={handleStartCall} />
         )}
       </View>
 
@@ -678,6 +766,83 @@ export default function PeopleScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* ── Call Overlay Modal ── */}
+      <Modal visible={activeCall !== null} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: '#1f2030' }} className="items-center justify-between py-16 px-6">
+          {/* Header */}
+          <View className="items-center mt-8">
+            <Text className="text-white/60 text-xs font-bold font-sans uppercase tracking-widest mb-2">
+              BUBBLE {activeCall?.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
+            </Text>
+            <Text className="text-white text-2xl font-bold font-sans mt-2">
+              {activeCall?.user?.name || activeCall?.user?.full_name || 'Unknown Colleague'}
+            </Text>
+            <Text className="text-[#6c5ce7] text-sm font-semibold font-sans mt-2">
+              {callDuration === 0 ? 'Ringing...' : `Connected • ${formatDuration(callDuration)}`}
+            </Text>
+          </View>
+
+          {/* Avatar / Video Preview area */}
+          <View className="items-center justify-center my-8">
+            {activeCall?.type === 'video' ? (
+              <View style={{ width: 220, height: 320, borderRadius: 28, backgroundColor: '#000', overflow: 'hidden' }} className="relative shadow-2xl">
+                {activeCall?.user?.avatar ? (
+                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: '100%', height: '100%', opacity: 0.8 }} />
+                ) : (
+                  <View className="flex-1 items-center justify-center bg-purple/20">
+                    <Text className="text-white text-5xl font-bold font-sans">
+                      {getInitials(activeCall?.user?.name || activeCall?.user?.full_name || 'UC')}
+                    </Text>
+                  </View>
+                )}
+                {/* Small Self Video Preview overlay */}
+                <View style={{ position: 'absolute', bottom: 16, right: 16, width: 70, height: 100, borderRadius: 12, backgroundColor: '#2d3748', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' }}>
+                  <View className="flex-1 items-center justify-center bg-purple/40">
+                    <Text className="text-white/80 text-[10px] font-bold">You</Text>
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(108,92,231,0.15)', borderWidth: 4, borderColor: '#6c5ce7' }} className="items-center justify-center shadow-lg">
+                {activeCall?.user?.avatar ? (
+                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: 132, height: 132, borderRadius: 66 }} />
+                ) : (
+                  <Text className="text-white text-4xl font-bold font-sans">
+                    {getInitials(activeCall?.user?.name || activeCall?.user?.full_name || 'UC')}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Action buttons */}
+          <View className="w-full flex-row justify-around items-center px-4 mb-4">
+            <TouchableOpacity 
+              onPress={() => setIsCallMuted(!isCallMuted)}
+              style={{ backgroundColor: isCallMuted ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
+              className="w-14 h-14 rounded-full items-center justify-center"
+            >
+              <MicOff color={isCallMuted ? '#fff' : '#9a9aab'} size={22} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setActiveCall(null)}
+              className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg shadow-red-500/30"
+            >
+              <PhoneOff color="#fff" size={24} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setIsSpeakerOn(!isSpeakerOn)}
+              style={{ backgroundColor: isSpeakerOn ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
+              className="w-14 h-14 rounded-full items-center justify-center"
+            >
+              <Volume2 color={isSpeakerOn ? '#fff' : '#9a9aab'} size={22} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

@@ -13,8 +13,8 @@ const KEYS = {
 
 const DEFAULT_FOLDERS = ["All", "Unread", "Friends", "Work", "Archive"];
 
-// Date format helper
-const formatMessageTime = (dateInput: any): string => {
+// Date format helpers
+const formatChatTime = (dateInput: any): string => {
   const date = new Date(dateInput);
   if (isNaN(date.getTime())) return '';
   const now = new Date();
@@ -34,6 +34,12 @@ const formatMessageTime = (dateInput: any): string => {
   }
   
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+};
+
+const formatMessagePreciseTime = (dateInput: any): string => {
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
 export const chatCache = {
@@ -145,7 +151,7 @@ export const chatCache = {
         isGroupChat: isGroup,
         otherUserId: otherUser ? String(otherUser.id || otherUser._id) : null,
         latestMessage: latestText,
-        time: c.latestMessage ? formatMessageTime(c.latestMessage.sentAt || c.latestMessage.createdAt) : formatMessageTime(c.updatedAt),
+        time: c.latestMessage ? formatChatTime(c.latestMessage.sentAt || c.latestMessage.createdAt) : formatChatTime(c.updatedAt),
         unreadCount: c.unreadCount || 0,
         isPinned: isPinned,
         isMuted: isMuted || isArchived,
@@ -195,7 +201,7 @@ export const chatCache = {
         text: m.content || (m.mediaUrl ? `📎 [${m.message_type || 'Media'}]` : ''),
         sender: isMe ? 'me' : 'other',
         senderName: m.sender?.full_name || m.sender?.username || undefined,
-        time: formatMessageTime(m.createdAt),
+        time: formatMessagePreciseTime(m.createdAt),
         timestamp: m.createdAt,
         reactions: Array.isArray(m.reactions) ? m.reactions.map((r: any) => r.emoji) : [],
         isPinned: !!m.is_pinned,
