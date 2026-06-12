@@ -488,87 +488,77 @@ export default function ChatScreen() {
                   </View>
                 )}
 
-                <View style={{ maxWidth: "70%", alignItems: isMe ? "flex-end" : "flex-start" }}>
-                  <TouchableOpacity
-                    activeOpacity={isSelectionMode ? 0.75 : 1}
-                    onPress={() => {
-                      if (isSelectionMode) {
-                        handleToggleMessageSelect(msg.id);
-                      }
-                    }}
-                    onLongPress={() => {
-                      if (!isSelectionMode) {
-                        setActiveContextMessage(msg);
-                      }
-                    }}
-                    style={{
-                      position: "relative",
-                      borderRadius: 18,
-                      borderBottomRightRadius: isMe ? 4 : 18,
-                      borderBottomLeftRadius: isMe ? 18 : 4,
-                      paddingHorizontal: 14,
-                      paddingTop: 10,
-                      paddingBottom: msg.reactions && msg.reactions.length > 0 ? 14 : 8,
-                      backgroundColor: isMe ? PURPLE : "#f1f2f6",
-                      shadowColor: isMe ? PURPLE : "#000",
-                      shadowOpacity: isMe ? 0.15 : 0.02,
-                      shadowRadius: 4,
-                      shadowOffset: { width: 0, height: 1 },
-                      elevation: 1,
-                      width: "100%",
-                    }}
-                  >
-                    {!isMe && chat.isGroupChat && msg.senderName && (
-                      <Text style={{ fontSize: 10, fontFamily: "Poppins_700Bold", color: PURPLE, marginBottom: 3 }}>
-                        {msg.senderName}
-                      </Text>
-                    )}
-                    <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: "Poppins_400Regular", color: isMe ? "#ffffff" : INK }}>
-                      {msg.text}
+                <TouchableOpacity
+                  activeOpacity={isSelectionMode ? 0.75 : 1}
+                  onPress={() => {
+                    if (isSelectionMode) {
+                      handleToggleMessageSelect(msg.id);
+                    }
+                  }}
+                  onLongPress={() => {
+                    if (!isSelectionMode) {
+                      setActiveContextMessage(msg);
+                    }
+                  }}
+                  style={{
+                    position: 'relative',
+                    maxWidth: '70%',
+                    borderRadius: 18,
+                    borderBottomRightRadius: isMe ? 4 : 18,
+                    borderBottomLeftRadius: isMe ? 18 : 4,
+                    paddingHorizontal: 14,
+                    paddingTop: 10,
+                    paddingBottom: msg.reactions && msg.reactions.length > 0 ? 16 : 8,
+                    backgroundColor: isMe ? PURPLE : '#f1f2f6',
+                    shadowColor: isMe ? PURPLE : '#000',
+                    shadowOpacity: isMe ? 0.15 : 0.02,
+                    shadowRadius: 4,
+                    shadowOffset: { width: 0, height: 1 },
+                    elevation: 1,
+                  }}
+                >
+                  {!isMe && chat.isGroupChat && msg.senderName && (
+                    <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, marginBottom: 3 }}>
+                      {msg.senderName}
                     </Text>
+                  )}
+                  <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK }}>
+                    {msg.text}
+                  </Text>
 
-                    {/* Reaction badge */}
-                    {msg.reactions && msg.reactions.length > 0 && (
-                      <View style={{
-                        position: "absolute",
-                        bottom: -10,
-                        right: isMe ? undefined : 12,
-                        left: isMe ? 12 : undefined,
-                        flexDirection: "row",
-                        backgroundColor: "#ffffff",
-                        borderRadius: 12,
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                        borderWidth: 1,
-                        borderColor: "rgba(108,92,231,0.15)",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.05,
-                        shadowRadius: 3,
-                        elevation: 1,
-                      }}>
-                        {msg.reactions.map((emoji, idx) => (
-                          <Text key={idx} style={{ fontSize: 11, marginRight: idx < msg.reactions!.length - 1 ? 2 : 0 }}>{emoji}</Text>
-                        ))}
-                      </View>
-                    )}
-                  </TouchableOpacity>
-
-                  {/* Timestamp and Checkmarks outside bubble */}
-                  <View style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: msg.reactions && msg.reactions.length > 0 ? 12 : 3,
-                    alignSelf: isMe ? "flex-end" : "flex-start",
-                    marginRight: isMe ? 4 : 0,
-                    marginLeft: isMe ? 0 : 4,
-                  }}>
-                    {msg.isPinned && <Pin size={10} color={INK_SOFT} style={{ marginRight: 4 }} />}
-                    <Text style={{ fontSize: 9, fontFamily: "Poppins_400Regular", color: INK_SOFT }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 4 }}>
+                    {msg.isPinned && <Pin size={10} color={isMe ? 'rgba(255,255,255,0.7)' : INK_SOFT} style={{ marginRight: 4 }} />}
+                    <Text style={{ fontSize: 9, fontFamily: 'Poppins_400Regular', color: isMe ? 'rgba(255,255,255,0.65)' : INK_SOFT }}>
                       {msg.time}
                     </Text>
                     {isMe && <CheckCheck size={11} color="#38bdf8" style={{ marginLeft: 4 }} />}
                   </View>
-                </View>
+
+                  {/* Reaction badge */}
+                  {msg.reactions && msg.reactions.length > 0 && (
+                    <View style={{
+                      position: 'absolute',
+                      bottom: -10,
+                      right: isMe ? undefined : 12,
+                      left: isMe ? 12 : undefined,
+                      flexDirection: 'row',
+                      backgroundColor: '#ffffff',
+                      borderRadius: 12,
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderWidth: 1,
+                      borderColor: 'rgba(108,92,231,0.15)',
+                      shadowColor: '#000',
+                      shadowOpacity: 0.05,
+                      shadowRadius: 3,
+                      elevation: 1,
+                    }}>
+                      {msg.reactions.map((emoji, idx) => (
+                        <Text key={idx} style={{ fontSize: 11, marginRight: idx < msg.reactions!.length - 1 ? 2 : 0 }}>{emoji}</Text>
+                      ))}
+                    </View>
+                  )}
+                </TouchableOpacity>
 
                 {/* Right (Sent) message avatar */}
                 {isMe && (
@@ -866,16 +856,10 @@ export default function ChatScreen() {
                     setIsEmojiOpen(false);
                   }}
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: isAttachmentOpen ? "rgba(108,92,231,0.12)" : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 4,
+                    paddingRight: 10,
                   }}
                 >
-                  <Paperclip size={20} color={isAttachmentOpen ? PURPLE : INK_SOFT} />
+                  <Paperclip size={20} color={isAttachmentOpen ? PURPLE : INK_SOFT} style={{ transform: [{ rotate: '45deg' }] }} />
                 </TouchableOpacity>
 
                 {/* Input text inside the capsule */}
@@ -883,7 +867,7 @@ export default function ChatScreen() {
                   style={{
                     flex: 1,
                     fontSize: 15,
-                    fontFamily: "Poppins_400Regular",
+                    fontFamily: 'Poppins_400Regular',
                     color: INK,
                     maxHeight: 100,
                     paddingTop: 0,
@@ -903,15 +887,7 @@ export default function ChatScreen() {
                     setIsEmojiOpen(prev => !prev);
                     setIsAttachmentOpen(false);
                   }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: isEmojiOpen ? "rgba(108,92,231,0.12)" : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginLeft: 4,
-                  }}
+                  style={{ paddingHorizontal: 6 }}
                 >
                   <Smile size={20} color={isEmojiOpen ? PURPLE : INK_SOFT} />
                 </TouchableOpacity>
@@ -920,37 +896,16 @@ export default function ChatScreen() {
                 {messageText.trim().length > 0 || selectedFile ? (
                   <TouchableOpacity
                     onPress={handleSend}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 18,
-                      backgroundColor: PURPLE,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginLeft: 6,
-                      shadowColor: PURPLE,
-                      shadowOpacity: 0.2,
-                      shadowRadius: 3,
-                      shadowOffset: { width: 0, height: 1 },
-                      elevation: 2,
-                    }}
+                    style={{ paddingLeft: 6 }}
                   >
-                    <Send size={18} color="#ffffff" />
+                    <Send size={20} color={PURPLE} />
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
                     onPress={() => {
                       sendMessage(chat.id, "🎤 [Voice Memo - 0:14]");
                     }}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 18,
-                      backgroundColor: "transparent",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginLeft: 4,
-                    }}
+                    style={{ paddingLeft: 6 }}
                   >
                     <Mic size={20} color={INK_SOFT} />
                   </TouchableOpacity>

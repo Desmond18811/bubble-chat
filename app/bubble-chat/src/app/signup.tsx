@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Text, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { Text, View, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
-import { register } from "../lib/api";
 
 export default function Signup() {
   const router = useRouter();
@@ -13,36 +12,13 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async () => {
-    if (!fullName.trim() || !email.trim() || !username.trim() || !password.trim()) {
-      Alert.alert("Required Fields", "Please fill in all the registration fields.");
-      return;
-    }
+  const handleSignup = () => {
     setLoading(true);
-    try {
-      const res = await register({
-        full_name: fullName.trim(),
-        email: email.trim(),
-        username: username.trim().toLowerCase(),
-        password: password.trim(),
-      });
-      
-      Alert.alert(
-        "Verification Required",
-        res.message || "Account created! A 5-digit verification code has been sent to your email.",
-        [
-          {
-            text: "Verify Now",
-            onPress: () => router.push(`/verify?email=${encodeURIComponent(email.trim())}`),
-          }
-        ]
-      );
-    } catch (err: any) {
-      console.error("Signup Error:", err);
-      Alert.alert("Registration Failed", err.message || "Failed to create account. Please check details.");
-    } finally {
+    // Mock signup and navigate to login
+    setTimeout(() => {
       setLoading(false);
-    }
+      router.replace("/login");
+    }, 1000);
   };
 
   return (
