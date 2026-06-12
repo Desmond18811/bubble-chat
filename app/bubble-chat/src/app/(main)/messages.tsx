@@ -7,24 +7,26 @@ import {
   ScrollView,
   StyleSheet,
   Modal,
+  Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, useNavigation, useRouter } from "expo-router";
 import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus, UserPlus, FolderPlus, X, Trash2, Archive, Ban } from "lucide-react-native";
 import { Image } from "expo-image";
 import { 
-  getChats, 
-  getContacts, 
-  subscribeToChats, 
   Chat, 
   Contact,
   subscribeToPlusButton,
-  getFolders,
-  addFolder,
-  addMockContact,
-  deleteChat,
-  deleteContact
 } from "../../lib/mockData";
+import { chatCache } from "../../lib/chatCache";
+import { 
+  addContact,
+  toggleChatPin,
+  toggleArchiveChat,
+  deleteChat,
+  removeContact,
+  blockUser,
+} from "../../lib/api";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
 
 export default function Messages() {
@@ -33,10 +35,16 @@ export default function Messages() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [chatsList, setChatsList] = useState<Chat[]>([]);
   const [contactsList, setContactsList] = useState<Contact[]>([]);
+  const [foldersList, setFoldersList] = useState<string[]>([]);
+  const [folderMappings, setFolderMappings] = useState<{ [id: string]: string[] }>({});
 
   // Selection states
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+
+  // Folder selection sub-modal state
+  const [isFolderSelectOpen, setIsFolderSelectOpen] = useState(false);
+  const [folderSelectChatId, setFolderSelectChatId] = useState<string | null>(null);
 
   // Context Menu state
   const [activeContextItem, setActiveContextItem] = useState<{
@@ -69,39 +77,58 @@ export default function Messages() {
     }
   };
 
-  const handleTogglePin = (id: string) => {
-    const chat = chatsList.find(c => c.id === id);
-    if (chat) {
-      chat.isPinned = !chat.isPinned;
-      showToast(chat.isPinned ? "Chat pinned" : "Chat unpinned");
-    }
-    setActiveContextItem(null);
-    setChatsList(getChats());
-  };
-
-  const handleToggleArchive = (id: string) => {
-    const chat = chatsList.find(c => c.id === id);
-    if (chat) {
-      chat.isMuted = !chat.isMuted;
-      showToast(chat.isMuted ? "Chat archived" : "Chat unarchived");
-    }
-    setActiveContextItem(null);
-    setChatsList(getChats());
-  };
-
-  const handleDeleteItem = (id: string, type: 'chat' | 'contact') => {
-    if (type === 'chat') {
-      deleteChat(id);
-      showToast("Chat deleted");
-    } else {
-      deleteContact(id);
-      showToast("Contact deleted");
+  const handleTogglePin = async (id: string) => {
+    try {
+      await toggleChatPin(id);
+      showToast("Chat pin toggled");
+      await syncWithBackend();
+    } catch (err: any) {
+      showToast("Failed to toggle pin");
     }
     setActiveContextItem(null);
   };
 
-  const handleBlockContact = (name: string) => {
-    showToast(`${name} has been blocked`);
+  const handleToggleArchive = async (id: string) => {
+    try {
+      await toggleArchiveChat(id);
+      showToast("Chat archive toggled");
+      await syncWithBackend();
+    } catch (err: any) {
+      showToast("Failed to toggle archive");
+    }
+    setActiveContextItem(null);
+  };
+
+  const handleDeleteItem = async (id: string, type: 'chat' | 'contact') => {
+    try {
+      if (type === 'chat') {
+        await deleteChat(id);
+        showToast("Chat deleted");
+      } else {
+        await removeContact(id);
+        showToast("Contact removed");
+      }
+      await syncWithBackend();
+    } catch (err: any) {
+      showToast("Action failed");
+    }
+    setActiveContextItem(null);
+  };
+
+  const handleBlockContact = async (name: string) => {
+    if (!activeContextItem) return;
+    try {
+      let targetUserId = activeContextItem.id;
+      if (activeContextItem.type === 'chat') {
+        const chatObj = chatsList.find(c => c.id === activeContextItem.id);
+        targetUserId = (chatObj as any)?.otherUserId || targetUserId;
+      }
+      await blockUser(targetUserId);
+      showToast(`${name} has been blocked`);
+      await syncWithBackend();
+    } catch (err: any) {
+      showToast("Failed to block user");
+    }
     setActiveContextItem(null);
   };
 
@@ -110,7 +137,6 @@ export default function Messages() {
     setSelectedItemIds([id]);
     setActiveContextItem(null);
   };
-  const [foldersList, setFoldersList] = useState<string[]>([]);
 
   // FAB Menu States
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
@@ -142,21 +168,44 @@ export default function Messages() {
     };
   }, [navigation]);
 
+  const loadCache = async () => {
+    const cachedChats = await chatCache.getCachedChats();
+    const cachedContacts = await chatCache.getCachedContacts();
+    const cachedFolders = await chatCache.getFolders();
+    const cachedMappings = await chatCache.getFolderMappings();
+    setChatsList(cachedChats);
+    setContactsList(cachedContacts);
+    setFoldersList(cachedFolders);
+    setFolderMappings(cachedMappings);
+  };
+
+  const syncWithBackend = async () => {
+    try {
+      const freshChats = await chatCache.syncChatsWithBackend();
+      const freshContacts = await chatCache.syncContactsWithBackend();
+      const freshFolders = await chatCache.getFolders();
+      const freshMappings = await chatCache.getFolderMappings();
+      setChatsList(freshChats);
+      setContactsList(freshContacts);
+      setFoldersList(freshFolders);
+      setFolderMappings(freshMappings);
+    } catch (err) {
+      console.warn("Silent sync failed in messages.tsx:", err);
+    }
+  };
+
   useEffect(() => {
-    setChatsList(getChats());
-    setContactsList(getContacts());
-    setFoldersList(getFolders());
-
-    const unsubscribe = subscribeToChats(() => {
-      setChatsList(getChats());
-      setContactsList(getContacts());
-      setFoldersList(getFolders());
-    });
-
-    return () => {
-      unsubscribe();
-    };
+    loadCache();
+    syncWithBackend();
   }, []);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    
+    // Poll silently every 5 seconds (no spinner UI)
+    const interval = setInterval(syncWithBackend, 5000);
+    return () => clearInterval(interval);
+  }, [isFocused]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -180,6 +229,13 @@ export default function Messages() {
   const filteredChats = chatsList.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
+
+    // Check custom folder tab mappings
+    const mappings = folderMappings[c.id] || [];
+    if (activeFilter !== "All" && mappings.includes(activeFilter)) {
+      return true;
+    }
+
     if (activeFilter === "Unread") return c.unreadCount > 0;
     if (activeFilter === "Work") return c.isGroupChat;
     if (activeFilter === "Archive") return !!c.isMuted;
@@ -197,6 +253,13 @@ export default function Messages() {
   const filteredContacts = contactsList.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
+
+    // Check custom folder tab mappings for contacts
+    const mappings = folderMappings[c.id] || [];
+    if (activeFilter !== "All" && mappings.includes(activeFilter)) {
+      return true;
+    }
+
     if (activeFilter === "All") return true;
     if (activeFilter === "Friends") return c.category === "friend" || c.category === "other";
     if (activeFilter === "Work") return c.category === "work";
@@ -441,8 +504,12 @@ export default function Messages() {
 
       {/* ── Add Contact Modal ── */}
       <Modal visible={isAddContactOpen} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsAddContactOpen(false)}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Contact</Text>
               <TouchableOpacity onPress={() => setIsAddContactOpen(false)}>
@@ -450,55 +517,47 @@ export default function Messages() {
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.inputLabel}>Full Name</Text>
+            <Text style={styles.inputLabel}>Email or BubbleID</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="e.g. John Doe"
+              placeholder="e.g. user@example.com or bubble-ID"
               value={newContactName}
               onChangeText={setNewContactName}
               placeholderTextColor="#9a9aab"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
-
-            <Text style={styles.inputLabel}>Category / Folder</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }} contentContainerStyle={{ gap: 6 }}>
-              {foldersList.filter(f => f !== "All" && f !== "Unread" && f !== "Archive").map((cat) => {
-                const isSelected = newContactCategory === cat;
-                return (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => setNewContactCategory(cat)}
-                    style={[
-                      styles.catBtn,
-                      isSelected && { backgroundColor: "#6c5ce7", borderColor: "#6c5ce7" }
-                    ]}
-                  >
-                    <Text style={[styles.catBtnText, isSelected && { color: "#ffffff" }]}>
-                      {cat}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
 
             <TouchableOpacity
               style={styles.saveBtn}
-              onPress={() => {
-                if (!newContactName.trim()) return;
-                addMockContact(newContactName.trim(), newContactCategory);
-                setNewContactName("");
-                setIsAddContactOpen(false);
+              onPress={async () => {
+                const tag = newContactName.trim();
+                if (!tag) return;
+                try {
+                  await addContact(tag);
+                  showToast("Contact added!");
+                  setNewContactName("");
+                  setIsAddContactOpen(false);
+                  await syncWithBackend();
+                } catch (err: any) {
+                  Alert.alert("Error", err.message || "Failed to add contact.");
+                }
               }}
             >
               <Text style={styles.saveBtnText}>Save Contact</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* ── Create Folder Tab Modal ── */}
       <Modal visible={isCreateTabOpen} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsCreateTabOpen(false)}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>New Folder Tab</Text>
               <TouchableOpacity onPress={() => setIsCreateTabOpen(false)}>
@@ -518,18 +577,89 @@ export default function Messages() {
 
             <TouchableOpacity
               style={styles.saveBtn}
-              onPress={() => {
-                if (!newTabName.trim()) return;
-                addFolder(newTabName.trim());
-                setActiveFilter(newTabName.trim());
+              onPress={async () => {
+                const name = newTabName.trim();
+                if (!name) return;
+                const updatedFolders = await chatCache.addFolder(name);
+                setFoldersList(updatedFolders);
+                setActiveFilter(name);
                 setNewTabName("");
                 setIsCreateTabOpen(false);
+                showToast(`Tab ${name} created`);
               }}
             >
               <Text style={styles.saveBtnText}>Create Tab</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── Move Chat to Folder Tab Modal ── */}
+      <Modal visible={isFolderSelectOpen} transparent animationType="slide">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            setIsFolderSelectOpen(false);
+            setFolderSelectChatId(null);
+          }}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Move to Folder</Text>
+              <TouchableOpacity onPress={() => { setIsFolderSelectOpen(false); setFolderSelectChatId(null); }}>
+                <X size={20} color="#6c5ce7" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 13, fontFamily: "Poppins_500Medium", color: "#1f2030", marginBottom: 12 }}>
+              Choose which folders/tabs this conversation should appear in:
+            </Text>
+
+            <ScrollView style={{ maxHeight: 250 }} contentContainerStyle={{ gap: 8, paddingBottom: 12 }} showsVerticalScrollIndicator={false}>
+              {foldersList.filter(f => f !== "All" && f !== "Unread" && f !== "Archive").map((folder) => {
+                const isMapped = folderSelectChatId ? (folderMappings[folderSelectChatId] || []).includes(folder) : false;
+                return (
+                  <TouchableOpacity
+                    key={folder}
+                    onPress={async () => {
+                      if (!folderSelectChatId) return;
+                      const updated = await chatCache.moveChatToFolder(folderSelectChatId, folder);
+                      setFolderMappings(updated);
+                      showToast(isMapped ? `Removed from ${folder}` : `Moved to ${folder}`);
+                    }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: 12,
+                      paddingHorizontal: 14,
+                      borderRadius: 14,
+                      backgroundColor: isMapped ? "rgba(108,92,231,0.08)" : "rgba(0,0,0,0.02)",
+                      borderWidth: 1,
+                      borderColor: isMapped ? "#6c5ce7" : "transparent",
+                    }}
+                  >
+                    <Text style={{ fontSize: 14, fontFamily: "Poppins_600SemiBold", color: isMapped ? "#6c5ce7" : "#1f2030" }}>
+                      {folder}
+                    </Text>
+                    {isMapped && <Check size={16} color="#6c5ce7" />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.saveBtn, { marginTop: 10 }]}
+              onPress={() => {
+                setIsFolderSelectOpen(false);
+                setFolderSelectChatId(null);
+              }}
+            >
+              <Text style={styles.saveBtnText}>Done</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       {/* ── Selection Mode Bulk Actions Bottom Bar ── */}
@@ -571,19 +701,18 @@ export default function Messages() {
 
           <View style={{ flexDirection: "row", gap: 10 }}>
             <TouchableOpacity
-              onPress={() => {
+              onPress={async () => {
                 let count = 0;
-                selectedItemIds.forEach(id => {
-                  const chat = chatsList.find(c => c.id === id);
-                  if (chat) {
-                    chat.isMuted = true;
+                for (const id of selectedItemIds) {
+                  try {
+                    await toggleArchiveChat(id);
                     count++;
-                  }
-                });
+                  } catch (e) {}
+                }
                 showToast(`${count} chats archived`);
                 setIsSelectionMode(false);
                 setSelectedItemIds([]);
-                setChatsList(getChats());
+                await syncWithBackend();
               }}
               disabled={selectedItemIds.length === 0}
               style={{
@@ -600,21 +729,21 @@ export default function Messages() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
-                selectedItemIds.forEach(id => {
-                  const chatIndex = chatsList.findIndex(c => c.id === id);
-                  if (chatIndex !== -1) {
-                    deleteChat(id);
-                  } else {
-                    const contactIndex = contactsList.findIndex(c => c.id === id);
-                    if (contactIndex !== -1) {
-                      deleteContact(id);
+              onPress={async () => {
+                for (const id of selectedItemIds) {
+                  try {
+                    const chatIndex = chatsList.findIndex(c => c.id === id);
+                    if (chatIndex !== -1) {
+                      await deleteChat(id);
+                    } else {
+                      await removeContact(id);
                     }
-                  }
-                });
+                  } catch (e) {}
+                }
                 showToast(`Deleted selected items`);
                 setIsSelectionMode(false);
                 setSelectedItemIds([]);
+                await syncWithBackend();
               }}
               disabled={selectedItemIds.length === 0}
               style={{
@@ -705,6 +834,18 @@ export default function Messages() {
                   icon={<Archive size={16} color="#9a9aab" />}
                   label={activeContextItem.isMuted ? "Unarchive Chat" : "Archive Chat"}
                   onPress={() => handleToggleArchive(activeContextItem.id)}
+                />
+              )}
+
+              {activeContextItem.type === 'chat' && (
+                <ContextMenuItem
+                  icon={<FolderPlus size={16} color="#9a9aab" />}
+                  label="Move to Folder"
+                  onPress={() => {
+                    setFolderSelectChatId(activeContextItem.id);
+                    setIsFolderSelectOpen(true);
+                    setActiveContextItem(null);
+                  }}
                 />
               )}
 

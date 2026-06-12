@@ -77,6 +77,7 @@ const formatConversation = async (c: any, userId?: any) => ({
   // User context
   mutedBy: c.mutedBy || [],
   archivedBy: c.archivedBy || [],
+  pinnedBy: c.pinnedBy || [],
 
   latestMessage: (c.latestMessage && (!userId || !c.latestMessage.deletedFor || !c.latestMessage.deletedFor.some((id: any) => String(id) === String(userId)))) ? {
     id: c.latestMessage._id,

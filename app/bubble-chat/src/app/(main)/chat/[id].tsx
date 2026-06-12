@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, Modal,
+  TextInput, KeyboardAvoidingView, Platform, Modal, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,7 +13,21 @@ import {
   Copy, Pin, Edit2, Check, CheckCheck,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
-import { getChatById, sendMessage, subscribeToChats, Message } from '../../../lib/mockData';
+import { Message } from '../../../lib/mockData';
+import { chatCache } from '../../../lib/chatCache';
+import {
+  sendTextMessage,
+  sendMediaMessage,
+  reactToMessage,
+  toggleMessagePin,
+  deleteMessageForMe,
+  deleteMessageForEveryone,
+  updateMessage,
+  muteChat,
+  clearChat,
+  toggleChatPin,
+  deleteChat,
+} from '../../../lib/api';
 
 const PURPLE = '#6c5ce7';
 const INK = '#1f2030';
@@ -27,6 +41,7 @@ export default function ChatScreen() {
   const [messageText, setMessageText] = useState('');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chat, setChat] = useState<any>(null);
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; type: string; url?: string } | null>(null);
@@ -57,21 +72,41 @@ export default function ChatScreen() {
     setTimeout(() => setToastMessage(null), 2000);
   };
 
-  const chat = getChatById(id as string);
+  const loadCachedChatAndMessages = async () => {
+    const cachedChats = await chatCache.getCachedChats();
+    const foundChat = cachedChats.find((c: any) => String(c.id) === String(id));
+    if (foundChat) {
+      setChat(foundChat);
+      setIsMuted(!!foundChat.isMuted);
+    }
+    const cachedMsgs = await chatCache.getCachedMessages(id as string);
+    setMessages(cachedMsgs);
+  };
+
+  const syncChatAndMessages = async () => {
+    try {
+      const cachedChats = await chatCache.getCachedChats();
+      const foundChat = cachedChats.find((c: any) => String(c.id) === String(id));
+      if (foundChat) {
+        setChat(foundChat);
+        setIsMuted(!!foundChat.isMuted);
+      }
+      
+      const freshMsgs = await chatCache.syncMessagesWithBackend(id as string);
+      setMessages(freshMsgs);
+    } catch (err) {
+      console.warn("Silent sync failed in ChatScreen:", err);
+    }
+  };
 
   useEffect(() => {
-    if (!chat) return;
-    setMessages([...chat.messages]);
-    chat.unreadCount = 0;
+    loadCachedChatAndMessages();
+    syncChatAndMessages();
+  }, [id]);
 
-    const unsubscribe = subscribeToChats(() => {
-      const updated = getChatById(id as string);
-      if (updated) {
-        setMessages([...updated.messages]);
-        updated.unreadCount = 0;
-      }
-    });
-    return () => unsubscribe();
+  useEffect(() => {
+    const interval = setInterval(syncChatAndMessages, 5000);
+    return () => clearInterval(interval);
   }, [id]);
 
   useEffect(() => {
@@ -82,11 +117,8 @@ export default function ChatScreen() {
 
   if (!chat) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: INK, fontFamily: 'Poppins_600SemiBold', fontSize: 15 }}>Conversation not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16, backgroundColor: PURPLE, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 14 }}>
-          <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Go Back</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }} edges={['top', 'bottom']}>
+        <Text style={{ color: INK, fontFamily: 'Poppins_600SemiBold', fontSize: 15 }}>Loading conversation...</Text>
       </SafeAreaView>
     );
   }
@@ -94,33 +126,40 @@ export default function ChatScreen() {
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
-  const handleSend = () => {
+  const handleSend = async () => {
     let text = messageText.trim();
-    if (editingMessageId) {
-      if (!text) return;
-      setMessages(prev => prev.map(m => {
-        if (m.id === editingMessageId) {
-          return { ...m, text };
-        }
-        return m;
-      }));
-      setEditingMessageId(null);
-      setMessageText('');
-      showToast("Message edited");
-      return;
-    }
+    
+    try {
+      if (editingMessageId) {
+        if (!text) return;
+        await updateMessage(editingMessageId, text);
+        setEditingMessageId(null);
+        setMessageText('');
+        showToast("Message edited");
+        await syncChatAndMessages();
+        return;
+      }
 
-    if (selectedFile) {
-      const icon = selectedFile.type === 'image' ? '🖼️' : selectedFile.type === 'video' ? '🎥' : '📄';
-      const fileStr = `${icon} ${selectedFile.name} (${selectedFile.size})`;
-      text = text ? `${fileStr}\n${text}` : fileStr;
+      if (selectedFile) {
+        const fileObj = {
+          uri: selectedFile.url || 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=200',
+          name: selectedFile.name,
+          type: selectedFile.type === 'image' ? 'image/jpeg' : selectedFile.type === 'video' ? 'video/mp4' : 'application/pdf'
+        } as any;
+        await sendMediaMessage(chat.id, fileObj, { content: text });
+      } else {
+        if (!text) return;
+        await sendTextMessage(chat.id, text);
+      }
+
+      setMessageText('');
+      setSelectedFile(null);
+      setIsAttachmentOpen(false);
+      setIsEmojiOpen(false);
+      await syncChatAndMessages();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to send message.");
     }
-    if (!text) return;
-    sendMessage(chat.id, text);
-    setMessageText('');
-    setSelectedFile(null);
-    setIsAttachmentOpen(false);
-    setIsEmojiOpen(false);
   };
 
   const statusLine = chat.status === 'typing'
@@ -128,7 +167,7 @@ export default function ChatScreen() {
     : chat.isOnline
     ? 'Online'
     : chat.isGroupChat
-    ? `${chat.messages.length} messages`
+    ? `${messages.length} messages`
     : 'Offline';
 
   const filteredMessages = messages.filter(msg => {
@@ -136,35 +175,36 @@ export default function ChatScreen() {
     return msg.text.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const handleReactMessage = (messageId: string, emoji: string) => {
-    setMessages(prev => prev.map(m => {
-      if (m.id === messageId) {
-        const reactions = m.reactions || [];
-        const updated = reactions.includes(emoji)
-          ? reactions.filter(r => r !== emoji)
-          : [...reactions, emoji];
-        return { ...m, reactions: updated };
-      }
-      return m;
-    }));
+  const handleReactMessage = async (messageId: string, emoji: string) => {
+    try {
+      await reactToMessage(messageId, emoji);
+      await syncChatAndMessages();
+    } catch (err) {
+      showToast("Reaction failed");
+    }
     setActiveContextMessage(null);
   };
 
-  const handleTogglePinMessage = (messageId: string) => {
-    setMessages(prev => prev.map(m => {
-      if (m.id === messageId) {
-        return { ...m, isPinned: !m.isPinned };
-      }
-      return m;
-    }));
+  const handleTogglePinMessage = async (messageId: string) => {
+    try {
+      await toggleMessagePin(messageId);
+      showToast("Message pin toggled");
+      await syncChatAndMessages();
+    } catch (err) {
+      showToast("Pin failed");
+    }
     setActiveContextMessage(null);
-    showToast("Message pin state updated");
   };
 
-  const handleDeleteMessage = (messageId: string) => {
-    setMessages(prev => prev.filter(m => m.id !== messageId));
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteMessageForMe(messageId);
+      showToast("Message deleted");
+      await syncChatAndMessages();
+    } catch (err) {
+      showToast("Delete failed");
+    }
     setActiveContextMessage(null);
-    showToast("Message deleted");
   };
 
   const handleEditMessage = (msg: Message) => {
@@ -563,7 +603,13 @@ export default function ChatScreen() {
                     <Text style={{ fontSize: 9.5, fontFamily: 'Poppins_400Regular', color: INK_SOFT }}>
                       {msg.time}
                     </Text>
-                    {isMe && <CheckCheck size={11} color="#38bdf8" style={{ marginLeft: 4 }} />}
+                    {isMe && (
+                      msg.isRead ? (
+                        <CheckCheck size={11} color="#38bdf8" style={{ marginLeft: 4 }} />
+                      ) : (
+                        <Check size={11} color={INK_SOFT} style={{ marginLeft: 4 }} />
+                      )
+                    )}
                   </View>
                 </View>
 
@@ -851,8 +897,8 @@ export default function ChatScreen() {
                 alignItems: 'flex-end',
                 backgroundColor: '#f1f2f6',
                 borderRadius: 24,
-                paddingHorizontal: 14,
-                paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+                paddingHorizontal: 8,
+                paddingVertical: 5,
                 minHeight: 48,
                 maxHeight: 120,
               }}>
@@ -863,11 +909,10 @@ export default function ChatScreen() {
                     setIsEmojiOpen(false);
                   }}
                   style={{
-                    paddingRight: 10,
-                    height: 32,
+                    width: 38,
+                    height: 38,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    marginBottom: 2,
                   }}
                 >
                   <Paperclip size={20} color={isAttachmentOpen ? PURPLE : INK_SOFT} />
@@ -881,8 +926,7 @@ export default function ChatScreen() {
                     fontFamily: 'Poppins_400Regular',
                     color: INK,
                     maxHeight: 100,
-                    paddingTop: Platform.OS === 'ios' ? 6 : 4,
-                    paddingBottom: Platform.OS === 'ios' ? 6 : 4,
+                    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
                     paddingHorizontal: 4,
                     textAlignVertical: 'center',
                   }}
@@ -900,11 +944,10 @@ export default function ChatScreen() {
                     setIsAttachmentOpen(false);
                   }}
                   style={{
-                    paddingHorizontal: 6,
-                    height: 32,
+                    width: 38,
+                    height: 38,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    marginBottom: 2,
                   }}
                 >
                   <Smile size={20} color={isEmojiOpen ? PURPLE : INK_SOFT} />
@@ -915,26 +958,29 @@ export default function ChatScreen() {
                   <TouchableOpacity
                     onPress={handleSend}
                     style={{
-                      paddingLeft: 6,
-                      height: 32,
+                      width: 38,
+                      height: 38,
                       justifyContent: 'center',
                       alignItems: 'center',
-                      marginBottom: 2,
                     }}
                   >
                     <Send size={20} color={PURPLE} />
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
-                    onPress={() => {
-                      sendMessage(chat.id, "🎤 [Voice Memo - 0:14]");
+                    onPress={async () => {
+                      try {
+                        await sendTextMessage(chat.id, "🎤 [Voice Memo - 0:14]");
+                        await syncChatAndMessages();
+                      } catch (err: any) {
+                        Alert.alert("Error", err.message || "Failed to send voice memo.");
+                      }
                     }}
                     style={{
-                      paddingLeft: 6,
-                      height: 32,
+                      width: 38,
+                      height: 38,
                       justifyContent: 'center',
                       alignItems: 'center',
-                      marginBottom: 2,
                     }}
                   >
                     <Mic size={20} color={INK_SOFT} />

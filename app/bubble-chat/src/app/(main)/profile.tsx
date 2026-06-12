@@ -229,7 +229,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 180 }} showsVerticalScrollIndicator={false}>
         <View className="w-full bg-purple-soft/5">
           {/* Hero Card */}
           <View className="bg-purple-soft/20 items-center w-full p-6 border-b border-black/5">

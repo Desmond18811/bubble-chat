@@ -9,6 +9,7 @@ export interface Message {
   timestamp: Date;
   reactions?: string[];
   isPinned?: boolean;
+  isRead?: boolean;
 }
 
 export interface Chat {

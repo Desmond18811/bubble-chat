@@ -23,15 +23,13 @@ import {
 import { Link, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
 import {
-  getContacts,
-  getChats,
-  subscribeToChats,
   Contact,
   Chat,
-  addMockContact,
-  createMockGroupChat,
   subscribeToPlusButton,
 } from '../../lib/mockData';
+import { chatCache } from '../../lib/chatCache';
+import { addContact, createGroupChat } from '../../lib/api';
+import { Alert } from 'react-native';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 // ─────────────────────────────────────────────
@@ -104,24 +102,40 @@ function ContactsTab({
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
 
+  const loadCache = async () => {
+    const cached = await chatCache.getCachedContacts();
+    setContacts(cached);
+  };
+
+  const syncContacts = async () => {
+    try {
+      const fresh = await chatCache.syncContactsWithBackend();
+      setContacts(fresh);
+    } catch (err) {
+      console.warn("Silent sync failed in ContactsTab:", err);
+    }
+  };
+
   useEffect(() => {
-    setContacts(getContacts());
-    const unsubscribe = subscribeToChats(() => {
-      setContacts(getContacts());
-    });
-    return () => unsubscribe();
+    loadCache();
+    syncContacts();
   }, []);
 
   const filtered = contacts.filter((c) =>
     (c.name + c.username + c.org_role).toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
-    if (addIdentifier.trim()) {
-      addMockContact(addIdentifier.trim(), 'work');
+  const handleAdd = async () => {
+    const tag = addIdentifier.trim();
+    if (!tag) return;
+    try {
+      await addContact(tag);
+      setAddIdentifier('');
+      setShowAddModal(false);
+      await syncContacts();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to add contact.");
     }
-    setAddIdentifier('');
-    setShowAddModal(false);
   };
 
   return (
@@ -225,59 +239,68 @@ function ContactsTab({
 
       {/* Add Friend Modal */}
       <Modal visible={showAddModal} transparent animationType="slide">
-        <View className="flex-1 bg-black/60 justify-end">
-          <SafeAreaView className="bg-white rounded-t-3xl shadow-2xl" edges={['bottom']}>
-            <View className="px-6 pt-6 pb-2">
-              <View className="flex-row items-start justify-between mb-2">
-                <View>
-                  <Text className="text-lg font-bold text-ink font-display">Add a Contact</Text>
-                  <Text className="text-xs text-ink-soft mt-0.5 font-sans">
-                    Enter their unique ID or @username
-                  </Text>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            setShowAddModal(false);
+            setAddIdentifier('');
+          }}
+          className="flex-1 bg-black/60 justify-end"
+        >
+          <TouchableOpacity activeOpacity={1}>
+            <SafeAreaView className="bg-white rounded-t-3xl shadow-2xl" edges={['bottom']}>
+              <View className="px-6 pt-6 pb-2">
+                <View className="flex-row items-start justify-between mb-2">
+                  <View>
+                    <Text className="text-lg font-bold text-ink font-display">Add a Contact</Text>
+                    <Text className="text-xs text-ink-soft mt-0.5 font-sans">
+                      Enter their unique ID or @username
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowAddModal(false);
+                      setAddIdentifier('');
+                    }}
+                    className="w-8 h-8 rounded-xl bg-black/5 items-center justify-center"
+                  >
+                    <X color="#6c5ce7" size={16} />
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowAddModal(false);
-                    setAddIdentifier('');
-                  }}
-                  className="w-8 h-8 rounded-xl bg-black/5 items-center justify-center"
-                >
-                  <X color="#6c5ce7" size={16} />
-                </TouchableOpacity>
-              </View>
 
-              <View className="bg-purple-soft/30 rounded-2xl border border-purple/10 px-4 py-3.5 mt-4 mb-4">
-                <TextInput
-                  value={addIdentifier}
-                  onChangeText={setAddIdentifier}
-                  placeholder="e.g. bubble-A3F9X7K2 or @username"
-                  placeholderTextColor="#9a9aab"
-                  className="text-[15px] text-ink font-sans"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+                <View className="bg-purple-soft/30 rounded-2xl border border-purple/10 px-4 py-3.5 mt-4 mb-4">
+                  <TextInput
+                    value={addIdentifier}
+                    onChangeText={setAddIdentifier}
+                    placeholder="e.g. bubble-A3F9X7K2 or @username"
+                    placeholderTextColor="#9a9aab"
+                    className="text-[15px] text-ink font-sans"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
 
-              <View className="flex-row gap-3 mb-2">
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowAddModal(false);
-                    setAddIdentifier('');
-                  }}
-                  className="flex-1 border border-black/10 rounded-xl py-3 items-center"
-                >
-                  <Text className="text-sm font-semibold text-ink-soft font-sans">Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleAdd}
-                  className="flex-1 bg-purple rounded-xl py-3 items-center flex-row justify-center shadow-sm"
-                >
-                  <Text className="text-white text-sm font-bold font-sans">Add Contact</Text>
-                </TouchableOpacity>
+                <View className="flex-row gap-3 mb-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      setShowAddModal(false);
+                      setAddIdentifier('');
+                    }}
+                    className="flex-1 border border-black/10 rounded-xl py-3 items-center"
+                  >
+                    <Text className="text-sm font-semibold text-ink-soft font-sans">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleAdd}
+                    className="flex-1 bg-purple rounded-xl py-3 items-center flex-row justify-center shadow-sm"
+                  >
+                    <Text className="text-white text-sm font-bold font-sans">Add Contact</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </SafeAreaView>
-        </View>
+            </SafeAreaView>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -288,17 +311,29 @@ function ContactsTab({
 // ─────────────────────────────────────────────
 function WorkroomTab() {
   const [search, setSearch] = useState('');
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [chats, setChats] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
+
+  const loadCacheAndSync = async () => {
+    const cachedChats = await chatCache.getCachedChats();
+    const cachedContacts = await chatCache.getCachedContacts();
+    setChats(cachedChats);
+    setContacts(cachedContacts);
+
+    try {
+      const freshChats = await chatCache.syncChatsWithBackend();
+      const freshContacts = await chatCache.syncContactsWithBackend();
+      setChats(freshChats);
+      setContacts(freshContacts);
+    } catch (err) {
+      console.warn("Silent sync failed in WorkroomTab:", err);
+    }
+  };
 
   useEffect(() => {
-    setChats(getChats());
-    setContacts(getContacts());
-    const unsubscribe = subscribeToChats(() => {
-      setChats(getChats());
-      setContacts(getContacts());
-    });
-    return () => unsubscribe();
+    loadCacheAndSync();
+    const interval = setInterval(loadCacheAndSync, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Filter and display group chats and regular workspace members
@@ -327,7 +362,7 @@ function WorkroomTab() {
       }))
     )
     .filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i) // Deduplicate
-    .filter((m) => (m.name + m.org_role).toLowerCase().includes(search.toLowerCase()));
+    .filter((m) => (m.name + (m.org_role || '')).toLowerCase().includes(search.toLowerCase()));
 
   return (
     <View className="flex-1">
@@ -540,6 +575,23 @@ export default function PeopleScreen() {
         )}
       </View>
 
+      {/* ── Tap Outside FAB Menu Dismiss Overlay ── */}
+      {isFabMenuOpen && (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsFabMenuOpen(false)}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99,
+            backgroundColor: 'transparent',
+          }}
+        />
+      )}
+
       {/* ── FAB Side Popover Menu ── */}
       {isFabMenuOpen && (
         <View style={{
@@ -585,8 +637,12 @@ export default function PeopleScreen() {
 
       {/* ── Create Group Chat Modal ── */}
       <Modal visible={showCreateGroupModal} transparent animationType="slide">
-        <View style={{ flex: 1, backgroundColor: "rgba(31,32,48,0.4)", justifyContent: "center", alignItems: "center", padding: 20 }}>
-          <View style={{ width: "100%", maxWidth: 320, backgroundColor: "#ffffff", borderRadius: 24, padding: 20, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowCreateGroupModal(false)}
+          style={{ flex: 1, backgroundColor: "rgba(31,32,48,0.4)", justifyContent: "center", alignItems: "center", padding: 20 }}
+        >
+          <TouchableOpacity activeOpacity={1} style={{ width: "100%", maxWidth: 320, backgroundColor: "#ffffff", borderRadius: 24, padding: 20, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <Text style={{ fontSize: 17, fontFamily: "SpaceGrotesk_700Bold", color: "#1f2030" }}>Create Group Chat</Text>
               <TouchableOpacity onPress={() => setShowCreateGroupModal(false)}>
@@ -605,17 +661,23 @@ export default function PeopleScreen() {
 
             <TouchableOpacity
               style={{ backgroundColor: "#6c5ce7", borderRadius: 14, paddingVertical: 12, alignItems: "center", marginTop: 4 }}
-              onPress={() => {
-                if (!newGroupName.trim()) return;
-                createMockGroupChat(newGroupName.trim());
-                setNewGroupName("");
-                setShowCreateGroupModal(false);
+              onPress={async () => {
+                const name = newGroupName.trim();
+                if (!name) return;
+                try {
+                  await createGroupChat(name, []);
+                  setNewGroupName("");
+                  setShowCreateGroupModal(false);
+                  await chatCache.syncChatsWithBackend();
+                } catch (err: any) {
+                  Alert.alert("Error", err.message || "Failed to create group.");
+                }
               }}
             >
               <Text style={{ color: "#ffffff", fontSize: 13, fontFamily: "Poppins_700Bold" }}>Create Group</Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
