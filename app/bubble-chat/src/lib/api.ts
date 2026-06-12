@@ -4,6 +4,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+const API_BASE = BASE_URL.replace(/\/api\/v1\/?$/, '');
+
+export function getSecureMediaUrl(url?: string | null): string | null {
+    if (!url) return null;
+    if (url === 'black' || url === '#000000') return null;
+    if (url.startsWith('blob:')) return url;
+    
+    if (url.includes('s3.filebase.com') || url.includes('filebase.com')) {
+        const encoded = encodeURIComponent(url);
+        return `${API_BASE}/api/v1/message/media/proxy?url=${encoded}`;
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return `${API_BASE}${url}`;
+    return `${API_BASE}/${url}`;
+}
 
 import { initSocket, disconnectSocket } from './socket';
 
@@ -19,7 +35,8 @@ export const initApiFromStorage = async (): Promise<void> => {
         const token = await AsyncStorage.getItem('bubble_access_token');
         tokenCache.accessToken = token;
         if (token) {
-            initSocket(token);
+            const sock = initSocket(token);
+            import('./callManager').then(m => m.setupCallSocketListeners(sock));
         }
     } catch {
         tokenCache.accessToken = null;
@@ -30,7 +47,8 @@ export const initApiFromStorage = async (): Promise<void> => {
 export const setApiToken = (token: string | null): void => {
     tokenCache.accessToken = token;
     if (token) {
-        initSocket(token);
+        const sock = initSocket(token);
+        import('./callManager').then(m => m.setupCallSocketListeners(sock));
     } else {
         disconnectSocket();
     }

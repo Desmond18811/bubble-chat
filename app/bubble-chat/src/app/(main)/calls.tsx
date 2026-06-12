@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
 import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { searchUsers, fetchTasks, createTaskFull } from '../../lib/api';
+import { searchUsers, fetchTasks, createTaskFull, getSecureMediaUrl } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { startOutgoingCall } from '../../lib/callManager';
+import { Image } from 'expo-image';
 
 // Calendar cells generator
 const getCalendarCells = (currentDate: Date) => {
@@ -50,6 +52,16 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+function getGroupInitials(name: string) {
+  if (!name) return 'UC';
+  const clean = name.trim().replace(/\s+/g, ' ');
+  const parts = clean.split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
+
 export default function CallsScreen() {
   const [callsTab, setCallsTab] = useState<'meet' | 'calendar'>('meet');
 
@@ -63,10 +75,6 @@ export default function CallsScreen() {
   const [tasks, setTasks] = useState<any[]>([]);
 
   // Calling states
-  const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
-  const [callDuration, setCallDuration] = useState(0);
-  const [isCallMuted, setIsCallMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
 
   // Calendar agenda states
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -126,24 +134,7 @@ export default function CallsScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    let timer: any;
-    if (activeCall) {
-      setCallDuration(0);
-      timer = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [activeCall]);
 
-  const formatDuration = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleCreateEvent = async () => {
     if (!title.trim()) {
@@ -191,10 +182,7 @@ export default function CallsScreen() {
             { 
               text: 'Start Call Now', 
               onPress: () => {
-                setActiveCall({
-                  user: { name: payload.title, avatar: null },
-                  type: 'voice'
-                });
+                startOutgoingCall({ name: payload.title, avatar: null }, 'voice');
               } 
             }
           ]
@@ -245,10 +233,7 @@ export default function CallsScreen() {
         {callsTab === 'meet' ? (
           <TouchableOpacity 
             onPress={() => {
-              setActiveCall({
-                user: { name: 'Quick Meet Room', avatar: null },
-                type: 'video'
-              });
+              startOutgoingCall({ name: 'Quick Meet Room', avatar: null }, 'video');
             }}
             className="bg-purple px-4 py-2.5 rounded-xl shadow-sm"
           >
@@ -310,10 +295,7 @@ export default function CallsScreen() {
                 <TouchableOpacity 
                   key={room.id} 
                   onPress={() => {
-                    setActiveCall({
-                      user: { name: room.title, avatar: null },
-                      type: 'voice'
-                    });
+                    startOutgoingCall({ name: room.title, avatar: null }, 'voice');
                   }}
                   className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm mb-3"
                 >
@@ -358,11 +340,11 @@ export default function CallsScreen() {
                     <View key={worker.id} style={{ width: '48%' }} className="bg-white border border-black/5 rounded-[32px] p-5 mb-4 items-center shadow-sm relative overflow-hidden">
                       <View className="relative">
                         {worker.avatar ? (
-                          <Image source={{ uri: worker.avatar }} style={{ width: 80, height: 80, borderRadius: 24 }} />
+                          <Image source={{ uri: getSecureMediaUrl(worker.avatar) || undefined }} style={{ width: 80, height: 80, borderRadius: 24 }} />
                         ) : (
-                          <View className="w-20 h-20 rounded-[24px] bg-purple-soft items-center justify-center shadow-md">
-                            <Text className="text-purple text-xl font-bold font-sans">
-                              {getInitials(displayName)}
+                          <View className="w-20 h-20 rounded-[24px] items-center justify-center shadow-md" style={{ backgroundColor: worker.organization ? '#000000' : 'rgba(108,92,231,0.2)' }}>
+                            <Text className="text-xl font-bold font-sans" style={{ color: worker.organization ? '#ffffff' : '#6c5ce7' }}>
+                              {worker.organization ? getGroupInitials(worker.organization) : getInitials(displayName)}
                             </Text>
                           </View>
                         )}
@@ -382,13 +364,13 @@ export default function CallsScreen() {
 
                       <View className="flex-row items-center justify-center gap-2 mt-5">
                         <TouchableOpacity 
-                          onPress={() => setActiveCall({ user: worker, type: 'voice' })}
+                          onPress={() => startOutgoingCall(worker, 'voice')}
                           className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center"
                         >
                           <Phone color="#6c5ce7" size={16} />
                         </TouchableOpacity>
                         <TouchableOpacity 
-                          onPress={() => setActiveCall({ user: worker, type: 'video' })}
+                          onPress={() => startOutgoingCall(worker, 'video')}
                           className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center"
                         >
                           <Video color="#6c5ce7" size={16} />
@@ -502,7 +484,7 @@ export default function CallsScreen() {
                       {(task.type === 'meeting' || task.priority === 'high' || task.priority === 'urgent') && (
                         <TouchableOpacity 
                           onPress={() => {
-                            setActiveCall({ user: { name: task.title, avatar: null }, type: 'voice' });
+                            startOutgoingCall({ name: task.title, avatar: null }, 'voice');
                           }}
                           className="bg-purple/10 px-2.5 py-1 rounded-lg"
                         >
@@ -646,82 +628,6 @@ export default function CallsScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* ── Call Overlay Modal ── */}
-      <Modal visible={activeCall !== null} transparent animationType="slide">
-        <View style={{ flex: 1, backgroundColor: '#1f2030' }} className="items-center justify-between py-16 px-6">
-          {/* Header */}
-          <View className="items-center mt-8">
-            <Text className="text-white/60 text-xs font-bold font-sans uppercase tracking-widest mb-2">
-              BUBBLE {activeCall?.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
-            </Text>
-            <Text className="text-white text-2xl font-bold font-sans mt-2">
-              {activeCall?.user?.full_name || activeCall?.user?.name || activeCall?.user?.username || 'Unknown Colleague'}
-            </Text>
-            <Text className="text-[#6c5ce7] text-sm font-semibold font-sans mt-2">
-              {callDuration === 0 ? 'Ringing...' : `Connected • ${formatDuration(callDuration)}`}
-            </Text>
-          </View>
-
-          {/* Avatar / Video Preview area */}
-          <View className="items-center justify-center my-8">
-            {activeCall?.type === 'video' ? (
-              <View style={{ width: 220, height: 320, borderRadius: 28, backgroundColor: '#000', overflow: 'hidden' }} className="relative shadow-2xl">
-                {activeCall?.user?.avatar ? (
-                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: '100%', height: '100%', opacity: 0.8 }} />
-                ) : (
-                  <View className="flex-1 items-center justify-center bg-purple/20">
-                    <Text className="text-white text-5xl font-bold font-sans">
-                      {getInitials(activeCall?.user?.full_name || activeCall?.user?.name || 'UC')}
-                    </Text>
-                  </View>
-                )}
-                {/* Small Self Video Preview overlay */}
-                <View style={{ position: 'absolute', bottom: 16, right: 16, width: 70, height: 100, borderRadius: 12, backgroundColor: '#2d3748', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' }}>
-                  <View className="flex-1 items-center justify-center bg-purple/40">
-                    <Text className="text-white/80 text-[10px] font-bold">You</Text>
-                  </View>
-                </View>
-              </View>
-            ) : (
-              <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(108,92,231,0.15)', borderWidth: 4, borderColor: '#6c5ce7' }} className="items-center justify-center shadow-lg">
-                {activeCall?.user?.avatar ? (
-                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: 132, height: 132, borderRadius: 66 }} />
-                ) : (
-                  <Text className="text-white text-4xl font-bold font-sans">
-                    {getInitials(activeCall?.user?.full_name || activeCall?.user?.name || 'UC')}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Action buttons */}
-          <View className="w-full flex-row justify-around items-center px-4 mb-4">
-            <TouchableOpacity 
-              onPress={() => setIsCallMuted(!isCallMuted)}
-              style={{ backgroundColor: isCallMuted ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
-              className="w-14 h-14 rounded-full items-center justify-center"
-            >
-              <MicOff color={isCallMuted ? '#fff' : '#9a9aab'} size={22} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => setActiveCall(null)}
-              className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg shadow-red-500/30"
-            >
-              <PhoneOff color="#fff" size={24} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => setIsSpeakerOn(!isSpeakerOn)}
-              style={{ backgroundColor: isSpeakerOn ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
-              className="w-14 h-14 rounded-full items-center justify-center"
-            >
-              <Volume2 color={isSpeakerOn ? '#fff' : '#9a9aab'} size={22} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }

@@ -48,6 +48,7 @@ export interface Contact {
   phone: string;
   org_role: string;
   category?: 'friend' | 'work' | 'other';
+  organization?: string;
 }
 
 // ─── Conversations ───────────────────────────────────────────────────────────

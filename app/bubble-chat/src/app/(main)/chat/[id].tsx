@@ -30,7 +30,10 @@ import {
   toggleChatPin,
   deleteChat,
   getAidaWritingSuggestions,
+  getSecureMediaUrl,
 } from '../../../lib/api';
+import { startOutgoingCall } from '../../../lib/callManager';
+import { authStorage } from '../../../lib/authStorage';
 
 const PURPLE = '#6c5ce7';
 const INK = '#1f2030';
@@ -48,38 +51,31 @@ export default function ChatScreen() {
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; type: string; url?: string } | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [typingUser, setTypingUser] = useState<{ id: string; name?: string; username?: string } | null>(null);
 
-  // Call state
-  const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
-  const [callDuration, setCallDuration] = useState(0);
-  const [isCallMuted, setIsCallMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+  // User details for own-typing socket filters
+  const currentUserIdRef = useRef<string | null>(null);
+  const chatRef = useRef<any>(null);
+
+  useEffect(() => {
+    authStorage.getUser().then((user) => {
+      if (user) {
+        currentUserIdRef.current = String(user.id || user._id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    chatRef.current = chat;
+  }, [chat]);
 
   // Aida Suggestions state
   const [aidaSuggestions, setAidaSuggestions] = useState<string[]>([]);
 
-  useEffect(() => {
-    let timer: any;
-    if (activeCall) {
-      setCallDuration(0);
-      timer = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [activeCall]);
-
   const handleStartCall = (type: 'voice' | 'video') => {
-    setActiveCall({ user: chat, type });
-  };
-
-  const formatDuration = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    startOutgoingCall(chat, type);
   };
 
   useEffect(() => {
@@ -118,6 +114,11 @@ export default function ChatScreen() {
     const socket = getSocket();
     if (socket && chat) {
       const targetUserId = chat.otherUserId;
+      if (!text.trim()) {
+        if (typingTimer.current) clearTimeout(typingTimer.current);
+        socket.emit('typing_stop', { toUserId: targetUserId, chatId: chat.id });
+        return;
+      }
       socket.emit('typing_start', { toUserId: targetUserId, chatId: chat.id });
       if (typingTimer.current) clearTimeout(typingTimer.current);
       typingTimer.current = setTimeout(() => {
@@ -130,15 +131,19 @@ export default function ChatScreen() {
     const socket = getSocket();
     if (!socket) return;
 
-    const onTypingStart = (data: { fromUserId: string; chatId: string }) => {
+    const onTypingStart = (data: { fromUserId: string; chatId: string; fromName?: string; fromUsername?: string }) => {
+      if (currentUserIdRef.current && String(data.fromUserId) === String(currentUserIdRef.current)) return;
       if (String(data.chatId) === String(id)) {
         setChat((prev: any) => prev ? { ...prev, status: 'typing' } : prev);
+        setTypingUser({ id: data.fromUserId, name: data.fromName, username: data.fromUsername });
       }
     };
 
     const onTypingStop = (data: { fromUserId: string; chatId: string }) => {
+      if (currentUserIdRef.current && String(data.fromUserId) === String(currentUserIdRef.current)) return;
       if (String(data.chatId) === String(id)) {
         setChat((prev: any) => prev ? { ...prev, status: 'read_own' } : prev);
+        setTypingUser(null);
       }
     };
 
@@ -152,6 +157,9 @@ export default function ChatScreen() {
       socket.off('typing_start', onTypingStart);
       socket.off('typing_stop', onTypingStop);
       if (typingTimer.current) clearTimeout(typingTimer.current);
+      if (chatRef.current) {
+        socket.emit('typing_stop', { toUserId: chatRef.current.otherUserId, chatId: chatRef.current.id });
+      }
     };
   }, [id]);
 
@@ -245,6 +253,12 @@ export default function ChatScreen() {
 
   const handleSend = async () => {
     let text = messageText.trim();
+    
+    const socket = getSocket();
+    if (socket && chat) {
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+      socket.emit('typing_stop', { toUserId: chat.otherUserId, chatId: chat.id });
+    }
     
     try {
       if (editingMessageId) {
@@ -456,11 +470,11 @@ export default function ChatScreen() {
               >
                 <View style={{ position: 'relative', flexShrink: 0, marginRight: 10 }}>
                   {chat.avatar ? (
-                    <Image source={{ uri: chat.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+                    <Image source={{ uri: getSecureMediaUrl(chat.avatar) || undefined }} style={{ width: 40, height: 40, borderRadius: 20 }} />
                   ) : (
-                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: chat.isGroupChat ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: chat.isGroupChat ? '#ffffff' : PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>
-                        {chat.isGroupChat ? getGroupInitials(chat.name) : getInitials(chat.name)}
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: chat.isGroupChat || chat.organization ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: chat.isGroupChat || chat.organization ? '#ffffff' : PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>
+                        {chat.isGroupChat ? getGroupInitials(chat.name) : chat.organization ? getGroupInitials(chat.organization) : getInitials(chat.name)}
                       </Text>
                     </View>
                   )}
@@ -477,7 +491,9 @@ export default function ChatScreen() {
                     {isMuted && <BellOff size={11} color={INK_SOFT} style={{ marginLeft: 2 }} />}
                   </View>
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: chat.status === 'typing' ? PURPLE : INK_SOFT, marginTop: 1 }}>
-                    {chat.status === 'typing' ? 'typing…' : chat.isOnline ? 'Online' : 'Offline'}
+                    {chat.status === 'typing' 
+                      ? (typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…') 
+                      : chat.isOnline ? 'Online' : chat.isGroupChat ? `${messages.length} messages` : 'Offline'}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -636,12 +652,12 @@ export default function ChatScreen() {
 
                 {/* Left (Received) message avatar */}
                 {!isMe && (
-                  <View style={{ width: 28, height: 28, borderRadius: 14, overflow: 'hidden', marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0, backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 28, height: 28, borderRadius: 14, overflow: 'hidden', marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0, backgroundColor: chat.isGroupChat || chat.organization ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
                     {chat.avatar ? (
-                      <Image source={{ uri: chat.avatar }} style={{ width: 28, height: 28 }} />
+                      <Image source={{ uri: getSecureMediaUrl(chat.avatar) || undefined }} style={{ width: 28, height: 28 }} />
                     ) : (
-                      <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 9 }}>
-                        {msg.senderName ? getInitials(msg.senderName) : getInitials(chat.name)}
+                      <Text style={{ color: chat.isGroupChat || chat.organization ? '#ffffff' : PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 9 }}>
+                        {chat.isGroupChat && msg.senderName ? getInitials(msg.senderName) : chat.isGroupChat ? getGroupInitials(chat.name) : chat.organization ? getInitials(chat.organization) : getInitials(chat.name)}
                       </Text>
                     )}
                   </View>
@@ -745,12 +761,12 @@ export default function ChatScreen() {
           {/* Typing bubble */}
           {chat.status === 'typing' && (
             <View style={{ marginBottom: 10, flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-end' }}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, overflow: 'hidden', marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0, backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, overflow: 'hidden', marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0, backgroundColor: chat.isGroupChat || chat.organization ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center' }}>
                 {chat.avatar ? (
-                  <Image source={{ uri: chat.avatar }} style={{ width: 28, height: 28 }} />
+                  <Image source={{ uri: getSecureMediaUrl(chat.avatar) || undefined }} style={{ width: 28, height: 28 }} />
                 ) : (
-                  <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 9 }}>
-                    {getInitials(chat.name)}
+                  <Text style={{ color: chat.isGroupChat || chat.organization ? '#ffffff' : PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 9 }}>
+                    {chat.isGroupChat && typingUser?.name ? getInitials(typingUser.name) : chat.isGroupChat ? getGroupInitials(chat.name) : chat.organization ? getGroupInitials(chat.organization) : getInitials(chat.name)}
                   </Text>
                 )}
               </View>
@@ -759,7 +775,9 @@ export default function ChatScreen() {
                   {[0, 1, 2].map(i => (
                     <View key={i} style={{ width: 6, height: 6, borderRadius: 99, backgroundColor: INK_SOFT }} />
                   ))}
-                  <Text style={{ fontSize: 12, color: INK_SOFT, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>typing…</Text>
+                  <Text style={{ fontSize: 12, color: INK_SOFT, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>
+                    {typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…'}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -1334,11 +1352,11 @@ export default function ChatScreen() {
           <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
             {/* Profile Card */}
             <View style={{ alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
-              <View style={{ width: 76, height: 76, borderRadius: 22, overflow: 'hidden', backgroundColor: PURPLE_SOFT, alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <View style={{ width: 76, height: 76, borderRadius: 22, overflow: 'hidden', backgroundColor: chat.isGroupChat || chat.organization ? '#000000' : PURPLE_SOFT, alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
                 {chat.avatar ? (
-                  <Image source={{ uri: chat.avatar }} style={{ width: 76, height: 76 }} />
+                  <Image source={{ uri: getSecureMediaUrl(chat.avatar) || undefined }} style={{ width: 76, height: 76 }} />
                 ) : (
-                  <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 24 }}>{getInitials(chat.name)}</Text>
+                  <Text style={{ color: chat.isGroupChat || chat.organization ? '#ffffff' : PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 24 }}>{chat.isGroupChat ? getGroupInitials(chat.name) : chat.organization ? getGroupInitials(chat.organization) : getInitials(chat.name)}</Text>
                 )}
               </View>
               <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>{chat.name}</Text>
@@ -1350,10 +1368,84 @@ export default function ChatScreen() {
               </Text>
             </View>
 
-            {/* Info Cards */}
-            <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={chat.email} />
-            {!chat.isGroupChat && <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={chat.phone} />}
-            <InfoCard icon={<Briefcase size={19} color={PURPLE} />} label="Organization & Role" value={`${chat.organization} · ${chat.org_role}`} />
+            {/* Info Cards - Only displayed for 1-on-1 chats */}
+            {!chat.isGroupChat && (
+              <>
+                <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={chat.email} />
+                <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={chat.phone} />
+                <InfoCard icon={<Briefcase size={19} color={PURPLE} />} label="Organization & Role" value={`${chat.organization} · ${chat.org_role}`} />
+              </>
+            )}
+
+            {/* Dynamic Shared Resources / Storage center */}
+            <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+              {chat.isGroupChat ? 'Shared Resources' : 'Storage Center'}
+            </Text>
+
+            {(() => {
+              const mediaSummary = countMedia(messages);
+              const accordionSections = [
+                { key: 'photos', label: `Photos & Videos (${mediaSummary.images + mediaSummary.videos})`, icon: <ImageIcon size={16} color={PURPLE} />, items: [
+                  ...mediaSummary.imageUrls.map((url, idx) => ({ label: `Photo ${idx + 1}`, url })),
+                  ...mediaSummary.videoItems.map(item => ({ label: item.label, url: item.url }))
+                ] },
+                { key: 'voice', label: `Voice Notes & Audio (${mediaSummary.voice + mediaSummary.audio})`, icon: <Mic size={16} color={PURPLE} />, items: [
+                  ...mediaSummary.voiceItems.map(item => ({ label: item.label, url: item.url })),
+                  ...mediaSummary.audioItems.map(item => ({ label: item.label, url: item.url }))
+                ] },
+                { key: 'links', label: `Links (${mediaSummary.linkItems.length})`, icon: <Sparkles size={16} color={PURPLE} />, items: mediaSummary.linkItems },
+                { key: 'files', label: `Documents & Files (${mediaSummary.files})`, icon: <FileText size={16} color={PURPLE} />, items: mediaSummary.fileItems },
+              ];
+
+              return accordionSections.map((section) => {
+                const isOpen = openSection === section.key;
+                return (
+                  <View key={section.key} style={{ backgroundColor: 'rgba(108,92,231,0.03)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', marginBottom: 8, overflow: 'hidden' }}>
+                    <TouchableOpacity
+                      onPress={() => setOpenSection(isOpen ? null : section.key)}
+                      activeOpacity={0.7}
+                      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        {section.icon}
+                        <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>
+                          {section.label}
+                        </Text>
+                      </View>
+                      <ChevronLeft size={16} color={INK_SOFT} style={{ transform: [{ rotate: isOpen ? '-90deg' : '0deg' }] }} />
+                    </TouchableOpacity>
+
+                    {isOpen && (
+                      <View style={{ paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.04)', paddingTop: 10 }}>
+                        {section.items.length === 0 ? (
+                          <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, fontStyle: 'italic' }}>
+                            No shared items yet.
+                          </Text>
+                        ) : (
+                          section.items.map((item, idx) => (
+                            <TouchableOpacity
+                              key={idx}
+                              onPress={() => {
+                                import('react-native').then(({ Linking }) => {
+                                  const secureUrl = getSecureMediaUrl(item.url);
+                                  if (secureUrl) Linking.openURL(secureUrl).catch(() => {});
+                                });
+                              }}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}
+                            >
+                              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: PURPLE }} />
+                              <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: 'Poppins_500Medium', color: PURPLE, textDecorationLine: 'underline', flex: 1 }}>
+                                {item.label}
+                              </Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              });
+            })()}
 
             <TouchableOpacity
               onPress={() => setIsInfoOpen(false)}
@@ -1363,83 +1455,6 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
-      </Modal>
-
-      {/* ── Call Overlay Modal ── */}
-      <Modal visible={activeCall !== null} transparent animationType="slide">
-        <View style={{ flex: 1, backgroundColor: '#1f2030' }} className="items-center justify-between py-16 px-6">
-          {/* Header */}
-          <View className="items-center mt-8">
-            <Text className="text-white/60 text-xs font-bold font-sans uppercase tracking-widest mb-2">
-              BUBBLE {activeCall?.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
-            </Text>
-            <Text className="text-white text-2xl font-bold font-sans mt-2">
-              {activeCall?.user?.name || 'Unknown Colleague'}
-            </Text>
-            <Text className="text-[#6c5ce7] text-sm font-semibold font-sans mt-2">
-              {callDuration === 0 ? 'Ringing...' : `Connected • ${formatDuration(callDuration)}`}
-            </Text>
-          </View>
-
-          {/* Avatar / Video Preview area */}
-          <View className="items-center justify-center my-8">
-            {activeCall?.type === 'video' ? (
-              <View style={{ width: 220, height: 320, borderRadius: 28, backgroundColor: '#000', overflow: 'hidden' }} className="relative shadow-2xl">
-                {activeCall?.user?.avatar ? (
-                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: '100%', height: '100%', opacity: 0.8 }} />
-                ) : (
-                  <View className="flex-1 items-center justify-center bg-purple/20">
-                    <Text className="text-white text-5xl font-bold font-sans">
-                      {getInitials(activeCall?.user?.name || 'UC')}
-                    </Text>
-                  </View>
-                )}
-                {/* Small Self Video Preview overlay */}
-                <View style={{ position: 'absolute', bottom: 16, right: 16, width: 70, height: 100, borderRadius: 12, backgroundColor: '#2d3748', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' }}>
-                  <View className="flex-1 items-center justify-center bg-purple/40">
-                    <Text className="text-white/80 text-[10px] font-bold">You</Text>
-                  </View>
-                </View>
-              </View>
-            ) : (
-              <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(108,92,231,0.15)', borderWidth: 4, borderColor: '#6c5ce7' }} className="items-center justify-center shadow-lg">
-                {activeCall?.user?.avatar ? (
-                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: 132, height: 132, borderRadius: 66 }} />
-                ) : (
-                  <Text className="text-white text-4xl font-bold font-sans">
-                    {getInitials(activeCall?.user?.name || 'UC')}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Action buttons */}
-          <View className="w-full flex-row justify-around items-center px-4 mb-4">
-            <TouchableOpacity 
-              onPress={() => setIsCallMuted(!isCallMuted)}
-              style={{ backgroundColor: isCallMuted ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
-              className="w-14 h-14 rounded-full items-center justify-center"
-            >
-              <MicOff color={isCallMuted ? '#fff' : '#9a9aab'} size={22} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => setActiveCall(null)}
-              className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg shadow-red-500/30"
-            >
-              <PhoneOff color="#fff" size={24} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => setIsSpeakerOn(!isSpeakerOn)}
-              style={{ backgroundColor: isSpeakerOn ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
-              className="w-14 h-14 rounded-full items-center justify-center"
-            >
-              <Volume2 color={isSpeakerOn ? '#fff' : '#9a9aab'} size={22} />
-            </TouchableOpacity>
-          </View>
-        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -1523,4 +1538,78 @@ function ContextMenuItem({
       </Text>
     </TouchableOpacity>
   );
+}
+
+function countMedia(messages: any[]) {
+  let images = 0, videos = 0, audio = 0, files = 0, voice = 0;
+  const imageUrls: string[] = [];
+  const videoItems: any[] = [];
+  const audioItems: any[] = [];
+  const fileItems: any[] = [];
+  const voiceItems: any[] = [];
+  const linkItems: any[] = [];
+
+  for (const m of messages) {
+    const url = m.mediaUrl;
+    const t = m.message_type || '';
+
+    if (m.text) {
+      const match = m.text.match(/(https?:\/\/[^\s]+)/gi);
+      if (match) {
+        match.forEach((link: string) => {
+          linkItems.push({
+            label: link.replace(/^https?:\/\/(www\.)?/, '').split('/')[0],
+            url: link,
+          });
+        });
+      }
+    }
+
+    if (!url) continue;
+
+    if (t === 'image' || m.mimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url)) {
+      images++;
+      imageUrls.push(url);
+    } else if (t === 'video' || m.mimeType?.startsWith('video/') || /\.(mp4|webm|mov|mkv)(\?|$)/i.test(url)) {
+      videos++;
+      videoItems.push({
+        label: m.fileName || url.split('/').pop() || 'Video file',
+        url: url,
+      });
+    } else if (t === 'voice' || t === 'audio' || m.mimeType?.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|weba)(\?|$)/i.test(url)) {
+      if (t === 'voice') {
+        voice++;
+        voiceItems.push({
+          label: `Voice note (${m.duration || '0:14'})`,
+          url: url,
+        });
+      } else {
+        audio++;
+        audioItems.push({
+          label: m.fileName || url.split('/').pop() || 'Audio file',
+          url: url,
+        });
+      }
+    } else {
+      files++;
+      fileItems.push({
+        label: m.fileName || url.split('/').pop() || 'Attachment file',
+        url: url,
+      });
+    }
+  }
+
+  return {
+    images,
+    videos,
+    audio,
+    files,
+    voice,
+    imageUrls,
+    videoItems,
+    audioItems,
+    fileItems,
+    voiceItems,
+    linkItems,
+  };
 }

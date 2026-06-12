@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'https://bubble-backend-production-96a0.up.railway.app';
+const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+const SOCKET_URL = BASE_URL.replace(/\/api\/v1\/?$/, '');
 
 let socket: Socket | null = null;
 

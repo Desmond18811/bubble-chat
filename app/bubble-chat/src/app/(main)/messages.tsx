@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Text,
   View,
@@ -27,7 +27,9 @@ import {
   deleteChat,
   removeContact,
   blockUser,
+  getSecureMediaUrl,
 } from "../../lib/api";
+import { authStorage } from "../../lib/authStorage";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
 
 export default function Messages() {
@@ -195,21 +197,29 @@ export default function Messages() {
     }
   };
 
+  const currentUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     loadCache();
     syncWithBackend();
+    authStorage.getUser().then((user) => {
+      if (user) {
+        currentUserIdRef.current = String(user.id || user._id);
+      }
+    });
   }, []);
 
   // Real-time socket typing states
-  const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
+  const [typingChats, setTypingChats] = useState<Record<string, { fromUserId: string; fromUsername?: string; fromName?: string } | false>>({});
 
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
-    const handleTypingStart = (data: { chatId: string }) => {
+    const handleTypingStart = (data: { chatId: string; fromUserId: string; fromUsername?: string; fromName?: string }) => {
+      if (currentUserIdRef.current && String(data.fromUserId) === String(currentUserIdRef.current)) return;
       if (data.chatId) {
-        setTypingChats(prev => ({ ...prev, [data.chatId]: true }));
+        setTypingChats(prev => ({ ...prev, [data.chatId]: { fromUserId: data.fromUserId, fromUsername: data.fromUsername, fromName: data.fromName } }));
       }
     };
 
@@ -259,6 +269,10 @@ export default function Messages() {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
 
+    const isArchived = !!c.isMuted;
+    if (activeFilter === "Archive") return isArchived;
+    if (isArchived) return false; // Hide archived from other tabs
+
     // Check custom folder tab mappings
     const mappings = folderMappings[c.id] || [];
     if (activeFilter !== "All" && mappings.includes(activeFilter)) {
@@ -267,7 +281,6 @@ export default function Messages() {
 
     if (activeFilter === "Unread") return c.unreadCount > 0;
     if (activeFilter === "Work") return c.isGroupChat;
-    if (activeFilter === "Archive") return !!c.isMuted;
     if (activeFilter === "Friends") return !!c.isFriend;
 
     if (activeFilter !== "All") {
@@ -344,7 +357,7 @@ export default function Messages() {
                         getInitials={getInitials}
                         isSelectionMode={isSelectionMode}
                         isSelected={isSelected}
-                        isTyping={!!typingChats[chat.id]}
+                        isTyping={typingChats[chat.id]}
                         onPress={() => handlePressItem('chat', chat.id)}
                         onLongPress={() => handleLongPressItem('chat', chat.id, chat.name, chat.isPinned, !!chat.isMuted)}
                       />
@@ -379,7 +392,7 @@ export default function Messages() {
                         getInitials={getInitials}
                         isSelectionMode={isSelectionMode}
                         isSelected={isSelected}
-                        isTyping={isTyping}
+                        isTyping={typingChats[matchingChat?.id || '']}
                         onPress={() => handlePressItem('contact', contact.id)}
                         onLongPress={() => handleLongPressItem('contact', contact.id, contact.name, false, false)}
                       />
@@ -913,6 +926,16 @@ export default function Messages() {
 
 // ── Sub-components ──────────────────────────────────────────────────────────
 
+function getGroupInitials(name: string) {
+  if (!name) return 'UC';
+  const clean = name.trim().replace(/\s+/g, ' ');
+  const parts = clean.split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
+
 function ChatRow({
   chat,
   getInitials,
@@ -926,18 +949,10 @@ function ChatRow({
   getInitials: (n: string) => string;
   isSelectionMode: boolean;
   isSelected: boolean;
-  isTyping: boolean;
+  isTyping: { fromUserId: string; fromUsername?: string; fromName?: string } | false | undefined;
   onPress: () => void;
   onLongPress: () => void;
 }) {
-  const getGroupInitials = (name: string) => {
-    const clean = name.trim().replace(/\s+/g, ' ');
-    const parts = clean.split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return clean.slice(0, 2).toUpperCase();
-  };
 
   return (
     <TouchableOpacity
@@ -966,11 +981,11 @@ function ChatRow({
       {/* Avatar */}
       <View style={{ position: "relative", flexShrink: 0 }}>
         {chat.avatar ? (
-          <Image source={{ uri: chat.avatar }} style={{ width: 52, height: 52, borderRadius: 14 }} />
+          <Image source={{ uri: getSecureMediaUrl(chat.avatar) || undefined }} style={{ width: 52, height: 52, borderRadius: 14 }} />
         ) : (
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: chat.isGroupChat ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: chat.isGroupChat ? "#ffffff" : "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
-              {chat.isGroupChat ? getGroupInitials(chat.name) : getInitials(chat.name)}
+          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: chat.isGroupChat || (chat as any).organization ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: chat.isGroupChat || (chat as any).organization ? "#ffffff" : "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
+              {chat.isGroupChat ? getGroupInitials(chat.name) : (chat as any).organization ? getGroupInitials((chat as any).organization) : getInitials(chat.name)}
             </Text>
           </View>
         )}
@@ -996,7 +1011,7 @@ function ChatRow({
         <View style={{ marginTop: 3, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           {isTyping ? (
             <Text style={{ fontSize: 13, color: "#6c5ce7", fontFamily: "Poppins_600SemiBold" }}>
-              typing…
+              {isTyping.fromUsername ? `@${isTyping.fromUsername} is typing...` : isTyping.fromName ? `${isTyping.fromName} is typing...` : 'typing...'}
             </Text>
           ) : (
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0, paddingRight: 8 }}>
@@ -1042,7 +1057,7 @@ function ContactRow({
   getInitials: (n: string) => string;
   isSelectionMode: boolean;
   isSelected: boolean;
-  isTyping?: boolean;
+  isTyping?: { fromUserId: string; fromUsername?: string; fromName?: string } | false | undefined;
   onPress: () => void;
   onLongPress: () => void;
 }) {
@@ -1072,11 +1087,11 @@ function ContactRow({
 
       <View style={{ position: "relative", flexShrink: 0 }}>
         {contact.avatar ? (
-          <Image source={{ uri: contact.avatar }} style={{ width: 52, height: 52, borderRadius: 14, opacity: 0.88 }} />
+          <Image source={{ uri: getSecureMediaUrl(contact.avatar) || undefined }} style={{ width: 52, height: 52, borderRadius: 14, opacity: 0.88 }} />
         ) : (
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
-              {getInitials(contact.name)}
+          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: contact.organization ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: contact.organization ? "#ffffff" : "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
+              {contact.organization ? getGroupInitials(contact.organization) : getInitials(contact.name)}
             </Text>
           </View>
         )}
@@ -1091,7 +1106,7 @@ function ContactRow({
         </Text>
         {isTyping ? (
           <Text style={{ fontSize: 12, fontFamily: "Poppins_600SemiBold", color: "#6c5ce7", marginTop: 2 }}>
-            typing…
+            {isTyping.fromUsername ? `@${isTyping.fromUsername} is typing...` : isTyping.fromName ? `${isTyping.fromName} is typing...` : 'typing...'}
           </Text>
         ) : (
           <Text style={{ fontSize: 12, fontFamily: "Poppins_400Regular", color: "rgba(31,32,48,0.3)", fontStyle: "italic", marginTop: 2 }}>

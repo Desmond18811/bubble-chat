@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -22,6 +23,7 @@ import {
   PhoneOff,
   MicOff,
   Volume2,
+  Scan,
 } from 'lucide-react-native';
 import { Link, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
@@ -31,10 +33,12 @@ import {
   subscribeToPlusButton,
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
-import { addContact, createGroupChat, searchUsers } from '../../lib/api';
+import { addContact, createGroupChat, searchUsers, getSecureMediaUrl } from '../../lib/api';
+import { startOutgoingCall } from '../../lib/callManager';
+import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
-import { Alert } from 'react-native';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 // ─────────────────────────────────────────────
 // Helper
@@ -66,30 +70,33 @@ function Avatar({
   size = 52,
   isOnline,
   isGroup = false,
+  organization,
 }: {
   name: string;
   avatar?: string | null;
   size?: number;
   isOnline?: boolean;
   isGroup?: boolean;
+  organization?: string;
 }) {
+  const isFallbackBlack = isGroup || !!organization;
   return (
     <View style={{ width: size, height: size }} className="relative shrink-0">
       {avatar ? (
         <Image
-          source={{ uri: avatar }}
+          source={{ uri: getSecureMediaUrl(avatar) || undefined }}
           style={{ width: size, height: size, borderRadius: size * 0.38 }}
         />
       ) : (
         <View
-          style={{ width: size, height: size, borderRadius: size * 0.38, backgroundColor: isGroup ? '#000000' : 'rgba(108,92,231,0.1)' }}
+          style={{ width: size, height: size, borderRadius: size * 0.38, backgroundColor: isFallbackBlack ? '#000000' : 'rgba(108,92,231,0.1)' }}
           className="items-center justify-center"
         >
           <Text
-            style={{ fontSize: size * 0.33, color: isGroup ? '#ffffff' : '#6c5ce7' }}
+            style={{ fontSize: size * 0.33, color: isFallbackBlack ? '#ffffff' : '#6c5ce7' }}
             className="font-bold font-sans"
           >
-            {isGroup ? getGroupInitials(name) : getInitials(name)}
+            {isGroup ? getGroupInitials(name) : organization ? getInitials(organization) : getInitials(name)}
           </Text>
         </View>
       )}
@@ -119,7 +126,44 @@ function ContactsTab({
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [chats, setChats] = useState<any[]>([]);
-  const [typingChats, setTypingChats] = useState<Record<string, boolean>>({});
+  const [typingChats, setTypingChats] = useState<Record<string, { fromUserId: string; fromUsername?: string; fromName?: string } | false>>({});
+
+  // QR scanner states
+  const [permission, requestPermission] = useCameraPermissions();
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const [scanFallbackInput, setScanFallbackInput] = useState('');
+
+  const currentUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    authStorage.getUser().then((user) => {
+      if (user) {
+        currentUserIdRef.current = String(user.id || user._id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isScannerOpen && !permission?.granted) {
+      requestPermission();
+    }
+  }, [isScannerOpen]);
+
+  const handleBarcodeScanned = async ({ data }: { data: string }) => {
+    if (scanned) return;
+    setScanned(true);
+    try {
+      await addContact(data);
+      Alert.alert("Success", `Contact "${data}" added successfully!`);
+      setIsScannerOpen(false);
+      await syncContacts();
+    } catch (err: any) {
+      Alert.alert("Scan Failed", err.message || "Failed to add contact from QR code.");
+    } finally {
+      setScanned(false);
+    }
+  };
 
   const loadCache = async () => {
     const cached = await chatCache.getCachedContacts();
@@ -153,8 +197,9 @@ function ContactsTab({
     const socket = getSocket();
     if (!socket) return;
 
-    const handleTypingStart = (data: { chatId: string }) => {
-      if (data.chatId) setTypingChats(prev => ({ ...prev, [data.chatId]: true }));
+    const handleTypingStart = (data: { chatId: string, fromUserId: string, fromUsername?: string, fromName?: string }) => {
+      if (currentUserIdRef.current && String(data.fromUserId) === String(currentUserIdRef.current)) return;
+      if (data.chatId) setTypingChats(prev => ({ ...prev, [data.chatId]: { fromUserId: data.fromUserId, fromUsername: data.fromUsername, fromName: data.fromName } }));
     };
     const handleTypingStop = (data: { chatId: string }) => {
       if (data.chatId) setTypingChats(prev => ({ ...prev, [data.chatId]: false }));
@@ -206,6 +251,12 @@ function ContactsTab({
           )}
         </View>
         <TouchableOpacity
+          onPress={() => setIsScannerOpen(true)}
+          style={{ width: 40, height: 40, backgroundColor: 'rgba(108,92,231,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Scan color="#6c5ce7" size={18} />
+        </TouchableOpacity>
+        <TouchableOpacity
           onPress={() => setShowAddModal(true)}
           className="flex-row items-center bg-purple rounded-2xl px-4 py-2.5 shadow-xs"
         >
@@ -213,6 +264,79 @@ function ContactsTab({
           <Text className="text-white text-xs font-bold font-sans ml-1.5">Add</Text>
         </TouchableOpacity>
       </View>
+
+      {/* QR Code Scanner Modal */}
+      <Modal visible={isScannerOpen} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.85)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: '90%', maxWidth: 360, backgroundColor: '#ffffff', borderRadius: 28, padding: 24, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }}>Scan QR Code</Text>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: '#9a9aab', marginTop: 2 }}>Scan coworker's profile QR code</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                <X color="#1f2030" size={16} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Camera Frame */}
+            <View style={{ width: '100%', height: 260, borderRadius: 20, overflow: 'hidden', backgroundColor: '#f1f2f6', position: 'relative', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+              {permission?.granted ? (
+                <CameraView
+                  style={{ width: '100%', height: '100%' }}
+                  facing="back"
+                  onBarcodeScanned={handleBarcodeScanned}
+                />
+              ) : (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: '#9a9aab', textAlign: 'center', marginBottom: 10 }}>
+                    Camera permission required to scan QR codes.
+                  </Text>
+                  <TouchableOpacity onPress={() => requestPermission()} style={{ backgroundColor: '#6c5ce7', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}>
+                    <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Grant Permission</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* Sandbox Fallback for simulator */}
+            <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 16 }}>
+              <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', color: '#9a9aab', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                Simulator Fallback (Enter Bubble ID)
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput
+                  value={scanFallbackInput}
+                  onChangeText={setScanFallbackInput}
+                  placeholder="e.g. bubble-X89F2"
+                  placeholderTextColor="#9a9aab"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={{ flex: 1, backgroundColor: 'rgba(108,92,231,0.05)', borderWidth: 1, borderColor: 'rgba(108,92,231,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#1f2030' }}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    const tag = scanFallbackInput.trim();
+                    if (!tag) return;
+                    try {
+                      await addContact(tag);
+                      Alert.alert("Success", `Contact added successfully!`);
+                      setIsScannerOpen(false);
+                      setScanFallbackInput('');
+                      await syncContacts();
+                    } catch (err: any) {
+                      Alert.alert("Error", err.message || "Failed to add contact.");
+                    }
+                  }}
+                  style={{ backgroundColor: '#6c5ce7', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}
+                >
+                  <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* Section header */}
@@ -253,7 +377,7 @@ function ContactsTab({
         ) : (
           filtered.map((contact) => {
             const matchingChat = chats.find(c => String(c.otherUserId) === String(contact.id) || String(c.id) === String(contact.id));
-            const isTyping = matchingChat && !!typingChats[matchingChat.id];
+            const typingInfo = matchingChat && typingChats[matchingChat.id];
 
             return (
               <View
@@ -265,16 +389,16 @@ function ContactsTab({
                     activeOpacity={0.75}
                     className="flex-1 flex-row items-center"
                   >
-                    <Avatar name={contact.name} avatar={contact.avatar} size={50} isOnline={contact.isOnline} />
+                    <Avatar name={contact.name} avatar={contact.avatar} size={50} isOnline={contact.isOnline} organization={contact.organization} />
 
                     {/* Info */}
                     <View className="flex-1 min-w-0 ml-3">
                       <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
                         {contact.name}
                       </Text>
-                      {isTyping ? (
+                      {typingInfo ? (
                         <Text className="text-[11px] font-semibold text-purple mt-0.5 font-sans">
-                          typing…
+                          {typingInfo.fromUsername ? `@${typingInfo.fromUsername} is typing...` : typingInfo.fromName ? `${typingInfo.fromName} is typing...` : 'typing...'}
                         </Text>
                       ) : (
                         <Text className="text-[11px] text-ink-soft mt-0.5 font-sans" numberOfLines={1}>
@@ -500,7 +624,7 @@ function WorkroomTab({
                     activeOpacity={0.75}
                     className="flex-1 flex-row items-center"
                   >
-                    <Avatar name={member.name} avatar={member.avatar} size={50} isOnline={member.isOnline} />
+                    <Avatar name={member.name} avatar={member.avatar} size={50} isOnline={member.isOnline} organization={member.organization} />
                     <View className="flex-1 min-w-0 ml-3">
                       <View className="flex-row items-center gap-1.5 flex-wrap">
                         <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
@@ -563,33 +687,8 @@ export default function PeopleScreen() {
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
 
-  // Call state
-  const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
-  const [callDuration, setCallDuration] = useState(0);
-  const [isCallMuted, setIsCallMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
-
-  useEffect(() => {
-    let timer: any;
-    if (activeCall) {
-      setCallDuration(0);
-      timer = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [activeCall]);
-
   const handleStartCall = (user: any, type: 'voice' | 'video') => {
-    setActiveCall({ user, type });
-  };
-
-  const formatDuration = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const secs = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    startOutgoingCall(user, type);
   };
 
   const navigation = useNavigation();
@@ -788,83 +887,6 @@ export default function PeopleScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
-      </Modal>
-
-      {/* ── Call Overlay Modal ── */}
-      <Modal visible={activeCall !== null} transparent animationType="slide">
-        <View style={{ flex: 1, backgroundColor: '#1f2030' }} className="items-center justify-between py-16 px-6">
-          {/* Header */}
-          <View className="items-center mt-8">
-            <Text className="text-white/60 text-xs font-bold font-sans uppercase tracking-widest mb-2">
-              BUBBLE {activeCall?.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
-            </Text>
-            <Text className="text-white text-2xl font-bold font-sans mt-2">
-              {activeCall?.user?.name || activeCall?.user?.full_name || 'Unknown Colleague'}
-            </Text>
-            <Text className="text-[#6c5ce7] text-sm font-semibold font-sans mt-2">
-              {callDuration === 0 ? 'Ringing...' : `Connected • ${formatDuration(callDuration)}`}
-            </Text>
-          </View>
-
-          {/* Avatar / Video Preview area */}
-          <View className="items-center justify-center my-8">
-            {activeCall?.type === 'video' ? (
-              <View style={{ width: 220, height: 320, borderRadius: 28, backgroundColor: '#000', overflow: 'hidden' }} className="relative shadow-2xl">
-                {activeCall?.user?.avatar ? (
-                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: '100%', height: '100%', opacity: 0.8 }} />
-                ) : (
-                  <View className="flex-1 items-center justify-center bg-purple/20">
-                    <Text className="text-white text-5xl font-bold font-sans">
-                      {getInitials(activeCall?.user?.name || activeCall?.user?.full_name || 'UC')}
-                    </Text>
-                  </View>
-                )}
-                {/* Small Self Video Preview overlay */}
-                <View style={{ position: 'absolute', bottom: 16, right: 16, width: 70, height: 100, borderRadius: 12, backgroundColor: '#2d3748', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' }}>
-                  <View className="flex-1 items-center justify-center bg-purple/40">
-                    <Text className="text-white/80 text-[10px] font-bold">You</Text>
-                  </View>
-                </View>
-              </View>
-            ) : (
-              <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(108,92,231,0.15)', borderWidth: 4, borderColor: '#6c5ce7' }} className="items-center justify-center shadow-lg">
-                {activeCall?.user?.avatar ? (
-                  <Image source={{ uri: activeCall.user.avatar }} style={{ width: 132, height: 132, borderRadius: 66 }} />
-                ) : (
-                  <Text className="text-white text-4xl font-bold font-sans">
-                    {getInitials(activeCall?.user?.name || activeCall?.user?.full_name || 'UC')}
-                  </Text>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Action buttons */}
-          <View className="w-full flex-row justify-around items-center px-4 mb-4">
-            <TouchableOpacity 
-              onPress={() => setIsCallMuted(!isCallMuted)}
-              style={{ backgroundColor: isCallMuted ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
-              className="w-14 h-14 rounded-full items-center justify-center"
-            >
-              <MicOff color={isCallMuted ? '#fff' : '#9a9aab'} size={22} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => setActiveCall(null)}
-              className="w-16 h-16 rounded-full bg-red-500 items-center justify-center shadow-lg shadow-red-500/30"
-            >
-              <PhoneOff color="#fff" size={24} />
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              onPress={() => setIsSpeakerOn(!isSpeakerOn)}
-              style={{ backgroundColor: isSpeakerOn ? '#6c5ce7' : 'rgba(255,255,255,0.08)' }} 
-              className="w-14 h-14 rounded-full items-center justify-center"
-            >
-              <Volume2 color={isSpeakerOn ? '#fff' : '#9a9aab'} size={22} />
-            </TouchableOpacity>
-          </View>
-        </View>
       </Modal>
     </SafeAreaView>
   );

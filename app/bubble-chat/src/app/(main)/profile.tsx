@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Image, Clipboard } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Clipboard } from 'react-native';
+import { Image } from 'expo-image';
 import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -7,7 +8,7 @@ import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { authStorage } from '../../lib/authStorage';
 
-import { getMyProfile, updateProfile } from '../../lib/api';
+import { getMyProfile, updateProfile, getSecureMediaUrl } from '../../lib/api';
 
 const AVATARS = [
   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop",
@@ -19,6 +20,21 @@ const AVATARS = [
 ];
 
 const PURPLE = '#6c5ce7';
+
+function getInitials(name: string) {
+  if (!name) return 'UC';
+  return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function getGroupInitials(name: string) {
+  if (!name) return 'UC';
+  const clean = name.trim().replace(/\s+/g, ' ');
+  const parts = clean.split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return clean.slice(0, 2).toUpperCase();
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -245,7 +261,7 @@ export default function ProfileScreen() {
                 width: 96,
                 height: 96,
                 borderRadius: 28,
-                backgroundColor: 'rgba(108,92,231,0.1)',
+                backgroundColor: user.avatar ? 'rgba(108,92,231,0.1)' : '#000000',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 16,
@@ -260,9 +276,11 @@ export default function ProfileScreen() {
               }}
             >
               {user.avatar ? (
-                <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%' }} />
+                <Image source={{ uri: getSecureMediaUrl(user.avatar) || undefined }} style={{ width: '100%', height: '100%' }} />
               ) : (
-                <User color="#6c5ce7" size={40} />
+                <Text style={{ fontSize: 32, fontFamily: 'SpaceGrotesk_700Bold', color: '#ffffff' }}>
+                  {user.organization ? getGroupInitials(user.organization) : getInitials(user.full_name)}
+                </Text>
               )}
             </TouchableOpacity>
             <Text className="text-[22px] font-bold text-ink leading-tight font-sans">{user.full_name}</Text>

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchAllUserChats, fetchMessages, getMyContacts } from './api';
+import { fetchAllUserChats, fetchMessages, getMyContacts, getSecureMediaUrl } from './api';
 import { authStorage } from './authStorage';
 
 // Storage Keys
@@ -147,7 +147,7 @@ export const chatCache = {
       return {
         id: String(c.id || c._id),
         name: isGroup ? (c.chatName || "Group Chat") : (otherUser?.full_name || otherUser?.username || "Unknown User"),
-        avatar: isGroup ? c.groupIcon : otherUser?.avatar,
+        avatar: isGroup ? getSecureMediaUrl(c.groupIcon) : getSecureMediaUrl(otherUser?.avatar),
         isGroupChat: isGroup,
         otherUserId: otherUser ? String(otherUser.id || otherUser._id) : null,
         latestMessage: latestText,
@@ -206,6 +206,10 @@ export const chatCache = {
         reactions: Array.isArray(m.reactions) ? m.reactions.map((r: any) => r.emoji) : [],
         isPinned: !!m.is_pinned,
         isRead: !!m.isRead,
+        mediaUrl: m.mediaUrl,
+        message_type: m.message_type,
+        fileName: m.fileName,
+        mimeType: m.mimeType,
       };
     });
 
@@ -231,7 +235,7 @@ export const chatCache = {
     const mapped = list.map((u: any) => ({
       id: String(u.id || u._id),
       name: u.full_name || u.username || "Unknown",
-      avatar: u.avatar,
+      avatar: getSecureMediaUrl(u.avatar),
       isOnline: !!u.isOnline,
       username: u.username || "",
       bio: u.bio || "",
