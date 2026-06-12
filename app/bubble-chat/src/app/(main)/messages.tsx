@@ -163,8 +163,13 @@ export default function Messages() {
                   <View style={{ flex: 1, height: 1, backgroundColor: "rgba(0,0,0,0.05)", marginLeft: 10 }} />
                 </View>
 
-                {filteredChats.map((chat) => (
-                  <ChatRow key={chat.id} chat={chat} getInitials={getInitials} />
+                {filteredChats.map((chat, index) => (
+                  <React.Fragment key={chat.id}>
+                    <ChatRow chat={chat} getInitials={getInitials} />
+                    {index < filteredChats.length - 1 && (
+                      <View style={{ height: 1, backgroundColor: "rgba(0,0,0,0.04)", marginHorizontal: 12, marginVertical: 3 }} />
+                    )}
+                  </React.Fragment>
                 ))}
               </View>
             )}
@@ -179,8 +184,13 @@ export default function Messages() {
                   <View style={{ flex: 1, height: 1, backgroundColor: "rgba(0,0,0,0.05)", marginLeft: 10 }} />
                 </View>
 
-                {filteredContacts.map((contact) => (
-                  <ContactRow key={contact.id} contact={contact} getInitials={getInitials} />
+                {filteredContacts.map((contact, index) => (
+                  <React.Fragment key={contact.id}>
+                    <ContactRow contact={contact} getInitials={getInitials} />
+                    {index < filteredContacts.length - 1 && (
+                      <View style={{ height: 1, backgroundColor: "rgba(0,0,0,0.04)", marginHorizontal: 12, marginVertical: 3 }} />
+                    )}
+                  </React.Fragment>
                 ))}
               </View>
             )}

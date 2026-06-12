@@ -1645,8 +1645,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/_layout.tsx": {
-    "mtime": 1781222877.6967509,
-    "ast_hash": "f59f9f741f8987fa1fdc330e6ae56296",
+    "mtime": 1781223462.4324493,
+    "ast_hash": "53f14c13bdbe3f93015668e5711727ba",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/calls.tsx": {
@@ -1655,8 +1655,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/messages.tsx": {
-    "mtime": 1781223050.1665652,
-    "ast_hash": "dae72640bb76539404e7c2e9782917c6",
+    "mtime": 1781224017.6129377,
+    "ast_hash": "8a06bae7f20406c6ca2a73e02573b4a2",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/profile.tsx": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1781222917.1443055,
-    "ast_hash": "39ff8d2b9fd4ce566b8694e96079f919",
+    "mtime": 1781224006.5029342,
+    "ast_hash": "f5dff1f6f433ab299f2a99383684cb82",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/mockData.ts": {
-    "mtime": 1781222927.568009,
-    "ast_hash": "daa7040633ef6efa1c1ac9850affdb3e",
+    "mtime": 1781223325.6728175,
+    "ast_hash": "82ee077a017ef1f28cfbdfc0c075d5f9",
     "semantic_hash": ""
   },
   "app/bubble-chat/assets/icon.png": {

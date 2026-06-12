@@ -7,6 +7,8 @@ export interface Message {
   senderName?: string;
   time: string;
   timestamp: Date;
+  reactions?: string[];
+  isPinned?: boolean;
 }
 
 export interface Chat {

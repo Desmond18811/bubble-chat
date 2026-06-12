@@ -15,7 +15,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     <View style={styles.tabBarWrapper}>
       {/* Full-width native blur panel behind the tabs */}
       <BlurView intensity={75} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(248, 247, 255, 0.78)" }} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(248, 247, 255, 0.78)" }]} />
 
       {/* Row containing capsule tabs and FAB */}
       <View style={styles.container}>
