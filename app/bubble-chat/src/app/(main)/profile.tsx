@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Image } from 'react-native';
 import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -9,9 +9,21 @@ import { authStorage } from '../../lib/authStorage';
 
 import { getMyProfile, updateProfile } from '../../lib/api';
 
+const AVATARS = [
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop",
+];
+
+const PURPLE = '#6c5ce7';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [user, setUser] = useState({
     full_name: 'John Doe',
     username: 'johndoe123',
@@ -21,7 +33,8 @@ export default function ProfileScreen() {
     email: 'john.doe@example.com',
     phone_number: '+1 234 567 8900',
     chatsCount: 0,
-    filesCount: 0
+    filesCount: 0,
+    avatar: ''
   });
 
   const navigation = useNavigation();
@@ -130,6 +143,48 @@ export default function ProfileScreen() {
     }
   };
 
+  const handlePressAvatar = () => {
+    Alert.alert(
+      "Profile Image",
+      "Would you like to change or remove your profile image?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove Image", style: "destructive", onPress: handleRemoveAvatar },
+        { text: "Change Image", onPress: () => setIsAvatarModalOpen(true) },
+      ]
+    );
+  };
+
+  const handleRemoveAvatar = async () => {
+    try {
+      const res = await updateProfile({ avatar: "" });
+      if (res?.data) {
+        await authStorage.updateUser(res.data);
+        setUser(prev => ({ ...prev, avatar: "" }));
+      } else {
+        setUser(prev => ({ ...prev, avatar: "" }));
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to remove profile image.");
+    }
+  };
+
+  const handleSelectAvatar = async (url: string) => {
+    try {
+      const res = await updateProfile({ avatar: url });
+      if (res?.data) {
+        const u = res.data;
+        await authStorage.updateUser(u);
+        setUser(prev => ({ ...prev, avatar: u.avatar }));
+      } else {
+        setUser(prev => ({ ...prev, avatar: url }));
+      }
+      setIsAvatarModalOpen(false);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update profile image.");
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert(
       'Log Out',
@@ -174,13 +229,37 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
         <View className="w-full bg-purple-soft/5">
           {/* Hero Card */}
           <View className="bg-purple-soft/20 items-center w-full p-6 border-b border-black/5">
-            <View className="w-24 h-24 rounded-3xl bg-purple/10 items-center justify-center mb-4 shadow-sm border border-purple/5">
-              <User color="#6c5ce7" size={40} />
-            </View>
+            <TouchableOpacity
+              onPress={handlePressAvatar}
+              activeOpacity={0.8}
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 28,
+                backgroundColor: 'rgba(108,92,231,0.1)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+                shadowColor: '#6c5ce7',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 3,
+                overflow: 'hidden',
+                borderWidth: 1.5,
+                borderColor: 'rgba(108,92,231,0.2)',
+              }}
+            >
+              {user.avatar ? (
+                <Image source={{ uri: user.avatar }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <User color="#6c5ce7" size={40} />
+              )}
+            </TouchableOpacity>
             <Text className="text-[22px] font-bold text-ink leading-tight font-sans">{user.full_name}</Text>
             <Text className="text-[14px] font-bold text-purple mt-1.5 font-sans">@{user.username}</Text>
             <Text className="text-[14px] font-semibold text-ink-soft mt-1.5 font-sans">{user.org_role}</Text>
@@ -331,6 +410,57 @@ export default function ProfileScreen() {
             </View>
           </ScrollView>
         </SafeAreaView>
+      </Modal>
+
+      {/* Choose Avatar Modal */}
+      <Modal visible={isAvatarModalOpen} transparent animationType="slide">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsAvatarModalOpen(false)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(31,32,48,0.4)',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={{
+              backgroundColor: '#ffffff',
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              padding: 24,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }}>
+                Select Profile Image
+              </Text>
+              <TouchableOpacity onPress={() => setIsAvatarModalOpen(false)} style={{ padding: 4 }}>
+                <X color={PURPLE} size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 10 }}>
+              {AVATARS.map((url) => (
+                <TouchableOpacity
+                  key={url}
+                  onPress={() => handleSelectAvatar(url)}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    borderWidth: user.avatar === url ? 3 : 0,
+                    borderColor: PURPLE,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );

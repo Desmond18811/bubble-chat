@@ -395,6 +395,23 @@ export default function Messages() {
         </View>
       </View>
 
+      {/* ── Tap Outside FAB Menu Dismiss Overlay ── */}
+      {isFabMenuOpen && (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsFabMenuOpen(false)}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99,
+            backgroundColor: 'transparent',
+          }}
+        />
+      )}
+
       {/* ── FAB Side Popover Menu ── */}
       {isFabMenuOpen && (
         <View style={styles.fabMenu}>
