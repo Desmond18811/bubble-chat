@@ -7,6 +7,7 @@ import { searchUsers, fetchTasks, createTaskFull, getSecureMediaUrl } from '../.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startOutgoingCall } from '../../lib/callManager';
 import { Image } from 'expo-image';
+import { Avatar } from '../../components/Avatar';
 
 // Calendar cells generator
 const getCalendarCells = (currentDate: Date) => {
@@ -339,15 +340,14 @@ export default function CallsScreen() {
                   return (
                     <View key={worker.id} style={{ width: '48%' }} className="bg-white border border-black/5 rounded-[32px] p-5 mb-4 items-center shadow-sm relative overflow-hidden">
                       <View className="relative">
-                        {worker.avatar ? (
-                          <Image source={{ uri: getSecureMediaUrl(worker.avatar) || undefined }} style={{ width: 80, height: 80, borderRadius: 24 }} />
-                        ) : (
-                          <View className="w-20 h-20 rounded-[24px] items-center justify-center shadow-md" style={{ backgroundColor: worker.organization ? '#000000' : 'rgba(108,92,231,0.2)' }}>
-                            <Text className="text-xl font-bold font-sans" style={{ color: worker.organization ? '#ffffff' : '#6c5ce7' }}>
-                              {worker.organization ? getGroupInitials(worker.organization) : getInitials(displayName)}
-                            </Text>
-                          </View>
-                        )}
+                        <Avatar
+                          url={worker.avatar}
+                          name={worker.organization || displayName}
+                          size={80}
+                          isGroup={!!worker.organization}
+                          style={{ borderRadius: 24 }}
+                          imageStyle={{ borderRadius: 24 }}
+                        />
                         {worker.isOnline && (
                           <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />
                         )}

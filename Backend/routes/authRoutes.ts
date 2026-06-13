@@ -370,7 +370,10 @@ router.get('/me', jwtAuth, getMe);
  *       302:
  *         description: Redirects user to Google OAuth consent screen.
  */
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', (req, res, next) => {
+  const state = req.query.state ? String(req.query.state) : 'web';
+  passport.authenticate('google', { scope: ['profile', 'email'], state })(req, res, next);
+});
 
 /**
  * @swagger

@@ -13,6 +13,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Link, useNavigation, useRouter } from "expo-router";
 import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus, UserPlus, FolderPlus, X, Trash2, Archive, Ban } from "lucide-react-native";
 import { Image } from "expo-image";
+import { Avatar } from "../../components/Avatar";
 import { 
   Chat, 
   Contact,
@@ -229,12 +230,25 @@ export default function Messages() {
       }
     };
 
+    const handleConnect = () => {
+      console.log("Socket connected/reconnected in Messages screen. Flushing offline queue and syncing...");
+      chatCache.processOfflineQueue().then(() => {
+        syncWithBackend();
+      });
+    };
+
     socket.on('typing_start', handleTypingStart);
     socket.on('typing_stop', handleTypingStop);
+    socket.on('connect', handleConnect);
+
+    if (socket.connected) {
+      handleConnect();
+    }
 
     return () => {
       socket.off('typing_start', handleTypingStart);
       socket.off('typing_stop', handleTypingStop);
+      socket.off('connect', handleConnect);
     };
   }, []);
 
@@ -980,15 +994,14 @@ function ChatRow({
 
       {/* Avatar */}
       <View style={{ position: "relative", flexShrink: 0 }}>
-        {chat.avatar ? (
-          <Image source={{ uri: getSecureMediaUrl(chat.avatar) || undefined }} style={{ width: 52, height: 52, borderRadius: 14 }} />
-        ) : (
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: chat.isGroupChat || (chat as any).organization ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: chat.isGroupChat || (chat as any).organization ? "#ffffff" : "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
-              {chat.isGroupChat ? getGroupInitials(chat.name) : (chat as any).organization ? getGroupInitials((chat as any).organization) : getInitials(chat.name)}
-            </Text>
-          </View>
-        )}
+        <Avatar
+          url={chat.avatar}
+          name={chat.name}
+          size={52}
+          isGroup={chat.isGroupChat || !!(chat as any).organization}
+          style={{ borderRadius: 14 }}
+          imageStyle={{ borderRadius: 14 }}
+        />
         {chat.isOnline && !chat.isGroupChat && (
           <View style={{ position: "absolute", bottom: -1, right: -1, width: 13, height: 13, borderRadius: 99, backgroundColor: "#22c55e", borderWidth: 2, borderColor: "#f8f7ff" }} />
         )}
@@ -1086,15 +1099,14 @@ function ContactRow({
       )}
 
       <View style={{ position: "relative", flexShrink: 0 }}>
-        {contact.avatar ? (
-          <Image source={{ uri: getSecureMediaUrl(contact.avatar) || undefined }} style={{ width: 52, height: 52, borderRadius: 14, opacity: 0.88 }} />
-        ) : (
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: contact.organization ? "#000000" : "rgba(108,92,231,0.12)", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: contact.organization ? "#ffffff" : "#6c5ce7", fontFamily: "Poppins_700Bold", fontSize: 17 }}>
-              {contact.organization ? getGroupInitials(contact.organization) : getInitials(contact.name)}
-            </Text>
-          </View>
-        )}
+        <Avatar
+          url={contact.avatar}
+          name={contact.organization || contact.name}
+          size={52}
+          isGroup={!!contact.organization}
+          style={{ borderRadius: 14 }}
+          imageStyle={{ borderRadius: 14 }}
+        />
         {contact.isOnline && (
           <View style={{ position: "absolute", bottom: -1, right: -1, width: 13, height: 13, borderRadius: 99, backgroundColor: "#22c55e", borderWidth: 2, borderColor: "#f8f7ff" }} />
         )}

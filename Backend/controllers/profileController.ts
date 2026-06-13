@@ -4,6 +4,7 @@ import { UserImage } from '../models/userImage';
 import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
 import { Conversation } from '../models/conversations';
 import { WorkspaceFile } from '../models/workspaceFile';
+import { Backup } from '../models/backup';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -571,5 +572,61 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     });
   } catch (err: any) {
     res.status(500).json({ message: 'Profile setup failed: ' + err.message });
+  }
+};
+
+// ─── CLOUD BACKUP & RESTORE ───────────────────────────────────────────────────
+export const saveBackup = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  const { backupData } = req.body;
+  if (!backupData) {
+    res.status(400).json({ message: 'Backup data is required.' });
+    return;
+  }
+
+  try {
+    const backup = await Backup.findOneAndUpdate(
+      { userId: req.user._id },
+      { backupData, userId: req.user._id },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({
+      message: 'Backup saved successfully.',
+      data: {
+        updatedAt: backup.updatedAt,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to save backup: ' + err.message });
+  }
+};
+
+export const getBackup = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  try {
+    const backup = await Backup.findOne({ userId: req.user._id });
+    if (!backup) {
+      res.status(404).json({ message: 'No backup found for this user.' });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Backup retrieved successfully.',
+      data: {
+        backupData: backup.backupData,
+        updatedAt: backup.updatedAt,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to retrieve backup: ' + err.message });
   }
 };

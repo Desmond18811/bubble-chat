@@ -44,14 +44,14 @@ export const authStorage = {
     return raw ? parseInt(raw, 10) : null;
   },
 
-  /** Check if session is still valid (30-day window) */
+  /** Check if session is still valid (31-day window) */
   async isSessionValid(): Promise<boolean> {
     const token = await authStorage.getAccessToken();
     if (!token) return false;
     const lastLogin = await authStorage.getLastLogin();
     if (!lastLogin) return false;
-    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-    return Date.now() - lastLogin < THIRTY_DAYS;
+    const THIRTY_ONE_DAYS = 31 * 24 * 60 * 60 * 1000;
+    return Date.now() - lastLogin < THIRTY_ONE_DAYS;
   },
 
   /** Update stored user data (e.g. after profile setup) */

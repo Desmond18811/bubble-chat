@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk";
 import * as SplashScreen from "expo-splash-screen";
@@ -260,6 +261,36 @@ function GlobalCallOverlay() {
   );
 }
 
+async function checkAndTriggerAutoBackup() {
+  try {
+    const isAutoBackupEnabled = await AsyncStorage.getItem("bubble_auto_backup");
+    if (isAutoBackupEnabled === "false") return;
+
+    const now = new Date();
+    if (now.getHours() === 2) {
+      const todayStr = now.toDateString();
+      const lastBackupDate = await AsyncStorage.getItem("bubble_last_auto_backup_date");
+      if (lastBackupDate === todayStr) return;
+
+      console.log("Auto-backup starting at 2:00 AM...");
+      const { chatCache } = await import("../lib/chatCache");
+      const success = await chatCache.performCloudBackup();
+      if (success) {
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = now.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const fullTime = `${dateStr} at ${timeStr}`;
+        await AsyncStorage.multiSet([
+          ["bubble_last_auto_backup_date", todayStr],
+          ["bubble_last_backup_time", fullTime]
+        ]);
+        console.log("Auto-backup successfully completed at 2:00 AM!");
+      }
+    }
+  } catch (err) {
+    console.warn("Failed in checkAndTriggerAutoBackup:", err);
+  }
+}
+
 export default function RootLayout() {
   verifyInstallation();
   const [loaded, error] = useFonts({
@@ -273,6 +304,11 @@ export default function RootLayout() {
   useEffect(() => {
     // Pre-load stored token into in-memory cache for synchronous getAuthHeaders()
     initApiFromStorage().catch(() => {});
+    
+    // Check auto backup status on launch and schedule every 15 minutes
+    checkAndTriggerAutoBackup();
+    const interval = setInterval(checkAndTriggerAutoBackup, 15 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

@@ -39,6 +39,7 @@ import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Avatar as SharedAvatar } from '../../components/Avatar';
 
 // ─────────────────────────────────────────────
 // Helper
@@ -64,6 +65,9 @@ function getGroupInitials(name: string) {
 // ─────────────────────────────────────────────
 // Avatar Component
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Avatar Component
+// ─────────────────────────────────────────────
 function Avatar({
   name,
   avatar,
@@ -82,24 +86,14 @@ function Avatar({
   const isFallbackBlack = isGroup || !!organization;
   return (
     <View style={{ width: size, height: size }} className="relative shrink-0">
-      {avatar ? (
-        <Image
-          source={{ uri: getSecureMediaUrl(avatar) || undefined }}
-          style={{ width: size, height: size, borderRadius: size * 0.38 }}
-        />
-      ) : (
-        <View
-          style={{ width: size, height: size, borderRadius: size * 0.38, backgroundColor: isFallbackBlack ? '#000000' : 'rgba(108,92,231,0.1)' }}
-          className="items-center justify-center"
-        >
-          <Text
-            style={{ fontSize: size * 0.33, color: isFallbackBlack ? '#ffffff' : '#6c5ce7' }}
-            className="font-bold font-sans"
-          >
-            {isGroup ? getGroupInitials(name) : organization ? getInitials(organization) : getInitials(name)}
-          </Text>
-        </View>
-      )}
+      <SharedAvatar
+        url={avatar}
+        name={organization || name}
+        size={size}
+        isGroup={isFallbackBlack}
+        imageStyle={{ borderRadius: size * 0.38 }}
+        style={{ borderRadius: size * 0.38 }}
+      />
       {isOnline && !isGroup && (
         <View
           className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 rounded-full border-2 border-white shadow-xs"
@@ -117,22 +111,18 @@ function ContactsTab({
   showAddModal,
   setShowAddModal,
   onStartCall,
+  onOpenScanner,
 }: {
   showAddModal: boolean;
   setShowAddModal: (v: boolean) => void;
   onStartCall: (user: any, type: 'voice' | 'video') => void;
+  onOpenScanner: () => void;
 }) {
   const [search, setSearch] = useState('');
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [chats, setChats] = useState<any[]>([]);
   const [typingChats, setTypingChats] = useState<Record<string, { fromUserId: string; fromUsername?: string; fromName?: string } | false>>({});
-
-  // QR scanner states
-  const [permission, requestPermission] = useCameraPermissions();
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [scanned, setScanned] = useState(false);
-  const [scanFallbackInput, setScanFallbackInput] = useState('');
 
   const currentUserIdRef = useRef<string | null>(null);
 
@@ -143,27 +133,6 @@ function ContactsTab({
       }
     });
   }, []);
-
-  useEffect(() => {
-    if (isScannerOpen && !permission?.granted) {
-      requestPermission();
-    }
-  }, [isScannerOpen]);
-
-  const handleBarcodeScanned = async ({ data }: { data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    try {
-      await addContact(data);
-      Alert.alert("Success", `Contact "${data}" added successfully!`);
-      setIsScannerOpen(false);
-      await syncContacts();
-    } catch (err: any) {
-      Alert.alert("Scan Failed", err.message || "Failed to add contact from QR code.");
-    } finally {
-      setScanned(false);
-    }
-  };
 
   const loadCache = async () => {
     const cached = await chatCache.getCachedContacts();
@@ -251,7 +220,7 @@ function ContactsTab({
           )}
         </View>
         <TouchableOpacity
-          onPress={() => setIsScannerOpen(true)}
+          onPress={onOpenScanner}
           style={{ width: 40, height: 40, backgroundColor: 'rgba(108,92,231,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
         >
           <Scan color="#6c5ce7" size={18} />
@@ -265,78 +234,7 @@ function ContactsTab({
         </TouchableOpacity>
       </View>
 
-      {/* QR Code Scanner Modal */}
-      <Modal visible={isScannerOpen} transparent animationType="slide">
-        <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.85)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ width: '90%', maxWidth: 360, backgroundColor: '#ffffff', borderRadius: 28, padding: 24, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <View>
-                <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }}>Scan QR Code</Text>
-                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: '#9a9aab', marginTop: 2 }}>Scan coworker's profile QR code</Text>
-              </View>
-              <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
-                <X color="#1f2030" size={16} />
-              </TouchableOpacity>
-            </View>
 
-            {/* Camera Frame */}
-            <View style={{ width: '100%', height: 260, borderRadius: 20, overflow: 'hidden', backgroundColor: '#f1f2f6', position: 'relative', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
-              {permission?.granted ? (
-                <CameraView
-                  style={{ width: '100%', height: '100%' }}
-                  facing="back"
-                  onBarcodeScanned={handleBarcodeScanned}
-                />
-              ) : (
-                <View style={{ padding: 20, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: '#9a9aab', textAlign: 'center', marginBottom: 10 }}>
-                    Camera permission required to scan QR codes.
-                  </Text>
-                  <TouchableOpacity onPress={() => requestPermission()} style={{ backgroundColor: '#6c5ce7', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}>
-                    <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Grant Permission</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-
-            {/* Sandbox Fallback for simulator */}
-            <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 16 }}>
-              <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', color: '#9a9aab', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
-                Simulator Fallback (Enter Bubble ID)
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TextInput
-                  value={scanFallbackInput}
-                  onChangeText={setScanFallbackInput}
-                  placeholder="e.g. bubble-X89F2"
-                  placeholderTextColor="#9a9aab"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={{ flex: 1, backgroundColor: 'rgba(108,92,231,0.05)', borderWidth: 1, borderColor: 'rgba(108,92,231,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#1f2030' }}
-                />
-                <TouchableOpacity
-                  onPress={async () => {
-                    const tag = scanFallbackInput.trim();
-                    if (!tag) return;
-                    try {
-                      await addContact(tag);
-                      Alert.alert("Success", `Contact added successfully!`);
-                      setIsScannerOpen(false);
-                      setScanFallbackInput('');
-                      await syncContacts();
-                    } catch (err: any) {
-                      Alert.alert("Error", err.message || "Failed to add contact.");
-                    }
-                  }}
-                  style={{ backgroundColor: '#6c5ce7', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}
-                >
-                  <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Submit</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* Section header */}
@@ -510,8 +408,10 @@ function ContactsTab({
 // ─────────────────────────────────────────────
 function WorkroomTab({
   onStartCall,
+  onOpenScanner,
 }: {
   onStartCall: (user: any, type: 'voice' | 'video') => void;
+  onOpenScanner: () => void;
 }) {
   const [search, setSearch] = useState('');
   const [chats, setChats] = useState<any[]>([]);
@@ -523,7 +423,16 @@ function WorkroomTab({
 
     try {
       const response = await searchUsers('');
-      const coworkersList = response?.users || [];
+      const rawList = response?.users || [];
+      const coworkersList = rawList.map((u: any) => ({
+        id: String(u.id || u._id),
+        name: u.full_name || u.name || u.username || "Unknown",
+        avatar: u.avatar || null,
+        isOnline: !!u.isOnline,
+        username: u.username || "",
+        org_role: u.org_role || "",
+        organization: u.organization || "",
+      }));
       setContacts(coworkersList);
     } catch (err) {
       console.warn("Workroom coworker fetch failed, fallback to cache:", err);
@@ -566,6 +475,12 @@ function WorkroomTab({
             </TouchableOpacity>
           )}
         </View>
+        <TouchableOpacity
+          onPress={onOpenScanner}
+          style={{ width: 40, height: 40, backgroundColor: 'rgba(108,92,231,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Scan color="#6c5ce7" size={18} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
@@ -687,6 +602,34 @@ export default function PeopleScreen() {
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
 
+  // Lifted scanner states
+  const [permission, requestPermission] = useCameraPermissions();
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const [scanFallbackInput, setScanFallbackInput] = useState('');
+
+  useEffect(() => {
+    if (isScannerOpen && !permission?.granted) {
+      requestPermission();
+    }
+  }, [isScannerOpen]);
+
+  const handleBarcodeScanned = async ({ data }: { data: string }) => {
+    if (scanned) return;
+    setScanned(true);
+    try {
+      await addContact(data);
+      Alert.alert("Success", `Contact "${data}" added successfully!`);
+      setIsScannerOpen(false);
+      await chatCache.syncContactsWithBackend();
+      await chatCache.syncChatsWithBackend();
+    } catch (err: any) {
+      Alert.alert("Scan Failed", err.message || "Failed to add contact from QR code.");
+    } finally {
+      setScanned(false);
+    }
+  };
+
   const handleStartCall = (user: any, type: 'voice' | 'video') => {
     startOutgoingCall(user, type);
   };
@@ -778,9 +721,17 @@ export default function PeopleScreen() {
       {/* Tab Content */}
       <View className="flex-1 pt-3 bg-purple-soft/5">
         {activeTab === 'Contacts' ? (
-          <ContactsTab showAddModal={showAddModal} setShowAddModal={setShowAddModal} onStartCall={handleStartCall} />
+          <ContactsTab
+            showAddModal={showAddModal}
+            setShowAddModal={setShowAddModal}
+            onStartCall={handleStartCall}
+            onOpenScanner={() => setIsScannerOpen(true)}
+          />
         ) : (
-          <WorkroomTab onStartCall={handleStartCall} />
+          <WorkroomTab
+            onStartCall={handleStartCall}
+            onOpenScanner={() => setIsScannerOpen(true)}
+          />
         )}
       </View>
 
@@ -887,6 +838,80 @@ export default function PeopleScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* QR Code Scanner Modal (Lifted) */}
+      <Modal visible={isScannerOpen} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.85)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: '90%', maxWidth: 360, backgroundColor: '#ffffff', borderRadius: 28, padding: 24, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }}>Scan QR Code</Text>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: '#9a9aab', marginTop: 2 }}>Scan coworker's profile QR code</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
+                <X color="#1f2030" size={16} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Camera Frame */}
+            <View style={{ width: '100%', height: 260, borderRadius: 20, overflow: 'hidden', backgroundColor: '#f1f2f6', position: 'relative', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+              {permission?.granted ? (
+                <CameraView
+                  style={{ width: '100%', height: '100%' }}
+                  facing="back"
+                  onBarcodeScanned={handleBarcodeScanned}
+                />
+              ) : (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: '#9a9aab', textAlign: 'center', marginBottom: 10 }}>
+                    Camera permission required to scan QR codes.
+                  </Text>
+                  <TouchableOpacity onPress={() => requestPermission()} style={{ backgroundColor: '#6c5ce7', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}>
+                    <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Grant Permission</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* Sandbox Fallback for simulator */}
+            <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 16 }}>
+              <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', color: '#9a9aab', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                Simulator Fallback (Enter Bubble ID)
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TextInput
+                  value={scanFallbackInput}
+                  onChangeText={setScanFallbackInput}
+                  placeholder="e.g. bubble-X89F2"
+                  placeholderTextColor="#9a9aab"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={{ flex: 1, backgroundColor: 'rgba(108,92,231,0.05)', borderWidth: 1, borderColor: 'rgba(108,92,231,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#1f2030' }}
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    const tag = scanFallbackInput.trim();
+                    if (!tag) return;
+                    try {
+                      await addContact(tag);
+                      Alert.alert("Success", `Contact added successfully!`);
+                      setIsScannerOpen(false);
+                      setScanFallbackInput('');
+                      await chatCache.syncContactsWithBackend();
+                      await chatCache.syncChatsWithBackend();
+                    } catch (err: any) {
+                      Alert.alert("Error", err.message || "Failed to add contact.");
+                    }
+                  }}
+                  style={{ backgroundColor: '#6c5ce7', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}
+                >
+                  <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

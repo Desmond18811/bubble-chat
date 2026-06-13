@@ -10,6 +10,7 @@ export interface Message {
   reactions?: string[];
   isPinned?: boolean;
   isRead?: boolean;
+  status?: 'queued' | 'sent' | 'delivered';
 }
 
 export interface Chat {

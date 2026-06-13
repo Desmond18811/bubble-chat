@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Text,
   View,
@@ -8,15 +8,75 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Alert,
   ActivityIndicator,
+  StatusBar,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
-import { login as apiLogin } from "../lib/api";
+import Svg, { Path, Rect, Ellipse, Circle, Text as SvgText } from "react-native-svg";
+import { login as apiLogin, startGoogleAuth } from "../lib/api";
 import { authStorage } from "../lib/authStorage";
 
+const BubbleLogo = ({ size = 40 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16">
+    <Rect width="16" height="16" rx="3.5" fill="#1a1a2e" />
+    <Ellipse
+      cx="8"
+      cy="8"
+      rx="6"
+      ry="2.2"
+      fill="none"
+      stroke="#7C5CFC"
+      strokeWidth={1.2}
+      rotation={-30}
+      origin="8, 8"
+    />
+    <Circle cx="13" cy="5.2" r="1" fill="#C3ABFF" />
+    <SvgText
+      x="8"
+      y="11.2"
+      fontFamily="System"
+      fontSize="9"
+      fontWeight="700"
+      fill="white"
+      textAnchor="middle"
+    >
+      b
+    </SvgText>
+  </Svg>
+);
+
+const GoogleLogo = ({ size = 18 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      fill="#4285F4"
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+    />
+    <Path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+    />
+    <Path
+      fill="#FBBC05"
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+    />
+    <Path
+      fill="#EA4335"
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+    />
+  </Svg>
+);
+
+const { width: W, height: H } = Dimensions.get("window");
+
 const PURPLE = "#6c5ce7";
+const PURPLE_SOFT = "rgba(108,92,231,0.08)";
+const BG_LIGHT = "#ffffff";
+const CARD_BG = "#f8f9fc";
+const INK_DARK = "#1f2030";
+const INK_SOFT = "#7d7e96";
 
 export default function Login() {
   const router = useRouter();
@@ -24,7 +84,18 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleLogin = async () => {
     setError("");
@@ -37,14 +108,28 @@ export default function Login() {
       const { data } = res;
 
       if (data?.requiresVerification) {
-        // Account not verified — send to OTP screen
+        // Account not verified — send to OTP verification screen
         router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}&mode=verify` as any);
         return;
       }
 
       if (data?.accessToken && data?.refreshToken) {
         await authStorage.setSession(data.accessToken, data.refreshToken, data.user);
-        router.replace("/(main)/messages" as any);
+        
+        // Silent restore E2E cloud backup if exists
+        try {
+          const { chatCache } = await import("../lib/chatCache");
+          await chatCache.restoreCloudBackup();
+        } catch (restoreErr) {
+          console.warn("Failed silent restore on login:", restoreErr);
+        }
+        
+        // Dynamic redirection to avoid setup errors
+        if (data.user?.onboardingComplete) {
+          router.replace("/(main)/messages" as any);
+        } else {
+          router.replace("/profile-setup" as any);
+        }
       }
     } catch (err: any) {
       setError(err.message || "Login failed. Please try again.");
@@ -53,50 +138,84 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const session = await startGoogleAuth();
+      if (session) {
+        await authStorage.setSession(session.accessToken, session.refreshToken, session.user);
+        
+        // Silent restore E2E cloud backup if exists
+        try {
+          const { chatCache } = await import("../lib/chatCache");
+          await chatCache.restoreCloudBackup();
+        } catch (restoreErr) {
+          console.warn("Failed silent restore on Google login:", restoreErr);
+        }
+        
+        // Dynamic redirection based on completeness of onboarding
+        if (session.user?.onboardingComplete) {
+          router.replace("/(main)/messages" as any);
+        } else {
+          router.replace("/profile-setup" as any);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Google Authentication was cancelled or failed.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
+      <StatusBar barStyle="dark-content" backgroundColor={BG_LIGHT} />
+
+      {/* Symmetrical Curved Background Arcs */}
+      <View style={styles.glowBottom} />
+
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.inner}>
+        <Animated.View style={[styles.inner, { opacity: fadeAnim }]}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <ArrowLeft size={20} color="#6b7280" />
+              <ArrowLeft size={18} color={INK_DARK} />
               <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
-            <View style={styles.logoMark}>
-              <View style={styles.logoInner} />
-            </View>
+            
+            <BubbleLogo size={40} />
           </View>
 
-          {/* Form */}
+          {/* Form Container */}
           <View style={styles.form}>
             <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Log in to your Bubblespace account</Text>
+            <Text style={styles.subtitle}>Sign in to your Bubblespace account</Text>
 
-            {/* Error */}
+            {/* Error Message Box */}
             {error ? (
               <View style={styles.errorBox}>
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             ) : null}
 
-            {/* Email */}
+            {/* Email Field */}
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Email Address</Text>
               <View style={styles.inputRow}>
-                <Mail size={18} color="#9ca3af" style={{ marginRight: 10 }} />
+                <Mail size={18} color={INK_SOFT} style={{ marginRight: 10 }} />
                 <TextInput
                   value={email}
                   onChangeText={t => { setEmail(t); setError(""); }}
                   placeholder="name@company.com"
-                  placeholderTextColor="#c4c8d8"
+                  placeholderTextColor="#b0b2c3"
                   autoCapitalize="none"
                   keyboardType="email-address"
                   style={styles.input}
@@ -105,128 +224,147 @@ export default function Login() {
               </View>
             </View>
 
-            {/* Password */}
+            {/* Password Field */}
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Password</Text>
-                <TouchableOpacity onPress={() => router.push("/forgot-password" as any)}>
+                <TouchableOpacity onPress={() => router.push("/forgot-password" as any)} activeOpacity={0.7}>
                   <Text style={styles.forgotLink}>Forgot?</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.inputRow}>
-                <Lock size={18} color="#9ca3af" style={{ marginRight: 10 }} />
+                <Lock size={18} color={INK_SOFT} style={{ marginRight: 10 }} />
                 <TextInput
                   value={password}
                   onChangeText={t => { setPassword(t); setError(""); }}
                   placeholder="Enter your password"
-                  placeholderTextColor="#c4c8d8"
+                  placeholderTextColor="#b0b2c3"
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   style={[styles.input, { flex: 1 }]}
                   autoComplete="password"
                 />
-                <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={{ padding: 4 }}>
-                  {showPassword ? <EyeOff size={18} color="#9ca3af" /> : <Eye size={18} color="#9ca3af" />}
+                <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={{ padding: 4 }} activeOpacity={0.7}>
+                  {showPassword ? <EyeOff size={18} color={INK_SOFT} /> : <Eye size={18} color={INK_SOFT} />}
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Login Button */}
+            {/* Log In Action Button */}
             <TouchableOpacity
               onPress={handleLogin}
-              disabled={loading}
+              disabled={loading || googleLoading}
               activeOpacity={0.88}
-              style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
+              style={[styles.primaryBtn, (loading || googleLoading) && { opacity: 0.7 }]}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color="#ffffff" size="small" />
               ) : (
                 <Text style={styles.primaryBtnText}>Log In</Text>
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
+             {/* Styled Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Google */}
-            <TouchableOpacity activeOpacity={0.8} style={styles.googleBtn}>
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
+            {/* Google Authentication Action Button */}
+            <TouchableOpacity
+              onPress={handleGoogleLogin}
+              disabled={loading || googleLoading}
+              activeOpacity={0.85}
+              style={[styles.googleBtn, (loading || googleLoading) && { opacity: 0.7 }]}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color={PURPLE} size="small" />
+              ) : (
+                <View style={styles.googleBtnContent}>
+                  <GoogleLogo size={18} />
+                  <Text style={styles.googleBtnText}>Google</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 
-          {/* Footer */}
+          {/* Footer Navigation */}
           <View style={styles.footer}>
-            <TouchableOpacity onPress={() => router.push("/signup" as any)} style={{ paddingVertical: 8 }}>
+            <TouchableOpacity onPress={() => router.push("/signup" as any)} style={{ paddingVertical: 8 }} activeOpacity={0.7}>
               <Text style={styles.footerText}>
                 Don't have an account?{" "}
-                <Text style={{ color: PURPLE, fontWeight: "700" }}>Sign up</Text>
+                <Text style={{ color: PURPLE, fontFamily: "Poppins_700Bold" }}>Sign up</Text>
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafafa" },
-  inner: { flex: 1, justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 56, paddingBottom: 40 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  container: { flex: 1, backgroundColor: BG_LIGHT },
+
+  glowBottom: {
+    position: "absolute",
+    bottom: -W * 1.85,
+    left: -W * 0.5,
+    width: W * 2,
+    height: W * 2,
+    borderRadius: W,
+    backgroundColor: "rgba(14,165,233,0.03)",
+    zIndex: 0,
+  },
+  inner: { flex: 1, justifyContent: "space-between", paddingHorizontal: 24, paddingTop: H * 0.07, paddingBottom: H * 0.04, zIndex: 10 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 8 },
-  backText: { fontSize: 14, fontWeight: "600", color: "#6b7280" },
-  logoMark: {
-    width: 40, height: 40, borderRadius: 14,
-    backgroundColor: PURPLE + "15",
-    alignItems: "center", justifyContent: "center",
-  },
-  logoInner: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: PURPLE,
-  },
-  form: { flex: 1, paddingVertical: 32 },
+  backText: { fontSize: 15, fontFamily: "Poppins_600SemiBold", color: INK_DARK },
+
+  form: { flex: 1, paddingVertical: 20 },
   title: {
-    fontSize: 30, fontWeight: "800", color: "#111827",
-    letterSpacing: -0.5, marginBottom: 6,
+    fontSize: 28, fontFamily: "SpaceGrotesk_700Bold", color: INK_DARK,
+    letterSpacing: -0.4, marginBottom: 8,
   },
-  subtitle: { fontSize: 14, color: "#6b7280", fontWeight: "500", marginBottom: 28 },
+  subtitle: { fontSize: 14, color: INK_SOFT, fontFamily: "Poppins_400Regular", marginBottom: 28 },
   errorBox: {
-    backgroundColor: "#fef2f2", borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: "#fecaca", marginBottom: 16,
+    backgroundColor: "#fff5f5", borderRadius: 16, padding: 14,
+    borderWidth: 1.5, borderColor: "#ffe3e3", marginBottom: 18,
   },
-  errorText: { color: "#dc2626", fontSize: 13, fontWeight: "500" },
-  fieldGroup: { marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: "700", color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 },
+  errorText: { color: "#e53e3e", fontSize: 13, fontFamily: "Poppins_600SemiBold" },
+  fieldGroup: { marginBottom: 18 },
+  label: { fontSize: 11, fontFamily: "Poppins_700Bold", color: INK_SOFT, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 },
   labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-  forgotLink: { fontSize: 13, fontWeight: "700", color: PURPLE },
+  forgotLink: { fontSize: 13, fontFamily: "Poppins_700Bold", color: PURPLE },
   inputRow: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#f3f4f6", borderRadius: 16,
-    paddingHorizontal: 14, paddingVertical: 14,
-    borderWidth: 1, borderColor: "#e5e7eb",
+    backgroundColor: CARD_BG, borderRadius: 18,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderWidth: 1.5, borderColor: "rgba(0,0,0,0.03)",
   },
-  input: { flex: 1, fontSize: 15, fontWeight: "500", color: "#111827" },
+  input: { flex: 1, fontSize: 15, fontFamily: "Poppins_500Medium", color: INK_DARK },
   primaryBtn: {
-    backgroundColor: PURPLE, paddingVertical: 16,
-    borderRadius: 20, alignItems: "center", justifyContent: "center",
+    backgroundColor: PURPLE, height: 56,
+    borderRadius: 18, alignItems: "center", justifyContent: "center",
     marginTop: 8,
     shadowColor: PURPLE,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 10, elevation: 8,
   },
-  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 20, gap: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#e5e7eb" },
-  dividerText: { fontSize: 13, color: "#9ca3af", fontWeight: "500" },
+  primaryBtnText: { color: "#ffffff", fontFamily: "Poppins_700Bold", fontSize: 15 },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 24, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "rgba(0,0,0,0.06)" },
+  dividerText: { fontSize: 11, color: INK_SOFT, fontFamily: "Poppins_600SemiBold", textTransform: "uppercase", letterSpacing: 1 },
   googleBtn: {
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb",
-    paddingVertical: 14, borderRadius: 20, alignItems: "center",
+    backgroundColor: "#ffffff", borderWidth: 1.5, borderColor: "rgba(0,0,0,0.08)",
+    height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center",
   },
-  googleBtnText: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  footer: { alignItems: "center" },
-  footerText: { fontSize: 14, color: "#6b7280", fontWeight: "500" },
+  googleBtnContent: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+  },
+
+  googleBtnText: { fontSize: 15, fontFamily: "Poppins_700Bold", color: INK_DARK },
+  footer: { alignItems: "center", marginTop: 16 },
+  footerText: { fontSize: 14, color: INK_SOFT, fontFamily: "Poppins_500Medium" },
 });

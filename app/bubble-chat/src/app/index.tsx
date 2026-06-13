@@ -11,7 +11,12 @@ export default function Index() {
       try {
         const valid = await authStorage.isSessionValid();
         if (valid) {
-          router.replace('/(main)/messages' as any);
+          const user = await authStorage.getUser();
+          if (user?.onboardingComplete) {
+            router.replace('/(main)/messages' as any);
+          } else {
+            router.replace('/profile-setup' as any);
+          }
         } else {
           await authStorage.clearSession();
           router.replace('/splash' as any);

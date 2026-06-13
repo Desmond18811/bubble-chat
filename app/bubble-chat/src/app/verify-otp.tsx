@@ -78,6 +78,15 @@ export default function VerifyOTP() {
       // For account verification: store session
       if (data?.accessToken && data?.refreshToken) {
         await authStorage.setSession(data.accessToken, data.refreshToken, data.user);
+        
+        // Silent restore E2E cloud backup if exists
+        try {
+          const { chatCache } = await import("../lib/chatCache");
+          await chatCache.restoreCloudBackup();
+        } catch (restoreErr) {
+          console.warn("Failed silent restore on OTP verification:", restoreErr);
+        }
+        
         // Check if profile setup is needed
         if (!data.user?.onboardingComplete) {
           router.replace("/profile-setup" as any);

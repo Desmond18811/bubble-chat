@@ -12,6 +12,8 @@ import {
   deleteAccount,
   setupProfile,
   uploadBackground,
+  saveBackup,
+  getBackup,
 } from '../controllers/profileController';
 
 const router = express.Router();
@@ -192,6 +194,9 @@ router.delete('/me', jwtAuth, deleteAccount);
  */
 router.post('/avatar', jwtAuth, upload.single('file'), uploadAvatar);
 router.post('/background', jwtAuth, upload.single('file'), uploadBackground);
+
+router.post('/backup', jwtAuth, saveBackup);
+router.get('/backup', jwtAuth, getBackup);
 
 /**
  * @swagger

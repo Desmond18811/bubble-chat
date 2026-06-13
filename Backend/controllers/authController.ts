@@ -17,7 +17,7 @@ const generateAccessToken = (userId: string) =>
   jwt.sign({ id: userId }, process.env.JWT_KEY as string, { expiresIn: '7d' });
 
 const generateRefreshToken = (userId: string) =>
-  jwt.sign({ id: userId }, process.env.JWT_REFRESH_KEY as string, { expiresIn: '30d' });
+  jwt.sign({ id: userId }, (process.env.JWT_REFRESH_KEY || process.env.JWT_REFRESH_SECRET || 'bubble_default_refresh_key') as string, { expiresIn: '30d' });
 
 // ─── OTP Helper ───────────────────────────────────────────────────────────────
 
@@ -661,7 +661,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
     let decoded: any;
     try {
-      decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string);
+      decoded = jwt.verify(token, (process.env.JWT_REFRESH_KEY || process.env.JWT_REFRESH_SECRET || 'bubble_default_refresh_key') as string);
     } catch {
       res.status(401).json({ message: 'Invalid or expired refresh token.' });
       return;
@@ -749,12 +749,83 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
     });
 
     const userJson = encodeURIComponent(JSON.stringify(formatUser(user)));
+    const rawState = req.query.state as string;
+    const state = rawState ? decodeURIComponent(rawState) : '';
 
-    // Redirect back to frontend callback page with tokens
-    res.redirect(`${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`);
+    // Extract inviteCode if present in state (e.g. mobile_..._invite_INVITECODE)
+    let inviteCode: string | undefined = undefined;
+    if (state && state.includes('_invite_')) {
+      const parts = state.split('_invite_');
+      inviteCode = parts[1] ? parts[1].trim() : undefined;
+    }
+
+    // Link user to organization via inviteCode if user has no organization yet
+    if (inviteCode && user && !user.organization) {
+      try {
+        const existingOrg = await Organization.findOne({ inviteCode });
+        if (existingOrg) {
+          user.organization = existingOrg.name;
+          user.org_industry = existingOrg.industry;
+          user.org_size = existingOrg.size;
+          user.role = 'employee';
+          await user.save();
+
+          // Add user to the default group chat of this organization
+          const defaultChat = await Conversation.findOne({
+            organizationId: existingOrg._id,
+            isDefaultOrgChat: true,
+          });
+          if (defaultChat) {
+            const userStr = user._id.toString();
+            if (!defaultChat.users.map((id: any) => id.toString()).includes(userStr)) {
+              defaultChat.users.push(user._id);
+              await defaultChat.save();
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to auto-link organization via invite code in googleCallback:', err);
+      }
+    }
+
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobileUA = userAgent.includes('Expo') || userAgent.includes('Darwin') || userAgent.includes('Android') || userAgent.includes('Mobile');
+    const isMobileRequest = (state && state.startsWith('mobile_')) || isMobileUA;
+
+    let redirectUrl = `${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`;
+    
+    if (isMobileRequest) {
+      let targetCallback = '';
+      if (state && state.startsWith('mobile_')) {
+        targetCallback = state.replace('mobile_', '');
+      } else {
+        targetCallback = 'bubblechat://';
+      }
+      const separator = targetCallback.includes('?') ? '&' : '?';
+      redirectUrl = `${targetCallback}${separator}access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`;
+    }
+
+    res.redirect(redirectUrl);
   } catch (err: any) {
     console.error('Google callback error:', err);
-    res.redirect(`${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/login?error=server_error`);
+    const rawState = req.query.state as string;
+    const state = rawState ? decodeURIComponent(rawState) : '';
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobileUA = userAgent.includes('Expo') || userAgent.includes('Darwin') || userAgent.includes('Android') || userAgent.includes('Mobile');
+    const isMobileRequest = (state && state.startsWith('mobile_')) || isMobileUA;
+
+    if (isMobileRequest) {
+      let targetCallback = '';
+      if (state && state.startsWith('mobile_')) {
+        targetCallback = state.replace('mobile_', '');
+      } else {
+        targetCallback = 'bubblechat://';
+      }
+      const separator = targetCallback.includes('?') ? '&' : '?';
+      res.redirect(`${targetCallback}${separator}error=server_error`);
+    } else {
+      res.redirect(`${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/login?error=server_error`);
+    }
   }
 };
 
