@@ -131,6 +131,59 @@ export default function ProfileScreen() {
     role: '',
   });
 
+  const [inviteCodeInput, setInviteCodeInput] = useState("");
+  const [isJoiningOrg, setIsJoiningOrg] = useState(false);
+
+  const handleJoinOrg = async () => {
+    if (!inviteCodeInput.trim()) {
+      Alert.alert("Error", "Please enter an invite code.");
+      return;
+    }
+    setIsJoiningOrg(true);
+    try {
+      const { joinOrganizationByInvite } = await import('../../lib/api');
+      const res = await joinOrganizationByInvite(inviteCodeInput.trim());
+      if (res && res.organization) {
+        Alert.alert("Success", `Successfully joined ${res.organization.name}!`);
+        
+        // Refresh local user state
+        const updatedUser = {
+          ...user,
+          organization: res.organization.name,
+          role: 'employee',
+          org_role: 'Collaborator',
+        };
+        setUser(updatedUser);
+        setFormData(updatedUser);
+        await authStorage.updateUser(updatedUser);
+
+        // Fetch organization settings/details
+        const { getOrgInviteCode } = await import('../../lib/api');
+        const orgRes = await getOrgInviteCode();
+        if (orgRes) {
+          setOrgData(orgRes);
+          setOrgFormData({
+            name: orgRes.name || '',
+            description: orgRes.description || '',
+            logo: orgRes.logo || '',
+            allowMembersToShareInvite: orgRes.allowMembersToShareInvite ?? true,
+          });
+        }
+        
+        // Sync local chat caches
+        const { chatCache } = await import('../../lib/chatCache');
+        await chatCache.syncChatsWithBackend();
+        await chatCache.syncContactsWithBackend();
+
+        setInviteCodeInput("");
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to join organization.");
+    } finally {
+      setIsJoiningOrg(false);
+    }
+  };
+
   const navigation = useNavigation();
   const [isFocused, setIsFocused] = useState(navigation.isFocused());
 
@@ -517,6 +570,43 @@ export default function ProfileScreen() {
                   trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
                   thumbColor={Platform.OS === 'ios' ? undefined : orgData.allowMembersToShareInvite ? "#6c5ce7" : "#f4f3f4"}
                 />
+              </View>
+            </View>
+          )}
+
+          {/* Join Organization Card */}
+          {!user.organization && (
+            <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
+              <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5 font-sans">
+                Join Organization
+              </Text>
+              
+              <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                <Text className="text-[13px] font-bold text-ink font-sans mb-1">Have an Organization Code?</Text>
+                <Text className="text-[11px] text-ink-soft mb-3 font-sans leading-tight">
+                  Enter the invite code provided by your organization admin to gain access to workspace resources and chats immediately.
+                </Text>
+                
+                <View className="flex-row gap-2.5 items-center">
+                  <TextInput
+                    placeholder="Enter Invite Code"
+                    value={inviteCodeInput}
+                    onChangeText={setInviteCodeInput}
+                    placeholderTextColor="#9a9aab"
+                    className="flex-1 bg-white border border-black/5 h-11 px-3.5 rounded-xl text-ink font-sans text-sm"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity
+                    onPress={handleJoinOrg}
+                    disabled={isJoiningOrg}
+                    className="bg-purple h-11 px-4 rounded-xl items-center justify-center shadow-xs"
+                  >
+                    <Text className="text-white text-xs font-bold font-sans">
+                      {isJoiningOrg ? 'Joining...' : 'Join'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           )}

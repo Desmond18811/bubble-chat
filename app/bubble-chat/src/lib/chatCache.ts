@@ -148,7 +148,7 @@ export const chatCache = {
       return {
         id: String(c.id || c._id),
         name: isGroup ? (c.chatName || "Group Chat") : (otherUser?.full_name || otherUser?.username || "Unknown User"),
-        avatar: isGroup ? getSecureMediaUrl(c.groupIcon) : getSecureMediaUrl(otherUser?.avatar),
+        avatar: isGroup ? (c.groupIcon || null) : (otherUser?.avatar || null),
         isGroupChat: isGroup,
         otherUserId: otherUser ? String(otherUser.id || otherUser._id) : null,
         latestMessage: latestText,
@@ -236,12 +236,13 @@ export const chatCache = {
     const mapped = list.map((u: any) => ({
       id: String(u.id || u._id),
       name: u.full_name || u.username || "Unknown",
-      avatar: getSecureMediaUrl(u.avatar),
+      avatar: u.avatar || null,
       isOnline: !!u.isOnline,
       username: u.username || "",
       bio: u.bio || "",
       email: u.email || "",
       phone: u.phone_number || "N/A",
+      organization: u.organization || "",
       org_role: u.org_role || "Collaborator",
       category: u.category || "work",
     }));

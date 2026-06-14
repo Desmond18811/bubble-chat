@@ -4,6 +4,7 @@ import { getSecureMediaUrl } from '../lib/api';
 
 interface AvatarProps {
   url?: string | null;
+  avatar?: string | null;
   name?: string | null;
   size?: number;
   isGroup?: boolean;
@@ -47,6 +48,7 @@ const getInitials = (name: string, isGroup?: boolean): string => {
 
 export const Avatar: React.FC<AvatarProps> = ({
   url,
+  avatar,
   name,
   size = 40,
   isGroup = false,
@@ -56,7 +58,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
   const displayName = name || 'User';
-  const resolvedUrl = getSecureMediaUrl(url);
+  const resolvedUrl = getSecureMediaUrl(url || avatar);
 
   // Reset error state if url changes
   useEffect(() => {

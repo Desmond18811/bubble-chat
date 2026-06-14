@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 let GoogleSignin: any = null;
 const isExpoGo = Constants.appOwnership === 'expo';
@@ -1784,6 +1785,26 @@ export const uploadAvatar = async (file: File) => {
         body: formData,
     });
     return handleResponse(res);
+};
+
+export const uploadGroupOrOrgImage = async (fileUri: string): Promise<string> => {
+    const token = tokenCache.accessToken;
+    const formData = new FormData();
+    const filename = fileUri.split('/').pop() || 'upload.jpg';
+    
+    formData.append('file', {
+        uri: Platform.OS === 'ios' ? fileUri.replace('file://', '') : fileUri,
+        name: filename,
+        type: 'image/jpeg',
+    } as any);
+
+    const res = await fetch(`${BASE_URL}/message/upload`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+    const data = await handleResponse(res);
+    return data.url;
 };
 
 export const uploadBackground = async (file: File) => {

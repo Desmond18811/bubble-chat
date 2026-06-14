@@ -14,6 +14,7 @@ import {
   MicOff, PhoneOff, Volume2, Clock, Play, Pause,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { Message } from '../../../lib/mockData';
 import { chatCache } from '../../../lib/chatCache';
 import { getSocket } from '../../../lib/socket';
@@ -31,6 +32,7 @@ import {
   deleteChat,
   getAidaWritingSuggestions,
   getSecureMediaUrl,
+  uploadGroupOrOrgImage,
 } from '../../../lib/api';
 import { startOutgoingCall } from '../../../lib/callManager';
 import { authStorage } from '../../../lib/authStorage';
@@ -890,7 +892,7 @@ export default function ChatScreen() {
                 {isMe && (
                   <View style={{ marginLeft: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
                     <Avatar
-                      url={ownUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160'}
+                      url={ownUser?.avatar || null}
                       name={ownUser?.name || 'Me'}
                       size={28}
                       isGroup={false}
@@ -1822,6 +1824,64 @@ export default function ChatScreen() {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+                
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                      if (!permissionResult.granted) {
+                        Alert.alert("Permission Denied", "Camera roll permissions are required to choose a group icon.");
+                        return;
+                      }
+
+                      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        allowsEditing: true,
+                        quality: 0.8,
+                      });
+
+                      if (pickerResult.canceled) return;
+                      const uri = pickerResult.assets[0].uri;
+                      try {
+                        const uploadedUrl = await uploadGroupOrOrgImage(uri);
+                        setGroupFormData({ ...groupFormData, groupIcon: uploadedUrl });
+                        Alert.alert("Success", "Custom avatar uploaded!");
+                      } catch (err: any) {
+                        Alert.alert("Error", err.message || "Failed to upload image.");
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: PURPLE_SOFT,
+                      borderWidth: 1,
+                      borderColor: 'rgba(108,92,231,0.2)',
+                      borderRadius: 12,
+                      paddingVertical: 10,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: PURPLE, fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Upload Custom</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      setGroupFormData({ ...groupFormData, groupIcon: '' });
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'rgba(239,68,68,0.05)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(239,68,68,0.1)',
+                      borderRadius: 12,
+                      paddingVertical: 10,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#ef4444', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Remove Avatar</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={{ marginBottom: 16 }}>

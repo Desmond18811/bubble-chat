@@ -153,6 +153,7 @@ export default function Messages() {
 
   // New Tab Inputs
   const [newTabName, setNewTabName] = useState("");
+  const [newFolderNameInMove, setNewFolderNameInMove] = useState("");
 
   const navigation = useNavigation();
   const [isFocused, setIsFocused] = useState(navigation.isFocused());
@@ -709,6 +710,46 @@ export default function Messages() {
                 );
               })}
             </ScrollView>
+
+            {/* Create inline folder tab section */}
+            <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 12, marginTop: 8, marginBottom: 8 }}>
+              <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#9a9aab', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.5 }}>
+                Create & Move to New Tab
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <TextInput
+                  style={[styles.textInput, { flex: 1, marginBottom: 0, height: 42, paddingVertical: 0 }]}
+                  placeholder="New tab name..."
+                  value={newFolderNameInMove}
+                  onChangeText={setNewFolderNameInMove}
+                  placeholderTextColor="#9a9aab"
+                />
+                <TouchableOpacity
+                  onPress={async () => {
+                    const name = newFolderNameInMove.trim();
+                    if (!name) return;
+                    const updatedFolders = await chatCache.addFolder(name);
+                    setFoldersList(updatedFolders);
+                    if (folderSelectChatId) {
+                      const updatedMappings = await chatCache.moveChatToFolder(folderSelectChatId, name);
+                      setFolderMappings(updatedMappings);
+                    }
+                    setNewFolderNameInMove("");
+                    showToast(`Created & added to ${name}`);
+                  }}
+                  style={{
+                    backgroundColor: '#6c5ce7',
+                    paddingHorizontal: 16,
+                    height: 42,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Create</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
             <TouchableOpacity
               style={[styles.saveBtn, { marginTop: 10 }]}

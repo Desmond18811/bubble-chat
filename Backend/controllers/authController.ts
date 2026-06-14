@@ -152,7 +152,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     // Handle Organization Registration
     let organization = null;
     if (cleanOrgName) {
-      const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase(); // Secure 8-char invite code
+      const inviteCode = crypto.randomBytes(16).toString('hex').toUpperCase(); // Secure 32-char invite code (impossible to clash)
       organization = await Organization.create({
         name: cleanOrgName,
         industry: cleanOrgIndustry || undefined,

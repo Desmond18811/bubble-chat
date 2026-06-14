@@ -11,6 +11,7 @@ import {
   proxyMedia,
   toggleMessagePin,
   shareWorkspaceFile,
+  uploadMedia,
 } from '../controllers/messageController';
 import {
   sendMessageRequest,
@@ -67,6 +68,7 @@ router.patch('/request/:requestId', respondToMessageRequest);
  *                 data: { $ref: '#/components/schemas/Message' }
  */
 router.route('/').post(handleUpload.single('file'), sendMessage);
+router.post('/upload', handleUpload.single('file'), uploadMedia);
 
 /**
  * @swagger
