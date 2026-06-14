@@ -19,10 +19,20 @@ export default function Index() {
           }
         } else {
           await authStorage.clearSession();
-          router.replace('/splash' as any);
+          const seen = await authStorage.hasSeenOnboarding();
+          if (seen) {
+            router.replace('/login' as any);
+          } else {
+            router.replace('/splash' as any);
+          }
         }
       } catch {
-        router.replace('/splash' as any);
+        const seen = await authStorage.hasSeenOnboarding();
+        if (seen) {
+          router.replace('/login' as any);
+        } else {
+          router.replace('/splash' as any);
+        }
       }
     }
     checkAuth();

@@ -89,6 +89,7 @@ export default function CallsScreen() {
   const [endTimeText, setEndTimeText] = useState('11:00');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
+  const [meetingType, setMeetingType] = useState<'voice' | 'video'>('voice');
 
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -159,6 +160,7 @@ export default function CallsScreen() {
         end_time: end.toISOString(),
         priority,
         type,
+        meetingType: type === 'meeting' ? meetingType : undefined,
       };
 
       await createTaskFull(payload);
@@ -170,6 +172,7 @@ export default function CallsScreen() {
       setEndTimeText('11:00');
       setPriority('medium');
       setType('meeting');
+      setMeetingType('voice');
       
       setIsModalOpen(false);
       await syncData();
@@ -183,7 +186,7 @@ export default function CallsScreen() {
             { 
               text: 'Start Call Now', 
               onPress: () => {
-                startOutgoingCall({ name: payload.title, avatar: null }, 'voice');
+                startOutgoingCall({ name: payload.title, avatar: null }, payload.meetingType || 'voice');
               } 
             }
           ]
@@ -432,9 +435,18 @@ export default function CallsScreen() {
                       {hasMeeting && (
                         <View className="flex-row gap-0.5 mt-auto flex-wrap">
                           {dayTasks.map(t => {
-                            const dotColor = t.priority === 'urgent' || t.priority === 'high' ? 'bg-red-500' : 'bg-emerald-500';
+                            let dotColor = 'bg-violet-500';
+                            if (t.priority === 'urgent') {
+                              dotColor = 'bg-red-500';
+                            } else if (t.type === 'meeting') {
+                              dotColor = 'bg-emerald-500';
+                            } else if (t.type === 'event') {
+                              dotColor = 'bg-blue-500';
+                            } else if (t.type === 'task') {
+                              dotColor = 'bg-violet-500';
+                            }
                             return (
-                              <View key={t._id} className={`w-1.5 h-1.5 rounded-full ${selected ? 'bg-white' : dotColor}`} />
+                              <View key={t._id || t.id} className={`w-1.5 h-1.5 rounded-full ${selected ? 'bg-white' : dotColor}`} />
                             );
                           })}
                         </View>
@@ -458,14 +470,24 @@ export default function CallsScreen() {
               </View>
             ) : (
               selectedDayTasks.map(task => {
-                const labelColor = task.type === 'meeting' ? 'bg-emerald-100 text-emerald-600' : task.type === 'event' ? 'bg-purple/10 text-purple' : 'bg-blue-100 text-blue-600';
+                const labelColor = task.type === 'meeting' ? 'bg-emerald-100' : task.type === 'event' ? 'bg-purple/10' : 'bg-blue-100';
+                const labelTextColor = task.type === 'meeting' ? 'text-emerald-600' : task.type === 'event' ? 'text-purple' : 'text-blue-600';
                 const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
                 return (
-                  <View key={task._id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
+                  <View key={task._id || task.id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
                     <View className="flex-row items-center gap-2 mb-2">
-                      <Text className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase font-sans ${labelColor}`}>
-                        {task.type || 'task'}
-                      </Text>
+                      <View className={`px-2 py-0.5 rounded-full flex-row items-center gap-1 ${labelColor}`}>
+                        {task.type === 'meeting' && (
+                          task.meetingType === 'video' 
+                            ? <Video size={10} color="#10b981" /> 
+                            : <Phone size={10} color="#10b981" />
+                        )}
+                        <Text className={`text-[9px] font-bold uppercase font-sans ${labelTextColor}`}>
+                          {task.type === 'meeting' 
+                            ? `Meeting (${task.meetingType === 'video' ? 'Video' : 'Voice'})` 
+                            : (task.type || 'task')}
+                        </Text>
+                      </View>
                       <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${pColor}`}>
                         {task.priority || 'medium'}
                       </Text>
@@ -484,11 +506,14 @@ export default function CallsScreen() {
                       {(task.type === 'meeting' || task.priority === 'high' || task.priority === 'urgent') && (
                         <TouchableOpacity 
                           onPress={() => {
-                            startOutgoingCall({ name: task.title, avatar: null }, 'voice');
+                            startOutgoingCall({ name: task.title, avatar: null }, task.meetingType || 'voice');
                           }}
-                          className="bg-purple/10 px-2.5 py-1 rounded-lg"
+                          className="bg-purple/10 px-2.5 py-1 rounded-lg flex-row items-center gap-1"
                         >
-                          <Text className="text-[10px] font-bold text-purple font-sans">Call room</Text>
+                          {task.meetingType === 'video' ? <Video size={11} color="#6c5ce7" /> : <Phone size={11} color="#6c5ce7" />}
+                          <Text className="text-[10px] font-bold text-purple font-sans">
+                            {task.meetingType === 'video' ? 'Video room' : 'Call room'}
+                          </Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -588,6 +613,34 @@ export default function CallsScreen() {
                   })}
                 </View>
               </View>
+
+              {type === 'meeting' && (
+                <View>
+                  <Text className="text-xs font-bold text-ink uppercase mb-1.5">Meeting Type</Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {['voice', 'video'].map(mt => {
+                      const active = meetingType === mt;
+                      return (
+                        <TouchableOpacity
+                          key={mt}
+                          onPress={() => setMeetingType(mt as any)}
+                          style={{
+                            flex: 1,
+                            backgroundColor: active ? '#6c5ce7' : 'rgba(108,92,231,0.08)',
+                            borderRadius: 12,
+                            paddingVertical: 10,
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Text style={{ color: active ? '#fff' : '#9a9aab', fontSize: 12, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' }}>
+                            {mt === 'voice' ? 'Voice Call' : 'Video Call'}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
 
               {/* Priority Select Tabs */}
               <View>

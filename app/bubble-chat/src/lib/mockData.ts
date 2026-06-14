@@ -5,6 +5,7 @@ export interface Message {
   text: string;
   sender: 'me' | 'other';
   senderName?: string;
+  senderIsBot?: boolean;
   time: string;
   timestamp: Date;
   reactions?: string[];

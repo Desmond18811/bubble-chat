@@ -400,6 +400,9 @@ export default function ChatScreen() {
     : 'Offline';
 
   const filteredMessages = messages.filter(msg => {
+    if (msg.senderIsBot || msg.senderName === 'aida' || msg.senderName?.toLowerCase() === 'aida') {
+      return false;
+    }
     if (!searchQuery.trim()) return true;
     return msg.text.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -595,13 +598,22 @@ export default function ChatScreen() {
             </View>
 
             {/* Action Icons */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <IconBtn icon={<Search size={18} color={INK_SOFT} />} onPress={() => setIsSearching(true)} />
-              <IconBtn icon={<Phone size={18} color={INK_SOFT} />} onPress={() => handleStartCall('voice')} />
-              <IconBtn icon={<Video size={18} color={INK_SOFT} />} onPress={() => handleStartCall('video')} />
-              <IconBtn icon={<Info size={18} color={INK_SOFT} />} onPress={() => setIsInfoOpen(true)} />
-              <IconBtn icon={<MoreVertical size={18} color={INK_SOFT} />} onPress={() => setIsMenuOpen(prev => !prev)} />
-            </View>
+            {(() => {
+              const hideCallButtons = chat?.is_bot || chat?.username === 'aida' || chat?.username?.toLowerCase() === 'aida' || (chat?.otherUserId && String(chat.otherUserId) === String(currentUserIdRef.current));
+              return (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <IconBtn icon={<Search size={18} color={INK_SOFT} />} onPress={() => setIsSearching(true)} />
+                  {!hideCallButtons && (
+                    <>
+                      <IconBtn icon={<Phone size={18} color={INK_SOFT} />} onPress={() => handleStartCall('voice')} />
+                      <IconBtn icon={<Video size={18} color={INK_SOFT} />} onPress={() => handleStartCall('video')} />
+                    </>
+                  )}
+                  <IconBtn icon={<Info size={18} color={INK_SOFT} />} onPress={() => setIsInfoOpen(true)} />
+                  <IconBtn icon={<MoreVertical size={18} color={INK_SOFT} />} onPress={() => setIsMenuOpen(prev => !prev)} />
+                </View>
+              );
+            })()}
           </>
         )}
       </View>

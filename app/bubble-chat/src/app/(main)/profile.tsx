@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Clipboard, Switch, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database } from 'lucide-react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database, ChevronLeft } from 'lucide-react-native';
 import { Avatar } from '../../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -56,6 +56,7 @@ export default function ProfileScreen() {
     logo: string;
     description: string;
     allowMembersToShareInvite: boolean;
+    isAdmin?: boolean;
   } | null>(null);
   const [isEditingOrg, setIsEditingOrg] = useState(false);
   const [orgFormData, setOrgFormData] = useState({
@@ -64,6 +65,10 @@ export default function ProfileScreen() {
     logo: '',
     allowMembersToShareInvite: true,
   });
+  const [activeOrgTab, setActiveOrgTab] = useState<'info' | 'people' | 'transcripts'>('info');
+  const [orgMembers, setOrgMembers] = useState<any[]>([]);
+  const [orgTranscripts, setOrgTranscripts] = useState<any[]>([]);
+  const [expandedTranscriptId, setExpandedTranscriptId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadBackupSettings() {
@@ -255,7 +260,7 @@ export default function ProfileScreen() {
         }
 
         if (currentOrg) {
-          const { getOrgInviteCode } = await import('../../lib/api');
+          const { getOrgInviteCode, getOrgMembers, getOrgTranscripts } = await import('../../lib/api');
           const orgRes = await getOrgInviteCode();
           if (orgRes) {
             setOrgData(orgRes);
@@ -265,6 +270,18 @@ export default function ProfileScreen() {
               logo: orgRes.logo || '',
               allowMembersToShareInvite: orgRes.allowMembersToShareInvite ?? true,
             });
+          }
+          try {
+            const membersRes = await getOrgMembers();
+            if (membersRes?.members) {
+              setOrgMembers(membersRes.members);
+            }
+            const transcriptsRes = await getOrgTranscripts();
+            if (transcriptsRes?.transcripts) {
+              setOrgTranscripts(transcriptsRes.transcripts);
+            }
+          } catch (orgErr) {
+            console.warn("Failed to fetch organization details:", orgErr);
           }
         }
       } catch (e) {
@@ -364,7 +381,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await authStorage.clearSession();
-            router.replace('/splash' as any);
+            router.replace('/login' as any);
           },
         },
       ]
@@ -503,17 +520,20 @@ export default function ProfileScreen() {
           </View>
 
           {/* Organization Settings Card */}
-          {user.role === 'admin' && orgData && (
+          {user.organization && orgData && (
             <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
-              <View className="flex-row justify-between items-center border-b border-black/10 pb-3 mb-5">
+              <View className="flex-row justify-between items-center border-b border-black/10 pb-3 mb-4">
                 <Text className="text-[15px] font-bold text-ink font-sans">
                   Organization Settings
                 </Text>
-                <TouchableOpacity onPress={() => setIsEditingOrg(true)} className="bg-purple/10 px-3 py-1 rounded-xl">
-                  <Text className="text-purple text-[12px] font-bold font-sans">Edit Settings</Text>
-                </TouchableOpacity>
+                {orgData.isAdmin && (
+                  <TouchableOpacity onPress={() => setIsEditingOrg(true)} className="bg-purple/10 px-3 py-1 rounded-xl">
+                    <Text className="text-purple text-[12px] font-bold font-sans">Edit Settings</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
+              {/* Organization Info Hero */}
               <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3 flex-row items-center">
                 <Avatar
                   url={orgData.logo}
@@ -531,46 +551,182 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
-                <View className="flex-1 pr-2">
-                  <Text className="text-[13px] font-bold text-ink font-sans">Organization Invite Code</Text>
-                  <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Share this code with employees to let them join</Text>
-                </View>
+              {/* Tab Switcher */}
+              <View className="flex-row border-b border-black/5 mb-4 mt-2">
                 <TouchableOpacity
-                  onPress={() => {
-                    Clipboard.setString(orgData.inviteCode);
-                    Alert.alert("Copied", "Organization invite code copied to clipboard!");
-                  }}
-                  className="bg-white px-3 py-1.5 rounded-xl border border-black/5 flex-row items-center"
+                  onPress={() => setActiveOrgTab('info')}
+                  className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'info' ? 'border-purple' : 'border-transparent'}`}
                 >
-                  <Copy color="#6c5ce7" size={13} style={{ marginRight: 4 }} />
-                  <Text className="text-purple font-bold text-[11.5px] font-sans">{orgData.inviteCode}</Text>
+                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'info' ? 'text-purple' : 'text-ink-soft'}`}>General</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setActiveOrgTab('people')}
+                  className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'people' ? 'border-purple' : 'border-transparent'}`}
+                >
+                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'people' ? 'text-purple' : 'text-ink-soft'}`}>People</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setActiveOrgTab('transcripts')}
+                  className={`pb-2 border-b-2 ${activeOrgTab === 'transcripts' ? 'border-purple' : 'border-transparent'}`}
+                >
+                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'transcripts' ? 'text-purple' : 'text-ink-soft'}`}>Transcripts</Text>
                 </TouchableOpacity>
               </View>
 
-              <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
-                <View className="flex-1 pr-2">
-                  <Text className="text-[13px] font-bold text-ink font-sans">Allow members to share code</Text>
-                  <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
+              {/* General Tab */}
+              {activeOrgTab === 'info' && (
+                <View style={{ gap: 10 }}>
+                  {orgData.inviteCode ? (
+                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                      <View className="flex-1 pr-2">
+                        <Text className="text-[13px] font-bold text-ink font-sans">Organization Invite Code</Text>
+                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Share this code with employees to let them join</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Clipboard.setString(orgData.inviteCode);
+                          Alert.alert("Copied", "Organization invite code copied to clipboard!");
+                        }}
+                        className="bg-white px-3 py-1.5 rounded-xl border border-black/5 flex-row items-center"
+                      >
+                        <Copy color="#6c5ce7" size={13} style={{ marginRight: 4 }} />
+                        <Text className="text-purple font-bold text-[11.5px] font-sans">{orgData.inviteCode}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View className="bg-red-50/50 p-4 rounded-2xl border border-red-100/30">
+                      <Text className="text-[12px] font-bold text-red-500 font-sans">Invite Code Hidden</Text>
+                      <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Your administrator has disabled invite code sharing for members.</Text>
+                    </View>
+                  )}
+
+                  {orgData.isAdmin && (
+                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                      <View className="flex-1 pr-2">
+                        <Text className="text-[13px] font-bold text-ink font-sans">Allow members to share code</Text>
+                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
+                      </View>
+                      <Switch
+                        value={orgData.allowMembersToShareInvite}
+                        onValueChange={async (val) => {
+                          try {
+                            const { updateOrgProfile } = await import('../../lib/api');
+                            const res = await updateOrgProfile({ allowMembersToShareInvite: val });
+                            if (res) {
+                              setOrgData(prev => prev ? { ...prev, allowMembersToShareInvite: val } : null);
+                              setOrgFormData(prev => ({ ...prev, allowMembersToShareInvite: val }));
+                            }
+                          } catch (e: any) {
+                            Alert.alert("Error", e.message || "Failed to update sharing settings.");
+                          }
+                        }}
+                        trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
+                        thumbColor={Platform.OS === 'ios' ? undefined : orgData.allowMembersToShareInvite ? "#6c5ce7" : "#f4f3f4"}
+                      />
+                    </View>
+                  )}
                 </View>
-                <Switch
-                  value={orgData.allowMembersToShareInvite}
-                  onValueChange={async (val) => {
-                    try {
-                      const { updateOrgProfile } = await import('../../lib/api');
-                      const res = await updateOrgProfile({ allowMembersToShareInvite: val });
-                      if (res) {
-                        setOrgData(prev => prev ? { ...prev, allowMembersToShareInvite: val } : null);
-                        setOrgFormData(prev => ({ ...prev, allowMembersToShareInvite: val }));
-                      }
-                    } catch (e: any) {
-                      Alert.alert("Error", e.message || "Failed to update sharing settings.");
-                    }
-                  }}
-                  trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
-                  thumbColor={Platform.OS === 'ios' ? undefined : orgData.allowMembersToShareInvite ? "#6c5ce7" : "#f4f3f4"}
-                />
-              </View>
+              )}
+
+              {/* People Tab */}
+              {activeOrgTab === 'people' && (
+                <View style={{ gap: 10 }}>
+                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider mb-1">Employee Directory ({orgMembers.length})</Text>
+                  {orgMembers.length === 0 ? (
+                    <Text className="text-xs text-ink-soft italic font-sans">No members found</Text>
+                  ) : (
+                    orgMembers.map(member => (
+                      <View key={member.username} className="flex-row items-center bg-purple-soft/5 p-3 rounded-2xl border border-black/5">
+                        <Avatar
+                          url={member.avatar}
+                          name={member.full_name || member.username}
+                          size={36}
+                          style={{ borderRadius: 10 }}
+                          imageStyle={{ borderRadius: 10 }}
+                        />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-xs font-bold text-ink font-sans">{member.full_name || member.username}</Text>
+                          <Text className="text-[10px] text-ink-soft font-sans">@{member.username}</Text>
+                        </View>
+                        <View className="bg-purple/10 px-2 py-0.5 rounded-lg">
+                          <Text className="text-purple font-bold text-[9px] uppercase font-sans">
+                            {member.org_role || (member.role === 'admin' ? 'Admin' : 'Member')}
+                          </Text>
+                        </View>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+
+              {/* Transcripts Tab */}
+              {activeOrgTab === 'transcripts' && (
+                <View style={{ gap: 10 }}>
+                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider mb-1">Meeting History ({orgTranscripts.length})</Text>
+                  {orgTranscripts.length === 0 ? (
+                    <Text className="text-xs text-ink-soft italic font-sans">No meeting history found</Text>
+                  ) : (
+                    orgTranscripts.map(meeting => {
+                      const isExpanded = expandedTranscriptId === meeting.roomId;
+                      return (
+                        <View key={meeting.roomId} className="bg-purple-soft/5 rounded-2xl border border-black/5 overflow-hidden">
+                          <TouchableOpacity
+                            onPress={() => setExpandedTranscriptId(isExpanded ? null : meeting.roomId)}
+                            className="p-4 flex-row items-center justify-between"
+                          >
+                            <View className="flex-1 pr-2">
+                              <Text className="text-xs font-bold text-ink font-sans">{meeting.title || 'Untitled Meeting'}</Text>
+                              <Text className="text-[10.5px] text-ink-soft font-sans mt-0.5">
+                                Hosted by {meeting.host?.name || 'Unknown'} · {new Date(meeting.timing || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                              </Text>
+                            </View>
+                            <ChevronLeft size={16} color="#6c5ce7" style={{ transform: [{ rotate: isExpanded ? '-90deg' : '0deg' }] }} />
+                          </TouchableOpacity>
+
+                          {isExpanded && (
+                            <View className="px-4 pb-4 border-t border-black/5 pt-3" style={{ gap: 12 }}>
+                              <View className="flex-row items-center justify-between">
+                                <Text className="text-[10.5px] text-ink-soft font-sans">Duration: {Math.ceil((meeting.duration || 0) / 60)} mins</Text>
+                                <Text className="text-[10.5px] text-ink-soft font-sans">Type: {meeting.type || 'Voice'}</Text>
+                              </View>
+
+                              {meeting.summary ? (
+                                <View className="bg-purple-soft/10 p-3 rounded-xl border border-purple/5">
+                                  <Text className="text-[11px] font-bold text-purple uppercase mb-1">Detailed Intelligence</Text>
+                                  <Text className="text-[11.5px] text-ink font-sans leading-relaxed">{meeting.summary}</Text>
+                                </View>
+                              ) : null}
+
+                              {meeting.actionItems && meeting.actionItems.length > 0 ? (
+                                <View>
+                                  <Text className="text-[11px] font-bold text-purple uppercase mb-1">Action Items</Text>
+                                  <View style={{ gap: 4 }} className="mt-1">
+                                    {meeting.actionItems.map((item: string, idx: number) => (
+                                      <View key={idx} className="flex-row items-start gap-1">
+                                        <Text className="text-[11.5px] text-ink">•</Text>
+                                        <Text className="text-[11.5px] text-ink font-sans flex-1">{item}</Text>
+                                      </View>
+                                    ))}
+                                  </View>
+                                </View>
+                              ) : null}
+
+                              {meeting.rawTranscript ? (
+                                <View>
+                                  <Text className="text-[11px] font-bold text-ink-soft uppercase mb-1">Raw Transcript</Text>
+                                  <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled className="bg-black/5 p-2.5 rounded-xl border border-black/5">
+                                    <Text className="text-[10px] text-ink-soft font-mono leading-relaxed">{meeting.rawTranscript}</Text>
+                                  </ScrollView>
+                                </View>
+                              ) : null}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })
+                  )}
+                </View>
+              )}
             </View>
           )}
 

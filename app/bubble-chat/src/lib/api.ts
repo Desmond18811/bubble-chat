@@ -1672,6 +1672,7 @@ export const createTaskFull = async (data: {
     start_time: string;
     end_time: string;
     type?: 'event' | 'task' | 'synced' | 'meeting';
+    meetingType?: 'voice' | 'video';
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     assignedTo?: string;
     color?: string;
@@ -1978,6 +1979,20 @@ export const updateGroupSettings = async (
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ chatId, ...data }),
+    });
+    return handleResponse(res);
+};
+
+export const getOrgMembers = async () => {
+    const res = await fetch(`${BASE_URL}/org/members`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+export const getOrgTranscripts = async () => {
+    const res = await fetch(`${BASE_URL}/org/transcripts`, {
+        headers: getAuthHeaders(),
     });
     return handleResponse(res);
 };
