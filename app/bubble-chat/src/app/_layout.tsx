@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk";
 import * as SplashScreen from "expo-splash-screen";
+import Constants from 'expo-constants';
 import { verifyInstallation } from "nativewind";
 import "../global.css";
 import { initApiFromStorage, getSecureMediaUrl } from "../lib/api";
@@ -13,6 +14,7 @@ import { Image } from "expo-image";
 import { PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Check, Minimize2, Maximize2 } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
 import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, CallState } from "../lib/callManager";
+import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -304,10 +306,36 @@ export default function RootLayout() {
   useEffect(() => {
     // Pre-load stored token into in-memory cache for synchronous getAuthHeaders()
     initApiFromStorage().catch(() => {});
+
+    // Configure Google Sign-In
+    const isExpoGo = Constants.appOwnership === 'expo';
+    if (!isExpoGo) {
+      try {
+        const { GoogleSignin } = require("@react-native-google-signin/google-signin");
+        if (process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID) {
+          GoogleSignin.configure({
+            webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+            offlineAccess: true,
+          });
+        } else {
+          console.warn("⚠️ EXPO_PUBLIC_GOOGLE_CLIENT_ID is not configured. Google Sign-In may fail.");
+        }
+      } catch (e) {
+        console.log("Google Sign-In native module is not available.");
+      }
+    } else {
+      console.log("Running in Expo Go. Google Sign-In native module is disabled. Using Web fallback.");
+    }
     
     // Check auto backup status on launch and schedule every 15 minutes
     checkAndTriggerAutoBackup();
     const interval = setInterval(checkAndTriggerAutoBackup, 15 * 60 * 1000);
+
+    // Register Push Notifications on launch
+    registerForPushNotificationsAsync().catch((err) => {
+      console.warn("Failed to register push notifications on mount:", err);
+    });
+
     return () => clearInterval(interval);
   }, []);
 

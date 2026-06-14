@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, Modal, Alert,
+  TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,6 +42,15 @@ const INK_SOFT = '#9a9aab';
 const BG = '#f8f7ff';
 const PURPLE_SOFT = 'rgba(108,92,231,0.10)';
 
+const AVATARS = [
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop",
+];
+
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -64,6 +73,22 @@ export default function ChatScreen() {
   // User details for own-typing socket filters
   const currentUserIdRef = useRef<string | null>(null);
   const chatRef = useRef<any>(null);
+
+  const [isEditingGroup, setIsEditingGroup] = useState(false);
+  const [groupFormData, setGroupFormData] = useState({
+    chatName: '',
+    groupDescription: '',
+    groupIcon: '',
+  });
+
+  const handleStartEditGroup = () => {
+    setGroupFormData({
+      chatName: chat?.name || '',
+      groupDescription: chat?.bio || '',
+      groupIcon: chat?.avatar || '',
+    });
+    setIsEditingGroup(true);
+  };
 
   useEffect(() => {
     authStorage.getUser().then((user) => {
@@ -1572,6 +1597,116 @@ export default function ChatScreen() {
               </>
             )}
 
+            {/* Group Administration settings */}
+            {chat.isGroupChat && (() => {
+              const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
+              return (
+                <View style={{ backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)', paddingBottom: 10, marginBottom: 10 }}>
+                    <Text style={{ fontSize: 14, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Group Administration</Text>
+                    {isGroupAdmin && (
+                      <TouchableOpacity onPress={handleStartEditGroup} style={{ backgroundColor: PURPLE, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 }}>
+                        <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Edit Info</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>Admin Permission</Text>
+                      <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 2 }}>
+                        {isGroupAdmin ? 'Allow members to share invite' : 'Members can share code: ' + (chat.allowMembersToShareInvite ? 'Yes' : 'No')}
+                      </Text>
+                    </View>
+                    {isGroupAdmin ? (
+                      <Switch
+                        value={chat.allowMembersToShareInvite ?? true}
+                        onValueChange={async (val) => {
+                          try {
+                            const { updateGroupSettings } = await import('../../../lib/api');
+                            const res = await updateGroupSettings(chat.id, { allowMembersToShareInvite: val });
+                            if (res?.conversation) {
+                              setChat(res.conversation);
+                            }
+                          } catch (e: any) {
+                            Alert.alert("Error", e.message || "Failed to update group settings.");
+                          }
+                        }}
+                        trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
+                        thumbColor={Platform.OS === 'ios' ? undefined : (chat.allowMembersToShareInvite ?? true) ? "#6c5ce7" : "#f4f3f4"}
+                      />
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Group Invite Code Card */}
+            {chat.isGroupChat && chat.inviteCode && (() => {
+              const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
+              if (isGroupAdmin || (chat.allowMembersToShareInvite ?? true)) {
+                return (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(108,92,231,0.06)', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 10 }}>
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', letterSpacing: 1 }}>Group Invite Code</Text>
+                      <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT, marginTop: 2 }}>Anyone with this code can join the group</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Clipboard.setString(chat.inviteCode);
+                        Alert.alert("Copied", "Group invite code copied to clipboard!");
+                      }}
+                      style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', flexDirection: 'row', alignItems: 'center' }}
+                    >
+                      <Copy size={12} color={PURPLE} style={{ marginRight: 4 }} />
+                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: PURPLE }}>{chat.inviteCode}</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              }
+              return null;
+            })()}
+
+            {/* List group members */}
+            {chat.isGroupChat && chat.users && chat.users.length > 0 && (
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Group Members ({chat.users.length})
+                </Text>
+                <View style={{ gap: 10 }}>
+                  {chat.users.map((member: any) => {
+                    const isAdmin = chat.groupAdmin && String(member.id || member._id || member) === String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin);
+                    return (
+                      <View key={member.id || member._id || member} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.04)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}>
+                        <Avatar
+                          url={member.avatar}
+                          name={member.full_name || member.username}
+                          size={36}
+                          style={{ borderRadius: 10 }}
+                          imageStyle={{ borderRadius: 10 }}
+                        />
+                        <View style={{ marginLeft: 12, flex: 1 }}>
+                          <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: INK }}>
+                            {member.full_name || member.username}
+                          </Text>
+                          {member.username && (
+                            <Text style={{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>
+                              @{member.username}
+                            </Text>
+                          )}
+                        </View>
+                        {isAdmin && (
+                          <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                            <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase' }}>Admin</Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
             {/* Dynamic Shared Resources / Storage center */}
             <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
               {chat.isGroupChat ? 'Shared Resources' : 'Storage Center'}
@@ -1648,6 +1783,90 @@ export default function ChatScreen() {
             >
               <Text style={{ color: '#ffffff', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Close</Text>
             </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Edit Group Info Modal */}
+      <Modal visible={isEditingGroup} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}>
+            <View>
+              <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Edit Group Info</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Update group details</Text>
+            </View>
+            <TouchableOpacity onPress={() => setIsEditingGroup(false)}>
+              <X color={PURPLE} size={20} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+            <View style={{ backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Avatar</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
+                  {AVATARS.map((url) => (
+                    <TouchableOpacity
+                      key={url}
+                      onPress={() => setGroupFormData({...groupFormData, groupIcon: url})}
+                      style={{
+                        width: 54,
+                        height: 54,
+                        borderRadius: 16,
+                        borderWidth: groupFormData.groupIcon === url ? 3 : 0,
+                        borderColor: PURPLE,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Name</Text>
+                <TextInput
+                  value={groupFormData.chatName}
+                  onChangeText={(t) => setGroupFormData({...groupFormData, chatName: t})}
+                  style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                />
+              </View>
+              
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Description / Bio</Text>
+                <TextInput
+                  value={groupFormData.groupDescription}
+                  onChangeText={(t) => setGroupFormData({...groupFormData, groupDescription: t})}
+                  style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', minHeight: 80 }}
+                  multiline
+                  textAlignVertical="top"
+                />
+              </View>
+              
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    const { updateGroupSettings } = await import('../../../lib/api');
+                    const res = await updateGroupSettings(chat.id, {
+                      chatName: groupFormData.chatName.trim(),
+                      groupDescription: groupFormData.groupDescription.trim(),
+                      groupIcon: groupFormData.groupIcon,
+                    });
+                    if (res?.conversation) {
+                      setChat(res.conversation);
+                      Alert.alert("Success", "Group settings updated successfully.");
+                      setIsEditingGroup(false);
+                    }
+                  } catch (err: any) {
+                    Alert.alert("Error", err.message || "Failed to update group settings.");
+                  }
+                }}
+                style={{ backgroundColor: PURPLE, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 14 }}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save Changes</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>

@@ -5,6 +5,7 @@ import { uploadToFilebase, getSignedMediaUrl, streamS3Object } from '../utils/fi
 import * as fs from 'fs';
 import { enqueueMessage } from '../utils/queue';
 import { getIO } from '../utils/socket';
+import { sendPushNotification } from '../utils/push';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -173,6 +174,44 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       });
     } catch (socketErr) {
       console.error('Socket emit new_message failed:', socketErr);
+    }
+
+    // Trigger push notification to other users asynchronously
+    try {
+      if (fullMessage) {
+        const pushTargets = convo.users.filter((u: any) => String(u) !== String(req.user._id));
+        if (pushTargets.length > 0) {
+          const senderName = fullMessage.sender && ((fullMessage.sender as any).full_name || (fullMessage.sender as any).username)
+            ? ((fullMessage.sender as any).full_name || (fullMessage.sender as any).username)
+            : 'Someone';
+          
+          const title = convo.isGroupChat 
+            ? `${senderName} inside ${convo.chatName || 'Group Chat'}`
+            : senderName;
+
+          let pushBody = '';
+          if (newMessage.is_encrypted) {
+            pushBody = '🔐 Sent an encrypted message';
+          } else if (newMessage.message_type === 'text') {
+            pushBody = newMessage.content || 'Sent a message';
+          } else if (newMessage.message_type === 'image') {
+            pushBody = '🖼️ Sent an image';
+          } else if (newMessage.message_type === 'video') {
+            pushBody = '🎥 Sent a video';
+          } else if (newMessage.message_type === 'voice') {
+            pushBody = '🎵 Sent a voice note';
+          } else {
+            pushBody = '📁 Sent a file';
+          }
+
+          sendPushNotification(pushTargets, title, pushBody, {
+            chatId: convo._id.toString(),
+            type: 'new_message',
+          }).catch(err => console.error('[Push] sendMessage hook failed:', err));
+        }
+      }
+    } catch (pushErr) {
+      console.error('[Push] Failed to compile push target information:', pushErr);
     }
 
     res.status(201).json(formatted);

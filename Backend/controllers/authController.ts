@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models/users';
 import { Organization } from '../models/organizations';
 import { Otp } from '../models/otp';
+import { PushToken } from '../models/pushToken';
 import { sendOTPEmail, sendPasswordResetEmail, sendWelcomeNewMemberEmail } from '../utils/mailer';
 import { seedOrgKnowledge } from './orgController';
 import { Conversation } from '../models/conversations';
@@ -829,6 +831,143 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
   }
 };
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+/**
+ * Handles Native Google Sign-In verification for mobile clients.
+ * Verifies ID Token, registers or links the user, processes optional invites, and returns JWT tokens.
+ */
+export const googleMobileLogin = async (req: Request, res: Response): Promise<void> => {
+  const { idToken, inviteCode } = req.body;
+
+  if (!idToken) {
+    res.status(400).json({ message: 'Google ID Token is required.' });
+    return;
+  }
+
+  try {
+    // 1. Verify the token Google gave the mobile app
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      res.status(401).json({ message: 'Invalid ID token payload.' });
+      return;
+    }
+
+    const { email, name, sub: googleId, picture } = payload;
+
+    if (!email) {
+      res.status(400).json({ message: 'Email address not provided in ID token.' });
+      return;
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    // 2. Find or create user in MongoDB (same logic as passport.ts / googleCallback)
+    let user = await User.findOne({ googleId });
+    if (!user) {
+      // Look up by email to link account
+      user = await User.findOne({ email: normalizedEmail });
+      if (user) {
+        // Link account
+        user.googleId = googleId;
+        if (!user.avatar && picture) {
+          user.avatar = picture;
+        }
+        await user.save();
+      } else {
+        // Brand new Google user — generate uniqueTag & create
+        const uniqueTag = await generateUniqueTag(name || 'user');
+        user = await User.create({
+          googleId,
+          full_name: name,
+          email: normalizedEmail,
+          avatar: picture || '',
+          isVerified: true,
+          uniqueTag,
+          role: 'employee',
+        });
+
+        // Background RSA keypair generation
+        crypto.generateKeyPair('rsa', {
+          modulusLength: 2048,
+          publicKeyEncoding: { type: 'spki', format: 'pem' },
+          privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+        }, async (err: any, pub: string, priv: string) => {
+          if (!err) {
+            await User.findByIdAndUpdate(user!._id, { publicKey: pub, privateKey: priv });
+          }
+        });
+      }
+    }
+
+    // Link user to organization via inviteCode if user has no organization yet
+    if (inviteCode && user && !user.organization) {
+      try {
+        const existingOrg = await Organization.findOne({ inviteCode });
+        if (existingOrg) {
+          user.organization = existingOrg.name;
+          user.org_industry = existingOrg.industry;
+          user.org_size = existingOrg.size as any;
+          user.role = 'employee';
+          await user.save();
+
+          // Add user to the default group chat of this organization
+          const defaultChat = await Conversation.findOne({
+            organizationId: existingOrg._id,
+            isDefaultOrgChat: true,
+          });
+          if (defaultChat) {
+            const userStr = user._id.toString();
+            if (!defaultChat.users.map((id: any) => id.toString()).includes(userStr)) {
+              defaultChat.users.push(user._id);
+              await defaultChat.save();
+            }
+          }
+
+          // Send welcome email (as they joined here)
+          if (user.email) {
+            const summaryHtml = existingOrg.description 
+              ? existingOrg.description.replace(/\n/g, '<br />') 
+              : 'Welcome to the organization! The brain is currently ready and listening.';
+            await sendWelcomeNewMemberEmail(user.email, user.full_name || 'Employee', existingOrg.name, summaryHtml);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to auto-link organization via invite code in googleMobileLogin:', err);
+      }
+    }
+
+    // Generate session tokens
+    const accessToken = generateAccessToken(String(user._id));
+    const refreshToken = generateRefreshToken(String(user._id));
+
+    // Update user's refresh token and online status
+    await User.findByIdAndUpdate(user._id, {
+      refreshToken,
+      isOnline: true,
+      lastSeen: new Date(),
+    });
+
+    res.status(200).json({
+      message: 'Google login successful.',
+      data: {
+        accessToken,
+        refreshToken,
+        user: formatUser(user),
+      }
+    });
+
+  } catch (err: any) {
+    console.error('Google mobile authentication failed:', err);
+    res.status(401).json({ message: 'Google token verification failed: ' + err.message });
+  }
+};
+
 // ─── 2FA INTEGRATION ─────────────────────────────────────────────────────────
 
 export const setup2FA = async (req: any, res: Response): Promise<void> => {
@@ -878,5 +1017,38 @@ export const verify2FA = async (req: any, res: Response): Promise<void> => {
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: 'Failed to verify 2FA token.' });
+  }
+};
+
+/**
+ * Registers or updates a push token for the authenticated user.
+ * POST /api/v1/auth/push-token
+ */
+export const savePushToken = async (req: any, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    const { token, deviceType } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    if (!token) {
+      res.status(400).json({ message: 'token is required' });
+      return;
+    }
+
+    // Upsert the token mapping
+    await PushToken.findOneAndUpdate(
+      { token },
+      { userId, deviceType: deviceType || 'unknown' },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ success: true, message: 'Push token registered successfully.' });
+  } catch (error: any) {
+    console.error('[savePushToken] error:', error);
+    res.status(500).json({ message: 'Failed to register push token.' });
   }
 };

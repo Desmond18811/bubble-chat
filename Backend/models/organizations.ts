@@ -9,6 +9,8 @@ export interface IOrganization extends Document {
     pineconeNamespace?: string;
     inviteCode: string;
     website?: string;
+    logo?: string;
+    allowMembersToShareInvite?: boolean;
     isVerified: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -24,6 +26,8 @@ const OrganizationSchema: Schema<IOrganization> = new Schema(
         pineconeNamespace: { type: String, unique: true, sparse: true },
         inviteCode: { type: String, unique: true, required: true },
         website: { type: String, trim: true },
+        logo: { type: String, default: '' },
+        allowMembersToShareInvite: { type: Boolean, default: true },
         isVerified: { type: Boolean, default: false },
     },
     { timestamps: true }

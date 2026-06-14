@@ -49,6 +49,22 @@ export default function ProfileScreen() {
   const [lastBackupTime, setLastBackupTime] = useState<string>("Today at 2:00 AM");
   const [isBackingUp, setIsBackingUp] = useState(false);
 
+  // Organization settings states
+  const [orgData, setOrgData] = useState<{
+    name: string;
+    inviteCode: string;
+    logo: string;
+    description: string;
+    allowMembersToShareInvite: boolean;
+  } | null>(null);
+  const [isEditingOrg, setIsEditingOrg] = useState(false);
+  const [orgFormData, setOrgFormData] = useState({
+    name: '',
+    description: '',
+    logo: '',
+    allowMembersToShareInvite: true,
+  });
+
   useEffect(() => {
     async function loadBackupSettings() {
       try {
@@ -112,6 +128,7 @@ export default function ProfileScreen() {
     filesCount: 0,
     avatar: '',
     uniqueTag: '',
+    role: '',
   });
 
   const navigation = useNavigation();
@@ -139,6 +156,7 @@ export default function ProfileScreen() {
 
     async function loadUser() {
       try {
+        let currentOrg = '';
         const stored = await authStorage.getUser();
         if (stored) {
           const mapped = {
@@ -152,9 +170,11 @@ export default function ProfileScreen() {
             org_role: stored.org_role || user.org_role,
             organization: stored.organization || user.organization,
             uniqueTag: stored.uniqueTag || user.uniqueTag,
+            role: stored.role || user.role,
           };
           setUser(mapped);
           setFormData(mapped);
+          currentOrg = stored.organization || '';
         }
         
         const fresh = await getMyProfile();
@@ -174,9 +194,25 @@ export default function ProfileScreen() {
             chatsCount: u.chatsCount ?? user.chatsCount,
             filesCount: u.filesCount ?? user.filesCount,
             uniqueTag: u.uniqueTag || user.uniqueTag,
+            role: u.role || user.role,
           };
           setUser(mappedFresh);
           setFormData(mappedFresh);
+          currentOrg = u.organization || '';
+        }
+
+        if (currentOrg) {
+          const { getOrgInviteCode } = await import('../../lib/api');
+          const orgRes = await getOrgInviteCode();
+          if (orgRes) {
+            setOrgData(orgRes);
+            setOrgFormData({
+              name: orgRes.name || '',
+              description: orgRes.description || '',
+              logo: orgRes.logo || '',
+              allowMembersToShareInvite: orgRes.allowMembersToShareInvite ?? true,
+            });
+          }
         }
       } catch (e) {
         console.warn("Failed to load user profile in ProfileScreen:", e);
@@ -413,6 +449,78 @@ export default function ProfileScreen() {
             </View>
           </View>
 
+          {/* Organization Settings Card */}
+          {user.role === 'admin' && orgData && (
+            <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
+              <View className="flex-row justify-between items-center border-b border-black/10 pb-3 mb-5">
+                <Text className="text-[15px] font-bold text-ink font-sans">
+                  Organization Settings
+                </Text>
+                <TouchableOpacity onPress={() => setIsEditingOrg(true)} className="bg-purple/10 px-3 py-1 rounded-xl">
+                  <Text className="text-purple text-[12px] font-bold font-sans">Edit Settings</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3 flex-row items-center">
+                <Avatar
+                  url={orgData.logo}
+                  name={orgData.name}
+                  size={50}
+                  isGroup={true}
+                  style={{ borderRadius: 16 }}
+                  imageStyle={{ borderRadius: 16 }}
+                />
+                <View className="ml-3 flex-1">
+                  <Text className="text-sm font-bold text-ink font-sans">{orgData.name}</Text>
+                  <Text className="text-xs text-ink-soft mt-0.5 font-sans" numberOfLines={2}>
+                    {orgData.description || 'No description set'}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
+                <View className="flex-1 pr-2">
+                  <Text className="text-[13px] font-bold text-ink font-sans">Organization Invite Code</Text>
+                  <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Share this code with employees to let them join</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    Clipboard.setString(orgData.inviteCode);
+                    Alert.alert("Copied", "Organization invite code copied to clipboard!");
+                  }}
+                  className="bg-white px-3 py-1.5 rounded-xl border border-black/5 flex-row items-center"
+                >
+                  <Copy color="#6c5ce7" size={13} style={{ marginRight: 4 }} />
+                  <Text className="text-purple font-bold text-[11.5px] font-sans">{orgData.inviteCode}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                <View className="flex-1 pr-2">
+                  <Text className="text-[13px] font-bold text-ink font-sans">Allow members to share code</Text>
+                  <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
+                </View>
+                <Switch
+                  value={orgData.allowMembersToShareInvite}
+                  onValueChange={async (val) => {
+                    try {
+                      const { updateOrgProfile } = await import('../../lib/api');
+                      const res = await updateOrgProfile({ allowMembersToShareInvite: val });
+                      if (res) {
+                        setOrgData(prev => prev ? { ...prev, allowMembersToShareInvite: val } : null);
+                        setOrgFormData(prev => ({ ...prev, allowMembersToShareInvite: val }));
+                      }
+                    } catch (e: any) {
+                      Alert.alert("Error", e.message || "Failed to update sharing settings.");
+                    }
+                  }}
+                  trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
+                  thumbColor={Platform.OS === 'ios' ? undefined : orgData.allowMembersToShareInvite ? "#6c5ce7" : "#f4f3f4"}
+                />
+              </View>
+            </View>
+          )}
+
           {/* Backup & Restore Card */}
           <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
             <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5 font-sans">
@@ -538,6 +646,93 @@ export default function ProfileScreen() {
               >
                 <Check color="#fff" size={16} />
                 <Text className="text-white font-bold ml-2">Save Changes</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Edit Organization Modal */}
+      <Modal visible={isEditingOrg} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+            <View>
+              <Text className="text-xl font-bold text-ink">Edit Organization</Text>
+              <Text className="text-xs text-ink-soft">Update your organization's settings</Text>
+            </View>
+            <TouchableOpacity onPress={() => setIsEditingOrg(false)}>
+              <X color="#6c5ce7" size={20} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView className="flex-1 px-6 pt-6">
+            <View className="bg-purple-soft/30 rounded-3xl border border-black/5 p-6 mb-8">
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-ink uppercase mb-2">Organization Logo</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
+                  {AVATARS.map((url) => (
+                    <TouchableOpacity
+                      key={url}
+                      onPress={() => setOrgFormData({...orgFormData, logo: url})}
+                      style={{
+                        width: 54,
+                        height: 54,
+                        borderRadius: 16,
+                        borderWidth: orgFormData.logo === url ? 3 : 0,
+                        borderColor: PURPLE,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-ink uppercase mb-1">Organization Name</Text>
+                <TextInput
+                  value={orgFormData.name}
+                  onChangeText={(t) => setOrgFormData({...orgFormData, name: t})}
+                  className="bg-white rounded-2xl p-4 text-ink border border-black/5"
+                />
+              </View>
+              
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-ink uppercase mb-1">Description</Text>
+                <TextInput
+                  value={orgFormData.description}
+                  onChangeText={(t) => setOrgFormData({...orgFormData, description: t})}
+                  className="bg-white rounded-2xl p-4 text-ink border border-black/5 min-h-[80px]"
+                  multiline
+                  textAlignVertical="top"
+                />
+              </View>
+              
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    const { updateOrgProfile } = await import('../../lib/api');
+                    const res = await updateOrgProfile({
+                      name: orgFormData.name.trim(),
+                      description: orgFormData.description.trim(),
+                      logo: orgFormData.logo,
+                      allowMembersToShareInvite: orgFormData.allowMembersToShareInvite,
+                    });
+                    if (res?.organization) {
+                      setOrgData(res.organization);
+                      setUser(prev => ({ ...prev, organization: res.organization.name }));
+                      Alert.alert("Success", "Organization settings updated successfully.");
+                      setIsEditingOrg(false);
+                    }
+                  } catch (err: any) {
+                    Alert.alert("Error", err.message || "Failed to update organization settings.");
+                  }
+                }}
+                className="bg-purple py-4 rounded-xl items-center flex-row justify-center mt-2"
+              >
+                <Check color="#fff" size={16} />
+                <Text className="text-white font-bold ml-2">Save Settings</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

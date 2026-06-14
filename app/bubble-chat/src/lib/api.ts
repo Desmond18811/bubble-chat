@@ -4,6 +4,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
+
+let GoogleSignin: any = null;
+const isExpoGo = Constants.appOwnership === 'expo';
+if (!isExpoGo) {
+    try {
+        GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
+    } catch (e) {
+        console.log("Google Sign-In native module is not available in JS context.");
+    }
+}
 
 const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 const API_BASE = BASE_URL.replace(/\/api\/v1\/?$/, '');
@@ -108,38 +119,95 @@ export function getSecureMediaUrl(url?: string | null): string | null {
 }
 
 export const startGoogleAuth = async (inviteCode?: string): Promise<{ accessToken: string; refreshToken: string; user: any } | null> => {
-    try {
-        const redirectUri = Linking.createURL('/');
-        let stateParam = `mobile_${encodeURIComponent(redirectUri)}`;
-        if (inviteCode) {
-            stateParam += `_invite_${encodeURIComponent(inviteCode)}`;
-        }
-        const authUrl = `${API_BASE}/api/v1/auth/google?state=${stateParam}`;
-        
-        const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-        
-        if (result.type === 'success') {
-            const parsed = Linking.parse(result.url);
-            const { access_token, refresh_token, user: userJson, error } = parsed.queryParams || {};
-            
-            if (error) {
-                throw new Error(error as string);
+    // Check if the native module is actually available
+    let useNativeGoogle = !!GoogleSignin;
+
+    if (useNativeGoogle) {
+        try {
+            // 1. Ensure Google Play Services are available
+            await GoogleSignin.hasPlayServices();
+
+            // 2. Perform native Google Sign-In
+            const userInfo = await GoogleSignin.signIn();
+
+            // 3. Extract the ID token (handle both userInfo.data?.idToken and userInfo.idToken)
+            const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
+            if (!idToken) {
+                throw new Error("No ID Token received from Google Sign-In.");
             }
+
+            // 4. Send the verification request to our new backend route
+            const response = await fetch(`${BASE_URL}/auth/google/mobile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken, inviteCode }),
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.message || `Request failed: ${response.status}`);
+            }
+
+            const data = await response.json();
             
-            if (access_token && refresh_token && userJson) {
-                const userObj = JSON.parse(decodeURIComponent(userJson as string));
+            // 5. Check if successful and return tokens/user
+            if (data?.data?.accessToken && data?.data?.refreshToken) {
                 return {
-                    accessToken: access_token as string,
-                    refreshToken: refresh_token as string,
-                    user: userObj,
+                    accessToken: data.data.accessToken,
+                    refreshToken: data.data.refreshToken,
+                    user: data.data.user,
                 };
             }
+            
+            throw new Error(data?.message || "Verification response from backend did not contain access and refresh tokens.");
+        } catch (err: any) {
+            // If the error is due to missing native module, fall back to WebBrowser
+            if (err.message && (err.message.includes('RNGoogleSignin') || err.message.includes('TurboModuleRegistry') || err.message.includes('enforcing'))) {
+                console.log("RNGoogleSignin native module missing in binary at runtime. Falling back to WebBrowser OAuth.");
+                useNativeGoogle = false;
+            } else {
+                console.error('Google Native Auth Error:', err);
+                throw err;
+            }
         }
-        return null;
-    } catch (err) {
-        console.error('Google Auth Session Error:', err);
-        throw err;
     }
+
+    // --- FALLBACK FLOW (WebBrowser / Passport.js popup) ---
+    if (!useNativeGoogle) {
+        try {
+            const redirectUri = Linking.createURL('/');
+            let stateParam = `mobile_${encodeURIComponent(redirectUri)}`;
+            if (inviteCode) {
+                stateParam += `_invite_${encodeURIComponent(inviteCode)}`;
+            }
+            const authUrl = `${API_BASE}/api/v1/auth/google?state=${stateParam}`;
+            
+            const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+            
+            if (result.type === 'success') {
+                const parsed = Linking.parse(result.url);
+                const { access_token, refresh_token, user: userJson, error } = parsed.queryParams || {};
+                
+                if (error) {
+                    throw new Error(error as string);
+                }
+                
+                if (access_token && refresh_token && userJson) {
+                    const userObj = JSON.parse(decodeURIComponent(userJson as string));
+                    return {
+                        accessToken: access_token as string,
+                        refreshToken: refresh_token as string,
+                        user: userObj,
+                    };
+                }
+            }
+            return null;
+        } catch (err) {
+            console.error('Google Auth Session Fallback Error:', err);
+            throw err;
+        }
+    }
+    return null;
 };
 
 import { initSocket, disconnectSocket } from './socket';
@@ -1847,6 +1915,48 @@ export const uploadCloudBackup = async (backupData: string) => {
 export const fetchCloudBackup = async () => {
     const res = await fetch(`${BASE_URL}/profile/backup`, {
         headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+export const registerPushToken = async (token: string, deviceType?: string) => {
+    const res = await fetch(`${BASE_URL}/auth/push-token`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ token, deviceType }),
+    });
+    return handleResponse(res);
+};
+
+export const updateOrgProfile = async (data: {
+    name?: string;
+    industry?: string;
+    size?: string;
+    description?: string;
+    logo?: string;
+    allowMembersToShareInvite?: boolean;
+}) => {
+    const res = await fetch(`${BASE_URL}/org/profile`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+export const updateGroupSettings = async (
+    chatId: string,
+    data: {
+        chatName?: string;
+        groupIcon?: string;
+        groupDescription?: string;
+        allowMembersToShareInvite?: boolean;
+    }
+) => {
+    const res = await fetch(`${BASE_URL}/chat/group/update`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ chatId, ...data }),
     });
     return handleResponse(res);
 };

@@ -73,6 +73,7 @@ const formatConversation = async (c: any, userId?: any) => ({
   theme: c.theme || 'default',
   is_broadcast: c.is_broadcast ?? false,
   inviteCode: c.inviteCode || null,
+  allowMembersToShareInvite: c.allowMembersToShareInvite ?? true,
 
   // User context
   mutedBy: c.mutedBy || [],
@@ -673,6 +674,72 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
 
     res.status(200).json({
       message: 'Successfully joined group.',
+      conversation: formatted,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Update group settings (group icon, name, description, allowMembersToShareInvite)
+ * PUT /api/v1/chat/group/update
+ */
+export const updateGroupSettings = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId, chatName, groupIcon, groupDescription, allowMembersToShareInvite } = req.body;
+  const userId = req.user?._id;
+
+  if (!chatId) {
+    res.status(400).json({ message: 'chatId is required.' });
+    return;
+  }
+
+  try {
+    const convo = await Conversation.findById(chatId);
+    if (!convo) {
+      res.status(404).json({ message: 'Conversation not found.' });
+      return;
+    }
+
+    // Only group admin can update group settings
+    if (String(convo.groupAdmin) !== String(userId)) {
+      res.status(403).json({ message: 'Only the group admin can update group settings.' });
+      return;
+    }
+
+    const updates: any = {};
+    if (chatName !== undefined) updates.chatName = chatName;
+    if (groupIcon !== undefined) updates.groupIcon = groupIcon;
+    if (groupDescription !== undefined) updates.groupDescription = groupDescription;
+    if (allowMembersToShareInvite !== undefined) updates.allowMembersToShareInvite = allowMembersToShareInvite;
+
+    const updated = await Conversation.findByIdAndUpdate(
+      chatId,
+      { $set: updates },
+      { returnDocument: 'after' }
+    )
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey');
+
+    if (!updated) {
+      res.status(404).json({ message: 'Failed to update conversation settings.' });
+      return;
+    }
+
+    const formatted = await formatConversation(updated, userId);
+
+    // Socket broadcast update to members
+    try {
+      const io = req.io || getIO();
+      updated.users.forEach((u: any) => {
+        io.to(String(u._id || u)).emit('chat_updated', formatted);
+      });
+    } catch (socketErr) {
+      console.error('Socket emit chat_updated failed:', socketErr);
+    }
+
+    res.status(200).json({
+      message: 'Group settings updated successfully.',
       conversation: formatted,
     });
   } catch (error: any) {

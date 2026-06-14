@@ -1,16 +1,16 @@
-# Graph Report - bubble-chat  (2026-06-13)
+# Graph Report - bubble-chat  (2026-06-14)
 
 ## Corpus Check
-- 291 files · ~1,887,422 words
+- 294 files · ~1,891,540 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2185 nodes · 3737 edges · 191 communities (146 shown, 45 thin omitted)
+- 2205 nodes · 3787 edges · 196 communities (142 shown, 54 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 295 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c80d9421`
+- Built from commit: `5e2ecc9a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -153,6 +153,7 @@
 - [[_COMMUNITY_Community 138|Community 138]]
 - [[_COMMUNITY_Community 139|Community 139]]
 - [[_COMMUNITY_Community 140|Community 140]]
+- [[_COMMUNITY_Community 141|Community 141]]
 - [[_COMMUNITY_Community 142|Community 142]]
 - [[_COMMUNITY_Community 143|Community 143]]
 - [[_COMMUNITY_Community 144|Community 144]]
@@ -164,16 +165,20 @@
 - [[_COMMUNITY_Community 152|Community 152]]
 - [[_COMMUNITY_Community 155|Community 155]]
 - [[_COMMUNITY_Community 156|Community 156]]
+- [[_COMMUNITY_Community 159|Community 159]]
 - [[_COMMUNITY_Community 160|Community 160]]
 - [[_COMMUNITY_Community 161|Community 161]]
+- [[_COMMUNITY_Community 162|Community 162]]
 - [[_COMMUNITY_Community 163|Community 163]]
 - [[_COMMUNITY_Community 165|Community 165]]
 - [[_COMMUNITY_Community 166|Community 166]]
+- [[_COMMUNITY_Community 167|Community 167]]
 - [[_COMMUNITY_Community 168|Community 168]]
 - [[_COMMUNITY_Community 171|Community 171]]
 - [[_COMMUNITY_Community 172|Community 172]]
 - [[_COMMUNITY_Community 177|Community 177]]
 - [[_COMMUNITY_Community 185|Community 185]]
+- [[_COMMUNITY_Community 186|Community 186]]
 - [[_COMMUNITY_Community 188|Community 188]]
 - [[_COMMUNITY_Community 189|Community 189]]
 - [[_COMMUNITY_Community 190|Community 190]]
@@ -185,15 +190,15 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 242 edges
-2. `handleResponse()` - 159 edges
+2. `handleResponse()` - 162 edges
 3. `handleResponse()` - 157 edges
-4. `getAuthHeaders()` - 148 edges
+4. `getAuthHeaders()` - 151 edges
 5. `getAuthHeaders()` - 145 edges
 6. `compilerOptions` - 22 edges
 7. `User` - 22 edges
 8. `useDashboard()` - 16 edges
 9. `compilerOptions` - 16 edges
-10. `getIO()` - 14 edges
+10. `getIO()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `RootComponent()` --calls--> `useTheme()`  [INFERRED]
@@ -202,23 +207,23 @@
   BUBBLESPACE/frontend/src/components/chat/tab-views.tsx → app/bubble-chat/example/src/hooks/use-theme.ts
 - `Toaster()` --calls--> `useTheme()`  [INFERRED]
   BUBBLESPACE/frontend/src/components/ui/sonner.tsx → app/bubble-chat/example/src/hooks/use-theme.ts
+- `LiveKitMeetingModal()` --calls--> `useSocket()`  [INFERRED]
+  BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx → BUBBLESPACE/frontend/src/contexts/AppContext.tsx
 - `VoiceBubble()` --calls--> `cn()`  [INFERRED]
   BUBBLESPACE/frontend/src/components/chat/chat-window.tsx → BUBBLESPACE/frontend/src/lib/utils.ts
-- `Dashboard()` --calls--> `useTheme()`  [INFERRED]
-  BUBBLESPACE/frontend/src/components/chat/dashboard.tsx → app/bubble-chat/example/src/hooks/use-theme.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (191 total, 45 thin omitted)
+## Communities (196 total, 54 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.04
-Nodes (55): addFeedComment(), aidaFlagPayments(), aidaScheduleSuggestion(), aidaScheduleTask(), aidaSummarizeFeed(), chatMessageAida(), clearActivityLog(), createGroupChat() (+47 more)
+Nodes (57): addMeetingTranscriptChunk(), aidaFlagPayments(), aidaScheduleTask(), aidaSummarizeFeed(), clearActivityLog(), clearChat(), createGroupChat(), createWorkspaceFolder() (+49 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.05
-Nodes (86): aidaScheduleTask(), buildAidaSystemPrompt(), buildSmartFallback(), callAIDA(), chatWithAida(), chatWithAidaInConversation(), createOrgDoc(), deepseekClient (+78 more)
+Cohesion: 0.07
+Nodes (57): aidaScheduleTask(), buildAidaSystemPrompt(), buildSmartFallback(), callAIDA(), chatWithAida(), chatWithAidaInConversation(), createOrgDoc(), deepseekClient (+49 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.04
@@ -230,19 +235,19 @@ Nodes (37): Collapsible(), styles, TabTwoScreen(), getDevMenuHint(), HomeScreen(
 
 ### Community 4 - "Community 4"
 Cohesion: 0.04
-Nodes (55): accessOrCreateChat(), addContact(), addMeetingTranscriptChunk(), addToGroup(), aidaScheduleSuggestion(), aidaSearchWorkspace(), blockUser(), blockWorkspaceFileUser() (+47 more)
+Nodes (55): addContact(), addMeetingTranscriptChunk(), aidaFlagPayments(), aidaScheduleSuggestion(), aidaSearchWorkspace(), blockUser(), chatWithAida(), clearAllNotifications() (+47 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.07
-Nodes (43): cn(), Card(), CardAction(), CardContent(), CardDescription(), CardFooter(), CardHeader(), CardTitle() (+35 more)
+Nodes (42): cn(), Card(), CardAction(), CardContent(), CardDescription(), CardFooter(), CardHeader(), CardTitle() (+34 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.06
-Nodes (34): dependencies, expo, expo-blur, expo-camera, expo-constants, expo-device, expo-font, expo-glass-effect (+26 more)
+Nodes (36): dependencies, expo, expo-blur, expo-camera, expo-constants, expo-device, expo-font, expo-glass-effect (+28 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.06
-Nodes (31): dependencies, @aws-sdk/client-s3, @aws-sdk/lib-storage, @aws-sdk/s3-request-presigner, bcryptjs, compression, cors, dotenv (+23 more)
+Nodes (32): dependencies, @aws-sdk/client-s3, @aws-sdk/lib-storage, @aws-sdk/s3-request-presigner, bcryptjs, compression, cors, dotenv (+24 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.11
@@ -258,11 +263,11 @@ Nodes (24): backgroundColor, backgroundImage, foregroundImage, monochromeImage, 
 
 ### Community 11 - "Community 11"
 Cohesion: 0.04
-Nodes (56): addToGroup(), blockUser(), blockWorkspaceFileUser(), clearAllNotifications(), createInvoice(), createMeeting(), createTemplate(), createWorkspaceFolder() (+48 more)
+Nodes (56): accessOrCreateChat(), addToGroup(), aidaScheduleSuggestion(), blockUser(), blockWorkspaceFileUser(), createFeedPost(), createInvoice(), createOrgDoc() (+48 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.04
-Nodes (55): accessOrCreateChat(), addContact(), addMeetingTranscriptChunk(), aidaExtractActionItems(), aidaSearchWorkspace(), chatWithAida(), clearCallLogs(), clearChat() (+47 more)
+Nodes (56): addContact(), addFeedComment(), aidaExtractActionItems(), aidaSearchWorkspace(), chatMessageAida(), chatWithAida(), clearAllNotifications(), clearCallLogs() (+48 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.08
@@ -281,32 +286,32 @@ Cohesion: 0.12
 Nodes (26): AuthRequest, deleteAccount(), followUser(), formatUser(), getBackup(), getFollowers(), getFollowing(), getMyProfile() (+18 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.05
-Nodes (33): Route, DashboardArchive(), Route, Route, Route, Route, DashboardPage(), Route (+25 more)
+Cohesion: 0.09
+Nodes (21): Route, DashboardAllRoute, DashboardArchiveRoute, DashboardCallsRoute, DashboardChatRoute, DashboardEditProfileRoute, DashboardFriendsRoute, DashboardIndexRoute (+13 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.22
-Nodes (8): Table(), TableBody(), TableCaption(), TableCell(), TableFooter(), TableHead(), TableHeader(), TableRow()
+Cohesion: 0.11
+Nodes (39): changePassword(), client, forgotPassword(), formatUser(), generateAccessToken(), generateOTP(), generateRefreshToken(), generateUniqueTag() (+31 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.19
-Nodes (16): addTranscriptChunk(), createMeeting(), deepseekClient, endMeeting(), endScreenShare(), extractMeetingIntelligence(), getMeetingActionItems(), getMeetingById() (+8 more)
+Cohesion: 0.11
+Nodes (25): addTranscriptChunk(), createMeeting(), deepseekClient, endMeeting(), endScreenShare(), extractMeetingIntelligence(), getMeetingActionItems(), getMeetingById() (+17 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.12
-Nodes (21): ChatScreen(), addFolder(), addMockContact(), AUTO_RESPONSES, ChatCallback, chats, contacts, createMockGroupChat() (+13 more)
+Cohesion: 0.11
+Nodes (22): ChatScreen(), addFolder(), addMockContact(), AUTO_RESPONSES, ChatCallback, chats, contacts, createMockGroupChat() (+14 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.10
 Nodes (20): devDependencies, nodemon, ts-node, @types/bcryptjs, @types/compression, @types/cors, @types/express, @types/express-rate-limit (+12 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.24
-Nodes (9): proxyMedia(), uploadMedia(), BUCKET, extractKeyFromUrl(), s3Client, saveFileLocally(), streamS3Object(), uploadsDir (+1 more)
+Cohesion: 0.18
+Nodes (15): addComment(), createPost(), deletePost(), getFeedPosts(), getFollowingFeed(), getSavedPosts(), getSuggestedUsers(), getTrendingPosts() (+7 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.10
-Nodes (26): fetchStories(), formatAuthor(), formatStory(), proxyStoryMedia(), uploadStory(), addContact(), AuthRequest, formatUser() (+18 more)
+Cohesion: 0.06
+Nodes (48): proxyMedia(), fetchStories(), formatAuthor(), formatStory(), proxyStoryMedia(), uploadStory(), addContact(), AuthRequest (+40 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.11
@@ -329,12 +334,12 @@ Cohesion: 0.23
 Nodes (7): MONGO_URI, formatSecurityCode(), getCurrentSecurityCode(), ISecurityCode, SecurityCode, SecurityCodeSchema, router
 
 ### Community 30 - "Community 30"
-Cohesion: 0.25
-Nodes (7): ITask, Task, TaskPriority, TaskSchema, TaskSource, TaskStatus, TaskType
+Cohesion: 0.42
+Nodes (9): ChatList(), ChatWindow(), ArchiveView(), CallsView(), FriendsView(), WorkView(), useChats(), useSocket() (+1 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.23
-Nodes (17): accessChat(), addToGroup(), AuthRequest, clearChat(), createGroupChat(), deleteChat(), fetchChats(), formatConversation() (+9 more)
+Nodes (19): accessChat(), addToGroup(), AuthRequest, clearChat(), createGroupChat(), deleteChat(), fetchChats(), formatConversation() (+11 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.12
@@ -350,7 +355,7 @@ Nodes (9): DropdownMenuCheckboxItem(), DropdownMenuContent(), DropdownMenuItem()
 
 ### Community 35 - "Community 35"
 Cohesion: 0.21
-Nodes (13): logActivity(), aiDescribeEvent(), clearAllTasks(), deepseekClient, deleteTask(), getTasks(), snoozeTask(), updateTask() (+5 more)
+Nodes (14): logActivity(), aiDescribeEvent(), clearAllTasks(), createTask(), deepseekClient, deleteTask(), getTasks(), snoozeTask() (+6 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.22
@@ -366,7 +371,7 @@ Nodes (13): Action, ActionType, actionTypes, addToRemoveQueue(), dispatch(), gen
 
 ### Community 40 - "Community 40"
 Cohesion: 0.04
-Nodes (54): aidaFlagPayments(), chatWithAida(), clearActivityLog(), createFeedPost(), createGroupChat(), createOrgDoc(), createTemplate(), deleteChat() (+46 more)
+Nodes (54): accessOrCreateChat(), addToGroup(), blockWorkspaceFileUser(), chatMessageAida(), clearActivityLog(), createFeedPost(), createInvoice(), createOrgDoc() (+46 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.45
@@ -381,28 +386,28 @@ Cohesion: 0.15
 Nodes (12): compilerOptions, esModuleInterop, forceConsistentCasingInFileNames, module, outDir, resolveJsonModule, rootDir, skipLibCheck (+4 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.13
-Nodes (6): checkAndTriggerAutoBackup(), chatCache, DEFAULT_FOLDERS, KEYS, Message, subscribeToChats()
+Cohesion: 0.12
+Nodes (7): checkAndTriggerAutoBackup(), AVATARS, chatCache, DEFAULT_FOLDERS, KEYS, Message, subscribeToChats()
 
 ### Community 45 - "Community 45"
 Cohesion: 0.18
 Nodes (12): Item(), ItemActions(), ItemContent(), ItemDescription(), ItemFooter(), ItemGroup(), ItemHeader(), ItemMedia() (+4 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.36
-Nodes (7): createTemplate(), deleteTemplate(), getTemplates(), updateTemplate(), useTemplate(), requireAuth, router
+Cohesion: 0.21
+Nodes (11): createTemplate(), deleteTemplate(), getTemplates(), updateTemplate(), useTemplate(), ITemplate, Template, TemplateSchema (+3 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.22
-Nodes (7): ContactCard(), countMedia(), FileRow(), FilesCard(), glass, iconMap, MembersCard()
+Cohesion: 0.18
+Nodes (8): ContactCard(), countMedia(), FileRow(), FilesCard(), glass, iconMap, MembersCard(), getSecureMediaUrl()
 
 ### Community 48 - "Community 48"
 Cohesion: 0.23
 Nodes (8): clearActivityLog(), getActivityLog(), ActivityAction, ActivityLog, ActivityLogSchema, IActivityLog, requireAuth, router
 
 ### Community 49 - "Community 49"
-Cohesion: 0.24
-Nodes (13): addComment(), createPost(), deletePost(), getFeedPosts(), getFollowingFeed(), getSavedPosts(), getSuggestedUsers(), getTrendingPosts() (+5 more)
+Cohesion: 0.10
+Nodes (14): IUser, User, UserSchema, generateUniqueTag(), JOB_TITLES, ROLES, run(), Employee (+6 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.23
@@ -441,8 +446,8 @@ Cohesion: 0.33
 Nodes (5): EMOJIS, LiquidGlassContactCard(), MessageOverlay(), MessageOverlayProps, Msg
 
 ### Community 59 - "Community 59"
-Cohesion: 0.15
-Nodes (15): Chat, Contact, getChats(), getContacts(), getFolders(), ChatRow(), ContactRow(), getGroupInitials() (+7 more)
+Cohesion: 0.16
+Nodes (14): Chat, Contact, getChats(), getContacts(), ChatRow(), ContactRow(), getGroupInitials(), styles (+6 more)
 
 ### Community 60 - "Community 60"
 Cohesion: 0.04
@@ -485,8 +490,8 @@ Cohesion: 0.60
 Nodes (3): checkHealth(), checkHealthDetailed(), router
 
 ### Community 70 - "Community 70"
-Cohesion: 0.11
-Nodes (23): ChatList(), ChatWindow(), ChatMessageEntry, LiveKitMeetingModal(), MeetingRoomLayout(), TranscriptEntry, ArchiveView(), CalendarSection() (+15 more)
+Cohesion: 0.17
+Nodes (10): CalendarSection(), CalendarSectionProps, EditView(), FriendCard(), getCalendarCells(), INDUSTRIES, MeetingView(), OFFICE_ROLES (+2 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.25
@@ -501,8 +506,8 @@ Cohesion: 0.25
 Nodes (4): ContextMenuPos, EMOJIS, VoiceBubble(), waveform
 
 ### Community 74 - "Community 74"
-Cohesion: 0.14
-Nodes (16): allMessages(), markMessagesRead, toggleMessagePin(), updateMessage, AuthRequest, canMessageUser(), getMessageRequests(), respondToMessageRequest() (+8 more)
+Cohesion: 0.13
+Nodes (23): allMessages(), AuthRequest, deleteForEveryone(), deleteForMe(), deleteMessage(), editMessage(), formatMessage(), formatSender() (+15 more)
 
 ### Community 75 - "Community 75"
 Cohesion: 0.25
@@ -561,8 +566,8 @@ Cohesion: 0.40
 Nodes (3): CASES, container, item
 
 ### Community 90 - "Community 90"
-Cohesion: 0.16
-Nodes (20): AuthRequest, blockFileUser(), BUCKET, createWorkspaceFolder(), deleteWorkspaceFile(), formatFile(), getSharedWithMe(), getSharedWorkspaceFolder() (+12 more)
+Cohesion: 0.18
+Nodes (12): createInvoice(), deleteInvoice(), generateInvoiceNumber(), getInvoiceById(), getInvoices(), updateInvoice(), createNotification(), IInvoice (+4 more)
 
 ### Community 91 - "Community 91"
 Cohesion: 0.18
@@ -593,16 +598,16 @@ Cohesion: 0.40
 Nodes (3): InputOTP(), InputOTPGroup(), InputOTPSlot()
 
 ### Community 100 - "Community 100"
-Cohesion: 0.17
-Nodes (18): createInvoice(), deleteInvoice(), generateInvoiceNumber(), getInvoiceById(), getInvoices(), updateInvoice(), createNotification(), contributeToGoal() (+10 more)
+Cohesion: 0.26
+Nodes (11): contributeToGoal(), createCheckoutSession(), createGoal(), depositFunds(), getGoals(), getTransactions(), stripe, stripeWebhook() (+3 more)
 
 ### Community 102 - "Community 102"
 Cohesion: 0.40
 Nodes (4): editor.codeActionsOnSave, source.fixAll, source.organizeImports, source.sortMembers
 
 ### Community 104 - "Community 104"
-Cohesion: 0.20
-Nodes (6): AvatarProps, ChatAvatar(), ContextMenuState, CreateGroupModal(), CreateGroupModalProps, getSecureMediaUrl()
+Cohesion: 0.24
+Nodes (5): AvatarProps, ChatAvatar(), ContextMenuState, CreateGroupModal(), CreateGroupModalProps
 
 ### Community 105 - "Community 105"
 Cohesion: 0.50
@@ -625,48 +630,36 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 110 - "Community 110"
-Cohesion: 0.15
-Nodes (11): Goal, GoalSchema, IGoal, INetwork, INetworkPost, NetworkPost, NetworkPostSchema, NetworkSchema (+3 more)
+Cohesion: 0.24
+Nodes (6): Goal, GoalSchema, IGoal, ITransaction, Transaction, TransactionSchema
+
+### Community 114 - "Community 114"
+Cohesion: 0.22
+Nodes (9): AuthRequest, canMessageUser(), getMessageRequests(), respondToMessageRequest(), sendMessageRequest(), IMessageRequest, MessageRequest, MessageRequestSchema (+1 more)
 
 ### Community 120 - "Community 120"
-Cohesion: 0.27
-Nodes (13): AuthRequest, deleteForEveryone(), deleteForMe(), deleteMessage(), editMessage(), formatMessage(), formatSender(), markAsRead() (+5 more)
+Cohesion: 0.40
+Nodes (4): ChatMessageEntry, LiveKitMeetingModal(), MeetingRoomLayout(), TranscriptEntry
 
 ### Community 121 - "Community 121"
-Cohesion: 0.20
-Nodes (9): ActionItemSchema, IActionItem, IMeeting, IScreenShare, ISharedFile, Meeting, MeetingSchema, ScreenShareSchema (+1 more)
-
-### Community 122 - "Community 122"
-Cohesion: 0.33
-Nodes (5): IInvoice, IInvoiceItem, Invoice, InvoiceItemSchema, InvoiceSchema
-
-### Community 123 - "Community 123"
-Cohesion: 0.33
-Nodes (3): IPost, PostSchema, postsData
+Cohesion: 0.22
+Nodes (8): Table(), TableBody(), TableCaption(), TableCell(), TableFooter(), TableHead(), TableHeader(), TableRow()
 
 ### Community 135 - "Community 135"
 Cohesion: 0.29
 Nodes (7): scripts, android, ios, lint, reset-project, start, web
 
-### Community 138 - "Community 138"
-Cohesion: 0.40
-Nodes (5): Employee, EMPLOYEES, generateUniqueTagSync(), ORGS, run()
-
 ### Community 139 - "Community 139"
-Cohesion: 0.40
-Nodes (4): ITemplate, Template, TemplateSchema, TemplateType
+Cohesion: 0.25
+Nodes (7): ITask, Task, TaskPriority, TaskSchema, TaskSource, TaskStatus, TaskType
 
-### Community 140 - "Community 140"
-Cohesion: 0.50
-Nodes (4): generateUniqueTag(), JOB_TITLES, ROLES, run()
+### Community 145 - "Community 145"
+Cohesion: 0.25
+Nodes (6): Pagination(), PaginationContent(), PaginationEllipsis(), PaginationLinkProps, PaginationNext(), PaginationPrevious()
 
 ### Community 147 - "Community 147"
-Cohesion: 0.16
-Nodes (16): styles, initApiFromStorage(), acceptIncomingCall(), CallState, currentCallState, declineIncomingCall(), hangUpCall(), listeners (+8 more)
-
-### Community 160 - "Community 160"
-Cohesion: 0.23
-Nodes (4): IUser, User, UserSchema, testUsers
+Cohesion: 0.15
+Nodes (17): styles, initApiFromStorage(), acceptIncomingCall(), CallState, currentCallState, declineIncomingCall(), hangUpCall(), listeners (+9 more)
 
 ### Community 161 - "Community 161"
 Cohesion: 0.25
@@ -677,12 +670,12 @@ Cohesion: 0.22
 Nodes (3): enqueueMessage(), processQueue(), redis
 
 ### Community 165 - "Community 165"
-Cohesion: 0.25
-Nodes (5): AVATARS, INDUSTRIES, ORG_SIZES, ROLE_OPTIONS, styles
+Cohesion: 0.33
+Nodes (5): INetwork, INetworkPost, NetworkPost, NetworkPostSchema, NetworkSchema
 
-### Community 166 - "Community 166"
-Cohesion: 0.25
-Nodes (6): Pagination(), PaginationContent(), PaginationEllipsis(), PaginationLinkProps, PaginationNext(), PaginationPrevious()
+### Community 168 - "Community 168"
+Cohesion: 0.50
+Nodes (3): Avatar(), AvatarFallback(), AvatarImage()
 
 ### Community 185 - "Community 185"
 Cohesion: 0.20
@@ -692,33 +685,29 @@ Nodes (9): devDependencies, tailwindcss, @types/react, @types/react-native, type
 Cohesion: 0.40
 Nodes (4): Tabs(), TabsContent(), TabsList(), TabsTrigger()
 
-### Community 190 - "Community 190"
-Cohesion: 0.50
-Nodes (3): Avatar(), AvatarFallback(), AvatarImage()
-
 ### Community 191 - "Community 191"
-Cohesion: 0.10
-Nodes (11): styles, { width: W, height: H }, styles, { width: W, height: H }, SLIDES, styles, { width: W, height: H }, styles (+3 more)
+Cohesion: 0.07
+Nodes (16): styles, { width: W, height: H }, AVATARS, INDUSTRIES, ORG_SIZES, ROLE_OPTIONS, styles, styles (+8 more)
 
 ## Knowledge Gaps
-- **671 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+666 more)
+- **678 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+673 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **45 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **54 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Community 5` to `Community 3`, `Community 9`, `Community 144`, `Community 145`, `Community 18`, `Community 19`, `Community 32`, `Community 33`, `Community 34`, `Community 166`, `Community 168`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 58`, `Community 188`, `Community 61`, `Community 190`, `Community 62`, `Community 64`, `Community 68`, `Community 197`, `Community 70`, `Community 73`, `Community 202`, `Community 203`, `Community 76`, `Community 77`, `Community 81`, `Community 82`, `Community 92`, `Community 95`, `Community 96`, `Community 97`, `Community 98`, `Community 99`, `Community 101`, `Community 104`, `Community 111`, `Community 112`, `Community 113`, `Community 114`?**
-  _High betweenness centrality (0.086) - this node is a cross-community bridge._
-- **Why does `DashboardPage()` connect `Community 18` to `Community 5`?**
+- **Why does `cn()` connect `Community 5` to `Community 3`, `Community 9`, `Community 144`, `Community 145`, `Community 30`, `Community 159`, `Community 32`, `Community 33`, `Community 34`, `Community 167`, `Community 168`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 58`, `Community 186`, `Community 188`, `Community 61`, `Community 62`, `Community 190`, `Community 64`, `Community 68`, `Community 197`, `Community 70`, `Community 73`, `Community 202`, `Community 203`, `Community 76`, `Community 77`, `Community 81`, `Community 82`, `Community 92`, `Community 95`, `Community 96`, `Community 97`, `Community 98`, `Community 99`, `Community 101`, `Community 104`, `Community 111`, `Community 112`, `Community 113`, `Community 120`, `Community 121`?**
+  _High betweenness centrality (0.087) - this node is a cross-community bridge._
+- **Why does `DashboardPage()` connect `Community 159` to `Community 5`?**
   _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **Why does `useTheme()` connect `Community 3` to `Community 94`, `Community 70`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Are the 241 inferred relationships involving `cn()` (e.g. with `ChatAvatar()` and `ChatList()`) actually correct?**
   _`cn()` has 241 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `$schema`, `style`, `rsc` to the rest of the system?**
-  _671 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _678 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.03569267997580157 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03508771929824561 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.05176116838487973 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07355769230769231 - nodes in this community are weakly interconnected._

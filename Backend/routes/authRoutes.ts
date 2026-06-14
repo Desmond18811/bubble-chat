@@ -13,8 +13,10 @@ import {
   getMe,
   googleLogin,
   googleCallback,
+  googleMobileLogin,
   setup2FA,
   verify2FA,
+  savePushToken,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -388,5 +390,34 @@ router.get('/google', (req, res, next) => {
  *         description: Authentication failed.
  */
 router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: `${process.env.ORIGIN || 'http://localhost:5173'}/login?error=auth_failed` }), googleCallback);
+
+/**
+ * @swagger
+ * /api/v1/auth/google/mobile:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Verify native Google Sign-In token and login/register
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken: { type: string, description: "Google ID Token" }
+ *               inviteCode: { type: string, description: "Optional organization invite code" }
+ *     responses:
+ *       200:
+ *         description: Login successful. Returns JWT tokens.
+ *       400:
+ *         description: Missing fields or invalid request.
+ *       401:
+ *         description: Google token verification failed.
+ */
+router.post('/google/mobile', googleMobileLogin);
+
+/** POST /api/v1/auth/push-token */
+router.post('/push-token', jwtAuth, savePushToken);
 
 export default router;

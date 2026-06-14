@@ -598,7 +598,7 @@ export const saveBackup = async (req: AuthRequest, res: Response): Promise<void>
     res.status(200).json({
       message: 'Backup saved successfully.',
       data: {
-        updatedAt: backup.updatedAt,
+        updatedAt: backup?.updatedAt,
       },
     });
   } catch (err: any) {

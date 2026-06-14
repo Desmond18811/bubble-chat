@@ -28,6 +28,7 @@ export interface IConversation extends Document {
   organizationId?: mongoose.Types.ObjectId;
   isDefaultOrgChat?: boolean;
   inviteCode?: string;
+  allowMembersToShareInvite?: boolean;
   
   createdAt: Date;
   updatedAt: Date;
@@ -107,6 +108,10 @@ const ConversationSchema: Schema<IConversation> = new Schema(
       type: String,
       unique: true,
       sparse: true,
+    },
+    allowMembersToShareInvite: {
+      type: Boolean,
+      default: true,
     },
   },
   {

@@ -434,9 +434,64 @@ export const getOrgInviteCode = async (req: AuthRequest, res: Response): Promise
     res.status(200).json({
       name: org.name,
       inviteCode: org.inviteCode,
+      logo: org.logo || '',
+      description: org.description || '',
+      allowMembersToShareInvite: org.allowMembersToShareInvite ?? true,
     });
   } catch (error: any) {
     console.error('[GetOrgInviteCode] error:', error);
     res.status(500).json({ error: 'Failed to retrieve organization invite code.' });
+  }
+};
+
+/**
+ * PUT /api/v1/org/profile
+ * Update organization profile settings (name, industry, size, description, logo, allowMembersToShareInvite)
+ */
+export const updateOrgProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.user?._id;
+  const { name, industry, size, description, logo, allowMembersToShareInvite } = req.body;
+
+  try {
+    // 1. Find the organization owned by this user
+    let org = await Organization.findOne({ owner: userId });
+    if (!org) {
+      res.status(404).json({ error: 'Organization not found or you are not the owner.' });
+      return;
+    }
+
+    const oldName = org.name;
+
+    // 2. Perform updates
+    if (name !== undefined && name.trim()) org.name = name.trim();
+    if (industry !== undefined) org.industry = industry;
+    if (size !== undefined) org.size = size;
+    if (description !== undefined) org.description = description;
+    if (logo !== undefined) org.logo = logo;
+    if (allowMembersToShareInvite !== undefined) org.allowMembersToShareInvite = allowMembersToShareInvite;
+
+    await org.save();
+
+    // 3. If organization name changed, update the user profile field of all members!
+    if (name !== undefined && name.trim() && oldName !== name.trim()) {
+      const newName = name.trim();
+      await User.updateMany(
+        { organization: oldName },
+        { $set: { organization: newName } }
+      );
+      // Also update any default group chat name of this organization
+      await Conversation.updateMany(
+        { organizationId: org._id, isDefaultOrgChat: true },
+        { $set: { chatName: newName } }
+      );
+    }
+
+    res.status(200).json({
+      message: 'Organization profile updated successfully.',
+      organization: org,
+    });
+  } catch (error: any) {
+    console.error('[updateOrgProfile] error:', error);
+    res.status(500).json({ error: 'Failed to update organization profile.' });
   }
 };

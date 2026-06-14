@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Notification, INotification, NotificationType } from '../models/notification';
 import mongoose from 'mongoose';
+import { sendPushNotification } from '../utils/push';
 
 // ─── Internal helper — called by other controllers ────────────────────────────
 
@@ -16,6 +17,15 @@ export const createNotification = async (data: {
 }): Promise<INotification | null> => {
   try {
     const notif = await Notification.create(data);
+    
+    // Trigger push notification asynchronously
+    sendPushNotification([data.recipient], data.title, data.body, {
+      notificationId: notif._id.toString(),
+      type: data.type,
+      entityId: data.entityId || '',
+      entityType: data.entityType || '',
+    }).catch(err => console.error('[Push] createNotification hook failed:', err));
+
     return notif;
   } catch (err) {
     console.error('❌ createNotification failed:', err);

@@ -3,6 +3,7 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/users';
 import mongoose from 'mongoose';
+import { sendPushNotification } from './push';
 
 
 let io: Server;
@@ -204,6 +205,21 @@ export const initSocket = (server: HttpServer) => {
         ...data,
         fromUserId: userId
       });
+
+      // Send push notification for incoming call asynchronously
+      const caller = (socket as any).fullName || (socket as any).username || 'Someone';
+      const typeStr = data.type === 'video' ? 'video call' : 'voice call';
+      sendPushNotification(
+        [data.toUserId],
+        `Incoming ${typeStr}`,
+        `${caller} is calling you...`,
+        {
+          roomId: data.roomId,
+          type: 'incoming_call',
+          callType: data.type || 'voice',
+          callerName: caller,
+        }
+      ).catch(err => console.error('[Push] Incoming call push failed:', err));
     });
 
     socket.on('call_answer', async (data: { toUserId: string; roomId: string }) => {

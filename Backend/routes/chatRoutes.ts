@@ -14,6 +14,7 @@ import {
   getUnreadChatCount,
   toggleArchiveChat,
   joinGroupChatByInvite,
+  updateGroupSettings,
 } from '../controllers/chatController';
 
 
@@ -119,6 +120,7 @@ router.route('/').get(fetchChats);
  */
 router.route('/group').post(createGroupChat);
 router.route('/group/join').post(joinGroupChatByInvite);
+router.route('/group/update').put(updateGroupSettings);
 
 /**
  * @swagger
