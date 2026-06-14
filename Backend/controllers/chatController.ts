@@ -89,7 +89,9 @@ const formatConversation = async (c: any, userId?: any) => ({
     sender: c.latestMessage.sender ? {
       id: c.latestMessage.sender._id || c.latestMessage.sender,
       full_name: c.latestMessage.sender.full_name || null,
-      avatar: c.latestMessage.sender.avatar || null
+      avatar: c.latestMessage.sender.avatar || null,
+      username: c.latestMessage.sender.username || null,
+      is_bot: c.latestMessage.sender.is_bot ?? false
     } : null,
     sentAt: c.latestMessage.createdAt,
     readBy: c.latestMessage.readBy || [],
@@ -133,7 +135,7 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
       .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
       .populate({
         path: 'latestMessage',
-        populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline' },
+        populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline is_bot' },
       });
 
     if (existing.length > 0) {
@@ -148,7 +150,7 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
         .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
         .populate({
           path: 'latestMessage',
-          populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline' },
+          populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline is_bot' },
         });
 
       const formatted = await formatConversation(updated, req.user._id);
@@ -218,7 +220,7 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
       .populate('groupAdmin', '-password -refreshToken -privateKey')
       .populate({
         path: 'latestMessage',
-        populate: { path: 'sender', select: 'full_name avatar email uniqueTag' },
+        populate: { path: 'sender', select: 'full_name username avatar email uniqueTag is_bot' },
       })
       .sort({ updatedAt: -1 });
 

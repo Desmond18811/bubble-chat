@@ -164,7 +164,7 @@ export default function Signup() {
       }
 
       await apiRegister(payload);
-      
+
       // Navigate to OTP verification screen
       router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}&mode=verify` as any);
     } catch (err: any) {
@@ -181,7 +181,7 @@ export default function Signup() {
       const session = await startGoogleAuth(inviteCode.trim());
       if (session) {
         await authStorage.setSession(session.accessToken, session.refreshToken, session.user);
-        
+
         // Silent restore E2E cloud backup if exists
         try {
           const { chatCache } = await import("../lib/chatCache");
@@ -189,7 +189,7 @@ export default function Signup() {
         } catch (restoreErr) {
           console.warn("Failed silent restore on Google signup:", restoreErr);
         }
-        
+
         // Redirect dynamically based on completeness of onboarding to prevent errors
         if (session.user?.onboardingComplete) {
           router.replace("/(main)/messages" as any);
@@ -287,6 +287,8 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     autoCapitalize="words"
                     style={styles.input}
+                    autoComplete="name"
+                    importantForAutofill="yes"
                   />
                 </View>
 
@@ -300,6 +302,8 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     autoCapitalize="characters"
                     style={styles.input}
+                    autoComplete="off"
+                    importantForAutofill="no"
                   />
                 </View>
 
@@ -315,28 +319,31 @@ export default function Signup() {
                     keyboardType="email-address"
                     style={styles.input}
                     autoComplete="email"
+                    importantForAutofill="yes"
                   />
                 </View>
 
-                {/* Password */}
+                {/* Password — FIX: autoComplete="new-password" prevents yellow autofill highlight */}
                 <View style={styles.inputRow}>
                   <Lock size={18} color={INK_SOFT} style={{ marginRight: 10 }} />
                   <TextInput
                     value={password}
                     onChangeText={t => { setPassword(t); setError(""); }}
-                    placeholder="Password"
+                    placeholder="Enter your password"
                     placeholderTextColor="#b0b2c3"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     style={[styles.input, { flex: 1 }]}
-                    autoComplete="password-new"
+                    autoComplete="new-password"
+                    importantForAutofill="no"
+                    textContentType="newPassword"
                   />
                   <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={{ padding: 4 }} activeOpacity={0.7}>
                     {showPassword ? <EyeOff size={18} color={INK_SOFT} /> : <Eye size={18} color={INK_SOFT} />}
                   </TouchableOpacity>
                 </View>
 
-                {/* Confirm Password */}
+                {/* Confirm Password — FIX: autoComplete="new-password" prevents yellow autofill highlight */}
                 <View style={styles.inputRow}>
                   <Lock size={18} color={INK_SOFT} style={{ marginRight: 10 }} />
                   <TextInput
@@ -346,8 +353,11 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
+                    keyboardType="default"
                     style={[styles.input, { flex: 1 }]}
-                    autoComplete="password-new"
+                    autoComplete="new-password"
+                    importantForAutofill="no"
+                    textContentType="newPassword"
                   />
                   <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={{ padding: 4 }} activeOpacity={0.7}>
                     {showConfirmPassword ? <EyeOff size={18} color={INK_SOFT} /> : <Eye size={18} color={INK_SOFT} />}
@@ -369,6 +379,8 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     autoCapitalize="words"
                     style={styles.input}
+                    autoComplete="organization"
+                    importantForAutofill="yes"
                   />
                 </View>
 
@@ -382,6 +394,8 @@ export default function Signup() {
                       placeholder="Industry"
                       placeholderTextColor="#b0b2c3"
                       style={styles.input}
+                      autoComplete="off"
+                      importantForAutofill="no"
                     />
                   </View>
 
@@ -412,6 +426,8 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     autoCapitalize="words"
                     style={styles.input}
+                    autoComplete="name"
+                    importantForAutofill="yes"
                   />
                 </View>
 
@@ -427,10 +443,11 @@ export default function Signup() {
                     keyboardType="email-address"
                     style={styles.input}
                     autoComplete="email"
+                    importantForAutofill="yes"
                   />
                 </View>
 
-                {/* Password */}
+                {/* Password — FIX: autoComplete="new-password" prevents yellow autofill highlight */}
                 <View style={styles.inputRow}>
                   <Lock size={18} color={INK_SOFT} style={{ marginRight: 10 }} />
                   <TextInput
@@ -440,15 +457,18 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
+                    keyboardType="default"
                     style={[styles.input, { flex: 1 }]}
-                    autoComplete="password-new"
+                    autoComplete="new-password"
+                    importantForAutofill="no"
+                    textContentType="newPassword"
                   />
                   <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={{ padding: 4 }} activeOpacity={0.7}>
                     {showPassword ? <EyeOff size={18} color={INK_SOFT} /> : <Eye size={18} color={INK_SOFT} />}
                   </TouchableOpacity>
                 </View>
 
-                {/* Confirm Password */}
+                {/* Confirm Password — FIX: autoComplete="new-password" prevents yellow autofill highlight */}
                 <View style={styles.inputRow}>
                   <Lock size={18} color={INK_SOFT} style={{ marginRight: 10 }} />
                   <TextInput
@@ -458,8 +478,11 @@ export default function Signup() {
                     placeholderTextColor="#b0b2c3"
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
+                    keyboardType="default"
                     style={[styles.input, { flex: 1 }]}
-                    autoComplete="password-new"
+                    autoComplete="new-password"
+                    importantForAutofill="no"
+                    textContentType="newPassword"
                   />
                   <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={{ padding: 4 }} activeOpacity={0.7}>
                     {showConfirmPassword ? <EyeOff size={18} color={INK_SOFT} /> : <Eye size={18} color={INK_SOFT} />}
@@ -526,8 +549,6 @@ export default function Signup() {
     </KeyboardAvoidingView>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG_LIGHT },
