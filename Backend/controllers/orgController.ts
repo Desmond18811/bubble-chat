@@ -9,6 +9,7 @@ import { Conversation } from '../models/conversations';
 import { Message } from '../models/messages';
 import { sendWelcomeNewMemberEmail } from '../utils/mailer';
 import { getAidaBotUser } from './aidaController';
+import { Meeting } from '../models/meeting';
 import OpenAI from 'openai';
 
 const deepseekClient = new OpenAI({
@@ -431,12 +432,16 @@ export const getOrgInviteCode = async (req: AuthRequest, res: Response): Promise
       return;
     }
 
+    const isAdmin = org.owner.toString() === userId.toString();
+    const inviteCode = (isAdmin || (org.allowMembersToShareInvite ?? true)) ? org.inviteCode : "";
+
     res.status(200).json({
       name: org.name,
-      inviteCode: org.inviteCode,
+      inviteCode,
       logo: org.logo || '',
       description: org.description || '',
       allowMembersToShareInvite: org.allowMembersToShareInvite ?? true,
+      isAdmin,
     });
   } catch (error: any) {
     console.error('[GetOrgInviteCode] error:', error);
@@ -493,5 +498,78 @@ export const updateOrgProfile = async (req: AuthRequest, res: Response): Promise
   } catch (error: any) {
     console.error('[updateOrgProfile] error:', error);
     res.status(500).json({ error: 'Failed to update organization profile.' });
+  }
+};
+
+/**
+ * GET /api/v1/org/members
+ * Get all members of the current user's organization
+ */
+export const getOrgMembers = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = (req.user as any)?._id;
+    const user = await User.findById(userId);
+    if (!user || !user.organization) {
+      res.status(200).json({ members: [] });
+      return;
+    }
+
+    const members = await User.find({ organization: user.organization })
+      .select('full_name username email avatar role isOnline lastSeen')
+      .sort({ full_name: 1, username: 1 })
+      .lean();
+
+    res.status(200).json({ members });
+  } catch (error: any) {
+    console.error('[getOrgMembers] error:', error);
+    res.status(550).json({ error: 'Failed to retrieve organization members.' });
+  }
+};
+
+/**
+ * GET /api/v1/org/transcripts
+ * Get all transcripts/minutes for meetings in the user's organization
+ */
+export const getOrgTranscripts = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = (req.user as any)?._id;
+    const user = await User.findById(userId);
+    if (!user || !user.organization) {
+      res.status(404).json({ error: 'User is not part of any organization.' });
+      return;
+    }
+
+    // Find all users in this organization
+    const orgUsers = await User.find({ organization: user.organization }).select('_id');
+    const orgUserIds = orgUsers.map(u => u._id);
+
+    // Find ended meetings hosted by any member of the organization
+    const meetings = await Meeting.find({
+      host: { $in: orgUserIds },
+      status: 'ended'
+    })
+    .populate('host', 'full_name username avatar')
+    .sort({ endedAt: -1 })
+    .lean();
+
+    // Map meetings to detailed transcript structures
+    const transcripts = meetings.map(m => ({
+      _id: m._id,
+      title: m.title,
+      roomId: m.roomId,
+      type: m.type,
+      startedAt: m.startedAt,
+      endedAt: m.endedAt,
+      duration: m.duration,
+      host: m.host,
+      transcriptRaw: m.transcriptRaw || '',
+      summary: m.summary || '',
+      actionItems: m.actionItems || []
+    }));
+
+    res.status(200).json({ transcripts });
+  } catch (error: any) {
+    console.error('[getOrgTranscripts] error:', error);
+    res.status(500).json({ error: 'Failed to retrieve organization transcripts.' });
   }
 };

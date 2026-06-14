@@ -12,6 +12,7 @@ export interface ITask extends Document {
   recipients?: mongoose.Types.ObjectId[]; // people invited / notified
 
   type: TaskType;
+  meetingType?: 'voice' | 'video';
   title: string;
   description?: string;
   start_time: Date;
@@ -46,6 +47,7 @@ const TaskSchema = new Schema<ITask>(
     recipients: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
     type: { type: String, enum: ['event', 'task', 'synced', 'meeting'], default: 'task' },
+    meetingType: { type: String, enum: ['voice', 'video'] },
     title: { type: String, required: true },
     description: { type: String },
     start_time: { type: Date, required: true },
@@ -71,4 +73,5 @@ TaskSchema.index({ user_id: 1, start_time: 1 });
 TaskSchema.index({ assignedTo: 1, status: 1 });
 
 export const Task = mongoose.model<ITask>('Task', TaskSchema);
+
 

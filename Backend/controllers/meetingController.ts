@@ -45,7 +45,7 @@ const extractMeetingIntelligence = async (
       messages: [
         {
           role: 'system',
-          content: `You are Aida, an expert meeting intelligence assistant. Analyze transcripts and extract structured data. Always return valid JSON only.`,
+          content: `You are Aida, an expert meeting intelligence assistant. Analyze transcripts and extract structured data. Write a highly detailed explanation explaining everything in key exciting details (who said what, key decisions made, technical context, details discussed, and future plans) rather than a brief summary. Always return valid JSON only.`,
         },
         {
           role: 'user',
@@ -56,14 +56,14 @@ TRANSCRIPT:
 ${transcript.substring(0, 3000)}
 
 Extract:
-1. A comprehensive summary (who said what, who did what, decisions made, files shared)
+1. A highly detailed, premium explanation of the meeting. This explanation should explain everything in key exciting details, highlighting who said what, key decisions, technical context, files shared, and future steps.
 2. All action items with who they are assigned to
 
 Return ONLY this JSON (no other text):
 {"summary": "...", "actionItems": [{"text": "...", "assignedToName": "...or null"}]}`,
         },
       ],
-      max_tokens: 700,
+      max_tokens: 1500,
       temperature: 0.3,
     });
 

@@ -1,5 +1,15 @@
 import express from 'express';
-import { ingestDocument, listDocuments, deleteDocument, joinOrganizationByInvite, onboardOrgBrain, getOrgInviteCode, updateOrgProfile } from '../controllers/orgController';
+import {
+  ingestDocument,
+  listDocuments,
+  deleteDocument,
+  joinOrganizationByInvite,
+  onboardOrgBrain,
+  getOrgInviteCode,
+  updateOrgProfile,
+  getOrgMembers,
+  getOrgTranscripts
+} from '../controllers/orgController';
 import passport from 'passport';
 
 const router = express.Router();
@@ -13,5 +23,7 @@ router.post('/join', requireAuth, joinOrganizationByInvite);
 router.post('/brain/onboard', requireAuth, onboardOrgBrain);
 router.get('/invite-code', requireAuth, getOrgInviteCode);
 router.put('/profile', requireAuth, updateOrgProfile);
+router.get('/members', requireAuth, getOrgMembers);
+router.get('/transcripts', requireAuth, getOrgTranscripts);
 
 export default router;
