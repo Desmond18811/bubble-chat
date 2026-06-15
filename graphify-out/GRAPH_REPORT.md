@@ -1,7 +1,7 @@
 # Graph Report - bubble-chat  (2026-06-15)
 
 ## Corpus Check
-- 294 files · ~1,903,060 words
+- 294 files · ~1,902,931 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a03e7473`
+- Built from commit: `aaf9165e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

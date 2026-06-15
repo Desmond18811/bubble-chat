@@ -114,57 +114,7 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    // Default organization default group chat broadcast for meeting/event with empty recipients
     const hasRecipients = recipients && recipients.length > 0;
-    if (!hasRecipients && (type === 'meeting' || type === 'event')) {
-      try {
-        const creator = await User.findById(userId);
-        if (creator && creator.organization) {
-          const org = await Organization.findOne({ name: creator.organization });
-          if (org) {
-            const defaultChat = await Conversation.findOne({
-              organizationId: org._id,
-              isDefaultOrgChat: true,
-            });
-
-            if (defaultChat) {
-              const bot = await User.findOne({ is_bot: true, username: 'aida' });
-              const botId = bot ? bot._id : null;
-              
-              const startStr = new Date(start_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-              const eventTypeText = type === 'meeting' ? '📅 Meeting' : '📢 Event';
-              const chatContent = `🗓️ **New ${eventTypeText} Scheduled**\n\n**Title:** ${task.title}\n**Time:** ${startStr}\n${description ? `**Description:** ${description}` : ''}`;
-
-              const groupMsg = await Message.create({
-                chat: defaultChat._id,
-                sender: botId || userId,
-                content: chatContent,
-                message_type: 'system',
-                is_announcement: true,
-              });
-
-              await Conversation.findByIdAndUpdate(defaultChat._id, {
-                $set: { latestMessage: (groupMsg as any)._id },
-              });
-
-              // Emit Socket alert
-              const { getIO } = await import('../utils/socket');
-              const io = getIO();
-              const { formatMessage } = await import('./messageController') as any;
-              const fullMsg = await Message.findById((groupMsg as any)._id).populate('sender', 'full_name username avatar is_bot');
-              const formatted = await formatMessage(fullMsg);
-              io.to(String(defaultChat._id)).emit('new_message', formatted);
-              defaultChat.users.forEach((u: any) => {
-                io.to(u.toString()).emit('new_message', formatted);
-              });
-              console.log(`[Calendar Alert] Broadcasted calendar creation message to default chat: ${defaultChat._id}`);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[Calendar Alert] Default group chat notification post failed:', err);
-      }
-    }
 
     // ── Send Email Invitations ───────────────────────────────────────────────
     try {

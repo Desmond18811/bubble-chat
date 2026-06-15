@@ -282,6 +282,10 @@ export default function ChatScreen() {
       if (!data) return;
       const incomingChatId = data.chat || data.chatId;
       if (String(incomingChatId) !== String(id)) return;
+
+      // ── NEW: discard Aida bot messages in group chats ──
+      const isBotSender = data.sender?.is_bot || data.sender?.username?.toLowerCase() === 'aida';
+      if (isBotSender && chatRef.current?.isGroupChat) return;
       const currentUserId = currentUserIdRef.current;
       const senderId = String(data.sender?.id || data.sender?._id || data.sender);
       const isMe = currentUserId && String(senderId) === String(currentUserId);
@@ -511,18 +515,25 @@ export default function ChatScreen() {
     }
   };
 
+  const memberCount = chat.isGroupChat && Array.isArray(chat.users) ? chat.users.length : 0;
   const statusLine = chat.status === 'typing'
     ? 'typing…'
     : chat.isOnline
     ? 'Online'
     : chat.isGroupChat
-    ? `${messages.length} messages`
+    ? `${memberCount > 0 ? memberCount : ''} member${memberCount !== 1 ? 's' : ''}`.trim()
     : 'Offline';
 
   const filteredMessages = messages.filter(msg => {
-    if (msg.senderIsBot || msg.senderName === 'aida' || msg.senderName?.toLowerCase() === 'aida') {
+    if (msg.isSystem || msg.message_type === 'system' || msg.is_announcement || msg.sender === 'system') {
       return false;
     }
+
+    // ── NEW ──
+    if (chat?.isGroupChat && msg.senderIsBot) {
+      return false;
+    }
+
     if (!searchQuery.trim()) return true;
     return msg.text.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -711,7 +722,7 @@ export default function ChatScreen() {
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: chat.status === 'typing' ? PURPLE : INK_SOFT, marginTop: 1 }}>
                     {chat.status === 'typing' 
                       ? (typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…') 
-                      : chat.isOnline ? 'Online' : chat.isGroupChat ? `${messages.length} messages` : 'Offline'}
+                      : chat.isOnline ? 'Online' : chat.isGroupChat ? statusLine : 'Offline'}
                   </Text>
                 </View>
               </TouchableOpacity>

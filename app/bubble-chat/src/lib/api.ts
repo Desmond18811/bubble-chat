@@ -25,81 +25,81 @@ let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
 const onRefreshed = (token: string) => {
-  refreshSubscribers.forEach(cb => cb(token));
-  refreshSubscribers = [];
+    refreshSubscribers.forEach(cb => cb(token));
+    refreshSubscribers = [];
 };
 
 const addRefreshSubscriber = (cb: (token: string) => void) => {
-  refreshSubscribers.push(cb);
+    refreshSubscribers.push(cb);
 };
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const urlStr = typeof input === 'string' ? input : (input as any).url || String(input);
-  
-  let res = await originalFetch(input, init);
+    const urlStr = typeof input === 'string' ? input : (input as any).url || String(input);
 
-  if (res.status === 401 && !urlStr.includes('/auth/refresh-token')) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-      try {
-        const refreshToken = await AsyncStorage.getItem('bubble_refresh_token');
-        if (refreshToken) {
-          const refreshRes = await originalFetch(`${BASE_URL}/auth/refresh-token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken }),
-          });
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json();
-            const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshData.data || {};
-            if (newAccessToken && newRefreshToken) {
-              await AsyncStorage.multiSet([
-                ['bubble_access_token', newAccessToken],
-                ['bubble_refresh_token', newRefreshToken],
-                ['bubble_last_login', Date.now().toString()],
-              ]);
-              setApiToken(newAccessToken);
-              onRefreshed(newAccessToken);
-              isRefreshing = false;
+    let res = await originalFetch(input, init);
+
+    if (res.status === 401 && !urlStr.includes('/auth/refresh-token')) {
+        if (!isRefreshing) {
+            isRefreshing = true;
+            try {
+                const refreshToken = await AsyncStorage.getItem('bubble_refresh_token');
+                if (refreshToken) {
+                    const refreshRes = await originalFetch(`${BASE_URL}/auth/refresh-token`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refreshToken }),
+                    });
+                    if (refreshRes.ok) {
+                        const refreshData = await refreshRes.json();
+                        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshData.data || {};
+                        if (newAccessToken && newRefreshToken) {
+                            await AsyncStorage.multiSet([
+                                ['bubble_access_token', newAccessToken],
+                                ['bubble_refresh_token', newRefreshToken],
+                                ['bubble_last_login', Date.now().toString()],
+                            ]);
+                            setApiToken(newAccessToken);
+                            onRefreshed(newAccessToken);
+                            isRefreshing = false;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to auto-refresh token:', err);
             }
-          }
+
+            if (isRefreshing) {
+                isRefreshing = false;
+                await AsyncStorage.multiRemove([
+                    'bubble_access_token',
+                    'bubble_refresh_token',
+                    'bubble_user',
+                    'bubble_last_login',
+                ]);
+                setApiToken(null);
+            }
         }
-      } catch (err) {
-        console.error('Failed to auto-refresh token:', err);
-      }
 
-      if (isRefreshing) {
-        isRefreshing = false;
-        await AsyncStorage.multiRemove([
-          'bubble_access_token',
-          'bubble_refresh_token',
-          'bubble_user',
-          'bubble_last_login',
-        ]);
-        setApiToken(null);
-      }
+        if (isRefreshing) {
+            const retryPromise = new Promise<Response>((resolve) => {
+                addRefreshSubscriber((newToken) => {
+                    const headers = init?.headers ? { ...init.headers } : {};
+                    (headers as any)['Authorization'] = `Bearer ${newToken}`;
+                    resolve(originalFetch(input, { ...init, headers }));
+                });
+            });
+            return retryPromise;
+        } else {
+            const newToken = await AsyncStorage.getItem('bubble_access_token');
+            if (newToken) {
+                const headers = init?.headers ? { ...init.headers } : {};
+                (headers as any)['Authorization'] = `Bearer ${newToken}`;
+                return originalFetch(input, { ...init, headers });
+            }
+        }
     }
 
-    if (isRefreshing) {
-      const retryPromise = new Promise<Response>((resolve) => {
-        addRefreshSubscriber((newToken) => {
-          const headers = init?.headers ? { ...init.headers } : {};
-          (headers as any)['Authorization'] = `Bearer ${newToken}`;
-          resolve(originalFetch(input, { ...init, headers }));
-        });
-      });
-      return retryPromise;
-    } else {
-      const newToken = await AsyncStorage.getItem('bubble_access_token');
-      if (newToken) {
-        const headers = init?.headers ? { ...init.headers } : {};
-        (headers as any)['Authorization'] = `Bearer ${newToken}`;
-        return originalFetch(input, { ...init, headers });
-      }
-    }
-  }
-
-  return res;
+    return res;
 };
 
 const fetch = customFetch;
@@ -150,7 +150,7 @@ export const startGoogleAuth = async (inviteCode?: string): Promise<{ accessToke
             }
 
             const data = await response.json();
-            
+
             // 5. Check if successful and return tokens/user
             if (data?.data?.accessToken && data?.data?.refreshToken) {
                 return {
@@ -159,7 +159,7 @@ export const startGoogleAuth = async (inviteCode?: string): Promise<{ accessToke
                     user: data.data.user,
                 };
             }
-            
+
             throw new Error(data?.message || "Verification response from backend did not contain access and refresh tokens.");
         } catch (err: any) {
             // If the error is due to missing native module, fall back to WebBrowser
@@ -182,17 +182,17 @@ export const startGoogleAuth = async (inviteCode?: string): Promise<{ accessToke
                 stateParam += `_invite_${encodeURIComponent(inviteCode)}`;
             }
             const authUrl = `${API_BASE}/api/v1/auth/google?state=${stateParam}`;
-            
+
             const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-            
+
             if (result.type === 'success') {
                 const parsed = Linking.parse(result.url);
                 const { access_token, refresh_token, user: userJson, error } = parsed.queryParams || {};
-                
+
                 if (error) {
                     throw new Error(error as string);
                 }
-                
+
                 if (access_token && refresh_token && userJson) {
                     const userObj = JSON.parse(decodeURIComponent(userJson as string));
                     return {
@@ -534,7 +534,7 @@ export const sendMediaMessage = async (
                     : file.type?.startsWith('audio/')
                         ? 'voice'
                         : 'file');
-        
+
         const res = await fetch(`${BASE_URL}/message`, {
             method: 'POST',
             headers: getAuthHeaders(),
@@ -1792,7 +1792,7 @@ export const uploadGroupOrOrgImage = async (fileUri: string): Promise<string> =>
     const token = tokenCache.accessToken;
     const formData = new FormData();
     const filename = fileUri.split('/').pop() || 'upload.jpg';
-    
+
     formData.append('file', {
         uri: Platform.OS === 'ios' ? fileUri.replace('file://', '') : fileUri,
         name: filename,

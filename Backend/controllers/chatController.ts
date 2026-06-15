@@ -94,6 +94,7 @@ const formatConversation = async (c: any, userId?: any) => ({
       is_bot: c.latestMessage.sender.is_bot ?? false
     } : null,
     sentAt: c.latestMessage.createdAt,
+    is_announcement: c.latestMessage.is_announcement ?? false,
     readBy: c.latestMessage.readBy || [],
     isRead: c.latestMessage.readBy && c.latestMessage.readBy.some((r: any) => {
       const senderId = String(c.latestMessage.sender?._id || c.latestMessage.sender?.id || c.latestMessage.sender);
@@ -233,7 +234,9 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
           chat: { $in: chatIds },
           sender: { $ne: objectUserId },
           readBy: { $ne: objectUserId },
-          deletedFor: { $ne: objectUserId }
+          deletedFor: { $ne: objectUserId },
+          message_type: { $ne: 'system' },
+          is_announcement: { $ne: true }
         }
       },
       { $group: { _id: '$chat', count: { $sum: 1 } } }
@@ -578,7 +581,9 @@ export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promi
       chat: { $in: chatIds },
       sender: { $ne: userId },
       readBy: { $ne: userId },
-      deletedFor: { $ne: userId }
+      deletedFor: { $ne: userId },
+      message_type: { $ne: 'system' },
+      is_announcement: { $ne: true }
     });
 
     const count = unreadChats.length;

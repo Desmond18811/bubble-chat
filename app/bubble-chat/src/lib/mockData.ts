@@ -3,7 +3,7 @@
 export interface Message {
   id: string;
   text: string;
-  sender: 'me' | 'other';
+  sender: 'me' | 'other' | 'system';
   senderName?: string;
   senderIsBot?: boolean;
   time: string;
@@ -12,6 +12,9 @@ export interface Message {
   isPinned?: boolean;
   isRead?: boolean;
   status?: 'queued' | 'sent' | 'delivered';
+  message_type?: string;
+  is_announcement?: boolean;
+  isSystem?: boolean;
 }
 
 export interface Chat {

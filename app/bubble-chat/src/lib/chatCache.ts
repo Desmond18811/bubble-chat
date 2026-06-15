@@ -129,7 +129,15 @@ export const chatCache = {
       let latestMessageTime = c.updatedAt;
       if (c.latestMessage) {
         const isSystem = c.latestMessage.message_type === 'system' || c.latestMessage.is_announcement;
-        if (!isSystem) {
+
+        // ── NEW ──
+        const isBotMsg = !!(
+          c.latestMessage.senderIsBot ||
+          c.latestMessage.sender?.is_bot ||
+          c.latestMessage.sender?.username === 'aida'
+        );
+
+        if (!isSystem && !isBotMsg) {
           if (c.latestMessage.message_type === 'text') {
             latestText = c.latestMessage.content;
           } else {
