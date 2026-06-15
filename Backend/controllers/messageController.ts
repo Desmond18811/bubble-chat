@@ -160,10 +160,19 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
         populate: { path: 'sender', select: 'full_name uniqueTag' }
       });
 
-    await Conversation.findByIdAndUpdate(chatId, {
-      latestMessage: newMessage._id,
-      $pull: { deletedBy: { $in: convo.users } }
-    });
+    const isSystem = newMessage.message_type === 'system' || newMessage.is_announcement === true;
+    
+    if (!isSystem) {
+      await Conversation.findByIdAndUpdate(chatId, {
+        latestMessage: newMessage._id,
+        $pull: { deletedBy: { $in: convo.users } }
+      });
+    } else {
+      // Just pull deletedBy so it reappears if someone deleted it, but don't bump latestMessage
+      await Conversation.findByIdAndUpdate(chatId, {
+        $pull: { deletedBy: { $in: convo.users } }
+      });
+    }
 
     const formatted = await formatMessage(fullMessage);
     try {
