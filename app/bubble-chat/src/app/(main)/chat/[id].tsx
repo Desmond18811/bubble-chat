@@ -11,7 +11,7 @@ import {
   Camera, FileText, Image as ImageIcon,
   Info, Sparkles, BellOff, EyeOff, Archive, Trash2,
   Copy, Pin, Edit2, Check, CheckCheck,
-  MicOff, PhoneOff, Volume2, Clock, Play, Pause,
+  MicOff, PhoneOff, Volume2, Clock, Play, Pause, MessageSquare,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -151,7 +151,7 @@ export default function ChatScreen() {
 
   useEffect(() => {
     if (!chat || messages.length === 0) return;
-    
+
     // Find the last received message (sender !== 'me')
     const lastReceived = [...messages].reverse().find(m => m.sender !== 'me');
     if (!lastReceived) {
@@ -203,8 +203,8 @@ export default function ChatScreen() {
 
           const filtered = query
             ? allMembers.filter(u =>
-                u.name.toLowerCase().includes(query) || u.username.toLowerCase().includes(query)
-              )
+              u.name.toLowerCase().includes(query) || u.username.toLowerCase().includes(query)
+            )
             : allMembers;
           setMentionSuggestions(filtered.slice(0, 8));
         } else {
@@ -410,7 +410,7 @@ export default function ChatScreen() {
           console.warn("Failed to resolve chat via API in ChatScreen:", apiErr);
         }
       }
-      
+
       const freshMsgs = await chatCache.syncMessagesWithBackend(id as string);
       setMessages(freshMsgs);
     } catch (err) {
@@ -456,13 +456,13 @@ export default function ChatScreen() {
 
   const handleSend = async () => {
     let text = messageText.trim();
-    
+
     const socket = getSocket();
     if (socket && chat) {
       if (typingTimer.current) clearTimeout(typingTimer.current);
       socket.emit('typing_stop', { toUserId: chat.otherUserId, chatId: chat.id });
     }
-    
+
     try {
       if (editingMessageId) {
         if (!text) return;
@@ -519,10 +519,10 @@ export default function ChatScreen() {
   const statusLine = chat.status === 'typing'
     ? 'typing…'
     : chat.isOnline
-    ? 'Online'
-    : chat.isGroupChat
-    ? `${memberCount > 0 ? memberCount : ''} member${memberCount !== 1 ? 's' : ''}`.trim()
-    : 'Offline';
+      ? 'Online'
+      : chat.isGroupChat
+        ? `${memberCount > 0 ? memberCount : ''} member${memberCount !== 1 ? 's' : ''}`.trim()
+        : 'Offline';
 
   const filteredMessages = messages.filter(msg => {
     if (msg.isSystem || msg.message_type === 'system' || msg.is_announcement || msg.sender === 'system') {
@@ -720,8 +720,8 @@ export default function ChatScreen() {
                     {isMuted && <BellOff size={11} color={INK_SOFT} style={{ marginLeft: 2 }} />}
                   </View>
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: chat.status === 'typing' ? PURPLE : INK_SOFT, marginTop: 1 }}>
-                    {chat.status === 'typing' 
-                      ? (typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…') 
+                    {chat.status === 'typing'
+                      ? (typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…')
                       : chat.isOnline ? 'Online' : chat.isGroupChat ? statusLine : 'Offline'}
                   </Text>
                 </View>
@@ -840,233 +840,251 @@ export default function ChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1, backgroundColor: BG }}
-          contentContainerStyle={{ paddingHorizontal: 14, paddingTop: 16, paddingBottom: 24 }}
+          contentContainerStyle={[
+            { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 24 },
+            renderedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
+          ]}
           showsVerticalScrollIndicator={false}
         >
-          {renderedItems.map(item => {
-            if (item.type === 'divider') {
-              return (
-                <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 18, paddingHorizontal: 10 }}>
-                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.06)' }} />
-                  <Text style={{ marginHorizontal: 16, fontSize: 12, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>
-                    {item.text}
-                  </Text>
-                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.06)' }} />
-                </View>
-              );
-            }
-
-            const msg = item.data as any;
-            const isMe = msg.sender === 'me';
-            const isSystem = msg.sender === 'system' || msg.isSystem || msg.is_announcement;
-            const isSelected = selectedMessageIds.includes(msg.id);
-
-            // ── System / Announcement Messages ─ render as centered banner ──────
-            if (isSystem) {
-              return (
-                <View key={msg.id} style={{ alignItems: 'center', marginVertical: 10, paddingHorizontal: 20 }}>
-                  <View style={{
-                    backgroundColor: 'rgba(108,92,231,0.07)',
-                    borderRadius: 20,
-                    paddingHorizontal: 14,
-                    paddingVertical: 7,
-                    borderWidth: 1,
-                    borderColor: 'rgba(108,92,231,0.12)',
-                    maxWidth: '85%',
-                  }}>
-                    <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: '#6c5ce7', textAlign: 'center', lineHeight: 17 }}>
-                      {msg.text}
+          {renderedItems.length === 0 ? (
+            <View style={{ alignItems: 'center', justifyContent: 'center', opacity: 0.8 }}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(108, 92, 231, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                <MessageSquare size={36} color="#6c5ce7" />
+              </View>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: INK, marginBottom: 8 }}>
+                Say hello! 👋
+              </Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: INK_SOFT, textAlign: 'center', maxWidth: 250 }}>
+                {chat?.isGroupChat
+                  ? 'Start the conversation with your group members.'
+                  : 'Start a conversation by sending a message below.'}
+              </Text>
+            </View>
+          ) : (
+            renderedItems.map(item => {
+              if (item.type === 'divider') {
+                return (
+                  <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 18, paddingHorizontal: 10 }}>
+                    <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.06)' }} />
+                    <Text style={{ marginHorizontal: 16, fontSize: 12, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>
+                      {item.text}
                     </Text>
+                    <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.06)' }} />
                   </View>
-                </View>
-              );
-            }
+                );
+              }
 
-            return (
-              <View key={msg.id} style={{ marginBottom: 14, flexDirection: 'row', justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems: 'flex-end' }}>
-                {/* Checkbox for selection mode */}
-                {isSelectionMode && (
-                  <TouchableOpacity
-                    onPress={() => handleToggleMessageSelect(msg.id)}
-                    style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      paddingRight: 10,
-                      alignSelf: 'center',
-                    }}
-                  >
+              const msg = item.data as any;
+              const isMe = msg.sender === 'me';
+              const isSystem = msg.sender === 'system' || msg.isSystem || msg.is_announcement;
+              const isSelected = selectedMessageIds.includes(msg.id);
+
+              // ── System / Announcement Messages ─ render as centered banner ──────
+              if (isSystem) {
+                return (
+                  <View key={msg.id} style={{ alignItems: 'center', marginVertical: 10, paddingHorizontal: 20 }}>
                     <View style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      borderWidth: 2,
-                      borderColor: isSelected ? PURPLE : INK_SOFT,
-                      backgroundColor: isSelected ? PURPLE : 'transparent',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      {isSelected && <Check size={12} color="#ffffff" />}
-                    </View>
-                  </TouchableOpacity>
-                )}
-
-                {/* Left (Received) message avatar */}
-                {!isMe && (
-                  <View style={{ marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
-                    <Avatar
-                      url={chat.avatar}
-                      name={chat.isGroupChat && msg.senderName ? msg.senderName : chat.name}
-                      size={28}
-                      isGroup={chat.isGroupChat ? false : !!chat.organization}
-                    />
-                  </View>
-                )}
-
-                <View style={{ maxWidth: '70%', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                  <TouchableOpacity
-                    activeOpacity={isSelectionMode ? 0.75 : 1}
-                    onPress={() => {
-                      if (isSelectionMode) {
-                        handleToggleMessageSelect(msg.id);
-                      }
-                    }}
-                    onLongPress={() => {
-                      if (!isSelectionMode) {
-                        setActiveContextMessage(msg);
-                      }
-                    }}
-                    style={{
-                      position: 'relative',
-                      borderRadius: 18,
-                      borderBottomRightRadius: isMe ? 4 : 18,
-                      borderBottomLeftRadius: isMe ? 18 : 4,
+                      backgroundColor: 'rgba(108,92,231,0.07)',
+                      borderRadius: 20,
                       paddingHorizontal: 14,
-                      paddingTop: 10,
-                      paddingBottom: msg.reactions && msg.reactions.length > 0 ? 14 : 10,
-                      backgroundColor: isMe ? PURPLE : '#f1f2f6',
-                      shadowColor: isMe ? PURPLE : '#000',
-                      shadowOpacity: isMe ? 0.15 : 0.02,
-                      shadowRadius: 4,
-                      shadowOffset: { width: 0, height: 1 },
-                      elevation: 1,
-                    }}
-                  >
-                    {!isMe && chat.isGroupChat && msg.senderName && (
-                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, marginBottom: 3 }}>
-                        {msg.senderName}
-                      </Text>
-                    )}
-                    {msg.message_type === 'voice' ? (
-                      <VoiceMessagePlayer msg={msg} isMe={isMe} />
-                    ) : msg.message_type === 'image' && (msg.mediaUrl || msg.media_url) ? (
-                      <View style={{ marginVertical: 4 }}>
-                        <Image
-                          source={{ uri: getSecureMediaUrl(msg.mediaUrl || msg.media_url) || undefined }}
-                          style={{ width: 200, height: 150, borderRadius: 12 }}
-                          contentFit="cover"
-                        />
-                        {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
-                          <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK, marginTop: 6 }}>
-                            {msg.text}
-                          </Text>
-                        )}
-                      </View>
-                    ) : msg.message_type === 'video' && (msg.mediaUrl || msg.media_url) ? (
-                      <View style={{ marginVertical: 4 }}>
-                        <View style={{ width: 200, height: 150, borderRadius: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-                          <Image
-                            source={{ uri: getSecureMediaUrl(msg.mediaUrl || msg.media_url) || undefined }}
-                            style={{ width: '100%', height: '100%', opacity: 0.6, position: 'absolute' }}
-                            contentFit="cover"
-                          />
-                          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center' }}>
-                            <Play size={16} color="#000" style={{ marginLeft: 2 }} />
-                          </View>
-                        </View>
-                        {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
-                          <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK, marginTop: 6 }}>
-                            {msg.text}
-                          </Text>
-                        )}
-                      </View>
-                    ) : msg.message_type === 'file' && (msg.mediaUrl || msg.media_url) ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, width: 200 }}>
-                        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(108,92,231,0.1)', alignItems: 'center', justifyContent: 'center' }}>
-                          <FileText size={16} color={isMe ? '#ffffff' : PURPLE} />
-                        </View>
-                        <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: isMe ? '#ffffff' : INK, flex: 1 }}>
-                          {msg.text || 'Document File'}
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK }}>
+                      paddingVertical: 7,
+                      borderWidth: 1,
+                      borderColor: 'rgba(108,92,231,0.12)',
+                      maxWidth: '85%',
+                    }}>
+                      <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: '#6c5ce7', textAlign: 'center', lineHeight: 17 }}>
                         {msg.text}
                       </Text>
-                    )}
+                    </View>
+                  </View>
+                );
+              }
 
-                    {/* Reaction badge */}
-                    {msg.reactions && msg.reactions.length > 0 && (
+              return (
+                <View key={msg.id} style={{ marginBottom: 14, flexDirection: 'row', justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems: 'flex-end' }}>
+                  {/* Checkbox for selection mode */}
+                  {isSelectionMode && (
+                    <TouchableOpacity
+                      onPress={() => handleToggleMessageSelect(msg.id)}
+                      style={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingRight: 10,
+                        alignSelf: 'center',
+                      }}
+                    >
                       <View style={{
-                        position: 'absolute',
-                        bottom: -10,
-                        right: isMe ? undefined : 12,
-                        left: isMe ? 12 : undefined,
-                        flexDirection: 'row',
-                        backgroundColor: '#ffffff',
-                        borderRadius: 12,
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                        borderWidth: 1,
-                        borderColor: 'rgba(108,92,231,0.15)',
-                        shadowColor: '#000',
-                        shadowOpacity: 0.05,
-                        shadowRadius: 3,
-                        elevation: 1,
+                        width: 20,
+                        height: 20,
+                        borderRadius: 10,
+                        borderWidth: 2,
+                        borderColor: isSelected ? PURPLE : INK_SOFT,
+                        backgroundColor: isSelected ? PURPLE : 'transparent',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}>
-                        {(msg.reactions as any[]).map((emoji: string, idx: number) => (
-                          <Text key={idx} style={{ fontSize: 11, marginRight: idx < msg.reactions!.length - 1 ? 2 : 0 }}>{emoji}</Text>
-                        ))}
+                        {isSelected && <Check size={12} color="#ffffff" />}
                       </View>
-                    )}
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  )}
 
-                  {/* Time and checkmarks outside/under the bubble */}
-                  <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: msg.reactions && msg.reactions.length > 0 ? 12 : 4,
-                    paddingHorizontal: 6,
-                  }}>
-                    {msg.isPinned && <Pin size={10} color={INK_SOFT} style={{ marginRight: 4 }} />}
-                    <Text style={{ fontSize: 9.5, fontFamily: 'Poppins_400Regular', color: INK_SOFT }}>
-                      {msg.time}
-                    </Text>
-                    {isMe && (
-                      msg.status === 'queued' ? (
-                        <Clock size={11} color={INK_SOFT} style={{ marginLeft: 4 }} />
-                      ) : msg.isRead ? (
-                        <CheckCheck size={11} color="#38bdf8" style={{ marginLeft: 4 }} />
+                  {/* Left (Received) message avatar */}
+                  {!isMe && (
+                    <View style={{ marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
+                      <Avatar
+                        url={chat.avatar}
+                        name={chat.isGroupChat && msg.senderName ? msg.senderName : chat.name}
+                        size={28}
+                        isGroup={chat.isGroupChat ? false : !!chat.organization}
+                      />
+                    </View>
+                  )}
+
+                  <View style={{ maxWidth: '70%', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                    <TouchableOpacity
+                      activeOpacity={isSelectionMode ? 0.75 : 1}
+                      onPress={() => {
+                        if (isSelectionMode) {
+                          handleToggleMessageSelect(msg.id);
+                        }
+                      }}
+                      onLongPress={() => {
+                        if (!isSelectionMode) {
+                          setActiveContextMessage(msg);
+                        }
+                      }}
+                      style={{
+                        position: 'relative',
+                        borderRadius: 18,
+                        borderBottomRightRadius: isMe ? 4 : 18,
+                        borderBottomLeftRadius: isMe ? 18 : 4,
+                        paddingHorizontal: 14,
+                        paddingTop: 10,
+                        paddingBottom: msg.reactions && msg.reactions.length > 0 ? 14 : 10,
+                        backgroundColor: isMe ? PURPLE : '#f1f2f6',
+                        shadowColor: isMe ? PURPLE : '#000',
+                        shadowOpacity: isMe ? 0.15 : 0.02,
+                        shadowRadius: 4,
+                        shadowOffset: { width: 0, height: 1 },
+                        elevation: 1,
+                      }}
+                    >
+                      {!isMe && chat.isGroupChat && msg.senderName && (
+                        <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, marginBottom: 3 }}>
+                          {msg.senderName}
+                        </Text>
+                      )}
+                      {msg.message_type === 'voice' ? (
+                        <VoiceMessagePlayer msg={msg} isMe={isMe} />
+                      ) : msg.message_type === 'image' && (msg.mediaUrl || msg.media_url) ? (
+                        <View style={{ marginVertical: 4 }}>
+                          <Image
+                            source={{ uri: getSecureMediaUrl(msg.mediaUrl || msg.media_url) || undefined }}
+                            style={{ width: 200, height: 150, borderRadius: 12 }}
+                            contentFit="cover"
+                          />
+                          {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
+                            <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK, marginTop: 6 }}>
+                              {msg.text}
+                            </Text>
+                          )}
+                        </View>
+                      ) : msg.message_type === 'video' && (msg.mediaUrl || msg.media_url) ? (
+                        <View style={{ marginVertical: 4 }}>
+                          <View style={{ width: 200, height: 150, borderRadius: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+                            <Image
+                              source={{ uri: getSecureMediaUrl(msg.mediaUrl || msg.media_url) || undefined }}
+                              style={{ width: '100%', height: '100%', opacity: 0.6, position: 'absolute' }}
+                              contentFit="cover"
+                            />
+                            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+                              <Play size={16} color="#000" style={{ marginLeft: 2 }} />
+                            </View>
+                          </View>
+                          {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
+                            <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK, marginTop: 6 }}>
+                              {msg.text}
+                            </Text>
+                          )}
+                        </View>
+                      ) : msg.message_type === 'file' && (msg.mediaUrl || msg.media_url) ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, width: 200 }}>
+                          <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(108,92,231,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                            <FileText size={16} color={isMe ? '#ffffff' : PURPLE} />
+                          </View>
+                          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: isMe ? '#ffffff' : INK, flex: 1 }}>
+                            {msg.text || 'Document File'}
+                          </Text>
+                        </View>
                       ) : (
-                        <Check size={11} color={INK_SOFT} style={{ marginLeft: 4 }} />
-                      )
-                    )}
-                  </View>
-                </View>
+                        <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK }}>
+                          {msg.text}
+                        </Text>
+                      )}
 
-                {/* Right (Sent) message avatar */}
-                {isMe && (
-                  <View style={{ marginLeft: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
-                    <Avatar
-                      url={ownUser?.avatar || null}
-                      name={ownUser?.name || 'Me'}
-                      size={28}
-                      isGroup={false}
-                    />
+                      {/* Reaction badge */}
+                      {msg.reactions && msg.reactions.length > 0 && (
+                        <View style={{
+                          position: 'absolute',
+                          bottom: -10,
+                          right: isMe ? undefined : 12,
+                          left: isMe ? 12 : undefined,
+                          flexDirection: 'row',
+                          backgroundColor: '#ffffff',
+                          borderRadius: 12,
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                          borderWidth: 1,
+                          borderColor: 'rgba(108,92,231,0.15)',
+                          shadowColor: '#000',
+                          shadowOpacity: 0.05,
+                          shadowRadius: 3,
+                          elevation: 1,
+                        }}>
+                          {(msg.reactions as any[]).map((emoji: string, idx: number) => (
+                            <Text key={idx} style={{ fontSize: 11, marginRight: idx < msg.reactions!.length - 1 ? 2 : 0 }}>{emoji}</Text>
+                          ))}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Time and checkmarks outside/under the bubble */}
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginTop: msg.reactions && msg.reactions.length > 0 ? 12 : 4,
+                      paddingHorizontal: 6,
+                    }}>
+                      {msg.isPinned && <Pin size={10} color={INK_SOFT} style={{ marginRight: 4 }} />}
+                      <Text style={{ fontSize: 9.5, fontFamily: 'Poppins_400Regular', color: INK_SOFT }}>
+                        {msg.time}
+                      </Text>
+                      {isMe && (
+                        msg.status === 'queued' ? (
+                          <Clock size={11} color={INK_SOFT} style={{ marginLeft: 4 }} />
+                        ) : msg.isRead ? (
+                          <CheckCheck size={11} color="#38bdf8" style={{ marginLeft: 4 }} />
+                        ) : (
+                          <Check size={11} color={INK_SOFT} style={{ marginLeft: 4 }} />
+                        )
+                      )}
+                    </View>
                   </View>
-                )}
-              </View>
-            );
-          })}
+
+                  {/* Right (Sent) message avatar */}
+                  {isMe && (
+                    <View style={{ marginLeft: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
+                      <Avatar
+                        url={ownUser?.avatar || null}
+                        name={ownUser?.name || 'Me'}
+                        size={28}
+                        isGroup={false}
+                      />
+                    </View>
+                  )}
+                </View>
+              );
+            }))}
 
           {/* Typing bubble */}
           {chat.status === 'typing' && (
@@ -1226,7 +1244,7 @@ export default function ChatScreen() {
                   <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', paddingHorizontal: 12, paddingVertical: 6, letterSpacing: 0.8 }}>
                     Upload attachment
                   </Text>
-                  
+
                   <TouchableOpacity
                     onPress={() => {
                       setSelectedFile({ name: 'IMG_4829.jpg', size: '1.4 MB', type: 'image', url: 'https://images.unsplash.com/photo-1548142813-c348350df52b?w=200' });
@@ -1237,7 +1255,7 @@ export default function ChatScreen() {
                     <ImageIcon size={16} color={PURPLE} style={{ marginRight: 10 }} />
                     <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: INK }}>Photo & Video</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => {
                       setSelectedFile({ name: 'screen_record.mov', size: '12.8 MB', type: 'video' });
@@ -1248,7 +1266,7 @@ export default function ChatScreen() {
                     <Video size={16} color={PURPLE} style={{ marginRight: 10 }} />
                     <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: INK }}>Video Clip</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => {
                       setSelectedFile({ name: 'project_spec.pdf', size: '2.1 MB', type: 'file' });
@@ -1339,9 +1357,9 @@ export default function ChatScreen() {
 
               {/* Aida Writing Suggestions Chips */}
               {aidaSuggestions.length > 0 && (
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingBottom: 8 }}
                 >
                   {aidaSuggestions.map((suggestion, idx) => (
@@ -1629,7 +1647,7 @@ export default function ChatScreen() {
                 label={activeContextMessage.isPinned ? "Unpin Message" : "Pin Message"}
                 onPress={() => handleTogglePinMessage(activeContextMessage.id)}
               />
-              
+
               {activeContextMessage.sender === 'me' && (
                 <ContextMenuItem
                   icon={<Edit2 size={16} color={INK_SOFT} />}
@@ -1882,14 +1900,18 @@ export default function ChatScreen() {
             {(() => {
               const mediaSummary = countMedia(messages);
               const accordionSections = [
-                { key: 'photos', label: `Photos & Videos (${mediaSummary.images + mediaSummary.videos})`, icon: <ImageIcon size={16} color={PURPLE} />, items: [
-                  ...mediaSummary.imageUrls.map((url, idx) => ({ label: `Photo ${idx + 1}`, url })),
-                  ...mediaSummary.videoItems.map(item => ({ label: item.label, url: item.url }))
-                ] },
-                { key: 'voice', label: `Voice Notes & Audio (${mediaSummary.voice + mediaSummary.audio})`, icon: <Mic size={16} color={PURPLE} />, items: [
-                  ...mediaSummary.voiceItems.map(item => ({ label: item.label, url: item.url })),
-                  ...mediaSummary.audioItems.map(item => ({ label: item.label, url: item.url }))
-                ] },
+                {
+                  key: 'photos', label: `Photos & Videos (${mediaSummary.images + mediaSummary.videos})`, icon: <ImageIcon size={16} color={PURPLE} />, items: [
+                    ...mediaSummary.imageUrls.map((url, idx) => ({ label: `Photo ${idx + 1}`, url })),
+                    ...mediaSummary.videoItems.map(item => ({ label: item.label, url: item.url }))
+                  ]
+                },
+                {
+                  key: 'voice', label: `Voice Notes & Audio (${mediaSummary.voice + mediaSummary.audio})`, icon: <Mic size={16} color={PURPLE} />, items: [
+                    ...mediaSummary.voiceItems.map(item => ({ label: item.label, url: item.url })),
+                    ...mediaSummary.audioItems.map(item => ({ label: item.label, url: item.url }))
+                  ]
+                },
                 { key: 'links', label: `Links (${mediaSummary.linkItems.length})`, icon: <Sparkles size={16} color={PURPLE} />, items: mediaSummary.linkItems },
                 { key: 'files', label: `Documents & Files (${mediaSummary.files})`, icon: <FileText size={16} color={PURPLE} />, items: mediaSummary.fileItems },
               ];
@@ -1925,7 +1947,7 @@ export default function ChatScreen() {
                               onPress={() => {
                                 import('react-native').then(({ Linking }) => {
                                   const secureUrl = getSecureMediaUrl(item.url);
-                                  if (secureUrl) Linking.openURL(secureUrl).catch(() => {});
+                                  if (secureUrl) Linking.openURL(secureUrl).catch(() => { });
                                 });
                               }}
                               style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}
@@ -1966,7 +1988,7 @@ export default function ChatScreen() {
               <X color={PURPLE} size={20} />
             </TouchableOpacity>
           </View>
-          
+
           <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
             <View style={{ backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
               <View style={{ marginBottom: 16 }}>
@@ -1975,7 +1997,7 @@ export default function ChatScreen() {
                   {AVATARS.map((url) => (
                     <TouchableOpacity
                       key={url}
-                      onPress={() => setGroupFormData({...groupFormData, groupIcon: url})}
+                      onPress={() => setGroupFormData({ ...groupFormData, groupIcon: url })}
                       style={{
                         width: 54,
                         height: 54,
@@ -1989,7 +2011,7 @@ export default function ChatScreen() {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
-                
+
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
                   <TouchableOpacity
                     onPress={async () => {
@@ -2053,22 +2075,22 @@ export default function ChatScreen() {
                 <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Name</Text>
                 <TextInput
                   value={groupFormData.chatName}
-                  onChangeText={(t) => setGroupFormData({...groupFormData, chatName: t})}
+                  onChangeText={(t) => setGroupFormData({ ...groupFormData, chatName: t })}
                   style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
                 />
               </View>
-              
+
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Description / Bio</Text>
                 <TextInput
                   value={groupFormData.groupDescription}
-                  onChangeText={(t) => setGroupFormData({...groupFormData, groupDescription: t})}
+                  onChangeText={(t) => setGroupFormData({ ...groupFormData, groupDescription: t })}
                   style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', minHeight: 80 }}
                   multiline
                   textAlignVertical="top"
                 />
               </View>
-              
+
               <TouchableOpacity
                 onPress={async () => {
                   try {
