@@ -11,8 +11,8 @@ export const initSocket = (token: string): Socket => {
     socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['polling', 'websocket'],
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
+        reconnectionAttempts: 15,
+        reconnectionDelay: 10000,
     });
 
     socket.on('connect', () => {

@@ -1084,7 +1084,8 @@ export default function ChatScreen() {
                   )}
                 </View>
               );
-            }))}
+            })
+          )}
 
           {/* Typing bubble */}
           {chat.status === 'typing' && (
