@@ -1,16 +1,16 @@
-# Graph Report - bubble-chat  (2026-06-14)
+# Graph Report - bubble-chat  (2026-06-15)
 
 ## Corpus Check
-- 294 files · ~1,897,027 words
+- 294 files · ~1,901,358 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2216 nodes · 3819 edges · 195 communities (140 shown, 55 thin omitted)
+- 2216 nodes · 3819 edges · 196 communities (141 shown, 55 thin omitted)
 - Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 298 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `75918faa`
+- Built from commit: `fdbe7da3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -179,6 +179,7 @@
 - [[_COMMUNITY_Community 177|Community 177]]
 - [[_COMMUNITY_Community 184|Community 184]]
 - [[_COMMUNITY_Community 185|Community 185]]
+- [[_COMMUNITY_Community 186|Community 186]]
 - [[_COMMUNITY_Community 188|Community 188]]
 - [[_COMMUNITY_Community 189|Community 189]]
 - [[_COMMUNITY_Community 191|Community 191]]
@@ -206,15 +207,15 @@
   BUBBLESPACE/frontend/src/components/chat/tab-views.tsx → app/bubble-chat/example/src/hooks/use-theme.ts
 - `Toaster()` --calls--> `useTheme()`  [INFERRED]
   BUBBLESPACE/frontend/src/components/ui/sonner.tsx → app/bubble-chat/example/src/hooks/use-theme.ts
+- `LiveKitMeetingModal()` --calls--> `useSocket()`  [INFERRED]
+  BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx → BUBBLESPACE/frontend/src/contexts/AppContext.tsx
 - `VoiceBubble()` --calls--> `cn()`  [INFERRED]
   BUBBLESPACE/frontend/src/components/chat/chat-window.tsx → BUBBLESPACE/frontend/src/lib/utils.ts
-- `Dashboard()` --calls--> `useTheme()`  [INFERRED]
-  BUBBLESPACE/frontend/src/components/chat/dashboard.tsx → app/bubble-chat/example/src/hooks/use-theme.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (195 total, 55 thin omitted)
+## Communities (196 total, 55 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.03
@@ -333,8 +334,8 @@ Cohesion: 0.23
 Nodes (7): MONGO_URI, formatSecurityCode(), getCurrentSecurityCode(), ISecurityCode, SecurityCode, SecurityCodeSchema, router
 
 ### Community 30 - "Community 30"
-Cohesion: 0.23
-Nodes (13): ChatList(), ChatWindow(), ChatMessageEntry, LiveKitMeetingModal(), MeetingRoomLayout(), TranscriptEntry, ArchiveView(), CallsView() (+5 more)
+Cohesion: 0.42
+Nodes (9): ChatList(), ChatWindow(), ArchiveView(), CallsView(), FriendsView(), WorkView(), useChats(), useSocket() (+1 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.23
@@ -672,6 +673,10 @@ Nodes (9): ActionItemSchema, IActionItem, IMeeting, IScreenShare, ISharedFile, M
 Cohesion: 0.20
 Nodes (9): devDependencies, tailwindcss, @types/react, @types/react-native, typescript, main, name, private (+1 more)
 
+### Community 186 - "Community 186"
+Cohesion: 0.40
+Nodes (4): ChatMessageEntry, LiveKitMeetingModal(), MeetingRoomLayout(), TranscriptEntry
+
 ### Community 188 - "Community 188"
 Cohesion: 0.40
 Nodes (4): Tabs(), TabsContent(), TabsList(), TabsTrigger()
@@ -688,7 +693,7 @@ Nodes (16): styles, { width: W, height: H }, AVATARS, INDUSTRIES, ORG_SIZES, ROL
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `Community 5` to `Community 3`, `Community 9`, `Community 144`, `Community 145`, `Community 24`, `Community 30`, `Community 159`, `Community 32`, `Community 33`, `Community 34`, `Community 167`, `Community 168`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 184`, `Community 58`, `Community 188`, `Community 61`, `Community 62`, `Community 64`, `Community 68`, `Community 197`, `Community 70`, `Community 73`, `Community 203`, `Community 76`, `Community 77`, `Community 81`, `Community 82`, `Community 92`, `Community 95`, `Community 96`, `Community 97`, `Community 98`, `Community 99`, `Community 101`, `Community 104`, `Community 111`, `Community 112`, `Community 113`, `Community 120`, `Community 121`?**
+- **Why does `cn()` connect `Community 5` to `Community 3`, `Community 9`, `Community 144`, `Community 145`, `Community 24`, `Community 30`, `Community 159`, `Community 32`, `Community 33`, `Community 34`, `Community 167`, `Community 168`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 184`, `Community 58`, `Community 186`, `Community 188`, `Community 61`, `Community 62`, `Community 64`, `Community 68`, `Community 197`, `Community 70`, `Community 73`, `Community 203`, `Community 76`, `Community 77`, `Community 81`, `Community 82`, `Community 92`, `Community 95`, `Community 96`, `Community 97`, `Community 98`, `Community 99`, `Community 101`, `Community 104`, `Community 111`, `Community 112`, `Community 113`, `Community 120`, `Community 121`?**
   _High betweenness centrality (0.092) - this node is a cross-community bridge._
 - **Why does `DashboardPage()` connect `Community 159` to `Community 5`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._

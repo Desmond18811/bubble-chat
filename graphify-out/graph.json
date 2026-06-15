@@ -1090,7 +1090,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "chat_livekitmeetingmodal",
-      "community": 30,
+      "community": 186,
       "norm_label": "livekitmeetingmodal.tsx"
     },
     {
@@ -1100,7 +1100,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "chat_livekitmeetingmodal_transcriptentry",
-      "community": 30,
+      "community": 186,
       "norm_label": "transcriptentry"
     },
     {
@@ -1110,7 +1110,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "chat_livekitmeetingmodal_chatmessageentry",
-      "community": 30,
+      "community": 186,
       "norm_label": "chatmessageentry"
     },
     {
@@ -1120,7 +1120,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "chat_livekitmeetingmodal_livekitmeetingmodal",
-      "community": 30,
+      "community": 186,
       "norm_label": "livekitmeetingmodal()"
     },
     {
@@ -1130,7 +1130,7 @@
       "source_location": "L392",
       "_origin": "ast",
       "id": "chat_livekitmeetingmodal_meetingroomlayout",
-      "community": 30,
+      "community": 186,
       "norm_label": "meetingroomlayout()"
     },
     {
@@ -1897,7 +1897,7 @@
       "label": "getCalendarCells()",
       "file_type": "code",
       "source_file": "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx",
-      "source_location": "L3243",
+      "source_location": "L3245",
       "_origin": "ast",
       "id": "chat_tab_views_getcalendarcells",
       "community": 70,
@@ -1907,7 +1907,7 @@
       "label": "CalendarSectionProps",
       "file_type": "code",
       "source_file": "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx",
-      "source_location": "L3283",
+      "source_location": "L3285",
       "_origin": "ast",
       "id": "chat_tab_views_calendarsectionprops",
       "community": 70,
@@ -1917,7 +1917,7 @@
       "label": "CalendarSection()",
       "file_type": "code",
       "source_file": "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx",
-      "source_location": "L3287",
+      "source_location": "L3289",
       "_origin": "ast",
       "id": "chat_tab_views_calendarsection",
       "community": 70,
@@ -10517,7 +10517,7 @@
       "label": "accessChat()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L112",
+      "source_location": "L114",
       "_origin": "ast",
       "id": "controllers_chatcontroller_accesschat",
       "community": 31,
@@ -10527,7 +10527,7 @@
       "label": "fetchChats()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L205",
+      "source_location": "L207",
       "_origin": "ast",
       "id": "controllers_chatcontroller_fetchchats",
       "community": 31,
@@ -10537,7 +10537,7 @@
       "label": "createGroupChat()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L267",
+      "source_location": "L269",
       "_origin": "ast",
       "id": "controllers_chatcontroller_creategroupchat",
       "community": 31,
@@ -10547,7 +10547,7 @@
       "label": "renameGroup()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L327",
+      "source_location": "L329",
       "_origin": "ast",
       "id": "controllers_chatcontroller_renamegroup",
       "community": 31,
@@ -10557,7 +10557,7 @@
       "label": "addToGroup()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L357",
+      "source_location": "L359",
       "_origin": "ast",
       "id": "controllers_chatcontroller_addtogroup",
       "community": 31,
@@ -10567,7 +10567,7 @@
       "label": "removeFromGroup()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L390",
+      "source_location": "L392",
       "_origin": "ast",
       "id": "controllers_chatcontroller_removefromgroup",
       "community": 31,
@@ -10577,7 +10577,7 @@
       "label": "muteChat()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L421",
+      "source_location": "L423",
       "_origin": "ast",
       "id": "controllers_chatcontroller_mutechat",
       "community": 31,
@@ -10587,7 +10587,7 @@
       "label": "clearChat()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L456",
+      "source_location": "L458",
       "_origin": "ast",
       "id": "controllers_chatcontroller_clearchat",
       "community": 31,
@@ -10597,7 +10597,7 @@
       "label": "toggleChatPin()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L486",
+      "source_location": "L488",
       "_origin": "ast",
       "id": "controllers_chatcontroller_togglechatpin",
       "community": 31,
@@ -10607,7 +10607,7 @@
       "label": "deleteChat()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L520",
+      "source_location": "L522",
       "_origin": "ast",
       "id": "controllers_chatcontroller_deletechat",
       "community": 31,
@@ -10617,7 +10617,7 @@
       "label": "getUnreadChatCount()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L564",
+      "source_location": "L566",
       "_origin": "ast",
       "id": "controllers_chatcontroller_getunreadchatcount",
       "community": 31,
@@ -10627,7 +10627,7 @@
       "label": "toggleArchiveChat()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L593",
+      "source_location": "L595",
       "_origin": "ast",
       "id": "controllers_chatcontroller_togglearchivechat",
       "community": 31,
@@ -10637,7 +10637,7 @@
       "label": "joinGroupChatByInvite()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L627",
+      "source_location": "L629",
       "_origin": "ast",
       "id": "controllers_chatcontroller_joingroupchatbyinvite",
       "community": 31,
@@ -10647,7 +10647,7 @@
       "label": "updateGroupSettings()",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L688",
+      "source_location": "L690",
       "_origin": "ast",
       "id": "controllers_chatcontroller_updategroupsettings",
       "community": 31,
@@ -18047,7 +18047,7 @@
       "label": "AVATARS",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L47",
+      "source_location": "L48",
       "_origin": "ast",
       "id": "chat_id_avatars",
       "community": 44,
@@ -18057,7 +18057,7 @@
       "label": "ChatScreen()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L56",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "chat_id_chatscreen",
       "community": 21,
@@ -18067,7 +18067,7 @@
       "label": "IconBtn()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1951",
+      "source_location": "L1980",
       "_origin": "ast",
       "id": "chat_id_iconbtn",
       "community": 44,
@@ -18077,7 +18077,7 @@
       "label": "InfoCard()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1959",
+      "source_location": "L1988",
       "_origin": "ast",
       "id": "chat_id_infocard",
       "community": 44,
@@ -18087,7 +18087,7 @@
       "label": "DropdownItem()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1971",
+      "source_location": "L2000",
       "_origin": "ast",
       "id": "chat_id_dropdownitem",
       "community": 44,
@@ -18097,7 +18097,7 @@
       "label": "ContextMenuItem()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2000",
+      "source_location": "L2029",
       "_origin": "ast",
       "id": "chat_id_contextmenuitem",
       "community": 44,
@@ -18107,7 +18107,7 @@
       "label": "countMedia()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2029",
+      "source_location": "L2058",
       "_origin": "ast",
       "id": "chat_id_countmedia",
       "community": 44,
@@ -18117,7 +18117,7 @@
       "label": "VoiceMessagePlayer()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2103",
+      "source_location": "L2132",
       "_origin": "ast",
       "id": "chat_id_voicemessageplayer",
       "community": 44,
@@ -18147,7 +18147,7 @@
       "label": "getGroupInitials()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/messages.tsx",
-      "source_location": "L984",
+      "source_location": "L986",
       "_origin": "ast",
       "id": "main_messages_getgroupinitials",
       "community": 59,
@@ -18157,7 +18157,7 @@
       "label": "ChatRow()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/messages.tsx",
-      "source_location": "L994",
+      "source_location": "L996",
       "_origin": "ast",
       "id": "main_messages_chatrow",
       "community": 59,
@@ -18167,7 +18167,7 @@
       "label": "ContactRow()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/messages.tsx",
-      "source_location": "L1101",
+      "source_location": "L1103",
       "_origin": "ast",
       "id": "main_messages_contactrow",
       "community": 59,
@@ -18177,7 +18177,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/messages.tsx",
-      "source_location": "L1176",
+      "source_location": "L1195",
       "_origin": "ast",
       "id": "main_messages_styles",
       "community": 59,
@@ -18187,7 +18187,7 @@
       "label": "ContextMenuItem()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/messages.tsx",
-      "source_location": "L1287",
+      "source_location": "L1306",
       "_origin": "ast",
       "id": "main_messages_contextmenuitem",
       "community": 59,
@@ -18227,7 +18227,7 @@
       "label": "Avatar()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L71",
+      "source_location": "L68",
       "_origin": "ast",
       "id": "main_people_avatar",
       "community": 59,
@@ -18237,7 +18237,7 @@
       "label": "ContactsTab()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L110",
+      "source_location": "L107",
       "_origin": "ast",
       "id": "main_people_contactstab",
       "community": 59,
@@ -18247,7 +18247,7 @@
       "label": "WorkroomTab()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L409",
+      "source_location": "L433",
       "_origin": "ast",
       "id": "main_people_workroomtab",
       "community": 59,
@@ -18257,7 +18257,7 @@
       "label": "TABS",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L595",
+      "source_location": "L669",
       "_origin": "ast",
       "id": "main_people_tabs",
       "community": 59,
@@ -18267,7 +18267,7 @@
       "label": "TabType",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L596",
+      "source_location": "L670",
       "_origin": "ast",
       "id": "main_people_tabtype",
       "community": 59,
@@ -18277,7 +18277,7 @@
       "label": "PeopleScreen()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L598",
+      "source_location": "L672",
       "_origin": "ast",
       "id": "main_people_peoplescreen",
       "community": 59,
@@ -18637,7 +18637,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/signup.tsx",
-      "source_location": "L532",
+      "source_location": "L553",
       "_origin": "ast",
       "id": "app_signup_styles",
       "community": 191,
@@ -32267,9 +32267,9 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/api.ts",
       "source_location": "L1729",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bubblespace_frontend_src_lib_api_ts_lib_api",
-      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgmembers",
-      "confidence_score": 1.0
+      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgmembers"
     },
     {
       "relation": "contains",
@@ -32277,9 +32277,9 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/api.ts",
       "source_location": "L1736",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bubblespace_frontend_src_lib_api_ts_lib_api",
-      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgtranscripts",
-      "confidence_score": 1.0
+      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgtranscripts"
     },
     {
       "relation": "contains",
@@ -33986,9 +33986,9 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/api.ts",
       "source_location": "L1731",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgmembers",
-      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getauthheaders",
-      "confidence_score": 1.0
+      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getauthheaders"
     },
     {
       "relation": "calls",
@@ -33997,9 +33997,9 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/api.ts",
       "source_location": "L1738",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgtranscripts",
-      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getauthheaders",
-      "confidence_score": 1.0
+      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_getauthheaders"
     },
     {
       "relation": "calls",
@@ -35625,9 +35625,9 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/api.ts",
       "source_location": "L1733",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgmembers",
-      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_handleresponse",
-      "confidence_score": 1.0
+      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_handleresponse"
     },
     {
       "relation": "calls",
@@ -35636,9 +35636,9 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/api.ts",
       "source_location": "L1740",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "bubblespace_frontend_src_lib_api_ts_lib_api_getorgtranscripts",
-      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_handleresponse",
-      "confidence_score": 1.0
+      "target": "bubblespace_frontend_src_lib_api_ts_lib_api_handleresponse"
     },
     {
       "relation": "calls",
@@ -56293,9 +56293,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1986",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_bubble_chat_src_lib_api_ts_lib_api",
-      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getorgmembers",
-      "confidence_score": 1.0
+      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getorgmembers"
     },
     {
       "relation": "contains",
@@ -56303,9 +56303,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1993",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_bubble_chat_src_lib_api_ts_lib_api",
-      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getorgtranscripts",
-      "confidence_score": 1.0
+      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getorgtranscripts"
     },
     {
       "relation": "contains",
@@ -58167,9 +58167,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1988",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_bubble_chat_src_lib_api_ts_lib_api_getorgmembers",
-      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getauthheaders",
-      "confidence_score": 1.0
+      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getauthheaders"
     },
     {
       "relation": "calls",
@@ -58178,9 +58178,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1995",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_bubble_chat_src_lib_api_ts_lib_api_getorgtranscripts",
-      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getauthheaders",
-      "confidence_score": 1.0
+      "target": "app_bubble_chat_src_lib_api_ts_lib_api_getauthheaders"
     },
     {
       "relation": "calls",
@@ -59861,9 +59861,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1990",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_bubble_chat_src_lib_api_ts_lib_api_getorgmembers",
-      "target": "app_bubble_chat_src_lib_api_ts_lib_api_handleresponse",
-      "confidence_score": 1.0
+      "target": "app_bubble_chat_src_lib_api_ts_lib_api_handleresponse"
     },
     {
       "relation": "calls",
@@ -59872,9 +59872,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1997",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "app_bubble_chat_src_lib_api_ts_lib_api_getorgtranscripts",
-      "target": "app_bubble_chat_src_lib_api_ts_lib_api_handleresponse",
-      "confidence_score": 1.0
+      "target": "app_bubble_chat_src_lib_api_ts_lib_api_handleresponse"
     },
     {
       "relation": "calls",
@@ -62257,5 +62257,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "75918faa223c20f6d9f34c691c8d3483f05a8f9f"
+  "built_at_commit": "fdbe7da340ece5be59668a4b88816d1d08d4d6ef"
 }

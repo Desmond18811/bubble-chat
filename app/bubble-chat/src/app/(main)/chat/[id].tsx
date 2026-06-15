@@ -33,6 +33,7 @@ import {
   getAidaWritingSuggestions,
   getSecureMediaUrl,
   uploadGroupOrOrgImage,
+  accessOrCreateChat,
 } from '../../../lib/api';
 import { startOutgoingCall } from '../../../lib/callManager';
 import { authStorage } from '../../../lib/authStorage';
@@ -266,10 +267,17 @@ export default function ChatScreen() {
 
   const loadCachedChatAndMessages = async () => {
     const cachedChats = await chatCache.getCachedChats();
-    const foundChat = cachedChats.find((c: any) => String(c.id) === String(id));
+    let foundChat = cachedChats.find((c: any) => String(c.id) === String(id));
+    if (!foundChat) {
+      foundChat = cachedChats.find((c: any) => !c.isGroupChat && String(c.otherUserId) === String(id));
+    }
     if (foundChat) {
       setChat(foundChat);
       setIsMuted(!!foundChat.isMuted);
+      if (String(foundChat.id) !== String(id)) {
+        router.replace(`/chat/${foundChat.id}`);
+        return;
+      }
     }
     const cachedMsgs = await chatCache.getCachedMessages(id as string);
     setMessages(cachedMsgs);
@@ -281,10 +289,31 @@ export default function ChatScreen() {
       await chatCache.processOfflineQueue();
 
       const cachedChats = await chatCache.getCachedChats();
-      const foundChat = cachedChats.find((c: any) => String(c.id) === String(id));
+      let foundChat = cachedChats.find((c: any) => String(c.id) === String(id));
+      if (!foundChat) {
+        foundChat = cachedChats.find((c: any) => !c.isGroupChat && String(c.otherUserId) === String(id));
+      }
       if (foundChat) {
         setChat(foundChat);
         setIsMuted(!!foundChat.isMuted);
+        if (String(foundChat.id) !== String(id)) {
+          router.replace(`/chat/${foundChat.id}`);
+          return;
+        }
+      } else {
+        // Resolve user ID via API
+        try {
+          const res = await accessOrCreateChat(id as string);
+          const conversation = res?.conversation || res?.data?.conversation || res?.data || res;
+          const actualChatId = conversation?.id || conversation?._id;
+          if (actualChatId && String(actualChatId) !== String(id)) {
+            await chatCache.syncChatsWithBackend();
+            router.replace(`/chat/${actualChatId}`);
+            return;
+          }
+        } catch (apiErr) {
+          console.warn("Failed to resolve chat via API in ChatScreen:", apiErr);
+        }
       }
       
       const freshMsgs = await chatCache.syncMessagesWithBackend(id as string);

@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
-    "mtime": 1781420860.4644313,
-    "ast_hash": "21eff2d78bc9840886f3d2624ff7d540",
+    "mtime": 1781503013.6624238,
+    "ast_hash": "e8ccb3035e69985b825c02cac122e1b7",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/BubbleCursor.tsx": {
@@ -645,8 +645,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/chatController.ts": {
-    "mtime": 1781415806.4499497,
-    "ast_hash": "fe12cec49872ab08bd5abfbfd2cd7a87",
+    "mtime": 1781441374.0196311,
+    "ast_hash": "e037f0ce979690648b75da47cfbb303d",
     "semantic_hash": ""
   },
   "Backend/controllers/communityController.ts": {
@@ -1655,8 +1655,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/messages.tsx": {
-    "mtime": 1781418362.3904812,
-    "ast_hash": "8ffdae63ccd65d688f65006e4b9c89ce",
+    "mtime": 1781502979.0965981,
+    "ast_hash": "193a614e8f21c3365a46ca384ef5b14c",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/profile.tsx": {
@@ -1670,8 +1670,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/signup.tsx": {
-    "mtime": 1781358424.5311327,
-    "ast_hash": "c39d6ab83b8c19b41478f1fc701310b1",
+    "mtime": 1781446267.4107685,
+    "ast_hash": "5a13f5056536c0e5da74251a07ca1cc7",
     "semantic_hash": ""
   },
   "app/bubble-chat/.expo/devices.json": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1781439283.2275038,
-    "ast_hash": "ffeeb0528271d1953055b4146a3dd18f",
+    "mtime": 1781503043.1312487,
+    "ast_hash": "13f9e35ab05ed030e9b528c7d1e750cf",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
@@ -1720,8 +1720,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/people.tsx": {
-    "mtime": 1781418671.4773402,
-    "ast_hash": "1bbc7bfe10fa3d222da5328f258dca39",
+    "mtime": 1781502996.4994037,
+    "ast_hash": "7a25109d8ebec574298cc33c63c20d52",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/mockData.ts": {

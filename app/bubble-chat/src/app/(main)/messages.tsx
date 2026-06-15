@@ -399,16 +399,18 @@ export default function Messages() {
                   const isSelected = selectedItemIds.includes(contact.id);
                   const matchingChat = chatsList.find(c => String(c.otherUserId) === String(contact.id) || String(c.id) === String(contact.id));
                   const isTyping = matchingChat && !!typingChats[matchingChat.id];
+                  const chatTarget = matchingChat?.id || contact.id;
 
                   return (
                     <React.Fragment key={contact.id}>
                       <ContactRow
                         contact={contact}
+                        matchingChat={matchingChat}
                         getInitials={getInitials}
                         isSelectionMode={isSelectionMode}
                         isSelected={isSelected}
                         isTyping={typingChats[matchingChat?.id || '']}
-                        onPress={() => handlePressItem('contact', contact.id)}
+                        onPress={() => handlePressItem('contact', chatTarget)}
                         onLongPress={() => handleLongPressItem('contact', contact.id, contact.name, false, false)}
                       />
                       {index < filteredContacts.length - 1 && (
@@ -1039,7 +1041,7 @@ function ChatRow({
           url={chat.avatar}
           name={chat.name}
           size={52}
-          isGroup={chat.isGroupChat || !!(chat as any).organization}
+          isGroup={chat.isGroupChat}
           style={{ borderRadius: 14 }}
           imageStyle={{ borderRadius: 14 }}
         />
@@ -1100,6 +1102,7 @@ function ChatRow({
 
 function ContactRow({
   contact,
+  matchingChat,
   getInitials,
   isSelectionMode,
   isSelected,
@@ -1108,6 +1111,7 @@ function ContactRow({
   onLongPress
 }: {
   contact: Contact;
+  matchingChat?: Chat | null;
   getInitials: (n: string) => string;
   isSelectionMode: boolean;
   isSelected: boolean;
@@ -1115,6 +1119,8 @@ function ContactRow({
   onPress: () => void;
   onLongPress: () => void;
 }) {
+  const unreadCount = matchingChat?.unreadCount || 0;
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -1142,9 +1148,9 @@ function ContactRow({
       <View style={{ position: "relative", flexShrink: 0 }}>
         <Avatar
           url={contact.avatar}
-          name={contact.organization || contact.name}
+          name={contact.name}
           size={52}
-          isGroup={!!contact.organization}
+          isGroup={false}
           style={{ borderRadius: 14 }}
           imageStyle={{ borderRadius: 14 }}
         />
@@ -1154,12 +1160,25 @@ function ContactRow({
       </View>
 
       <View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
-        <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: "Poppins_600SemiBold", color: "rgba(31,32,48,0.65)" }}>
-          {contact.name}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: matchingChat && unreadCount > 0 ? "Poppins_700Bold" : "Poppins_600SemiBold", color: "#1f2030", flex: 1 }}>
+            {contact.name}
+          </Text>
+          {unreadCount > 0 && (
+            <View style={{ width: 20, height: 20, borderRadius: 99, backgroundColor: "#f4663b", alignItems: "center", justifyContent: "center", marginLeft: 6 }}>
+              <Text style={{ fontSize: 10, fontFamily: "Poppins_700Bold", color: "#fff", lineHeight: 13 }}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
         {isTyping ? (
           <Text style={{ fontSize: 12, fontFamily: "Poppins_600SemiBold", color: "#6c5ce7", marginTop: 2 }}>
             {isTyping.fromUsername ? `@${isTyping.fromUsername} is typing...` : isTyping.fromName ? `${isTyping.fromName} is typing...` : 'typing...'}
+          </Text>
+        ) : matchingChat?.latestMessage ? (
+          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: unreadCount > 0 ? "Poppins_600SemiBold" : "Poppins_400Regular", color: unreadCount > 0 ? "#1f2030" : "rgba(31,32,48,0.45)", marginTop: 2 }}>
+            {matchingChat.latestMessage}
           </Text>
         ) : (
           <Text style={{ fontSize: 12, fontFamily: "Poppins_400Regular", color: "rgba(31,32,48,0.3)", fontStyle: "italic", marginTop: 2 }}>
