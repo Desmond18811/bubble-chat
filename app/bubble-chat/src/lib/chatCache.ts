@@ -124,19 +124,33 @@ export const chatCache = {
       const isMuted = Array.isArray(c.mutedBy) && c.mutedBy.some((id: any) => String(id) === currentUserId);
       const isArchived = Array.isArray(c.archivedBy) && c.archivedBy.some((id: any) => String(id) === currentUserId);
 
-      // Latest Message Text
+      // Latest Message Text — skip system/announcement messages for preview
       let latestText = null;
+      let latestMessageTime = c.updatedAt;
       if (c.latestMessage) {
-        if (c.latestMessage.message_type === 'text') {
-          latestText = c.latestMessage.content;
-        } else {
-          latestText = `📎 [${c.latestMessage.message_type || 'Media'}]`;
+        const isSystem = c.latestMessage.message_type === 'system' || c.latestMessage.is_announcement;
+        if (!isSystem) {
+          if (c.latestMessage.message_type === 'text') {
+            latestText = c.latestMessage.content;
+          } else {
+            latestText = `📎 [${c.latestMessage.message_type || 'Media'}]`;
+          }
+          latestMessageTime = c.latestMessage.sentAt || c.latestMessage.createdAt;
+        }
+        // For groups, the latest message time might still reflect the last update even if system
+        if (isGroup && !latestText) {
+          latestMessageTime = c.updatedAt;
         }
       }
 
-      // Check status
+      // Check status — exclude system messages from unread count
       let status: 'read_own' | 'unread_other' | 'typing' | 'delivered' | 'read_other_all' = 'read_own';
-      if (c.latestMessage) {
+      // unreadCount from backend may include system messages — we trust the backend's count 
+      // but filter it: if there's no real latestText, treat unread as 0
+      const effectiveUnreadCount = (c.latestMessage?.message_type === 'system' || c.latestMessage?.is_announcement)
+        ? 0
+        : (c.unreadCount || 0);
+      if (c.latestMessage && !(c.latestMessage.message_type === 'system' || c.latestMessage.is_announcement)) {
         const senderId = String(c.latestMessage.sender?.id || c.latestMessage.sender?._id || c.latestMessage.sender);
         if (senderId === currentUserId) {
           status = c.latestMessage.isRead ? 'read_other_all' : 'delivered';
@@ -152,8 +166,8 @@ export const chatCache = {
         isGroupChat: isGroup,
         otherUserId: otherUser ? String(otherUser.id || otherUser._id) : null,
         latestMessage: latestText,
-        time: c.latestMessage ? formatChatTime(c.latestMessage.sentAt || c.latestMessage.createdAt) : formatChatTime(c.updatedAt),
-        unreadCount: c.unreadCount || 0,
+        time: formatChatTime(latestMessageTime || c.updatedAt),
+        unreadCount: effectiveUnreadCount,
         isPinned: isPinned,
         isMuted: isMuted || isArchived,
         isOnline: !isGroup && !!otherUser?.isOnline,
@@ -168,6 +182,11 @@ export const chatCache = {
         organization: otherUser?.organization || "",
         org_role: otherUser?.org_role || "",
         messages: [],
+        // Preserve full group info for Info panel
+        users: isGroup ? c.users : undefined,
+        groupAdmin: isGroup ? c.groupAdmin : undefined,
+        inviteCode: isGroup ? c.inviteCode : undefined,
+        allowMembersToShareInvite: isGroup ? c.allowMembersToShareInvite : undefined,
       };
     }));
 
@@ -198,11 +217,12 @@ export const chatCache = {
     const mapped = list.map((m: any) => {
       const senderId = String(m.sender?.id || m.sender?._id || m.sender);
       const isMe = senderId === currentUserId;
+      const isSystem = m.message_type === 'system' || m.is_announcement === true;
 
       return {
         id: String(m.id || m._id),
         text: m.content || (m.mediaUrl ? `📎 [${m.message_type || 'Media'}]` : ''),
-        sender: isMe ? 'me' : 'other',
+        sender: isMe ? 'me' : (isSystem ? 'system' : 'other'),
         senderName: m.sender?.full_name || m.sender?.username || undefined,
         senderIsBot: m.senderIsBot || (m.sender && (m.sender.is_bot || m.sender.username === 'aida' || m.sender.username?.toLowerCase() === 'aida')),
         time: formatMessagePreciseTime(m.createdAt),
@@ -212,6 +232,8 @@ export const chatCache = {
         isRead: !!m.isRead,
         mediaUrl: m.mediaUrl,
         message_type: m.message_type,
+        is_announcement: m.is_announcement,
+        isSystem,
         fileName: m.fileName,
         mimeType: m.mimeType,
       };

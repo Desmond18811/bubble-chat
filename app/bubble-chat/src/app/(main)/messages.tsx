@@ -231,6 +231,46 @@ export default function Messages() {
       }
     };
 
+    // ── Real-time new message ─ update badge and preview instantly ────────────
+    const handleNewMessage = (data: any) => {
+      if (!data) return;
+      const chatId = String(data.chat || data.chatId || '');
+      if (!chatId) return;
+      const currentUserId = currentUserIdRef.current;
+      const senderId = String(data.sender?.id || data.sender?._id || data.sender || '');
+      const isMe = currentUserId && senderId === String(currentUserId);
+      const isSystem = data.message_type === 'system' || data.is_announcement === true;
+
+      // Don't increment unread for system messages or own messages
+      if (isSystem || isMe) return;
+
+      const previewText = data.message_type === 'text'
+        ? (data.content || data.text || '')
+        : `📎 [${data.message_type || 'Media'}]`;
+
+      setChatsList(prev => prev.map(c => {
+        if (String(c.id) !== chatId) return c;
+        return {
+          ...c,
+          latestMessage: previewText,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          unreadCount: (c.unreadCount || 0) + 1,
+        };
+      }));
+    };
+
+    // ── Real-time read receipts ─ clear badge when other user reads ───────────
+    const handleMessagesRead = (data: { chatId: string; userId: string }) => {
+      if (!data?.chatId) return;
+      const currentUserId = currentUserIdRef.current;
+      // If the current user read messages, clear their own badge
+      if (currentUserId && String(data.userId) === String(currentUserId)) {
+        setChatsList(prev => prev.map(c =>
+          String(c.id) === String(data.chatId) ? { ...c, unreadCount: 0 } : c
+        ));
+      }
+    };
+
     const handleConnect = () => {
       console.log("Socket connected/reconnected in Messages screen. Flushing offline queue and syncing...");
       chatCache.processOfflineQueue().then(() => {
@@ -240,6 +280,9 @@ export default function Messages() {
 
     socket.on('typing_start', handleTypingStart);
     socket.on('typing_stop', handleTypingStop);
+    socket.on('new_message', handleNewMessage);
+    socket.on('receive_message', handleNewMessage);
+    socket.on('messages_read', handleMessagesRead);
     socket.on('connect', handleConnect);
 
     if (socket.connected) {
@@ -249,6 +292,9 @@ export default function Messages() {
     return () => {
       socket.off('typing_start', handleTypingStart);
       socket.off('typing_stop', handleTypingStop);
+      socket.off('new_message', handleNewMessage);
+      socket.off('receive_message', handleNewMessage);
+      socket.off('messages_read', handleMessagesRead);
       socket.off('connect', handleConnect);
     };
   }, []);

@@ -77,6 +77,11 @@ export default function ChatScreen() {
   const currentUserIdRef = useRef<string | null>(null);
   const chatRef = useRef<any>(null);
 
+  // @mention state
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null); // null = not in mention mode
+  const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; username: string; avatar?: string }[]>([]);
+  const mentionStartIndexRef = useRef<number>(-1);
+
   const [isEditingGroup, setIsEditingGroup] = useState(false);
   const [groupFormData, setGroupFormData] = useState({
     chatName: '',
@@ -177,6 +182,42 @@ export default function ChatScreen() {
   const handleTextChange = (text: string) => {
     setMessageText(text);
 
+    // ── @mention detection ───────────────────────────────────
+    if (chat?.isGroupChat && Array.isArray(chat?.users) && chat.users.length > 0) {
+      // Find the last '@' that starts a word
+      const lastAt = text.lastIndexOf('@');
+      if (lastAt !== -1) {
+        const afterAt = text.slice(lastAt + 1);
+        // If no space after the @, we are still in mention mode
+        if (!afterAt.includes(' ') && !afterAt.includes('\n')) {
+          const query = afterAt.toLowerCase();
+          setMentionQuery(query);
+          mentionStartIndexRef.current = lastAt;
+          // Filter members
+          const allMembers: { id: string; name: string; username: string; avatar?: string }[] = chat.users.map((u: any) => ({
+            id: String(u.id || u._id || u),
+            name: u.full_name || u.username || '',
+            username: u.username || '',
+            avatar: u.avatar,
+          })).filter((u: any) => u.id !== currentUserIdRef.current);
+
+          const filtered = query
+            ? allMembers.filter(u =>
+                u.name.toLowerCase().includes(query) || u.username.toLowerCase().includes(query)
+              )
+            : allMembers;
+          setMentionSuggestions(filtered.slice(0, 8));
+        } else {
+          setMentionQuery(null);
+          setMentionSuggestions([]);
+        }
+      } else {
+        setMentionQuery(null);
+        setMentionSuggestions([]);
+      }
+    }
+    // ───────────────────────────────────────────
+
     const socket = getSocket();
     if (socket && chat) {
       const targetUserId = chat.otherUserId;
@@ -191,6 +232,18 @@ export default function ChatScreen() {
         socket.emit('typing_stop', { toUserId: targetUserId, chatId: chat.id });
       }, 2000);
     }
+  };
+
+  const insertMention = (member: { id: string; name: string; username: string }) => {
+    const startIdx = mentionStartIndexRef.current;
+    if (startIdx === -1) return;
+    const before = messageText.slice(0, startIdx);
+    const displayName = member.username ? `@${member.username}` : `@${member.name.replace(/\s/g, '_').toLowerCase()}`;
+    const newText = before + displayName + ' ';
+    setMessageText(newText);
+    setMentionQuery(null);
+    setMentionSuggestions([]);
+    mentionStartIndexRef.current = -1;
   };
 
   useEffect(() => {
@@ -224,6 +277,42 @@ export default function ChatScreen() {
     socket.on('typing_stop', onTypingStop);
     socket.on('connect', onConnect);
 
+    // Real-time new message delivery without waiting for poll
+    const onNewMessage = (data: any) => {
+      if (!data) return;
+      const incomingChatId = data.chat || data.chatId;
+      if (String(incomingChatId) !== String(id)) return;
+      const currentUserId = currentUserIdRef.current;
+      const senderId = String(data.sender?.id || data.sender?._id || data.sender);
+      const isMe = currentUserId && String(senderId) === String(currentUserId);
+      const isSystem = data.message_type === 'system' || data.is_announcement === true;
+
+      const formatted = {
+        id: String(data.id || data._id || Date.now()),
+        text: data.content || data.text || '',
+        sender: isMe ? 'me' : (isSystem ? 'system' : 'other'),
+        senderName: data.sender?.full_name || data.sender?.username || undefined,
+        senderIsBot: data.sender?.is_bot || data.sender?.username === 'aida',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: data.createdAt || new Date().toISOString(),
+        reactions: [],
+        isPinned: false,
+        isRead: false,
+        mediaUrl: data.mediaUrl,
+        message_type: data.message_type || 'text',
+        isSystem,
+      };
+
+      setMessages(prev => {
+        // Deduplicate by id
+        if (prev.some((m: any) => String(m.id) === String(formatted.id))) return prev;
+        return [...prev, formatted as any];
+      });
+    };
+
+    socket.on('new_message', onNewMessage);
+    socket.on('receive_message', onNewMessage);
+
     if (socket.connected) {
       onConnect();
     }
@@ -233,6 +322,8 @@ export default function ChatScreen() {
       socket.off('typing_start', onTypingStart);
       socket.off('typing_stop', onTypingStop);
       socket.off('connect', onConnect);
+      socket.off('new_message', onNewMessage);
+      socket.off('receive_message', onNewMessage);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (chatRef.current) {
         socket.emit('typing_stop', { toUserId: chatRef.current.otherUserId, chatId: chatRef.current.id });
@@ -756,7 +847,29 @@ export default function ChatScreen() {
 
             const msg = item.data as any;
             const isMe = msg.sender === 'me';
+            const isSystem = msg.sender === 'system' || msg.isSystem || msg.is_announcement;
             const isSelected = selectedMessageIds.includes(msg.id);
+
+            // ── System / Announcement Messages ─ render as centered banner ──────
+            if (isSystem) {
+              return (
+                <View key={msg.id} style={{ alignItems: 'center', marginVertical: 10, paddingHorizontal: 20 }}>
+                  <View style={{
+                    backgroundColor: 'rgba(108,92,231,0.07)',
+                    borderRadius: 20,
+                    paddingHorizontal: 14,
+                    paddingVertical: 7,
+                    borderWidth: 1,
+                    borderColor: 'rgba(108,92,231,0.12)',
+                    maxWidth: '85%',
+                  }}>
+                    <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: '#6c5ce7', textAlign: 'center', lineHeight: 17 }}>
+                      {msg.text}
+                    </Text>
+                  </View>
+                </View>
+              );
+            }
 
             return (
               <View key={msg.id} style={{ marginBottom: 14, flexDirection: 'row', justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems: 'flex-end' }}>

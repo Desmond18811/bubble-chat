@@ -139,7 +139,8 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
                 chat: defaultChat._id,
                 sender: botId || userId,
                 content: chatContent,
-                message_type: 'text',
+                message_type: 'system',
+                is_announcement: true,
               });
 
               await Conversation.findByIdAndUpdate(defaultChat._id, {

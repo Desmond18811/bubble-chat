@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
-import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video } from 'lucide-react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share } from 'react-native';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchTasks, createTaskFull } from '../../lib/api';
+import { getSocket } from '../../lib/socket';
 
 // Helper to get calendar cells
 const getCalendarCells = (currentDate: Date) => {
@@ -52,6 +53,13 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
+// Type-based calendar dot colors
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  meeting: '#3b82f6',  // blue
+  event: '#22c55e',   // green
+  task: '#eab308',    // yellow
+};
+
 export default function UpdatesScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -70,6 +78,21 @@ export default function UpdatesScreen() {
   const [callDuration, setCallDuration] = useState(0);
   const [isCallMuted, setIsCallMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
+
+  // Transcript notification state
+  const [transcriptModal, setTranscriptModal] = useState<{
+    visible: boolean;
+    title: string;
+    summary: string;
+    actionItems: { text: string; assignedToName?: string }[];
+    rawTranscript?: string;
+    meetingId?: string;
+  }>({
+    visible: false,
+    title: '',
+    summary: '',
+    actionItems: [],
+  });
 
   const navigation = useNavigation();
   const [isFocused, setIsFocused] = useState(navigation.isFocused());
@@ -136,6 +159,68 @@ export default function UpdatesScreen() {
     const interval = setInterval(syncTasks, 7000);
     return () => clearInterval(interval);
   }, [isFocused]);
+
+  // Listen for meeting_ended socket event to show transcript notification
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const onMeetingEnded = async (data: {
+      roomId: string;
+      meetingId?: string;
+      title?: string;
+      summary?: string;
+      actionItems?: { text: string; assignedToName?: string }[];
+      rawTranscript?: string;
+    }) => {
+      // Fetch full meeting details if we have meetingId
+      let summary = data.summary || '';
+      let actionItems = data.actionItems || [];
+      let rawTranscript = data.rawTranscript || '';
+
+      if (data.meetingId) {
+        try {
+          const { fetchMeetingById } = await import('../../lib/api');
+          const res = await fetchMeetingById(data.meetingId);
+          const m = res?.meeting;
+          if (m) {
+            summary = m.summary || '';
+            actionItems = m.actionItems || [];
+            rawTranscript = m.transcriptRaw || '';
+          }
+        } catch (_) {}
+      }
+
+      Alert.alert(
+        '📋 Meeting Ended',
+        `"${data.title || 'The meeting'}" has finished. Tap to view transcript & minutes.`,
+        [
+          { text: 'Later', style: 'cancel' },
+          {
+            text: 'View Transcript',
+            onPress: () => {
+              setTranscriptModal({
+                visible: true,
+                title: data.title || 'Meeting Transcript',
+                summary,
+                actionItems,
+                rawTranscript,
+                meetingId: data.meetingId,
+              });
+            },
+          },
+        ]
+      );
+
+      // Refresh tasks since new ones may have been created from action items
+      await syncTasks();
+    };
+
+    socket.on('meeting_ended', onMeetingEnded);
+    return () => {
+      socket.off('meeting_ended', onMeetingEnded);
+    };
+  }, []);
 
   useEffect(() => {
     let timer: any;
@@ -337,9 +422,9 @@ export default function UpdatesScreen() {
                     {hasMeeting && (
                       <View className="flex-row gap-0.5 mt-auto flex-wrap">
                         {dayTasks.map(t => {
-                          const dotColor = t.priority === 'urgent' || t.priority === 'high' ? 'bg-red-500' : 'bg-emerald-500';
+                          const dotColor = EVENT_TYPE_COLORS[t.type] || '#6c5ce7';
                           return (
-                            <View key={t._id} className={`w-1.5 h-1.5 rounded-full ${selected ? 'bg-white' : dotColor}`} />
+                            <View key={t._id} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: selected ? '#ffffff' : dotColor, marginRight: 1 }} />
                           );
                         })}
                       </View>
@@ -362,12 +447,12 @@ export default function UpdatesScreen() {
             </View>
           ) : (
             selectedDayTasks.map(task => {
-              const labelColor = task.type === 'meeting' ? 'bg-emerald-100 text-emerald-600' : task.type === 'event' ? 'bg-purple/10 text-purple' : 'bg-blue-100 text-blue-600';
+              const typeLabel = task.type === 'meeting' ? { bg: '#eff6ff', text: '#3b82f6' } : task.type === 'event' ? { bg: '#f0fdf4', text: '#22c55e' } : { bg: '#fefce8', text: '#ca8a04' };
               const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
               return (
-                <View key={task._id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
+                <View key={task._id} style={{ borderLeftWidth: 3, borderLeftColor: EVENT_TYPE_COLORS[task.type] || '#6c5ce7' }} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
                   <View className="flex-row items-center gap-2 mb-2">
-                    <Text className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase font-sans ${labelColor}`}>
+                    <Text style={{ backgroundColor: typeLabel.bg, color: typeLabel.text }} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase font-sans">
                       {task.type || 'task'}
                     </Text>
                     <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${pColor}`}>
@@ -402,6 +487,115 @@ export default function UpdatesScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* ── Transcript Viewer Modal ── */}
+      <Modal visible={transcriptModal.visible} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)' }}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }} numberOfLines={1}>{transcriptModal.title}</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: '#9a9aab', marginTop: 1 }}>Meeting Minutes & Transcript</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                onPress={async () => {
+                  const shareText = `Meeting: ${transcriptModal.title}\n\nSummary:\n${transcriptModal.summary}\n\nAction Items:\n${transcriptModal.actionItems.map(ai => `• ${ai.text}${ai.assignedToName ? ` (${ai.assignedToName})` : ''}`).join('\n')}\n\nFull Transcript:\n${transcriptModal.rawTranscript || ''}`;
+                  try {
+                    await Share.share({ message: shareText, title: transcriptModal.title });
+                  } catch (_) {}
+                }}
+                style={{ padding: 6, backgroundColor: 'rgba(108,92,231,0.08)', borderRadius: 10 }}
+              >
+                <Share2 size={16} color="#6c5ce7" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setTranscriptModal(prev => ({ ...prev, visible: false }))}
+                style={{ padding: 6 }}
+              >
+                <X size={20} color="#6c5ce7" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+            {/* AI Summary */}
+            {transcriptModal.summary ? (
+              <View style={{ backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 20, padding: 18, marginBottom: 18, borderLeftWidth: 3, borderLeftColor: '#6c5ce7' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <FileText size={16} color="#6c5ce7" />
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#6c5ce7', marginLeft: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Aida's Meeting Intelligence</Text>
+                </View>
+                <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_400Regular', color: '#1f2030', lineHeight: 22 }}>
+                  {transcriptModal.summary}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Action Items */}
+            {transcriptModal.actionItems.length > 0 && (
+              <View style={{ marginBottom: 18 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Check size={15} color="#22c55e" />
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#1f2030', marginLeft: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Action Items ({transcriptModal.actionItems.length})</Text>
+                </View>
+                {transcriptModal.actionItems.map((ai, idx) => (
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#f0fdf4', borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(34,197,94,0.15)' }}>
+                    <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#22c55e', alignItems: 'center', justifyContent: 'center', marginRight: 10, marginTop: 1, flexShrink: 0 }}>
+                      <Text style={{ color: '#fff', fontSize: 10, fontFamily: 'Poppins_700Bold' }}>{idx + 1}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: '#1f2030', lineHeight: 20 }}>{ai.text}</Text>
+                      {ai.assignedToName && (
+                        <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: '#6c5ce7', marginTop: 3 }}>@ {ai.assignedToName}</Text>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Raw Transcript */}
+            {transcriptModal.rawTranscript ? (
+              <View style={{ marginBottom: 32 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                  <Users size={15} color="#9a9aab" />
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#9a9aab', marginLeft: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Full Transcript</Text>
+                </View>
+                <View style={{ backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}>
+                  <Text style={{ fontSize: 12.5, fontFamily: 'Poppins_400Regular', color: 'rgba(31,32,48,0.75)', lineHeight: 21 }}>
+                    {transcriptModal.rawTranscript}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#9a9aab', fontStyle: 'italic' }}>No transcript available for this meeting.</Text>
+              </View>
+            )}
+          </ScrollView>
+
+          <View style={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 8, gap: 10 }}>
+            <TouchableOpacity
+              onPress={async () => {
+                const shareText = `Meeting: ${transcriptModal.title}\n\nSummary:\n${transcriptModal.summary}\n\nAction Items:\n${transcriptModal.actionItems.map(ai => `• ${ai.text}${ai.assignedToName ? ` (${ai.assignedToName})` : ''}`).join('\n')}\n\nFull Transcript:\n${transcriptModal.rawTranscript || ''}`;
+                try {
+                  await Share.share({ message: shareText, title: transcriptModal.title });
+                } catch (_) {}
+              }}
+              style={{ backgroundColor: 'rgba(108,92,231,0.1)', paddingVertical: 14, borderRadius: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}
+            >
+              <Share2 size={16} color="#6c5ce7" />
+              <Text style={{ color: '#6c5ce7', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Share Minutes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setTranscriptModal(prev => ({ ...prev, visible: false }))}
+              style={{ backgroundColor: '#6c5ce7', paddingVertical: 14, borderRadius: 16, alignItems: 'center', shadowColor: '#6c5ce7', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
+            >
+              <Text style={{ color: '#ffffff', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
       {/* Advanced Create Event Modal */}
       <Modal visible={isModalOpen} transparent animationType="slide">
