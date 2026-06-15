@@ -228,6 +228,11 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
     const chatIds = results.map(c => c._id);
     const objectUserId = new mongoose.Types.ObjectId(req.user._id);
 
+    const botUsers = await User.find({ is_bot: true }).select('_id');
+    const botUserIds = botUsers.map(b => b._id);
+    const groupChatIds = results.filter(c => c.isGroupChat).map(c => c._id);
+    const dmChatIds = results.filter(c => !c.isGroupChat).map(c => c._id);
+
     const unreadAgg = await Message.aggregate([
       {
         $match: {
@@ -236,7 +241,11 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
           readBy: { $ne: objectUserId },
           deletedFor: { $ne: objectUserId },
           message_type: { $ne: 'system' },
-          is_announcement: { $ne: true }
+          is_announcement: { $ne: true },
+          $or: [
+            { chat: { $in: dmChatIds } },
+            { chat: { $in: groupChatIds }, sender: { $nin: botUserIds } }
+          ]
         }
       },
       { $group: { _id: '$chat', count: { $sum: 1 } } }
@@ -574,8 +583,13 @@ export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promi
     const conversations = await Conversation.find({
       users: userId,
       deletedBy: { $ne: userId }
-    }).select('_id');
+    }).select('_id isGroupChat');
     const chatIds = conversations.map(c => c._id);
+    const groupChatIds = conversations.filter(c => c.isGroupChat).map(c => c._id);
+    const dmChatIds = conversations.filter(c => !c.isGroupChat).map(c => c._id);
+
+    const botUsers = await User.find({ is_bot: true }).select('_id');
+    const botUserIds = botUsers.map(b => b._id);
 
     const unreadChats = await Message.distinct('chat', {
       chat: { $in: chatIds },
@@ -583,7 +597,11 @@ export const getUnreadChatCount = async (req: AuthRequest, res: Response): Promi
       readBy: { $ne: userId },
       deletedFor: { $ne: userId },
       message_type: { $ne: 'system' },
-      is_announcement: { $ne: true }
+      is_announcement: { $ne: true },
+      $or: [
+        { chat: { $in: dmChatIds } },
+        { chat: { $in: groupChatIds }, sender: { $nin: botUserIds } }
+      ]
     });
 
     const count = unreadChats.length;
