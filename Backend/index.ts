@@ -15,7 +15,8 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { initSocket, getIO } from './utils/socket';
-import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler } from './utils/scheduler';
+import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler, initDailyDigestScheduler } from './utils/scheduler';
+import { initBrainEventListener } from './utils/brainEventListener';
 import { processQueue } from './utils/queue';
 import { Conversation } from './models/conversations';
 import './middleware/passport';
@@ -40,6 +41,8 @@ import notificationRoutes from './routes/notificationRoutes';
 import templateRoutes from './routes/templateRoutes';
 import activityRoutes from './routes/activityRoutes';
 import orgRoutes from './routes/orgRoutes';
+import brainRoutes from './routes/brainRoutes';
+import calendarRoutes from './routes/calendarRoutes';
 import { seedDefaultTemplates } from './controllers/templateController';
 
 const app = express();
@@ -328,6 +331,8 @@ app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/templates', templateRoutes);
 app.use('/api/v1/activity', activityRoutes);
 app.use('/api/v1/org', orgRoutes);
+app.use('/api/v1/brain', brainRoutes);
+app.use('/api/v1/events', calendarRoutes);
 
 // FIX 4: Create the HTTP server BEFORE connecting to MongoDB
 const server = http.createServer(app);
@@ -346,6 +351,8 @@ mongoose.connect(mongoURI, { family: 4 })
     initSecurityScheduler();
     initTranscriptProcessor();
     initTaskReminderScheduler();
+    initDailyDigestScheduler();
+    initBrainEventListener();
 
     const systemUser = await import('./models/users').then(m => m.User.findOne({ is_bot: true }));
     if (systemUser) await seedDefaultTemplates(String(systemUser._id));

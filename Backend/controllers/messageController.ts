@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { enqueueMessage } from '../utils/queue';
 import { getIO } from '../utils/socket';
 import { sendPushNotification } from '../utils/push';
+import { brainEventBus } from '../utils/brainEventListener';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -221,6 +222,17 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       }
     } catch (pushErr) {
       console.error('[Push] Failed to compile push target information:', pushErr);
+    }
+
+    // 🧠 Brain ingestion — fire-and-forget for group chats only
+    if (convo.isGroupChat && content && content.trim().length >= 10) {
+      setImmediate(() => {
+        brainEventBus.emit('group_message_sent', {
+          messageId: String(newMessage._id),
+          chatId: String(chatId),
+          senderId: String(req.user._id),
+        });
+      });
     }
 
     res.status(201).json(formatted);

@@ -209,9 +209,11 @@ export const sendMeetingTranscriptEmail = async (
   to: string,
   name: string,
   meetingTitle: string,
-  transcriptRaw: string
+  transcriptRaw: string,
+  summary?: string,
+  actionItems?: { text: string; assignedToName?: string | null }[]
 ) => {
-  const subject = `Meeting Transcript: ${meetingTitle}`;
+  const subject = `Meeting Intelligence: ${meetingTitle}`;
 
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -220,28 +222,66 @@ export const sendMeetingTranscriptEmail = async (
     day: 'numeric'
   });
 
-  const mdContent = `# Transcript: ${meetingTitle}\n\n${transcriptRaw || 'No transcript recorded.'}\n\n---\nDate: ${dateStr}\n`;
+  // Build action items HTML
+  const actionItemsHtml = (actionItems && actionItems.length > 0)
+    ? `
+      <div style="margin-bottom: 28px;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #1f2030; margin: 0 0 12px; display: flex; align-items: center; gap: 8px;">
+          ✅ Action Items (${actionItems.length})
+        </h3>
+        ${actionItems.map((ai, idx) => `
+          <div style="display: flex; align-items: flex-start; background: #f0fdf4; border-radius: 14px; padding: 12px; margin-bottom: 8px; border: 1px solid rgba(34,197,94,0.15);">
+            <div style="min-width: 24px; height: 24px; border-radius: 12px; background: #22c55e; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 12px; margin-top: 1px; flex-shrink: 0;">
+              ${idx + 1}
+            </div>
+            <div>
+              <p style="margin: 0; font-size: 13.5px; color: #1f2030; line-height: 1.5;">${ai.text}</p>
+              ${ai.assignedToName ? `<p style="margin: 4px 0 0; font-size: 11px; font-weight: 700; color: #6c5ce7;">@ ${ai.assignedToName}</p>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>`
+    : '';
+
+  // Build summary HTML
+  const summaryHtml = summary
+    ? `
+      <div style="background: rgba(108,92,231,0.06); border-left: 4px solid #6c5ce7; border-radius: 18px; padding: 20px 22px; margin-bottom: 24px;">
+        <p style="font-size: 11px; font-weight: 800; color: #6c5ce7; letter-spacing: 1px; text-transform: uppercase; margin: 0 0 10px;">🧠 Aida's Meeting Intelligence</p>
+        <p style="font-size: 13.5px; color: #1f2030; line-height: 1.8; margin: 0;">${summary}</p>
+      </div>`
+    : '';
+
+  // Attach full transcript as markdown
+  const mdContent = `# Meeting Minutes: ${meetingTitle}\nDate: ${dateStr}\n\n## Summary\n${summary || 'Unavailable'}\n\n## Action Items\n${(actionItems || []).map((ai, i) => `${i + 1}. ${ai.text}${ai.assignedToName ? ` (@ ${ai.assignedToName})` : ''}`).join('\n') || 'None'}\n\n## Full Transcript\n${transcriptRaw || 'No transcript recorded.'}\n`;
   const attachmentBase64 = Buffer.from(mdContent).toString('base64');
-  const filename = `transcript-${meetingTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'meeting'}.md`;
+  const filename = `meeting-minutes-${meetingTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'meeting'}.md`;
 
   const html = `
-    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #fbfbfe; border-radius: 28px; overflow: hidden; border: 1px solid #eae7fa; box-shadow: 0 15px 35px -5px rgba(108, 92, 231, 0.06);">
+    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 0; background-color: #fbfbfe; border-radius: 28px; overflow: hidden; border: 1px solid #eae7fa; box-shadow: 0 15px 35px -5px rgba(108, 92, 231, 0.06);">
       <!-- Header -->
       <div style="background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%); padding: 44px 36px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">
         <div style="font-size: 30px; font-weight: 900; letter-spacing: 6px; color: #ffffff; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">BUBBLESPACE</div>
         <div style="font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: 4px; text-transform: uppercase; margin-top: 6px; font-weight: 700;">Meeting Intelligence Suite</div>
       </div>
-      
+
       <!-- Body -->
       <div style="padding: 44px 36px; background-color: #ffffff;">
-        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 14px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">Meeting Transcript 📝</h2>
-        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 12px;">Hello ${name},</p>
+        <h2 style="color: #1f2030; font-size: 22px; font-weight: 800; margin: 0 0 6px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif;">Meeting Minutes 📋</h2>
+        <p style="font-size: 12px; color: #9a9aab; margin: 0 0 24px;">${dateStr}</p>
+
+        <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 8px;">Hello ${name},</p>
         <p style="font-size: 14.5px; line-height: 1.7; color: #4a5568; margin: 0 0 28px;">
-          Your meeting <strong style="color: #6c5ce7;">${meetingTitle}</strong> has ended. We have attached the full meeting transcript file (.md) below for your reference.
+          Your meeting <strong style="color: #6c5ce7;">${meetingTitle}</strong> has ended. Here is Aida's full intelligence report:
         </p>
-        
-        <p style="font-size: 12px; color: #9a9aab; line-height: 1.7; margin-top: 28px; text-align: center; font-family: 'Segoe UI', sans-serif;">
-          This transcript has been processed and saved according to your preferences.
+
+        ${summaryHtml}
+        ${actionItemsHtml}
+
+        <!-- Divider -->
+        <div style="border-top: 1px solid #eae7fa; margin: 24px 0;"></div>
+        <p style="font-size: 12px; color: #9a9aab; margin: 0; text-align: center;">
+          The complete meeting minutes (including full transcript) are attached as a <strong>.md</strong> file for your records.
         </p>
       </div>
 

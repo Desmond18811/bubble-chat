@@ -150,10 +150,16 @@ export const initSocket = (server: HttpServer) => {
       }
     });
 
-    socket.on('meeting_transcript_chunk', async (data: { roomId: string, speaker: string, text: string }) => {
-      socket.to(data.roomId).emit('meeting_transcript_chunk', data);
+    socket.on('meeting_transcript_chunk', async (data: { roomId: string, speaker?: string, text: string, userId?: string }) => {
+      // Auto-resolve speaker identity from the authenticated socket session
+      // This ensures silent diarization — whoever is speaking is always correctly identified
+      const speakerName = (socket as any).fullName || (socket as any).username || data.speaker || 'Participant';
+      const speakerId = userId || data.userId;
+      
+      const enrichedData = { ...data, speaker: speakerName, userId: speakerId };
+      socket.to(data.roomId).emit('meeting_transcript_chunk', enrichedData);
 
-      // Save directly to MongoDB in real-time
+      // Save directly to MongoDB in real-time with speaker userId for accurate diarization
       try {
         const { Meeting } = await import('../models/meeting');
         await Meeting.updateOne(
@@ -161,7 +167,8 @@ export const initSocket = (server: HttpServer) => {
           {
             $push: {
               transcriptChunks: {
-                speaker: data.speaker,
+                speaker: speakerName,
+                speakerId,
                 text: data.text,
                 timestamp: Date.now()
               }
@@ -201,23 +208,26 @@ export const initSocket = (server: HttpServer) => {
 
     // ─── Call Signaling ───────────────────────────────────────────────────────
     socket.on('call_offer', async (data: { toUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
+      // Use authenticated socket identity as the authoritative caller name
+      const callerName = (socket as any).fullName || (socket as any).username || data.callerName || 'Colleague';
+      
       io.to(data.toUserId).emit('incoming_call', {
         ...data,
-        fromUserId: userId
+        fromUserId: userId,
+        callerName,
       });
 
       // Send push notification for incoming call asynchronously
-      const caller = (socket as any).fullName || (socket as any).username || 'Someone';
       const typeStr = data.type === 'video' ? 'video call' : 'voice call';
       sendPushNotification(
         [data.toUserId],
-        `Incoming ${typeStr}`,
-        `${caller} is calling you...`,
+        `Incoming ${typeStr} from ${callerName}`,
+        `${callerName} is calling you...`,
         {
           roomId: data.roomId,
           type: 'incoming_call',
           callType: data.type || 'voice',
-          callerName: caller,
+          callerName,
         }
       ).catch(err => console.error('[Push] Incoming call push failed:', err));
     });

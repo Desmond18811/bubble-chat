@@ -57,6 +57,12 @@ export interface IUser extends Document {
   org_industry?: string;
   org_size?: 'solo' | '2-10' | '11-50' | '51-200' | '201-500' | '500+';
   onboardingComplete?: boolean;
+  department?: string;              // engineering, product, hr, finance, etc.
+  onboardingBriefSeen: boolean;     // true after new hire views their first brief
+  digestPreferences?: {
+    enabled: boolean;
+    notifyTime: string;             // '07:00' in org timezone
+  };
   app_background?: 'bubbles' | 'light' | 'dark' | 'custom' | 'glass';
   custom_background?: string;
   unreadCount?: number;
@@ -130,6 +136,12 @@ const UserSchema: Schema<IUser> = new Schema(
     org_industry: { type: String, trim: true, default: '' },
     org_size: { type: String, enum: ['solo', '2-10', '11-50', '51-200', '201-500', '500+'] },
     onboardingComplete: { type: Boolean, default: false },
+    department: { type: String, trim: true, default: '' },
+    onboardingBriefSeen: { type: Boolean, default: false },
+    digestPreferences: {
+      enabled: { type: Boolean, default: true },
+      notifyTime: { type: String, default: '07:00' },
+    },
     app_background: {
       type: String,
       enum: ['bubbles', 'light', 'dark', 'custom', 'glass'],

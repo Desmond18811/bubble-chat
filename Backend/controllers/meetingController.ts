@@ -18,7 +18,7 @@ const deepseekClient = new OpenAI({
 
 const hasDeepSeekKey = (): boolean => {
   const key = process.env.DEEPSEEK_API_KEY;
-  return !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
+  return !!(key && key.trim().length > 10);
 };
 
 // ─── Helper: AI-powered transcript processing via DeepSeek ───────────────────
@@ -523,8 +523,20 @@ export const endMeeting = async (
     try {
       const { getIO } = await import('../utils/socket');
       const io = getIO();
-      io.to(meeting.roomId).emit('meeting_ended', { roomId: meeting.roomId });
-      console.log(`[Meeting] Broadcasted meeting_ended for room ${meeting.roomId}`);
+      // Emit to both the roomId and each participant's personal room for cross-device delivery
+      const endPayload = {
+        roomId: meeting.roomId,
+        meetingId: String(meeting._id),
+        title: meeting.title,
+        // summary/actionItems will be populated by background AI and re-emitted after
+      };
+      io.to(meeting.roomId).emit('meeting_ended', endPayload);
+      // Also emit to each participant's personal user room so all their devices get it
+      const allParticipantIds = [String(meeting.host), ...meeting.attendees.map((a: any) => String(a))];
+      for (const pid of allParticipantIds) {
+        io.to(pid).emit('meeting_ended', endPayload);
+      }
+      console.log(`[Meeting] Broadcasted meeting_ended for room ${meeting.roomId} to ${allParticipantIds.length} participants`);
     } catch (socketErr) {
       console.error('[Meeting] Socket emit meeting_ended failed:', socketErr);
     }
@@ -537,232 +549,381 @@ export const endMeeting = async (
 
     // ── Background AI extraction (non-blocking) ───────────────────────────
     setImmediate(async () => {
-      try {
-        const allParticipants = [meeting.host, ...meeting.attendees];
-        const intelligence = await extractMeetingIntelligence(
-          rawTranscript,
-          meeting.attendeeNames || []
-        );
-
-        // Resolve action items → map names to user IDs
-        const resolvedActionItems = await Promise.all(
-          intelligence.actionItems.map(async (ai) => {
-            let assignedTo: any = undefined;
-            if (ai.assignedToName) {
-              const found = await User.findOne({
-                $or: [
-                  {
-                    full_name: {
-                      $regex: ai.assignedToName,
-                      $options: 'i',
-                    },
-                  },
-                  {
-                    username: {
-                      $regex: ai.assignedToName,
-                      $options: 'i',
-                    },
-                  },
-                ],
-                _id: { $in: [...meeting.attendees, meeting.host] },
-              }).select('_id');
-              if (found) assignedTo = found._id;
-            }
-            return {
-              text: ai.text,
-              assignedToName: ai.assignedToName,
-              assignedTo,
-              status: 'pending',
-            };
-          })
-        );
-
-        // Persist AI results
-        await Meeting.findByIdAndUpdate(meeting._id, {
-          $set: {
-            summary: intelligence.summary,
-            actionItems: resolvedActionItems,
-          },
-        });
-
-        // Auto-create synced Calendar tasks
-        const createdTasks = [];
-        for (const ai of resolvedActionItems) {
-          if (ai.text) {
-            const task = await Task.create({
-              user_id: ai.assignedTo || meeting.host,
-              assignedTo: ai.assignedTo,
-              assignedToName: ai.assignedToName,
-              type: 'synced',
-              source: 'meeting',
-              meetingRef: meeting._id,
-              title: ai.text,
-              description: `From meeting: ${meeting.title}`,
-              start_time: new Date(),
-              end_time: new Date(Date.now() + 24 * 60 * 60 * 1000),
-              priority: 'medium',
-              status: 'todo',
-            });
-            createdTasks.push(task);
-
-            if (ai.assignedTo) {
-              await createNotification({
-                recipient: ai.assignedTo,
-                sender: meeting.host,
-                type: 'meeting_action_item',
-                title: 'New action item assigned',
-                body: `From meeting "${meeting.title}": ${ai.text}`,
-                entityId: String(task._id),
-                entityType: 'Task',
-              });
-            }
-          }
-        }
-
-        // Find organization for meeting host and save Minutes as a .md document to storage center
-        const hostUser = await User.findById(meeting.host);
-        let org = null;
-        if (hostUser && hostUser.organization) {
-          org = await Organization.findOne({ name: hostUser.organization });
-        }
-
-        if (org && saveToStorage) {
-          try {
-            const { OrgDocument } = await import('../models/orgDocument');
-            const minutesTitle = `Meeting Minutes: ${meeting.title}`;
-            const formattedActionItems = resolvedActionItems
-              .map((ai) => `- ${ai.text} (Assigned to: ${ai.assignedToName || 'Unassigned'})`)
-              .join('\n');
-            const minutesContent = `# Meeting Minutes: ${meeting.title}\n\n**Date:** ${new Date().toLocaleDateString()}\n**Duration:** ${meeting.duration ? Math.floor(meeting.duration / 60) + ' minutes' : 'unknown'}\n\n## Summary\n${intelligence.summary}\n\n## Action Items\n${formattedActionItems || 'None'}`;
-
-            await OrgDocument.create({
-              title: minutesTitle,
-              content: minutesContent,
-              department: 'general',
-              accessLevel: 'public',
-              createdBy: meeting.host,
-              organizationId: org._id,
-              tags: ['minutes', 'meeting', meeting.title.toLowerCase()],
-            });
-            console.log(`[Meeting AI] Saved meeting minutes as OrgDocument for org: ${org.name}`);
-          } catch (docErr) {
-            console.error('[Meeting AI] Failed to save minutes document:', docErr);
-          }
-        }
-
-        // Email participants with the restyled Light/Lavender Transcript template
-        if (sendEmail) {
-          const { sendMeetingTranscriptEmail } = await import('../utils/mailer');
-          for (const participantId of allParticipants) {
-            try {
-              const user = await User.findById(participantId);
-              if (user && user.email) {
-                await sendMeetingTranscriptEmail(
-                  user.email,
-                  user.full_name || user.username || 'Attendee',
-                  meeting.title,
-                  rawTranscript
-                );
-                console.log(`[Meeting Email] Transcript email sent to: ${user.email}`);
-              }
-            } catch (emailErr) {
-              console.error('[Meeting Email] Failed sending transcript email:', emailErr);
-            }
-          }
-        }
-
-        // Chunk & Index transcript to Pinecone under organization namespace to grow the brain
-        const { hasPinecone, upsertVectors } = await import('../utils/pinecone');
-        const { chunkText, generateEmbedding } = await import('../utils/embeddings');
-        const { OrgDocument } = await import('../models/orgDocument');
-        const crypto = await import('crypto');
-
-        if (hasPinecone() && org && rawTranscript) {
-          try {
-            const namespace = org.pineconeNamespace || `org-${org._id}`;
-            const transcriptTitle = `Meeting Transcript: ${meeting.title}`;
-            const chunks = chunkText(rawTranscript, 500, 100);
-            const pineconeIds: string[] = [];
-            const vectors = [];
-
-            for (const chunk of chunks) {
-              const embedding = await generateEmbedding(chunk);
-              if (embedding.length > 0) {
-                const id = `meet-chunk-${crypto.randomUUID()}`;
-                pineconeIds.push(id);
-                vectors.push({
-                  id,
-                  values: embedding,
-                  metadata: {
-                    title: transcriptTitle,
-                    chunk,
-                    department: 'general',
-                    accessLevel: 'public',
-                    organizationId: org._id,
-                    meetingId: meeting._id,
-                  },
-                });
-              }
-            }
-
-            if (vectors.length > 0) {
-              await upsertVectors(vectors, namespace);
-              // Save a local OrgDocument copy so it shows up in Brain files list
-              await OrgDocument.create({
-                title: transcriptTitle,
-                content: rawTranscript,
-                department: 'general',
-                accessLevel: 'public',
-                createdBy: meeting.host,
-                organizationId: org._id,
-                pineconeIds,
-                tags: ['transcript', 'meeting', meeting.title.toLowerCase()],
-              });
-              console.log(`[Meeting Pinecone] Upserted ${vectors.length} transcript chunks for namespace: ${namespace}`);
-            }
-          } catch (pineconeErr) {
-            console.error('[Meeting Pinecone] Upsert failed:', pineconeErr);
-          }
-        }
-
-        // Notify all participants that minutes are ready
-        for (const participantId of allParticipants) {
-          if (String(participantId) !== String(userId)) {
-            await createNotification({
-              recipient: participantId,
-              sender: userId,
-              type: 'meeting_ended',
-              title: `Meeting ended: ${meeting.title}`,
-              body: `${resolvedActionItems.length} action items were extracted. Check your Calendar.`,
-              entityId: String(meeting._id),
-              entityType: 'Meeting',
-            });
-          }
-        }
-
-        await logActivity({
-          actor: userId,
-          action: 'meeting_ended',
-          entityId: String(meeting._id),
-          entityType: 'Meeting',
-          entityLabel: meeting.title,
-          metadata: {
-            duration,
-            actionItemCount: resolvedActionItems.length,
-            tasksCreated: createdTasks.length,
-          },
-        });
-      } catch (bgErr) {
-        console.error(
-          '[Meeting AI] Background extraction failed:',
-          bgErr
-        );
-      }
+      await runBackgroundMeetingAI(meeting, rawTranscript, String(userId), saveToStorage, sendEmail);
     });
   } catch (err: any) {
     res
       .status(500)
       .json({ message: 'Failed to end meeting', error: err.message });
+  }
+};
+
+// Helper to execute all post-meeting background AI extraction tasks (summaries, actions, docs, notifications)
+export const runBackgroundMeetingAI = async (
+  meeting: any,
+  rawTranscript: string,
+  userId: string,
+  saveToStorage: boolean,
+  sendEmail: boolean
+) => {
+  try {
+    const allParticipants = [meeting.host, ...meeting.attendees];
+    const intelligence = await extractMeetingIntelligence(
+      rawTranscript,
+      meeting.attendeeNames || []
+    );
+
+    // Resolve action items → map names to user IDs
+    const resolvedActionItems = await Promise.all(
+      intelligence.actionItems.map(async (ai) => {
+        let assignedTo: any = undefined;
+        if (ai.assignedToName) {
+          const found = await User.findOne({
+            $or: [
+              {
+                full_name: {
+                  $regex: ai.assignedToName,
+                  $options: 'i',
+                },
+              },
+              {
+                username: {
+                  $regex: ai.assignedToName,
+                  $options: 'i',
+                },
+              },
+            ],
+            _id: { $in: [...meeting.attendees, meeting.host] },
+          }).select('_id');
+          if (found) assignedTo = found._id;
+        }
+        return {
+          text: ai.text,
+          assignedToName: ai.assignedToName,
+          assignedTo,
+          status: 'pending',
+        };
+      })
+    );
+
+    // Persist AI results
+    await Meeting.findByIdAndUpdate(meeting._id, {
+      $set: {
+        summary: intelligence.summary,
+        actionItems: resolvedActionItems,
+      },
+    });
+
+    // Auto-create synced Calendar tasks
+    const createdTasks = [];
+    for (const ai of resolvedActionItems) {
+      if (ai.text) {
+        const task = await Task.create({
+          user_id: ai.assignedTo || meeting.host,
+          assignedTo: ai.assignedTo,
+          assignedToName: ai.assignedToName,
+          type: 'synced',
+          source: 'meeting',
+          meetingRef: meeting._id,
+          title: ai.text,
+          description: `From meeting: ${meeting.title}`,
+          start_time: new Date(),
+          end_time: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          priority: 'medium',
+          status: 'todo',
+        });
+        createdTasks.push(task);
+
+        if (ai.assignedTo) {
+          await createNotification({
+            recipient: ai.assignedTo,
+            sender: meeting.host,
+            type: 'meeting_action_item',
+            title: 'New action item assigned',
+            body: `From meeting "${meeting.title}": ${ai.text}`,
+            entityId: String(task._id),
+            entityType: 'Task',
+          });
+        }
+      }
+    }
+
+    // Find organization for meeting host and save Minutes as a .md document to storage center
+    const hostUser = await User.findById(meeting.host);
+    let org = null;
+    if (hostUser && hostUser.organization) {
+      org = await Organization.findOne({ name: hostUser.organization });
+    }
+
+    if (org && saveToStorage) {
+      try {
+        const { OrgDocument } = await import('../models/orgDocument');
+        const minutesTitle = `Meeting Minutes: ${meeting.title}`;
+        const formattedActionItems = resolvedActionItems
+          .map((ai) => `- ${ai.text} (Assigned to: ${ai.assignedToName || 'Unassigned'})`)
+          .join('\n');
+        const minutesContent = `# Meeting Minutes: ${meeting.title}\n\n**Date:** ${new Date().toLocaleDateString()}\n**Duration:** ${meeting.duration ? Math.floor(meeting.duration / 60) + ' minutes' : 'unknown'}\n\n## Summary\n${intelligence.summary}\n\n## Action Items\n${formattedActionItems || 'None'}`;
+
+        await OrgDocument.create({
+          title: minutesTitle,
+          content: minutesContent,
+          department: 'general',
+          accessLevel: 'public',
+          createdBy: meeting.host,
+          organizationId: org._id,
+          tags: ['minutes', 'meeting', meeting.title.toLowerCase()],
+        });
+        console.log(`[Meeting AI] Saved meeting minutes as OrgDocument for org: ${org.name}`);
+      } catch (docErr) {
+        console.error('[Meeting AI] Failed to save minutes document:', docErr);
+      }
+    }
+
+    // Email participants with the full AI summary + transcript
+    if (sendEmail) {
+      const { sendMeetingTranscriptEmail } = await import('../utils/mailer');
+      for (const participantId of allParticipants) {
+        try {
+          const user = await User.findById(participantId);
+          if (user && user.email) {
+            await sendMeetingTranscriptEmail(
+              user.email,
+              user.full_name || user.username || 'Attendee',
+              meeting.title,
+              rawTranscript,
+              intelligence.summary,
+              resolvedActionItems.map(ai => ({ text: ai.text, assignedToName: ai.assignedToName }))
+            );
+            console.log(`[Meeting Email] Transcript email sent to: ${user.email}`);
+          }
+        } catch (emailErr) {
+          console.error('[Meeting Email] Failed sending transcript email:', emailErr);
+        }
+      }
+    }
+
+    // Chunk & Index transcript to Pinecone under organization namespace to grow the brain
+    const { hasPinecone, upsertVectors } = await import('../utils/pinecone');
+    const { chunkText, generateEmbedding } = await import('../utils/embeddings');
+    const { OrgDocument } = await import('../models/orgDocument');
+    const crypto = await import('crypto');
+
+    if (hasPinecone() && org && rawTranscript) {
+      try {
+        const namespace = org.pineconeNamespace || `org-${org._id}`;
+        const transcriptTitle = `Meeting Transcript: ${meeting.title}`;
+        const chunks = chunkText(rawTranscript, 500, 100);
+        const pineconeIds: string[] = [];
+        const vectors = [];
+
+        for (const chunk of chunks) {
+          const embedding = await generateEmbedding(chunk);
+          if (embedding.length > 0) {
+            const id = `meet-chunk-${crypto.randomUUID()}`;
+            pineconeIds.push(id);
+            vectors.push({
+              id,
+              values: embedding,
+              metadata: {
+                title: transcriptTitle,
+                chunk,
+                department: 'general',
+                accessLevel: 'public',
+                organizationId: org._id,
+                meetingId: meeting._id,
+              },
+            });
+          }
+        }
+
+        if (vectors.length > 0) {
+          await upsertVectors(vectors, namespace);
+          // Save a local OrgDocument copy so it shows up in Brain files list
+          await OrgDocument.create({
+            title: transcriptTitle,
+            content: rawTranscript,
+            department: 'general',
+            accessLevel: 'public',
+            createdBy: meeting.host,
+            organizationId: org._id,
+            pineconeIds,
+            tags: ['transcript', 'meeting', meeting.title.toLowerCase()],
+          });
+          console.log(`[Meeting Pinecone] Upserted ${vectors.length} transcript chunks for namespace: ${namespace}`);
+        }
+      } catch (pineconeErr) {
+        console.error('[Meeting Pinecone] Upsert failed:', pineconeErr);
+      }
+    }
+
+    // Re-broadcast meeting_ended with AI intelligence for live UI updates
+    try {
+      const { getIO } = await import('../utils/socket');
+      const io = getIO();
+      const enrichedPayload = {
+        roomId: meeting.roomId,
+        meetingId: String(meeting._id),
+        title: meeting.title,
+        summary: intelligence.summary,
+        actionItems: resolvedActionItems.map(ai => ({ text: ai.text, assignedToName: ai.assignedToName })),
+        rawTranscript,
+      };
+      io.to(meeting.roomId).emit('meeting_ended', enrichedPayload);
+      const allParticipantIds2 = [String(meeting.host), ...meeting.attendees.map((a: any) => String(a))];
+      for (const pid of allParticipantIds2) {
+        io.to(pid).emit('meeting_ended', enrichedPayload);
+      }
+    } catch (_) { /* silent */ }
+
+    // Notify all participants that minutes are ready
+    for (const participantId of allParticipants) {
+      if (String(participantId) !== String(userId)) {
+        await createNotification({
+          recipient: participantId,
+          sender: userId,
+          type: 'meeting_ended',
+          title: `Meeting ended: ${meeting.title}`,
+          body: `${resolvedActionItems.length} action items were extracted. Check your Calendar.`,
+          entityId: String(meeting._id),
+          entityType: 'Meeting',
+        });
+      }
+    }
+
+    await logActivity({
+      actor: userId,
+      action: 'meeting_ended',
+      entityId: String(meeting._id),
+      entityType: 'Meeting',
+      entityLabel: meeting.title,
+      metadata: {
+        duration: meeting.duration || 0,
+        actionItemCount: resolvedActionItems.length,
+        tasksCreated: createdTasks.length,
+      },
+    });
+  } catch (bgErr) {
+    console.error('[Meeting AI] Background extraction failed:', bgErr);
+  }
+};
+
+// ─── POST /api/v1/meetings/:id/transcribe-upload ── Transcribe uploaded recording ──
+export const transcribeUpload = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No audio file uploaded' });
+    }
+    const searchId = String(req.params.id);
+    const isObjectId = mongoose.Types.ObjectId.isValid(searchId);
+
+    let meeting = await Meeting.findOne({
+      $or: [
+        ...(isObjectId ? [{ _id: searchId }] : []),
+        { roomId: searchId },
+      ],
+    });
+
+    // If meeting is not found, check if this is a scheduled meeting task
+    if (!meeting && isObjectId) {
+      const task = await Task.findOne({
+        _id: searchId,
+        $or: [{ user_id: userId }, { assignedTo: userId }],
+      });
+      if (task && task.type === 'meeting') {
+        meeting = await Meeting.create({
+          roomId: String(task._id),
+          title: task.title,
+          host: task.user_id,
+          type: task.meetingType || 'video',
+          attendees: task.recipients || [],
+          attendeeNames: [],
+          startedAt: task.start_time || new Date(),
+          status: 'ended',
+        });
+        task.meetingRef = meeting._id;
+        await task.save();
+      }
+    }
+
+    if (!meeting) {
+      return res.status(404).json({ message: 'Meeting or Meeting-Task not found' });
+    }
+
+    // Parse speakerNames
+    let speakerNames: string[] = [];
+    try {
+      if (req.body.speakerNames) {
+        if (typeof req.body.speakerNames === 'string') {
+          try {
+            speakerNames = JSON.parse(req.body.speakerNames);
+          } catch (_) {
+            speakerNames = req.body.speakerNames.split(',').map((s: string) => s.trim());
+          }
+        } else if (Array.isArray(req.body.speakerNames)) {
+          speakerNames = req.body.speakerNames;
+        }
+      }
+    } catch (err) {
+      console.warn('[transcribeUpload] Failed to parse speakerNames:', err);
+    }
+
+    // Resolve speakerNames if empty
+    if (speakerNames.length === 0) {
+      const hostUser = await User.findById(meeting.host).select('full_name username');
+      const attendeeUsers = await User.find({ _id: { $in: meeting.attendees } }).select('full_name username');
+      speakerNames = [
+        hostUser ? (hostUser.full_name || hostUser.username || 'Host') : 'Host',
+        ...attendeeUsers.map(u => u.full_name || u.username || 'Attendee')
+      ];
+    }
+
+    // Call whisperService to transcribe
+    const { transcribeWithTimestamps } = await import('../utils/whisperService');
+    const chunks = await transcribeWithTimestamps(req.file.path, speakerNames);
+
+    // Annotate chunks
+    const annotatedChunks = chunks.map((chunk, index) => {
+      return {
+        speaker: chunk.speaker || speakerNames[index % speakerNames.length] || 'Attendee',
+        text: chunk.text,
+        timestamp: chunk.timestamp || Date.now(),
+      };
+    });
+
+    const rawTranscript = annotatedChunks
+      .map(c => `${c.speaker ? c.speaker + ': ' : ''}${c.text}`)
+      .join('\n');
+
+    // Overwrite meeting transcript fields
+    meeting.transcriptChunks = annotatedChunks;
+    meeting.transcriptRaw = rawTranscript;
+    meeting.status = 'ended';
+    meeting.endedAt = new Date();
+    if (!meeting.duration && chunks.length > 0) {
+      const maxTime = Math.max(...chunks.map(c => c.timestamp || 0));
+      meeting.duration = maxTime > 0 ? maxTime : undefined;
+    }
+    await meeting.save();
+
+    // Trigger the background AI intelligence
+    setImmediate(async () => {
+      await runBackgroundMeetingAI(meeting, rawTranscript, String(userId), true, true);
+    });
+
+    res.status(200).json({
+      message: 'Audio transcribed and saved successfully. AI processing in progress.',
+      transcriptRaw: rawTranscript,
+      transcriptChunks: annotatedChunks,
+    });
+  } catch (err: any) {
+    console.error('[transcribeUpload] Error:', err);
+    res.status(500).json({ message: 'Failed to transcribe uploaded recording', error: err.message });
   }
 };
 

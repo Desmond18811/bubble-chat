@@ -11,8 +11,10 @@ import {
   startScreenShare,
   endScreenShare,
   getMeetingStatsWithUser,
+  transcribeUpload,
 } from '../controllers/meetingController';
 import passport from 'passport';
+import { handleUpload } from '../middleware/upload';
 
 const router = express.Router();
 const requireAuth = passport.authenticate('jwt', { session: false });
@@ -27,6 +29,7 @@ router.get('/:id', getMeetingById);
 
 // ── Transcript (background real-time accumulation) ───────────────────────────
 router.post('/:id/transcript', addTranscriptChunk);
+router.post('/:id/transcribe-upload', handleUpload.single('audio'), transcribeUpload);
 
 // ── Meeting lifecycle ────────────────────────────────────────────────────────
 router.post('/:id/end', endMeeting);

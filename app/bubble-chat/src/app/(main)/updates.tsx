@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator } from 'react-native';
 import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchTasks, createTaskFull } from '../../lib/api';
+import { fetchTasks, createTaskFull, uploadMeetingRecording } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
+import * as DocumentPicker from 'expo-document-picker';
 
 // Helper to get calendar cells
 const getCalendarCells = (currentDate: Date) => {
@@ -93,6 +94,59 @@ export default function UpdatesScreen() {
     summary: '',
     actionItems: [],
   });
+
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUploadRecording = async (task: any) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'audio/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const fileAsset = result.assets[0];
+      const fileToUpload = {
+        uri: fileAsset.uri,
+        name: fileAsset.name || 'recording.mp3',
+        type: fileAsset.mimeType || 'audio/mpeg',
+      } as any;
+
+      setIsUploading(true);
+      const res = await uploadMeetingRecording(task._id, fileToUpload);
+      setIsUploading(false);
+
+      if (res && res.message) {
+        Alert.alert(
+          '✨ Audio Transcribed',
+          'Aida has successfully processed the audio recording. Check your updates for the summary and action items.',
+          [
+            {
+              text: 'View Transcript',
+              onPress: () => {
+                setTranscriptModal({
+                  visible: true,
+                  title: task.title || 'Meeting Transcript',
+                  summary: res.summary || 'AI Summary is processing in the background...',
+                  actionItems: res.actionItems || [],
+                  rawTranscript: res.transcriptRaw || '',
+                  meetingId: task._id,
+                });
+              }
+            },
+            { text: 'OK' }
+          ]
+        );
+      }
+      await syncTasks();
+    } catch (err: any) {
+      setIsUploading(false);
+      Alert.alert('Upload Failed', err.message || 'Could not upload audio file.');
+    }
+  };
 
   const navigation = useNavigation();
   const [isFocused, setIsFocused] = useState(navigation.isFocused());
@@ -480,6 +534,16 @@ export default function UpdatesScreen() {
                         <Text className="text-[10px] font-bold text-purple font-sans">Call room</Text>
                       </TouchableOpacity>
                     )}
+                    {task.type === 'meeting' && (
+                      <TouchableOpacity 
+                        onPress={() => handleUploadRecording(task)}
+                        className="bg-purple-soft/80 px-2.5 py-1 rounded-lg flex-row items-center"
+                        style={{ gap: 4 }}
+                      >
+                        <FileText size={10} color="#6c5ce7" />
+                        <Text className="text-[10px] font-bold text-purple font-sans">Upload Audio</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               );
@@ -777,6 +841,17 @@ export default function UpdatesScreen() {
           </View>
         </View>
       </Modal>
+      {isUploading && (
+        <Modal transparent animationType="fade" visible={isUploading}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ backgroundColor: '#ffffff', borderRadius: 20, padding: 24, alignItems: 'center' }} className="gap-3 shadow-xl">
+              <ActivityIndicator size="large" color="#6c5ce7" />
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: '#1f2030', fontSize: 14 }}>Transcribing Audio...</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', color: '#9a9aab', fontSize: 11 }}>Aida is processing your recording</Text>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }

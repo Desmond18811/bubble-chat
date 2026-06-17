@@ -1436,6 +1436,24 @@ export const endMeeting = async (
     return handleResponse(res);
 };
 
+export const uploadMeetingRecording = async (
+    meetingId: string,
+    file: any,
+    speakerNames?: string[]
+) => {
+    const formData = new FormData();
+    formData.append('audio', file);
+    if (speakerNames && speakerNames.length > 0) {
+        formData.append('speakerNames', JSON.stringify(speakerNames));
+    }
+    const res = await fetch(`${BASE_URL}/meetings/${meetingId}/transcribe-upload`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: formData,
+    });
+    return handleResponse(res);
+};
+
 export const getMeetingStatsWithUser = async (withUserId: string) => {
     const res = await fetch(`${BASE_URL}/meetings/stats/${withUserId}`, {
         headers: getAuthHeaders(),
@@ -1994,5 +2012,225 @@ export const getOrgTranscripts = async () => {
     const res = await fetch(`${BASE_URL}/org/transcripts`, {
         headers: getAuthHeaders(),
     });
+    return handleResponse(res);
+};
+
+// ─── Company Brain ────────────────────────────────────────────────────────────
+
+/** Ingest a file (PDF, DOCX, TXT, MP3, MP4, …) into the brain */
+export const brainIngestFile = async (file: {
+    uri: string;
+    name: string;
+    type: string;
+}) => {
+    const token = tokenCache.accessToken;
+    const formData = new FormData();
+    formData.append('file', file as any);
+    const res = await fetch(`${BASE_URL}/brain/ingest`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+    return handleResponse(res);
+};
+
+/** Ingest a raw text snippet or paste into the brain */
+export const brainIngestText = async (text: string, title?: string, department?: string) => {
+    const res = await fetch(`${BASE_URL}/brain/ingest`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ text, title, department }),
+    });
+    return handleResponse(res);
+};
+
+/** Ingest a URL (web page / YouTube / doc link) into the brain */
+export const brainIngestUrl = async (url: string, title?: string) => {
+    const res = await fetch(`${BASE_URL}/brain/ingest`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ url, title }),
+    });
+    return handleResponse(res);
+};
+
+/** Poll job status */
+export const brainGetJobStatus = async (jobId: string) => {
+    const res = await fetch(`${BASE_URL}/brain/job/${jobId}`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** List all ingestion jobs for this org */
+export const brainGetJobs = async () => {
+    const res = await fetch(`${BASE_URL}/brain/jobs`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Semantic search across org brain */
+export const brainSearch = async (query: string, department?: string, topK?: number) => {
+    const params = new URLSearchParams({ query });
+    if (department) params.append('department', department);
+    if (topK) params.append('topK', String(topK));
+    const res = await fetch(`${BASE_URL}/brain/search?${params}`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Generate an onboarding brief for the current user */
+export const brainOnboardingBrief = async () => {
+    const res = await fetch(`${BASE_URL}/brain/onboarding/brief`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Route a question to the right expert */
+export const brainAskQuestion = async (question: string) => {
+    const res = await fetch(`${BASE_URL}/brain/ask`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ question }),
+    });
+    return handleResponse(res);
+};
+
+/** Confirm a question was resolved (closes the loop) */
+export const brainResolveQuestion = async (questionId: string, answer: string) => {
+    const res = await fetch(`${BASE_URL}/brain/resolve`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ questionId, answer }),
+    });
+    return handleResponse(res);
+};
+
+/** Get the daily digest (morning brief) for the current user */
+export const getDailyDigest = async (date?: string) => {
+    const q = date ? `?date=${date}` : '';
+    const res = await fetch(`${BASE_URL}/brain/digest${q}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+/** Get the last N days of digest history */
+export const getDigestHistory = async (days = 7) => {
+    const res = await fetch(`${BASE_URL}/brain/digest/history?days=${days}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+/** Get the expertise radar — topic-expert leaderboard for the org */
+export const getExpertiseRadar = async (topic?: string) => {
+    const q = topic ? `?topic=${encodeURIComponent(topic)}` : '';
+    const res = await fetch(`${BASE_URL}/brain/expertise${q}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+// ─── Calendar Events ──────────────────────────────────────────────────────────
+
+/** Create a new calendar event */
+export const createCalendarEvent = async (data: {
+    title: string;
+    eventType?: 'company' | 'holiday' | 'meeting_video' | 'meeting_audio' | 'all_day';
+    description?: string;
+    startTime: string;
+    endTime: string;
+    isAllDay?: boolean;
+    attendees?: string[];
+    agenda?: string;
+    tags?: string[];
+    isRecurring?: boolean;
+    recurrenceRule?: string;
+}) => {
+    const res = await fetch(`${BASE_URL}/events/create`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+/** List org events with optional filters */
+export const getCalendarEvents = async (params?: {
+    start?: string;
+    end?: string;
+    type?: string;
+    mine?: boolean;
+}) => {
+    const q = new URLSearchParams();
+    if (params?.start) q.set('start', params.start);
+    if (params?.end) q.set('end', params.end);
+    if (params?.type) q.set('type', params.type);
+    if (params?.mine) q.set('mine', 'true');
+    const res = await fetch(`${BASE_URL}/events?${q.toString()}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+/** Get a single event by ID */
+export const getCalendarEvent = async (id: string) => {
+    const res = await fetch(`${BASE_URL}/events/${id}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+/** Update an event */
+export const updateCalendarEvent = async (id: string, data: any) => {
+    const res = await fetch(`${BASE_URL}/events/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+/** Cancel (soft-delete) an event */
+export const deleteCalendarEvent = async (id: string) => {
+    const res = await fetch(`${BASE_URL}/events/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Start a meeting — creates LiveKit room, returns roomId */
+export const startCalendarMeeting = async (eventId: string) => {
+    const res = await fetch(`${BASE_URL}/events/${eventId}/start-meeting`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** End a meeting — submit transcript for brain enrichment */
+export const endCalendarMeeting = async (
+    eventId: string,
+    data: { transcriptText?: string; transcriptChunks?: any[] }
+) => {
+    const res = await fetch(`${BASE_URL}/events/${eventId}/end-meeting`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+/** Bulk import public holidays (admin only) */
+export const bulkImportHolidays = async (holidays: { name: string; date: string; country?: string }[]) => {
+    const res = await fetch(`${BASE_URL}/events/holidays/bulk`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ holidays }),
+    });
+    return handleResponse(res);
+};
+
+/** Get smart event creation suggestions (title, participants, agenda, conflicts) */
+export const getEventSuggestions = async (query?: string, startTime?: string) => {
+    const q = new URLSearchParams();
+    if (query) q.set('query', query);
+    if (startTime) q.set('startTime', startTime);
+    const res = await fetch(`${BASE_URL}/events/suggest?${q.toString()}`, { headers: getAuthHeaders() });
     return handleResponse(res);
 };

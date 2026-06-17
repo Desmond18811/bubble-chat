@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { MessageSquare, User, Calendar, Users, Plus, Share2 } from "lucide-react-native";
+import { MessageSquare, User, Users, Plus, Share2 } from "lucide-react-native";
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
@@ -22,7 +22,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         {/* Pill Container for the Main Tabs */}
         <View style={styles.pillContainer}>
           {state.routes.map((route: any, index: number) => {
-            if (route.name === "calls" || route.name === "chat/[id]") return null;
+            if (route.name === "calls" || route.name === "chat/[id]" || route.name === "brain" || route.name === "calendar") return null;
 
             const { options } = descriptors[route.key];
             const label =
@@ -137,6 +137,18 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profile",
+        }}
+      />
+      <Tabs.Screen
+        name="brain"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen

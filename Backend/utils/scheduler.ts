@@ -274,3 +274,70 @@ export const initTaskReminderScheduler = () => {
 
   console.log('⏰ [TaskReminders] Background auto-reminder initialized (runs every 30 min).');
 };
+
+// ─── Daily Digest Generator ────────────────────────────────────────────────────
+
+/**
+ * Generates personalized morning briefs for all active users across all orgs.
+ * Runs at 07:00 UTC daily. Each user's digest is cached in DailyDigest collection.
+ */
+export const runDailyDigestJob = async () => {
+  try {
+    const { User } = await import('../models/users');
+    const { generateDigestForUser } = await import('../controllers/digestController');
+    const { sendPushNotification } = await import('./push');
+    const { PushToken } = await import('../models/pushToken');
+
+    // Find all users who belong to an org and have digest enabled (or default)
+    const users = await User.find({
+      organization: { $exists: true, $ne: '' },
+      $or: [
+        { 'digestPreferences.enabled': true },
+        { 'digestPreferences.enabled': { $exists: false } }, // default on
+      ],
+    }).select('_id full_name username digestPreferences').limit(500);
+
+    console.log(`📅 [DailyDigest] Generating briefs for ${users.length} users...`);
+
+    let successCount = 0;
+    const today = new Date();
+
+    for (const user of users) {
+      try {
+        const digest = await generateDigestForUser(user._id.toString(), today);
+        if (!digest) continue;
+
+        // Send push notification if user has push tokens
+        if (digest.morningBrief) {
+          await sendPushNotification(
+            [user._id.toString()],
+            '🌅 Your Morning Brief is Ready',
+            digest.morningBrief.substring(0, 120),
+            { type: 'morning_digest', date: today.toISOString().slice(0, 10) }
+          );
+          digest.pushSent = true;
+          await digest.save();
+        }
+
+        successCount++;
+      } catch (userErr) {
+        console.error(`[DailyDigest] Failed for user ${user._id}:`, userErr);
+      }
+    }
+
+    console.log(`✅ [DailyDigest] Completed: ${successCount}/${users.length} briefs generated.`);
+  } catch (err) {
+    console.error('❌ [DailyDigest] Job failed:', err);
+  }
+};
+
+export const initDailyDigestScheduler = () => {
+  // Run every day at 07:00 UTC
+  cron.schedule('0 7 * * *', async () => {
+    console.log('📅 [DailyDigest] 07:00 UTC — Running daily digest job...');
+    await runDailyDigestJob();
+  });
+
+  console.log('📅 [DailyDigest] Scheduler initialized (runs daily at 07:00 UTC).');
+};
+
