@@ -5,8 +5,10 @@ import { CalendarEvent } from '../models/calendarEvent';
 import { User } from '../models/users';
 import { Organization } from '../models/organizations';
 import { Task } from '../models/task';
+import { OrgDocument } from '../models/orgDocument';
 import { generateEmbedding } from '../utils/embeddings';
 import { queryVectors, hasPinecone } from '../utils/pinecone';
+import { resolveUserOrg } from '../utils/orgResolver';
 
 const CONFIDENCE_THRESHOLD = 0.70;
 const HEADS_UP_THRESHOLD = 0.45;
@@ -20,6 +22,69 @@ const getDeepSeekClient = () => {
 const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
 const endOfDay = (d: Date) => { const x = new Date(d); x.setHours(23,59,59,999); return x; };
 
+const buildYesterdayRecap = async (
+  userId: string,
+  orgId: any,
+  yStart: Date,
+  yEnd: Date
+) => {
+  const meetings = await CalendarEvent.find({
+    organizationId: orgId,
+    attendees: userId,
+    status: 'ended',
+    endTime: { $gte: yStart, $lte: yEnd },
+  })
+    .select('title summary decisions actionItems')
+    .lean();
+
+  const meetingSummary = meetings.map((m: any) => ({
+    title: m.title,
+    summary: m.summary || '',
+    decisions: Array.isArray(m.decisions) ? m.decisions.slice(0, 3) : [],
+    actionItems: Array.isArray(m.actionItems)
+      ? m.actionItems
+          .filter((a: any) => !a.assignedTo || String(a.assignedTo) === String(userId))
+          .slice(0, 3)
+          .map((a: any) => a.text || '')
+          .filter(Boolean)
+      : [],
+  }));
+
+  // Top group-chat highlights from yesterday
+  const chatDocs = await OrgDocument.find({
+    organizationId: orgId,
+    tags: 'chat',
+    createdAt: { $gte: yStart, $lte: yEnd },
+  })
+    .select('title content')
+    .sort({ createdAt: -1 })
+    .limit(3)
+    .lean();
+
+  const messageHighlights = chatDocs.map((d: any) => ({
+    title: d.title,
+    snippet: (d.content || '').slice(0, 240),
+  }));
+
+  // Decisions captured yesterday (any source)
+  const decisionDocs = await OrgDocument.find({
+    organizationId: orgId,
+    tags: { $in: ['decision', 'decisions'] },
+    createdAt: { $gte: yStart, $lte: yEnd },
+  })
+    .select('title content')
+    .sort({ createdAt: -1 })
+    .limit(3)
+    .lean();
+
+  const decisions = decisionDocs.map((d: any) => ({
+    title: d.title,
+    snippet: (d.content || '').slice(0, 240),
+  }));
+
+  return { meetings: meetingSummary, messageHighlights, decisions };
+};
+
 /**
  * Core function: generate a daily digest for one user.
  * Called by the cron scheduler and on-demand by the GET endpoint.
@@ -27,11 +92,14 @@ const endOfDay = (d: Date) => { const x = new Date(d); x.setHours(23,59,59,999);
 export const generateDigestForUser = async (userId: string, date: Date = new Date()): Promise<any> => {
   const dayStart = startOfDay(date);
   const dayEnd = endOfDay(date);
+  const yesterday = new Date(dayStart.getTime() - 24 * 60 * 60 * 1000);
+  const yStart = startOfDay(yesterday);
+  const yEnd = endOfDay(yesterday);
 
   const user = await User.findById(userId);
-  if (!user?.organization) return null;
+  if (!user || (!user.organizationId && !user.organization)) return null;
 
-  const org = await Organization.findOne({ name: user.organization });
+  const org = await resolveUserOrg(user);
   if (!org) return null;
 
   // 1. Today's events for this user
@@ -68,7 +136,7 @@ export const generateDigestForUser = async (userId: string, date: Date = new Dat
     const seedQuery = `${user.org_role || user.role || 'employee'} ${user.department || 'general'} latest decisions updates`;
     const embedding = await generateEmbedding(seedQuery);
     if (embedding.length > 0) {
-      const matches = await queryVectors(embedding, 8, undefined, namespace);
+      const matches = await queryVectors(embedding, 8, org._id.toString(), namespace);
       for (const m of matches) {
         const item = {
           type: 'decision' as const,
@@ -86,7 +154,10 @@ export const generateDigestForUser = async (userId: string, date: Date = new Dat
     }
   }
 
-  // 4. Build full item list
+  // 4. Yesterday recap — what happened, decisions made, action items captured.
+  const yesterdayRecap = await buildYesterdayRecap(userId, org._id, yStart, yEnd);
+
+  // 5. Build full item list
   const allItems = [
     ...todayEvents.map(e => ({
       type: 'event' as const,
@@ -99,26 +170,47 @@ export const generateDigestForUser = async (userId: string, date: Date = new Dat
     ...highConfidenceItems,
   ];
 
-  // 5. AI-synthesize morning brief
+  // 6. AI-synthesize morning brief
   let morningBrief = `Good morning! You have ${todayEvents.length} event(s) today and ${openActionItems.length} open action item(s).`;
   const deepseek = getDeepSeekClient();
 
-  if (deepseek && allItems.length > 0) {
+  if (deepseek && (allItems.length > 0 || yesterdayRecap.meetings.length > 0 || yesterdayRecap.messageHighlights.length > 0)) {
     try {
       const briefData = allItems.slice(0, 10).map(i => `- [${i.type}] ${i.content}`).join('\n');
+      const recapLines: string[] = [];
+      if (yesterdayRecap.meetings.length > 0) {
+        recapLines.push('Meetings:');
+        for (const m of yesterdayRecap.meetings) {
+          recapLines.push(`  • ${m.title}${m.summary ? ` — ${m.summary.slice(0, 160)}` : ''}`);
+          for (const d of m.decisions || []) recapLines.push(`    - Decision: ${d}`);
+        }
+      }
+      if (yesterdayRecap.messageHighlights.length > 0) {
+        recapLines.push('Group chat highlights:');
+        for (const h of yesterdayRecap.messageHighlights) recapLines.push(`  • ${h.snippet.slice(0, 160)}`);
+      }
+      if (yesterdayRecap.decisions.length > 0) {
+        recapLines.push('Decisions captured:');
+        for (const d of yesterdayRecap.decisions) recapLines.push(`  • ${d.title}: ${d.snippet.slice(0, 160)}`);
+      }
+      const recapBlock = recapLines.length > 0 ? `Yesterday:\n${recapLines.join('\n')}\n\n` : '';
+
       const aiRes = await deepseek.chat.completions.create({
         model: 'deepseek-chat',
         messages: [
           {
             role: 'system',
-            content: `You are Aida, a smart work assistant. Generate a concise, professional morning brief (5 bullet points max) for ${user.full_name || user.username}. 
+            content: `You are Aida, a smart work assistant. Generate a concise, professional morning brief for ${user.full_name || user.username}.
 Role: ${user.org_role || user.role}. Department: ${user.department || 'general'}.
-Be encouraging, specific, and actionable. Return plain text with bullet points.`,
+Structure (plain text, no markdown headers):
+  1. Lead with ONE sentence reflecting on yesterday — meetings attended, decisions made, key updates.
+  2. Then 3-4 bullet points covering today's events, open action items, and heads-up knowledge from the brain.
+Be specific and actionable.`,
           },
-          { role: 'user', content: `Today's agenda and knowledge:\n${briefData}` },
+          { role: 'user', content: `${recapBlock}Today's agenda and knowledge:\n${briefData}` },
         ],
         temperature: 0.5,
-        max_tokens: 300,
+        max_tokens: 350,
       });
       morningBrief = aiRes.choices?.[0]?.message?.content?.trim() || morningBrief;
     } catch (err) {
@@ -126,7 +218,7 @@ Be encouraging, specific, and actionable. Return plain text with bullet points.`
     }
   }
 
-  // 6. Upsert the daily digest document
+  // 7. Upsert the daily digest document
   const digest = await DailyDigest.findOneAndUpdate(
     { userId, date: dayStart },
     {
@@ -136,6 +228,7 @@ Be encouraging, specific, and actionable. Return plain text with bullet points.`
       morningBrief,
       highConfidenceItems,
       headsUpItems,
+      yesterdayRecap,
       generatedAt: new Date(),
     },
     { upsert: true, new: true }
@@ -205,9 +298,11 @@ export const getExpertiseRadar = async (req: Request, res: Response): Promise<an
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const user = await User.findById(userId);
-    if (!user?.organization) return res.status(400).json({ error: 'No organization found.' });
+    if (!user || (!user.organizationId && !user.organization)) {
+      return res.status(400).json({ error: 'No organization found.' });
+    }
 
-    const org = await Organization.findOne({ name: user.organization });
+    const org = await resolveUserOrg(user);
     if (!org) return res.status(404).json({ error: 'Organization not found.' });
 
     const { ExpertiseRadar } = await import('../models/expertiseRadar');

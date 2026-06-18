@@ -7,7 +7,12 @@ import { OrgDocument } from '../models/orgDocument';
 import { chunkText, generateEmbedding } from '../utils/embeddings';
 import { upsertVectors, hasPinecone } from '../utils/pinecone';
 import { updateExpertiseRadar } from '../controllers/continuityController';
+import { getSignedMediaUrl } from './filebase';
+import { transcribeAudio } from './whisperService';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 /**
  * Central Brain Event Bus.
@@ -243,16 +248,149 @@ brainEventBus.on('document_uploaded', async (payload: {
   }
 });
 
+// ─── Event: Chat File Shared ─────────────────────────────────────────────────
+
+const TEXT_LIKE_MIME = /^(text\/|application\/(json|x-yaml|csv|xml))/i;
+const AUDIO_VIDEO_EXT = ['.mp3', '.wav', '.m4a', '.webm', '.ogg', '.oga', '.aac', '.3gp', '.mp4', '.mov', '.amr', '.caf'];
+
+/**
+ * Emitted by messageController when a non-text message (file/voice/video/image)
+ * is shared in a group chat. The file is fetched from storage, normalized to
+ * text where possible (transcript for audio/video, raw read for text formats),
+ * and ingested into the brain.
+ */
+brainEventBus.on('chat_file_shared', async (payload: {
+  messageId: string;
+  chatId: string;
+  senderId: string;
+  mediaUrl: string;
+  mimeType?: string;
+  caption?: string;
+}) => {
+  try {
+    const { chatId, senderId, mediaUrl, mimeType, caption } = payload;
+
+    const chat = await Conversation.findById(chatId).select('organizationId chatName isGroupChat');
+    if (!chat || !chat.isGroupChat || !chat.organizationId) return;
+
+    const org = await Organization.findById(chat.organizationId);
+    if (!org) return;
+
+    const isAudioVideo =
+      (mimeType && (mimeType.startsWith('audio/') || mimeType.startsWith('video/'))) ||
+      AUDIO_VIDEO_EXT.some((ext) => mediaUrl.toLowerCase().endsWith(ext));
+    const isTextLike = mimeType ? TEXT_LIKE_MIME.test(mimeType) : false;
+
+    if (!isAudioVideo && !isTextLike) {
+      // PDFs, docx, images — no text extractor wired. Skip silently rather than
+      // poison the brain with binary garbage.
+      console.log(`[Brain Event] chat_file_shared skipped (unsupported mime: ${mimeType || 'unknown'})`);
+      return;
+    }
+
+    const signedUrl = await getSignedMediaUrl(mediaUrl);
+    const res = await fetch(signedUrl);
+    if (!res.ok) return;
+
+    let extractedText = '';
+    let title = chat.chatName ? `File in ${chat.chatName}` : 'Shared File';
+
+    if (isAudioVideo) {
+      const ext = path.extname(mediaUrl).split('?')[0] || '.bin';
+      const tmpPath = path.join(os.tmpdir(), `brain-${crypto.randomUUID()}${ext}`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      fs.writeFileSync(tmpPath, buf);
+      try {
+        extractedText = await transcribeAudio(tmpPath);
+        title = `Voice/Video in ${chat.chatName}`;
+      } finally {
+        try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+      }
+    } else {
+      extractedText = await res.text();
+    }
+
+    if (caption && caption.trim()) {
+      extractedText = `Caption: ${caption.trim()}\n\n${extractedText}`;
+    }
+
+    if (!extractedText || extractedText.trim().length < 10) return;
+
+    const namespace = org.pineconeNamespace || `org-${org._id}`;
+    await ingestTextToOrg(
+      extractedText,
+      title,
+      ['chat', 'file', 'shared'],
+      org._id.toString(),
+      namespace,
+      senderId,
+      'communications'
+    );
+
+    console.log(`[Brain Event] Ingested chat file (${isAudioVideo ? 'transcript' : 'text'}) for org ${org.name}`);
+  } catch (err) {
+    console.error('[Brain Event] chat_file_shared ingestion failed:', err);
+  }
+});
+
+// ─── Event: QA Resolved (closed loop, automatic) ─────────────────────────────
+
+/**
+ * Emitted automatically when a reply lands on a message that originated from
+ * the Knowledge Continuity Engine's expert routing (the reply's parent_message
+ * has a brainQuestionRef). Mirrors the manual POST /api/brain/qa/resolve flow.
+ */
+brainEventBus.on('qa_resolved', async (payload: { questionMessageId: string; replyMessageId: string }) => {
+  try {
+    const { questionMessageId, replyMessageId } = payload;
+
+    const [question, reply] = await Promise.all([
+      Message.findById(questionMessageId).populate('chat', 'organizationId'),
+      Message.findById(replyMessageId).populate('sender', 'full_name username'),
+    ]);
+    if (!question || !reply) return;
+
+    const orgId = (question.chat as any)?.organizationId;
+    if (!orgId) return;
+
+    const org = await Organization.findById(orgId);
+    if (!org) return;
+
+    const answererId = String((reply.sender as any)?._id || reply.sender);
+    const qaContent = `Question:\n${question.content}\n\nAnswer:\n${reply.content}`;
+    const namespace = org.pineconeNamespace || `org-${org._id}`;
+
+    await ingestTextToOrg(
+      qaContent,
+      `Resolved Q&A`,
+      ['qa', 'resolved'],
+      org._id.toString(),
+      namespace,
+      answererId,
+      'general'
+    );
+
+    // Reward the expert for closing the loop.
+    await updateExpertiseRadar(answererId, org._id.toString(), ['qa', 'resolved'], 10);
+
+    console.log(`[Brain Event] Closed-loop Q&A ingested for org ${org.name}`);
+  } catch (err) {
+    console.error('[Brain Event] qa_resolved ingestion failed:', err);
+  }
+});
+
 /**
  * Initialize the brain event listener.
  * Call this once from index.ts after DB connection.
- * 
+ *
  * Events handled:
  *  - group_message_sent      : auto-ingest group chat messages (DMs are NEVER ingested — E2E privacy)
+ *  - chat_file_shared        : auto-ingest files / voice notes / videos shared in group chats
  *  - meeting_ended           : ingest meeting transcript + summary after a call ends
  *  - calendar_event_created  : ingest event metadata for discoverability and agenda pre-fill
  *  - document_uploaded       : ingest manually uploaded org documents immediately
+ *  - qa_resolved             : closed-loop capture of expert replies routed via the brain
  */
 export const initBrainEventListener = () => {
-  console.log('🧠 [Brain Event Listener] Initialized — listening for group_message_sent, meeting_ended, calendar_event_created, document_uploaded. DMs excluded (E2E encrypted).');
+  console.log('🧠 [Brain Event Listener] Initialized — group_message_sent, chat_file_shared, meeting_ended, calendar_event_created, document_uploaded, qa_resolved. DMs excluded (E2E encrypted).');
 };

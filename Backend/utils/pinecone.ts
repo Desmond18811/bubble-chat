@@ -49,17 +49,30 @@ export const upsertVectors = async (vectors: PineconeVector[], namespace?: strin
 };
 
 /**
- * Query Pinecone for similar vectors
+ * Query Pinecone for similar vectors.
+ *
+ * organizationId is REQUIRED for multi-tenant isolation. Namespace alone is
+ * not enough — we layer a metadata filter on top so a misconfigured namespace
+ * still cannot leak data across organizations.
  */
 export const queryVectors = async (
     embedding: number[],
     topK = 5,
-    filter?: Record<string, any>,
-    namespace?: string
+    organizationId: string,
+    namespace?: string,
+    extraFilter?: Record<string, any>
 ): Promise<{ id: string; score: number; metadata?: Record<string, any> }[]> => {
+    if (!organizationId) {
+        console.error('[Pinecone] queryVectors called without organizationId — refusing to query');
+        return [];
+    }
     const index = getIndex(namespace);
     if (!index) return [];
     try {
+        const filter: Record<string, any> = {
+            ...(extraFilter || {}),
+            organizationId: { $eq: organizationId },
+        };
         const res = await index.query({
             vector: embedding,
             topK,

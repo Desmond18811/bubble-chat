@@ -162,6 +162,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         pineconeNamespace: `org-${newUser._id}`,
       });
 
+      // Canonical org reference on the user
+      await User.findByIdAndUpdate(newUser._id, { organizationId: organization._id });
+
       // Seed basic knowledge for the organization
       await seedOrgKnowledge(organization, (newUser._id as any).toString());
 
@@ -196,6 +199,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       if (existingOrg) {
         await User.findByIdAndUpdate(newUser._id, {
           organization: existingOrg.name,
+          organizationId: existingOrg._id,
           org_industry: existingOrg.industry,
           org_size: existingOrg.size,
           role: 'employee',
@@ -767,6 +771,7 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
         const existingOrg = await Organization.findOne({ inviteCode });
         if (existingOrg) {
           user.organization = existingOrg.name;
+          user.organizationId = existingOrg._id as any;
           user.org_industry = existingOrg.industry;
           user.org_size = existingOrg.size;
           user.role = 'employee';
@@ -911,6 +916,7 @@ export const googleMobileLogin = async (req: Request, res: Response): Promise<vo
         const existingOrg = await Organization.findOne({ inviteCode });
         if (existingOrg) {
           user.organization = existingOrg.name;
+          user.organizationId = existingOrg._id as any;
           user.org_industry = existingOrg.industry;
           user.org_size = existingOrg.size as any;
           user.role = 'employee';

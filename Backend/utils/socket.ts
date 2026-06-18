@@ -210,7 +210,10 @@ export const initSocket = (server: HttpServer) => {
     socket.on('call_offer', async (data: { toUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
       // Use authenticated socket identity as the authoritative caller name
       const callerName = (socket as any).fullName || (socket as any).username || data.callerName || 'Colleague';
-      
+
+      // Caller joins the room immediately so hangup events later reach this socket
+      socket.join(data.roomId);
+
       io.to(data.toUserId).emit('incoming_call', {
         ...data,
         fromUserId: userId,
@@ -233,11 +236,35 @@ export const initSocket = (server: HttpServer) => {
     });
 
     socket.on('call_answer', async (data: { toUserId: string; roomId: string }) => {
+      // Callee joins the room so subsequent meeting_ended / call_ended events reach them.
+      socket.join(data.roomId);
+
+      // Pull the caller's open sockets into the same room so they can hear the callee's hangup.
+      try {
+        const targetSockets = await io.in(data.toUserId).fetchSockets();
+        for (const s of targetSockets) {
+          await s.join(data.roomId);
+        }
+      } catch (err) {
+        console.error('[Call] Failed to join caller socket(s) to room:', err);
+      }
+
       io.to(data.toUserId).emit('call_accepted', { byUserId: userId, roomId: data.roomId });
     });
 
-    socket.on('call_reject', async (data: { toUserId: string }) => {
+    socket.on('call_reject', async (data: { toUserId: string; roomId?: string }) => {
+      // Reach BOTH parties by userId regardless of whether they joined a room.
       io.to(data.toUserId).emit('call_rejected', { byUserId: userId });
+      io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+      io.to(userId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+    });
+
+    socket.on('call_end', async (data: { toUserId?: string; roomId?: string }) => {
+      // Explicit hangup from either side. Fan out to both userIds AND the room
+      // so the call ends cleanly regardless of join state.
+      if (data.toUserId) io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+      io.to(userId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+      if (data.roomId) io.to(data.roomId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
     });
 
     socket.on('disconnect', async () => {

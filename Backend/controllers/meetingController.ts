@@ -96,7 +96,7 @@ export const createMeeting = async (
     const userId = (req as any).user?._id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { roomId, title, type, attendees, attendeeNames } = req.body;
+    const { roomId, title, type, attendees, attendeeNames, chatId } = req.body;
 
     const meeting = await Meeting.create({
       roomId: roomId || `room-${Date.now()}`,
@@ -105,6 +105,7 @@ export const createMeeting = async (
       type: type || 'video',
       attendees: attendees || [],
       attendeeNames: attendeeNames || [],
+      chatId: chatId || undefined,
       startedAt: new Date(),
       status: 'live',
     });
@@ -651,8 +652,9 @@ export const runBackgroundMeetingAI = async (
     // Find organization for meeting host and save Minutes as a .md document to storage center
     const hostUser = await User.findById(meeting.host);
     let org = null;
-    if (hostUser && hostUser.organization) {
-      org = await Organization.findOne({ name: hostUser.organization });
+    if (hostUser) {
+      const { resolveUserOrg } = await import('../utils/orgResolver');
+      org = await resolveUserOrg(hostUser);
     }
 
     if (org && saveToStorage) {
@@ -702,57 +704,57 @@ export const runBackgroundMeetingAI = async (
       }
     }
 
-    // Chunk & Index transcript to Pinecone under organization namespace to grow the brain
-    const { hasPinecone, upsertVectors } = await import('../utils/pinecone');
-    const { chunkText, generateEmbedding } = await import('../utils/embeddings');
-    const { OrgDocument } = await import('../models/orgDocument');
-    const crypto = await import('crypto');
-
-    if (hasPinecone() && org && rawTranscript) {
+    // Push transcript + summary through the unified brain event bus.
+    // The listener handles chunking, embedding, Pinecone upsert, OrgDocument save,
+    // and expertise-radar updates — keeping a single ingestion code path.
+    if (org && rawTranscript) {
       try {
-        const namespace = org.pineconeNamespace || `org-${org._id}`;
-        const transcriptTitle = `Meeting Transcript: ${meeting.title}`;
-        const chunks = chunkText(rawTranscript, 500, 100);
-        const pineconeIds: string[] = [];
-        const vectors = [];
+        const { brainEventBus } = await import('../utils/brainEventListener');
+        brainEventBus.emit('meeting_ended', {
+          meetingId: String(meeting._id),
+          organizationId: String(org._id),
+          hostId: String(meeting.host),
+          title: meeting.title,
+          transcript: rawTranscript,
+          summary: intelligence.summary || '',
+          tags: ['transcript', 'meeting', meeting.title.toLowerCase()],
+        });
+      } catch (busErr) {
+        console.error('[Meeting Brain] Failed to emit meeting_ended:', busErr);
+      }
+    }
 
-        for (const chunk of chunks) {
-          const embedding = await generateEmbedding(chunk);
-          if (embedding.length > 0) {
-            const id = `meet-chunk-${crypto.randomUUID()}`;
-            pineconeIds.push(id);
-            vectors.push({
-              id,
-              values: embedding,
-              metadata: {
-                title: transcriptTitle,
-                chunk,
-                department: 'general',
-                accessLevel: 'public',
-                organizationId: org._id,
-                meetingId: meeting._id,
-              },
-            });
-          }
-        }
+    // Drop a "📝 Meeting minutes ready" system message into the originating
+    // chat so the transcript download surfaces directly in the conversation
+    // where the call started.
+    if (meeting.chatId) {
+      try {
+        const baseUrl = process.env.API_PUBLIC_URL || process.env.BASE_URL || '';
+        const transcriptUrl = `${baseUrl}/api/v1/meetings/${meeting._id}/transcript.md`;
+        const systemContent = `📝 Meeting minutes ready for "${meeting.title}". ${resolvedActionItems.length} action item${resolvedActionItems.length === 1 ? '' : 's'} captured.`;
 
-        if (vectors.length > 0) {
-          await upsertVectors(vectors, namespace);
-          // Save a local OrgDocument copy so it shows up in Brain files list
-          await OrgDocument.create({
-            title: transcriptTitle,
-            content: rawTranscript,
-            department: 'general',
-            accessLevel: 'public',
-            createdBy: meeting.host,
-            organizationId: org._id,
-            pineconeIds,
-            tags: ['transcript', 'meeting', meeting.title.toLowerCase()],
-          });
-          console.log(`[Meeting Pinecone] Upserted ${vectors.length} transcript chunks for namespace: ${namespace}`);
-        }
-      } catch (pineconeErr) {
-        console.error('[Meeting Pinecone] Upsert failed:', pineconeErr);
+        const systemMessage = await Message.create({
+          chat: meeting.chatId,
+          sender: meeting.host,
+          content: systemContent,
+          message_type: 'file',
+          mediaUrl: transcriptUrl,
+          mediaType: 'file',
+          media_metadata: { mime_type: 'text/markdown' },
+          is_announcement: true,
+        });
+
+        await Conversation.findByIdAndUpdate(meeting.chatId, {
+          latestMessage: systemMessage._id,
+        });
+
+        try {
+          const { getIO } = await import('../utils/socket');
+          const io = getIO();
+          io.to(String(meeting.chatId)).emit('new_message', systemMessage);
+        } catch (_) { /* silent */ }
+      } catch (chatErr) {
+        console.error('[Meeting Minutes] Failed to post system message:', chatErr);
       }
     }
 
@@ -954,5 +956,80 @@ export const getMeetingActionItems = async (
     res
       .status(500)
       .json({ message: 'Failed to fetch action items', error: err.message });
+  }
+};
+
+// ─── GET /api/v1/meetings/:id/transcript.md ──────────────────────────────────
+// Returns the meeting transcript as a markdown document. Only the host and
+// attendees may download.
+export const downloadTranscriptMarkdown = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    const meeting = await Meeting.findOne({
+      _id: req.params.id,
+      $or: [{ host: userId }, { attendees: userId }],
+    })
+      .populate('host', 'full_name username')
+      .populate('attendees', 'full_name username');
+
+    if (!meeting) return res.status(404).json({ message: 'Meeting not found' });
+
+    const hostName = (meeting.host as any)?.full_name || (meeting.host as any)?.username || 'Host';
+    const attendeeLines = ((meeting.attendees as any[]) || [])
+      .map((a) => `- ${a.full_name || a.username || 'Attendee'}`)
+      .join('\n');
+
+    const chunks = meeting.transcriptChunks || [];
+    const fmtTimestamp = (ts?: number) => {
+      if (!ts) return '';
+      const seconds = Math.floor(ts / 1000);
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `[${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}]`;
+    };
+
+    const transcriptBody = chunks.length > 0
+      ? chunks
+          .map((c) => `${fmtTimestamp(c.timestamp)} **${c.speaker || 'Speaker'}**: ${c.text}`)
+          .join('\n\n')
+      : (meeting.transcriptRaw || '_No transcript captured._');
+
+    const decisions = ''; // future: surface meeting.summary structured decisions
+    const actionItems = (meeting.actionItems || [])
+      .map((a) => `- ${a.text}${a.assignedToName ? ` — _${a.assignedToName}_` : ''}`)
+      .join('\n');
+
+    const md = [
+      `# ${meeting.title}`,
+      ``,
+      `**Host:** ${hostName}  `,
+      `**Date:** ${meeting.startedAt.toISOString().slice(0, 10)}  `,
+      meeting.endedAt ? `**Ended:** ${meeting.endedAt.toISOString()}  ` : '',
+      ``,
+      `## Attendees`,
+      attendeeLines || '_No attendees recorded._',
+      ``,
+      `## Summary`,
+      meeting.summary || '_Summary not yet generated._',
+      ``,
+      decisions ? `## Decisions\n${decisions}\n` : '',
+      `## Action Items`,
+      actionItems || '_None._',
+      ``,
+      `## Transcript`,
+      transcriptBody,
+      ``,
+    ]
+      .filter((l) => l !== undefined)
+      .join('\n');
+
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${meeting.title.replace(/[^a-z0-9-_ ]/gi, '_')}.md"`
+    );
+    return res.status(200).send(md);
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Failed to render transcript', error: err.message });
   }
 };

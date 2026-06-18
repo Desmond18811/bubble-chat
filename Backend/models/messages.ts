@@ -15,6 +15,11 @@ export interface IMessage extends Document {
   is_pinned: boolean;
   client_id?: string; // For idempotency
 
+  // Marks a message that was sent by the Knowledge Continuity Engine on behalf
+  // of a user asking the brain a low-confidence question. Replies whose
+  // parent_message has this flag trigger automatic closed-loop ingestion.
+  brainQuestionRef?: boolean;
+
   // Workspace File Attachment
   workspaceFile?: mongoose.Types.ObjectId;
 
@@ -100,6 +105,7 @@ const MessageSchema: Schema<IMessage> = new Schema(
     is_encrypted: { type: Boolean, default: false },
     is_pinned: { type: Boolean, default: false },
     client_id: { type: String },
+    brainQuestionRef: { type: Boolean, default: false },
 
     workspaceFile: {
       type: mongoose.Schema.Types.ObjectId,

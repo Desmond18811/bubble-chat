@@ -121,7 +121,7 @@ const retrieveOrgContext = async (
         const namespace = org?.pineconeNamespace || `org-${organizationId}`;
         const embedding = await generateEmbedding(message);
         if (embedding.length > 0) {
-          const matches = await queryVectors(embedding, 5, undefined, namespace);
+          const matches = await queryVectors(embedding, 5, organizationId, namespace);
           if (matches && matches.length > 0) {
             const contextText = matches
               .map((match: any) => {
@@ -1365,10 +1365,53 @@ export const getAidaWritingSuggestions = async (req: Request, res: Response): Pr
     const recipient = conv?.users?.find((u: any) => String(u._id) !== String(userId));
     const recipientName = (recipient as any)?.full_name || 'them';
 
-    const systemPrompt = `You are Aida, a smart writing assistant. Provide 3 short message completions or follow-up suggestions (max 10 words each) for a user currently typing a message to ${recipientName}. Return ONLY a JSON array of strings.`;
-    const userPrompt = `The user has typed: "${message}". What are 3 ways they might want to finish or follow up this thought?`;
+    // Pull last 5 messages for short-term conversational context and use them as
+    // a brain seed query — surfaces facts the typing user might not remember.
+    let conversationContext = '';
+    let brainKnowledge = '';
+    if (conversationId) {
+      const recent = await Message.find({ chat: conversationId })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate('sender', 'full_name username')
+        .lean();
+      conversationContext = recent
+        .reverse()
+        .map((m: any) => `${(m.sender?.full_name || m.sender?.username || 'User')}: ${m.content}`)
+        .join('\n');
 
-    const raw = await callAIDA(systemPrompt, userPrompt, 150, 0.7);
+      const { resolveUserOrg } = await import('../utils/orgResolver');
+      const typer = await User.findById(userId);
+      const org = typer ? await resolveUserOrg(typer) : null;
+
+      if (org && hasPinecone()) {
+        try {
+          const seed = `${conversationContext}\n${message}`.slice(-1500);
+          const embedding = await generateEmbedding(seed);
+          if (embedding.length > 0) {
+            const namespace = org.pineconeNamespace || `org-${org._id}`;
+            const matches = await queryVectors(embedding, 3, org._id.toString(), namespace);
+            brainKnowledge = matches
+              .filter((m) => m.score >= 0.55)
+              .map((m: any) => `• ${m.metadata?.chunk || ''}`)
+              .join('\n');
+          }
+        } catch (brainErr) {
+          console.error('[Writing Suggestions] brain seed failed:', brainErr);
+        }
+      }
+    }
+
+    const systemPrompt = `You are Aida, a smart writing assistant inside a company chat. Provide 3 short, contextual message completions (max 12 words each) for a user typing to ${recipientName}. If the brain-knowledge block contains a fact relevant to the conversation, use it — these are facts the typing user may not know off the top of their head. Return ONLY a JSON array of 3 strings, no preamble.`;
+    const userPrompt = [
+      conversationContext ? `Recent conversation:\n${conversationContext}` : '',
+      brainKnowledge ? `Brain knowledge from this organization:\n${brainKnowledge}` : '',
+      `The user has typed: "${message}". Suggest 3 helpful completions or follow-ups.`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    const raw = await callAIDA(systemPrompt, userPrompt, 200, 0.6);
     let suggestions: string[] = [];
     try {
       const cleaned = raw.replace(/```json|```/g, '').trim();

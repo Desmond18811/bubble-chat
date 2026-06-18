@@ -53,6 +53,7 @@ export interface IUser extends Document {
 
   // Organizational Identity
   organization?: string;
+  organizationId?: mongoose.Types.ObjectId;
   org_role?: string;
   org_industry?: string;
   org_size?: 'solo' | '2-10' | '11-50' | '51-200' | '201-500' | '500+';
@@ -132,6 +133,7 @@ const UserSchema: Schema<IUser> = new Schema(
 
     // Organizational Identity
     organization: { type: String, trim: true, default: '' },
+    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', index: true },
     org_role: { type: String, trim: true, default: '' },
     org_industry: { type: String, trim: true, default: '' },
     org_size: { type: String, enum: ['solo', '2-10', '11-50', '51-200', '201-500', '500+'] },

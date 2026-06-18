@@ -7,6 +7,7 @@ import { Message } from '../models/messages';
 import { Conversation } from '../models/conversations';
 import { chunkText, generateEmbedding } from '../utils/embeddings';
 import { upsertVectors, queryVectors, hasPinecone } from '../utils/pinecone';
+import { resolveUserOrg } from '../utils/orgResolver';
 import * as crypto from 'crypto';
 import OpenAI from 'openai';
 
@@ -57,11 +58,11 @@ export const getOnboardingBrief = async (req: Request, res: Response): Promise<a
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const user = await User.findById(userId);
-    if (!user || !user.organization) {
+    if (!user || (!user.organizationId && !user.organization)) {
       return res.status(400).json({ error: 'User is not mapped to any organization' });
     }
 
-    const org = await Organization.findOne({ name: user.organization });
+    const org = await resolveUserOrg(user);
     if (!org) {
       return res.status(404).json({ error: 'Organization details not found.' });
     }
@@ -130,11 +131,11 @@ export const searchBrain = async (req: Request, res: Response): Promise<any> => 
     }
 
     const user = await User.findById(userId);
-    if (!user || !user.organization) {
+    if (!user || (!user.organizationId && !user.organization)) {
       return res.status(400).json({ error: 'User is not mapped to any organization' });
     }
 
-    const org = await Organization.findOne({ name: user.organization });
+    const org = await resolveUserOrg(user);
     if (!org) {
       return res.status(404).json({ error: 'Organization not found.' });
     }
@@ -145,7 +146,7 @@ export const searchBrain = async (req: Request, res: Response): Promise<any> => 
 
     let matches: any[] = [];
     if (embedding.length > 0 && hasPinecone()) {
-      matches = await queryVectors(embedding, 3, undefined, namespace);
+      matches = await queryVectors(embedding, 3, org._id.toString(), namespace);
     }
 
     const CONFIDENCE_THRESHOLD = 0.70;
@@ -254,6 +255,7 @@ export const routeQuestion = async (req: Request, res: Response): Promise<any> =
       sender: userId,
       content: routingPayload,
       message_type: 'text',
+      brainQuestionRef: true,
     });
 
     chat.latestMessage = message._id as any;
@@ -303,11 +305,11 @@ export const resolveQAExchange = async (req: Request, res: Response): Promise<an
     const qaContent = `Question:\n${questionText}\n\nAnswer:\n${answerMessage.content}`;
 
     const user = await User.findById(userId);
-    if (!user || !user.organization) {
+    if (!user || (!user.organizationId && !user.organization)) {
       return res.status(400).json({ error: 'User is not mapped to any organization' });
     }
 
-    const org = await Organization.findOne({ name: user.organization });
+    const org = await resolveUserOrg(user);
     if (!org) return res.status(404).json({ error: 'Organization not found.' });
 
     // DeepSeek tag extraction

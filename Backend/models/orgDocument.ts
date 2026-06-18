@@ -24,13 +24,15 @@ const OrgDocumentSchema: Schema<IOrgDocument> = new Schema(
             default: 'public',
         },
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization' },
+        organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: true },
         pineconeIds: [{ type: String }],
         tags: [{ type: String }],
     },
     { timestamps: true }
 );
 
+OrgDocumentSchema.index({ organizationId: 1, createdAt: -1 });
+OrgDocumentSchema.index({ organizationId: 1, tags: 1 });
 OrgDocumentSchema.index({ department: 1, accessLevel: 1 });
 OrgDocumentSchema.index({ title: 'text', content: 'text', tags: 'text' });
 

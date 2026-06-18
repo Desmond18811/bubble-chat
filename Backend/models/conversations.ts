@@ -99,6 +99,7 @@ const ConversationSchema: Schema<IConversation> = new Schema(
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
+      index: true,
     },
     isDefaultOrgChat: {
       type: Boolean,
@@ -118,5 +119,14 @@ const ConversationSchema: Schema<IConversation> = new Schema(
     timestamps: true,
   }
 );
+
+// Enforce: every group chat must belong to an organization. 1:1 DMs may remain
+// org-less so users can contact peers in other companies.
+(ConversationSchema as any).pre('validate', function (this: IConversation, next: (err?: Error) => void) {
+  if (this.isGroupChat && !this.organizationId) {
+    return next(new Error('Group chats require organizationId'));
+  }
+  next();
+});
 
 export const Conversation = mongoose.model<IConversation>('Conversation', ConversationSchema);

@@ -38,6 +38,11 @@ interface DigestData {
   events: any[];
   highConfidenceItems: any[];
   headsUpItems: any[];
+  yesterdayRecap?: {
+    meetings: { title: string; summary?: string; decisions?: string[]; actionItems?: string[] }[];
+    messageHighlights: { title: string; snippet: string }[];
+    decisions: { title: string; snippet: string }[];
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -123,6 +128,27 @@ const MorningBriefCard = ({ digest, loading }: { digest: DigestData | null; load
       {expanded && (
         <>
           <Text style={styles.digestBrief}>{digest.morningBrief}</Text>
+
+          {digest.yesterdayRecap && (
+            (digest.yesterdayRecap.meetings.length > 0 ||
+             digest.yesterdayRecap.messageHighlights.length > 0 ||
+             digest.yesterdayRecap.decisions.length > 0) && (
+              <View style={styles.recapSection}>
+                <Text style={styles.recapHeader}>Yesterday</Text>
+                {digest.yesterdayRecap.meetings.map((m, i) => (
+                  <Text key={`m-${i}`} style={styles.recapLine}>
+                    • {m.title}{m.summary ? ` — ${m.summary.slice(0, 120)}` : ''}
+                  </Text>
+                ))}
+                {digest.yesterdayRecap.messageHighlights.map((h, i) => (
+                  <Text key={`h-${i}`} style={styles.recapLine}>• {h.snippet.slice(0, 120)}</Text>
+                ))}
+                {digest.yesterdayRecap.decisions.map((d, i) => (
+                  <Text key={`d-${i}`} style={styles.recapLine}>• Decision: {d.title}</Text>
+                ))}
+              </View>
+            )
+          )}
 
           {digest.headsUpItems?.length > 0 && (
             <View style={styles.headsUpRow}>
@@ -719,6 +745,17 @@ const styles = StyleSheet.create({
   },
   headsUpRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   headsUpText: { fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#f59e0b' },
+  recapSection: {
+    marginTop: 14, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: '#eee',
+  },
+  recapHeader: {
+    fontFamily: 'Poppins_600SemiBold', fontSize: 12,
+    color: '#6c5ce7', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6,
+  },
+  recapLine: {
+    fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#4b5563', lineHeight: 19,
+  },
 
   // Month navigation
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },

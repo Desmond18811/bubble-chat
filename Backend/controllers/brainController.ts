@@ -8,6 +8,7 @@ import { Message } from '../models/messages';
 import { chunkText, generateEmbedding } from '../utils/embeddings';
 import { upsertVectors, hasPinecone } from '../utils/pinecone';
 import { transcribeAudio } from '../utils/whisperService';
+import { resolveUserOrg } from '../utils/orgResolver';
 import { updateExpertiseRadar } from './continuityController';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
@@ -131,13 +132,20 @@ export const ingest = async (req: Request, res: Response): Promise<any> => {
 
     // Derive Org ID server-side from authenticated JWT context
     const user = await User.findById(userId);
-    if (!user || !user.organization) {
+    if (!user || (!user.organizationId && !user.organization)) {
       return res.status(400).json({ error: 'User is not mapped to any organization' });
     }
 
-    const org = await Organization.findOne({ name: user.organization });
+    const org = await resolveUserOrg(user);
     if (!org) {
       return res.status(404).json({ error: 'Organization details not found.' });
+    }
+
+    // Admin gate — only the org owner or an admin may seed/ingest into the brain.
+    const isOwner = String(org.owner) === String(user._id);
+    const isAdmin = user.role === 'admin' || user.role === 'HR';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Only admins or the organization owner may ingest into the brain.' });
     }
 
     const { sourceType, title, content, url, chatId, tags = [], department = 'general' } = req.body;

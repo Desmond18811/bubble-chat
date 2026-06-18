@@ -12,6 +12,7 @@ import {
   endScreenShare,
   getMeetingStatsWithUser,
   transcribeUpload,
+  downloadTranscriptMarkdown,
 } from '../controllers/meetingController';
 import passport from 'passport';
 import { handleUpload } from '../middleware/upload';
@@ -30,6 +31,7 @@ router.get('/:id', getMeetingById);
 // ── Transcript (background real-time accumulation) ───────────────────────────
 router.post('/:id/transcript', addTranscriptChunk);
 router.post('/:id/transcribe-upload', handleUpload.single('audio'), transcribeUpload);
+router.get('/:id/transcript.md', downloadTranscriptMarkdown);
 
 // ── Meeting lifecycle ────────────────────────────────────────────────────────
 router.post('/:id/end', endMeeting);

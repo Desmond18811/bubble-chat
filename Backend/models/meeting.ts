@@ -44,6 +44,11 @@ export interface IMeeting extends Document {
   attendees: mongoose.Types.ObjectId[];
   attendeeNames?: string[];
 
+  // Conversation that triggered this meeting (1:1 call, group call from a chat,
+  // or scheduled meeting tied to an event chat). When set, post-meeting minutes
+  // are dropped into this chat as a system message with a transcript download.
+  chatId?: mongoose.Types.ObjectId;
+
   type: 'video' | 'voice' | 'group';
   startedAt: Date;
   endedAt?: Date;
@@ -123,6 +128,7 @@ const MeetingSchema = new Schema<IMeeting>(
     host: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     attendees: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     attendeeNames: [{ type: String }],
+    chatId: { type: Schema.Types.ObjectId, ref: 'Conversation', index: true },
 
     type: { type: String, enum: ['video', 'voice', 'group'], default: 'video' },
     startedAt: { type: Date, default: Date.now },

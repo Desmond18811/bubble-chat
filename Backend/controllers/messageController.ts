@@ -235,6 +235,38 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       });
     }
 
+    // 🧠 Shared files in group chats also feed the brain
+    if (convo.isGroupChat && mediaUrl && ['file', 'voice', 'video', 'image'].includes(newMessage.message_type)) {
+      setImmediate(() => {
+        brainEventBus.emit('chat_file_shared', {
+          messageId: String(newMessage._id),
+          chatId: String(chatId),
+          senderId: String(req.user._id),
+          mediaUrl,
+          mimeType: media_metadata?.mime_type || mediaType || newMessage.message_type,
+          caption: content || '',
+        });
+      });
+    }
+
+    // 🧠 Closed-loop capture — if this reply lands on a brain-routed question,
+    // index the resulting Q&A pair back into the brain automatically.
+    if (parent_message) {
+      setImmediate(async () => {
+        try {
+          const parent = await Message.findById(parent_message).select('brainQuestionRef');
+          if (parent?.brainQuestionRef) {
+            brainEventBus.emit('qa_resolved', {
+              questionMessageId: String(parent._id),
+              replyMessageId: String(newMessage._id),
+            });
+          }
+        } catch (err) {
+          console.error('[Brain] qa_resolved emit failed:', err);
+        }
+      });
+    }
+
     res.status(201).json(formatted);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

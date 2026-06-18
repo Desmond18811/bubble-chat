@@ -502,7 +502,7 @@ export const getEventSuggestions = async (req: Request, res: Response): Promise<
     if (query && hasPinecone()) {
       const embedding = await generateEmbedding(query as string);
       if (embedding.length > 0) {
-        const matches = await queryVectors(embedding, 2, { sourceType: 'calendar_event' }, namespace);
+        const matches = await queryVectors(embedding, 2, org._id.toString(), namespace, { sourceType: 'calendar_event' });
         if (matches.length > 0 && matches[0].score > 0.6) {
           agendaSuggestion = matches[0].metadata?.chunk || '';
         }

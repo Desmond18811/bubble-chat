@@ -142,11 +142,15 @@ export const hangUpCall = async () => {
   stopDurationTimer();
 
   if (state.status === 'calling_out') {
-    if (socket) socket.emit('call_reject', { toUserId: state.user.id || state.user._id || state.user.otherUserId });
+    const targetUserId = state.user?.id || state.user?._id || state.user?.otherUserId;
+    if (socket) {
+      socket.emit('call_reject', { toUserId: targetUserId, roomId: state.roomId });
+      socket.emit('call_end', { toUserId: targetUserId, roomId: state.roomId });
+    }
   } else if (state.status === 'in_call') {
     const targetUserId = state.user.id || state.user._id || state.user.otherUserId;
     if (socket) {
-      socket.emit('call_reject', { toUserId: targetUserId });
+      socket.emit('call_end', { toUserId: targetUserId, roomId: state.roomId });
       socket.emit('meeting_ended', { roomId: state.roomId });
     }
 
@@ -188,6 +192,7 @@ export const setupCallSocketListeners = (socket: any) => {
   socket.off('incoming_call');
   socket.off('call_accepted');
   socket.off('call_rejected');
+  socket.off('call_ended');
   socket.off('meeting_ended');
 
   socket.on('incoming_call', (data: { fromUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
@@ -222,10 +227,15 @@ export const setupCallSocketListeners = (socket: any) => {
     // Host also creates/updates meeting DB record on accept
     let dbId: string | null = null;
     try {
+      const user = currentCallState.user || {};
+      const chatId = user.chatId || user.id || user._id || user.otherChatId;
+      const otherUserId = user.otherUserId || user.id || user._id;
       const res = await createMeeting({
         roomId: data.roomId,
         title: `${currentCallState.type === 'video' ? 'Video' : 'Voice'} Call`,
-        type: currentCallState.type
+        type: currentCallState.type,
+        chatId,
+        attendees: otherUserId ? [otherUserId] : [],
       });
       dbId = res?.meeting?._id || res?._id || null;
       if (dbId) {
@@ -255,6 +265,17 @@ export const setupCallSocketListeners = (socket: any) => {
 
   socket.on('meeting_ended', (data: { roomId: string }) => {
     if (currentCallState.status === 'in_call' && currentCallState.roomId === data.roomId) {
+      hangUpCall();
+    }
+  });
+
+  // Server emits 'call_ended' from either reject, explicit hangup, or timeout.
+  // Reaches both sides regardless of join state — this is the authoritative end signal.
+  socket.on('call_ended', (data: { roomId?: string; byUserId?: string }) => {
+    const status = currentCallState.status;
+    if (status === 'idle') return;
+    // Match by room when present; otherwise fall back to "any active call".
+    if (!data?.roomId || data.roomId === currentCallState.roomId) {
       hangUpCall();
     }
   });

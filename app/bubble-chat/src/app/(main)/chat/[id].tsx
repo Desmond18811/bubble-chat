@@ -178,6 +178,29 @@ export default function ChatScreen() {
   }, [messages, id]);
 
   const typingTimer = useRef<any>(null);
+  const suggestDraftTimer = useRef<any>(null);
+
+  // Brain-augmented draft suggestions — fires 800ms after typing pauses.
+  // Surfaces facts from the company brain the user may not know off the top of
+  // their head (e.g. status of a project, contact info, prior decisions).
+  useEffect(() => {
+    if (suggestDraftTimer.current) clearTimeout(suggestDraftTimer.current);
+    if (!messageText || messageText.trim().length < 3) return;
+    suggestDraftTimer.current = setTimeout(async () => {
+      try {
+        const response = await getAidaWritingSuggestions(messageText, String(id));
+        const list = response?.suggestions || response?.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          setAidaSuggestions(list);
+        }
+      } catch {
+        // silent — keep whatever suggestions are already there
+      }
+    }, 800);
+    return () => {
+      if (suggestDraftTimer.current) clearTimeout(suggestDraftTimer.current);
+    };
+  }, [messageText, id]);
 
   const handleTextChange = (text: string) => {
     setMessageText(text);

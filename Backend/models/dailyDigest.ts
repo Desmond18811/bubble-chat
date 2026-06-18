@@ -8,6 +8,12 @@ export interface IDigestItem {
   confidence?: number;   // 0-1, items below 0.70 go into headsUp bucket
 }
 
+export interface IYesterdayRecap {
+  meetings: { title: string; summary?: string; decisions?: string[]; actionItems?: string[] }[];
+  messageHighlights: { title: string; snippet: string }[];
+  decisions: { title: string; snippet: string }[];
+}
+
 export interface IDailyDigest extends Document {
   userId: mongoose.Types.ObjectId;
   organizationId: mongoose.Types.ObjectId;
@@ -17,6 +23,7 @@ export interface IDailyDigest extends Document {
   morningBrief: string;              // AI-synthesized 5-bullet plain-text summary
   highConfidenceItems: IDigestItem[];
   headsUpItems: IDigestItem[];       // items with score < 0.70, shown collapsed
+  yesterdayRecap?: IYesterdayRecap;  // explicit reflection of the prior day
   generatedAt: Date;
   pushSent: boolean;                 // true once push notification delivered
 }
@@ -42,6 +49,25 @@ const DailyDigestSchema = new Schema<IDailyDigest>(
     morningBrief: { type: String, default: '' },
     highConfidenceItems: [DigestItemSchema],
     headsUpItems: [DigestItemSchema],
+    yesterdayRecap: {
+      meetings: [{
+        _id: false,
+        title: { type: String },
+        summary: { type: String },
+        decisions: [{ type: String }],
+        actionItems: [{ type: String }],
+      }],
+      messageHighlights: [{
+        _id: false,
+        title: { type: String },
+        snippet: { type: String },
+      }],
+      decisions: [{
+        _id: false,
+        title: { type: String },
+        snippet: { type: String },
+      }],
+    },
     generatedAt: { type: Date, default: Date.now },
     pushSent: { type: Boolean, default: false },
   },

@@ -218,9 +218,10 @@ export const joinOrganizationByInvite = async (req: AuthRequest, res: Response):
             return;
         }
 
-        // Link user to org
+        // Link user to org (canonical id + legacy name for back-compat)
         await User.findByIdAndUpdate(userId, {
             organization: org.name,
+            organizationId: org._id,
             org_industry: org.industry,
             org_size: org.size,
             role: 'employee',

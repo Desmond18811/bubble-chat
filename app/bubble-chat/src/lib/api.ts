@@ -1383,6 +1383,7 @@ export const createMeeting = async (data: {
     type?: 'video' | 'voice' | 'group';
     attendees?: string[];
     attendeeNames?: string[];
+    chatId?: string;
 }) => {
     const res = await fetch(`${BASE_URL}/meetings`, {
         method: 'POST',
