@@ -11,13 +11,24 @@ import "../global.css";
 import { initApiFromStorage, getSecureMediaUrl } from "../lib/api";
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 import { Image } from "expo-image";
-import { PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Check, Minimize2, Maximize2 } from "lucide-react-native";
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2 } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
 import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, CallState } from "../lib/callManager";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Call UI palette (light theme)
+const WHITE = '#ffffff';
+const INK = '#13141f';
+const INK_SOFT = '#6b6f86';
+const PURPLE = '#6c5ce7';
+const PURPLE_SOFT = '#f1eefe';
+const SURFACE = '#f5f4fb';
+const BORDER = '#ece9f7';
+const GREEN = '#10b981';
+const RED = '#ef4444';
 
 function GlobalCallOverlay() {
   const [callState, setCallState] = useState<CallState>({ status: 'idle' });
@@ -50,20 +61,19 @@ function GlobalCallOverlay() {
 
   if (callState.status === 'idle') return null;
 
+  const isIncoming = callState.status === 'calling_in';
+  const isOutgoing = callState.status === 'calling_out';
+  const isVideo = callState.type === 'video';
+
   const formatDuration = (sec: number) => {
     const mins = Math.floor(sec / 60);
     const secs = sec % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return 'UC';
-    return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
-  };
-
-  const getGroupInitials = (name: string) => {
-    if (!name) return 'UC';
-    const clean = name.trim().replace(/\s+/g, ' ');
+  const getGroupInitials = (n: string) => {
+    if (!n) return 'BC';
+    const clean = n.trim().replace(/\s+/g, ' ');
     const parts = clean.split(' ');
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -72,59 +82,78 @@ function GlobalCallOverlay() {
   };
 
   const getAvatarUri = () => {
-    if (callState.status === 'calling_out') return getSecureMediaUrl(callState.user?.avatar);
-    if (callState.status === 'calling_in') return getSecureMediaUrl(callState.callerAvatar);
-    if (callState.status === 'in_call') return getSecureMediaUrl(callState.user?.avatar);
+    if (callState.status === 'calling_out') {
+      return getSecureMediaUrl(callState.user?.avatar || callState.user?.groupIcon);
+    }
+    if (callState.status === 'calling_in') {
+      return getSecureMediaUrl(callState.callerAvatar);
+    }
+    if (callState.status === 'in_call') {
+      return getSecureMediaUrl(callState.user?.avatar || callState.user?.groupIcon);
+    }
     return null;
   };
 
   const getName = () => {
-    if (callState.status === 'calling_out') return callState.user?.name || 'Colleague';
-    if (callState.status === 'calling_in') return callState.callerName || 'Colleague';
-    if (callState.status === 'in_call') return callState.user?.name || 'Colleague';
-    return 'Colleague';
+    if (callState.status === 'calling_out') {
+      return callState.user?.name || callState.user?.full_name || callState.user?.chatName || 'Bubble User';
+    }
+    if (callState.status === 'calling_in') {
+      return callState.callerName || 'Bubble User';
+    }
+    if (callState.status === 'in_call') {
+      return callState.user?.name || callState.user?.full_name || callState.user?.chatName || 'Bubble User';
+    }
+    return 'Bubble User';
   };
 
   const name = getName();
   const avatarUri = getAvatarUri();
 
+  const statusLabel = isOutgoing
+    ? 'Calling…'
+    : isIncoming
+      ? `Incoming ${isVideo ? 'video' : 'voice'} call`
+      : `Connected · ${formatDuration((callState as any).duration)}`;
+
+  const renderAvatar = (size: number) => (
+    avatarUri ? (
+      <Image source={{ uri: avatarUri || undefined }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+    ) : (
+      <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: PURPLE, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#ffffff', fontSize: size * 0.32, fontFamily: 'SpaceGrotesk_700Bold' }}>{getGroupInitials(name)}</Text>
+      </View>
+    )
+  );
+
   if (isMinimized) {
     return (
       <View style={styles.minimizedContainer}>
-        {/* Floating Mini Overlay Header */}
         <View style={styles.miniHeader}>
           <TouchableOpacity onPress={() => setIsMinimized(false)} style={styles.miniOptionButton}>
-            <Maximize2 color="#6c5ce7" size={16} />
+            <Maximize2 color={PURPLE} size={16} />
           </TouchableOpacity>
         </View>
 
-        {/* Avatar/Initials and status */}
-        <View style={{ alignItems: 'center', width: '100%' }}>
-          {avatarUri ? (
-            <Image source={{ uri: avatarUri || undefined }} style={styles.miniAvatarImage} />
-          ) : (
-            <View style={styles.miniInitialsPlaceholder}>
-              <Text style={styles.miniInitialsText}>{getGroupInitials(name)}</Text>
-            </View>
-          )}
+        <View style={{ alignItems: 'center', width: '100%', marginTop: 4 }}>
+          {renderAvatar(46)}
           <Text numberOfLines={1} style={styles.miniNameText}>{name}</Text>
           <Text style={styles.miniDurationText}>
-            {callState.status === 'in_call' ? formatDuration(callState.duration) : 'Calling...'}
+            {callState.status === 'in_call' ? formatDuration(callState.duration) : 'Calling…'}
           </Text>
         </View>
 
-        {/* Buttons */}
         <View style={styles.miniButtonsRow}>
           <TouchableOpacity
             onPress={() => setIsMuted(!isMuted)}
             style={[styles.miniOptionsButton, isMuted && styles.activeMiniOptionsButton]}
           >
-            {isMuted ? <MicOff color="#ffffff" size={14} /> : <Mic color="#6c5ce7" size={14} />}
+            {isMuted ? <MicOff color="#ffffff" size={14} /> : <Mic color={INK_SOFT} size={14} />}
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => hangUpCall()}
-            style={[styles.miniOptionsButton, { backgroundColor: '#ef4444' }]}
+            style={[styles.miniOptionsButton, { backgroundColor: RED }]}
           >
             <PhoneOff color="#ffffff" size={14} />
           </TouchableOpacity>
@@ -134,103 +163,97 @@ function GlobalCallOverlay() {
   }
 
   return (
-    <View style={styles.fullScreenContainer}>
-        <View style={styles.callContainer}>
-          {/* Minimize Button in top right of Full Screen */}
-          {callState.status !== 'calling_in' && (
-            <TouchableOpacity 
-              onPress={() => setIsMinimized(true)}
-              style={{
-                position: 'absolute',
-                top: 48,
-                right: 24,
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: 'rgba(108,92,231,0.08)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 10,
-              }}
-            >
-              <Minimize2 color="#6c5ce7" size={18} />
-            </TouchableOpacity>
-          )}
+    <Modal
+      visible={true}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      statusBarTranslucent={true}
+    >
+      <View style={styles.callContainer}>
+        {/* Minimize Button (not while an incoming call is ringing) */}
+        {!isIncoming && (
+          <TouchableOpacity
+            onPress={() => setIsMinimized(true)}
+            style={styles.minimizeButton}
+          >
+            <Minimize2 color={INK_SOFT} size={18} />
+          </TouchableOpacity>
+        )}
 
-          {/* Header */}
-          <View style={styles.callHeader}>
-            <Text style={styles.callTypeTitle}>
-              BUBBLE {callState.type === 'video' ? 'VIDEO CALL' : 'VOICE CALL'}
-            </Text>
-            <Text style={styles.callerNameText}>{name}</Text>
-            <Text style={styles.statusText}>
-              {callState.status === 'calling_out' && 'Calling...'}
-              {callState.status === 'calling_in' && 'Incoming Call...'}
-              {callState.status === 'in_call' && `Connected • ${formatDuration(callState.duration)}`}
-            </Text>
-          </View>
+        {/* Header */}
+        <View style={styles.callHeader}>
+          <Text style={styles.callTypeTitle}>
+            BUBBLE {isVideo ? 'VIDEO CALL' : 'VOICE CALL'}
+          </Text>
+          <Text style={styles.callerNameText} numberOfLines={2}>{name}</Text>
+          <Text style={styles.statusText}>{statusLabel}</Text>
+        </View>
 
-          {/* Media / Video Stream area */}
-          <View style={styles.mediaContainer}>
-            {callState.status === 'in_call' && isCameraActive && hasPermission ? (
-              <View style={styles.videoPreviewFrame}>
-                <CameraView style={StyleSheet.absoluteFill} facing="front" />
-                {/* Remote simulated profile avatar overlay */}
-                <View style={styles.remoteVideoPreviewOverlay}>
-                  {avatarUri ? (
-                    <Image source={{ uri: avatarUri || undefined }} style={styles.remoteAvatarImage} />
-                  ) : (
-                    <View style={styles.remoteInitialsPlaceholder}>
-                      <Text style={styles.remoteInitialsText}>{getGroupInitials(name)}</Text>
-                    </View>
-                  )}
-                  <Text style={styles.remoteLabel}>Remote</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.avatarPlaceholderContainer}>
+        {/* Media / Video Stream area */}
+        <View style={styles.mediaContainer}>
+          {callState.status === 'in_call' && isCameraActive && hasPermission ? (
+            <View style={styles.videoPreviewFrame}>
+              <CameraView style={StyleSheet.absoluteFill} facing="front" />
+              <View style={styles.remoteVideoPreviewOverlay}>
                 {avatarUri ? (
-                  <Image source={{ uri: avatarUri || undefined }} style={styles.largeAvatarImage} />
+                  <Image source={{ uri: avatarUri || undefined }} style={styles.remoteAvatarImage} />
                 ) : (
-                  <View style={styles.largeInitialsPlaceholder}>
-                    <Text style={styles.largeInitialsText}>{getGroupInitials(name)}</Text>
+                  <View style={styles.remoteInitialsPlaceholder}>
+                    <Text style={styles.remoteInitialsText}>{getGroupInitials(name)}</Text>
                   </View>
                 )}
+                <Text style={styles.remoteLabel}>You</Text>
               </View>
-            )}
-          </View>
+            </View>
+          ) : (
+            <View style={[styles.avatarOuterRing, isIncoming && styles.avatarOuterRingIncoming]}>
+              <View style={styles.avatarInnerRing}>
+                <View style={styles.avatarPlaceholderContainer}>
+                  {renderAvatar(156)}
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
 
-          {/* Call Actions */}
-          <View style={styles.actionsContainer}>
-            {callState.status === 'calling_in' ? (
-              <View style={styles.buttonsRow}>
-                {/* Decline Button */}
+        {/* Call Actions */}
+        <View style={styles.actionsContainer}>
+          {isIncoming ? (
+            <View style={styles.incomingButtonsRow}>
+              {/* Decline */}
+              <View style={styles.incomingActionGroup}>
                 <TouchableOpacity
                   onPress={() => declineIncomingCall()}
                   style={[styles.actionButton, styles.declineButton]}
                 >
-                  <PhoneOff color="#ffffff" size={24} style={{ transform: [{ rotate: '135deg' }] }} />
+                  <PhoneOff color="#ffffff" size={26} />
                 </TouchableOpacity>
-                
-                {/* Accept Button */}
+                <Text style={styles.actionLabel}>Decline</Text>
+              </View>
+
+              {/* Accept */}
+              <View style={styles.incomingActionGroup}>
                 <TouchableOpacity
                   onPress={() => acceptIncomingCall()}
                   style={[styles.actionButton, styles.acceptButton]}
                 >
-                  <Check color="#ffffff" size={24} />
+                  {isVideo ? <Video color="#ffffff" size={26} /> : <Phone color="#ffffff" size={26} />}
                 </TouchableOpacity>
+                <Text style={styles.actionLabel}>Accept</Text>
               </View>
-            ) : (
+            </View>
+          ) : (
+            <View style={styles.glassActionPanel}>
               <View style={styles.buttonsRow}>
                 {/* Mute Toggle */}
                 <TouchableOpacity
                   onPress={() => setIsMuted(!isMuted)}
                   style={[styles.optionsButton, isMuted && styles.activeOptionsButton]}
                 >
-                  {isMuted ? <MicOff color="#ffffff" size={22} /> : <Mic color="#6c5ce7" size={22} />}
+                  {isMuted ? <MicOff color="#ffffff" size={20} /> : <Mic color={INK} size={20} />}
                 </TouchableOpacity>
 
-                {/* End Call / Decline Button */}
+                {/* End Call */}
                 <TouchableOpacity
                   onPress={() => hangUpCall()}
                   style={[styles.actionButton, styles.declineButton]}
@@ -243,23 +266,24 @@ function GlobalCallOverlay() {
                   onPress={() => setIsSpeaker(!isSpeaker)}
                   style={[styles.optionsButton, isSpeaker && styles.activeOptionsButton]}
                 >
-                  <Volume2 color={isSpeaker ? '#ffffff' : '#6c5ce7'} size={22} />
+                  <Volume2 color={isSpeaker ? '#ffffff' : INK} size={20} />
                 </TouchableOpacity>
 
-                {/* Video Toggle (only available in active calls) */}
+                {/* Video Toggle (only in active calls) */}
                 {callState.status === 'in_call' && (
                   <TouchableOpacity
                     onPress={() => setIsCameraActive(!isCameraActive)}
                     style={[styles.optionsButton, isCameraActive && styles.activeOptionsButton]}
                   >
-                    {isCameraActive ? <Video color="#ffffff" size={22} /> : <VideoOff color="#6c5ce7" size={22} />}
+                    {isCameraActive ? <Video color="#ffffff" size={20} /> : <VideoOff color={INK} size={20} />}
                   </TouchableOpacity>
                 )}
               </View>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </View>
+    </Modal>
   );
 }
 
@@ -362,17 +386,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 96,
     right: 16,
-    width: 140,
-    height: 180,
-    backgroundColor: '#ffffff',
+    width: 142,
+    height: 184,
+    backgroundColor: WHITE,
     borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: 'rgba(108,92,231,0.15)',
+    borderWidth: 1,
+    borderColor: BORDER,
     padding: 10,
     shadowColor: '#6c5ce7',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 8,
     zIndex: 9999,
     alignItems: 'center',
@@ -386,42 +410,23 @@ const styles = StyleSheet.create({
   miniOptionButton: {
     padding: 4,
   },
-  miniAvatarImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 18,
-    marginBottom: 6,
-  },
-  miniInitialsPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 18,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  miniInitialsText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontFamily: 'SpaceGrotesk_700Bold',
-  },
   miniNameText: {
     fontSize: 12,
     fontFamily: 'Poppins_600SemiBold',
-    color: '#1f2030',
+    color: INK,
     textAlign: 'center',
     width: 110,
+    marginTop: 6,
   },
   miniDurationText: {
     fontSize: 10,
     fontFamily: 'Poppins_400Regular',
-    color: '#6c5ce7',
+    color: INK_SOFT,
     marginTop: 2,
   },
   miniButtonsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
@@ -430,54 +435,59 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(108,92,231,0.06)',
+    backgroundColor: SURFACE,
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeMiniOptionsButton: {
-    backgroundColor: '#6c5ce7',
-  },
-  fullScreenContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#ffffff',
-    zIndex: 99999,
+    backgroundColor: PURPLE,
   },
   callContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 64,
+    paddingVertical: 72,
     paddingHorizontal: 24,
+  },
+  minimizeButton: {
+    position: 'absolute',
+    top: 54,
+    right: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: SURFACE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   callHeader: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 28,
   },
   callTypeTitle: {
-    color: '#9a9aab',
+    color: PURPLE,
     fontSize: 11,
     fontFamily: 'Poppins_700Bold',
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   callerNameText: {
-    color: '#1f2030',
-    fontSize: 26,
+    color: INK,
+    fontSize: 30,
     fontFamily: 'SpaceGrotesk_700Bold',
     marginTop: 4,
     textAlign: 'center',
   },
   statusText: {
-    color: '#6c5ce7',
+    color: INK_SOFT,
     fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
-    marginTop: 6,
+    marginTop: 8,
   },
   mediaContainer: {
     alignItems: 'center',
@@ -485,46 +495,52 @@ const styles = StyleSheet.create({
     marginVertical: 32,
     width: '100%',
   },
+  avatarOuterRing: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(108, 92, 231, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(108, 92, 231, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarOuterRingIncoming: {
+    backgroundColor: 'rgba(16, 185, 129, 0.06)',
+    borderColor: 'rgba(16, 185, 129, 0.18)',
+  },
+  avatarInnerRing: {
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(108, 92, 231, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(108, 92, 231, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   avatarPlaceholderContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(108,92,231,0.06)',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: WHITE,
     borderWidth: 2,
-    borderColor: 'rgba(108,92,231,0.15)',
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#6c5ce7',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  largeAvatarImage: {
-    width: 146,
-    height: 146,
-    borderRadius: 73,
-  },
-  largeInitialsPlaceholder: {
-    width: 146,
-    height: 146,
-    borderRadius: 73,
-    backgroundColor: '#000000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  largeInitialsText: {
-    color: '#ffffff',
-    fontSize: 44,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 6,
   },
   videoPreviewFrame: {
-    width: 260,
-    height: 380,
+    width: 280,
+    height: 400,
     borderRadius: 32,
-    backgroundColor: '#f1f2f6',
+    backgroundColor: '#0b0b12',
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: BORDER,
     position: 'relative',
   },
   remoteVideoPreviewOverlay: {
@@ -534,15 +550,15 @@ const styles = StyleSheet.create({
     width: 80,
     height: 110,
     borderRadius: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: 'rgba(108,92,231,0.15)',
+    borderColor: BORDER,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 6,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 2,
   },
@@ -555,7 +571,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#000000',
+    backgroundColor: PURPLE,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -567,14 +583,40 @@ const styles = StyleSheet.create({
   remoteLabel: {
     fontSize: 9,
     fontFamily: 'Poppins_700Bold',
-    color: '#6c5ce7',
+    color: INK_SOFT,
     marginTop: 4,
     textTransform: 'uppercase',
   },
   actionsContainer: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
+  },
+  incomingButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    width: '100%',
+  },
+  incomingActionGroup: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  actionLabel: {
+    fontSize: 13,
+    fontFamily: 'Poppins_600SemiBold',
+    color: INK_SOFT,
+  },
+  glassActionPanel: {
+    backgroundColor: SURFACE,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 32,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    width: '90%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonsRow: {
     flexDirection: 'row',
@@ -583,34 +625,35 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   actionButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
   declineButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: RED,
   },
   acceptButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: GREEN,
   },
   optionsButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(108,92,231,0.06)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: WHITE,
     borderWidth: 1,
-    borderColor: 'rgba(108,92,231,0.1)',
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeOptionsButton: {
-    backgroundColor: '#6c5ce7',
-    borderColor: '#6c5ce7',
+    backgroundColor: PURPLE,
+    borderColor: PURPLE,
   },
 });

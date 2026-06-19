@@ -355,6 +355,18 @@ export const chatCache = {
     }
   },
 
+  async markChatReadLocally(chatId: string): Promise<void> {
+    try {
+      const cachedChats = await this.getCachedChats();
+      const updatedChats = cachedChats.map((c: any) =>
+        String(c.id) === String(chatId) ? { ...c, unreadCount: 0 } : c
+      );
+      await AsyncStorage.setItem(KEYS.CACHED_CHATS, JSON.stringify(updatedChats));
+    } catch (err) {
+      console.warn("Failed to zero unread count in cached chats list:", err);
+    }
+  },
+
   async performCloudBackup(): Promise<boolean> {
     try {
       const allKeys = await AsyncStorage.getAllKeys();

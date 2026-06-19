@@ -1,6 +1,7 @@
 import { getSocket } from './socket';
 import { RingtonePlayer } from './ringtone';
 import { createMeeting, endMeeting } from './api';
+import { authStorage } from './authStorage';
 
 export type CallState =
   | { status: 'idle' }
@@ -49,11 +50,10 @@ export const stopRingtone = () => {
   }
 };
 
-export const startOutgoingCall = (user: any, type: 'voice' | 'video') => {
-  const socket = getSocket();
-  if (!socket) return;
-
+export const startOutgoingCall = async (user: any, type: 'voice' | 'video') => {
   const roomId = `bubble-${Math.random().toString(36).slice(2, 11)}`;
+  
+  // Update state immediately to open calling overlay for the host
   setCallState({
     status: 'calling_out',
     user,
@@ -63,19 +63,30 @@ export const startOutgoingCall = (user: any, type: 'voice' | 'video') => {
 
   startRingtone('outgoing');
 
-  // Emit call offer to backend
-  socket.emit('call_offer', {
-    toUserId: user.id || user._id || user.otherUserId,
-    roomId,
-    callerName: 'Colleague',
-    callerAvatar: null,
-    type
-  });
+  const socket = getSocket();
+  const currentUser = await authStorage.getUser();
+  const callerName = currentUser?.full_name || currentUser?.username || 'Bubble User';
+  const callerAvatar = currentUser?.avatar || null;
+
+  if (socket) {
+    // Emit call offer to backend with authentic caller details
+    socket.emit('call_offer', {
+      toUserId: user.id || user._id || user.otherUserId,
+      roomId,
+      callerName,
+      callerAvatar,
+      type
+    });
+  } else {
+    console.warn("Socket not initialized. Attempting call on disconnected socket.");
+  }
 
   // Timeout if no answer after 30 seconds
   if (callTimeout) clearTimeout(callTimeout);
   callTimeout = setTimeout(() => {
-    socket.emit('call_reject', { toUserId: user.id || user._id || user.otherUserId });
+    if (socket) {
+      socket.emit('call_reject', { toUserId: user.id || user._id || user.otherUserId });
+    }
     hangUpCall();
   }, 30000);
 };
@@ -147,6 +158,11 @@ export const hangUpCall = async () => {
       socket.emit('call_reject', { toUserId: targetUserId, roomId: state.roomId });
       socket.emit('call_end', { toUserId: targetUserId, roomId: state.roomId });
     }
+  } else if (state.status === 'calling_in') {
+    // Tearing down an unanswered incoming call — tell the caller so their side resets too.
+    if (socket) {
+      socket.emit('call_reject', { toUserId: state.callerId, roomId: state.roomId });
+    }
   } else if (state.status === 'in_call') {
     const targetUserId = state.user.id || state.user._id || state.user.otherUserId;
     if (socket) {
@@ -205,7 +221,7 @@ export const setupCallSocketListeners = (socket: any) => {
     setCallState({
       status: 'calling_in',
       callerId: data.fromUserId,
-      callerName: data.callerName || 'Colleague',
+      callerName: data.callerName || 'Bubble User',
       callerAvatar: data.callerAvatar,
       roomId: data.roomId,
       type: data.type || 'voice'

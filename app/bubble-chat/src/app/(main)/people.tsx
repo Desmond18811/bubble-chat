@@ -35,6 +35,7 @@ import {
 import { chatCache } from '../../lib/chatCache';
 import { addContact, createGroupChat, searchUsers, getSecureMediaUrl, accessOrCreateChat } from '../../lib/api';
 import { startOutgoingCall } from '../../lib/callManager';
+import { useIsOnline } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -70,6 +71,7 @@ function Avatar({
   avatar,
   size = 52,
   isOnline,
+  userId,
   isGroup = false,
   organization,
 }: {
@@ -77,10 +79,12 @@ function Avatar({
   avatar?: string | null;
   size?: number;
   isOnline?: boolean;
+  userId?: string | null;
   isGroup?: boolean;
   organization?: string;
 }) {
   const isFallbackBlack = isGroup;
+  const online = useIsOnline(userId, !!isOnline);
   return (
     <View style={{ width: size, height: size }} className="relative shrink-0">
       <SharedAvatar
@@ -91,7 +95,7 @@ function Avatar({
         imageStyle={{ borderRadius: size * 0.38 }}
         style={{ borderRadius: size * 0.38 }}
       />
-      {isOnline && !isGroup && (
+      {online && !isGroup && (
         <View
           className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 rounded-full border-2 border-white shadow-xs"
           style={{ width: size * 0.27, height: size * 0.27 }}
@@ -296,7 +300,7 @@ function ContactsTab({
                     activeOpacity={0.75}
                     className="flex-1 flex-row items-center"
                   >
-                    <Avatar name={contact.name} avatar={contact.avatar} size={50} isOnline={contact.isOnline} organization={contact.organization} />
+                    <Avatar name={contact.name} avatar={contact.avatar} size={50} isOnline={contact.isOnline} userId={contact.id} organization={contact.organization} />
 
                     {/* Info */}
                     <View className="flex-1 min-w-0 ml-3">
@@ -705,7 +709,15 @@ export default function PeopleScreen() {
   };
 
   const handleStartCall = (user: any, type: 'voice' | 'video') => {
-    startOutgoingCall(user, type);
+    const targetId = user?.otherUserId || user?.id || user?._id;
+    if (!targetId) return;
+    startOutgoingCall({
+      id: targetId,
+      otherUserId: targetId,
+      name: user?.name || user?.full_name || user?.username,
+      avatar: user?.avatar,
+      chatId: user?.chatId,
+    }, type);
   };
 
   const navigation = useNavigation();

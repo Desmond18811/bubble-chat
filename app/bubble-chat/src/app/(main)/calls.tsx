@@ -8,6 +8,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startOutgoingCall } from '../../lib/callManager';
 import { Image } from 'expo-image';
 import { Avatar } from '../../components/Avatar';
+import { useIsOnline } from '../../lib/presence';
+
+// Live presence dot — rendered inside a list `.map`, so it owns its own hook subscription.
+function StaffDot({ userId, fallback }: { userId?: string | null; fallback?: boolean }) {
+  const online = useIsOnline(userId, !!fallback);
+  if (!online) return null;
+  return <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />;
+}
 
 // Calendar cells generator
 const getCalendarCells = (currentDate: Date) => {
@@ -351,9 +359,7 @@ export default function CallsScreen() {
                           style={{ borderRadius: 24 }}
                           imageStyle={{ borderRadius: 24 }}
                         />
-                        {worker.isOnline && (
-                          <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />
-                        )}
+                        <StaffDot userId={worker.id} fallback={worker.isOnline} />
                       </View>
                       <Text className="text-[15px] font-bold text-ink mt-4 text-center w-full font-sans" numberOfLines={1}>
                         {displayName}
@@ -366,14 +372,14 @@ export default function CallsScreen() {
                       </Text>
 
                       <View className="flex-row items-center justify-center gap-2 mt-5">
-                        <TouchableOpacity 
-                          onPress={() => startOutgoingCall(worker, 'voice')}
+                        <TouchableOpacity
+                          onPress={() => startOutgoingCall({ id: worker.id, otherUserId: worker.id, name: displayName, avatar: worker.avatar }, 'voice')}
                           className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center"
                         >
                           <Phone color="#6c5ce7" size={16} />
                         </TouchableOpacity>
-                        <TouchableOpacity 
-                          onPress={() => startOutgoingCall(worker, 'video')}
+                        <TouchableOpacity
+                          onPress={() => startOutgoingCall({ id: worker.id, otherUserId: worker.id, name: displayName, avatar: worker.avatar }, 'video')}
                           className="w-10 h-10 rounded-xl bg-purple-soft items-center justify-center"
                         >
                           <Video color="#6c5ce7" size={16} />

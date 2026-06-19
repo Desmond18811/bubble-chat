@@ -25,6 +25,7 @@ import {
   toggleMessagePin,
   deleteMessageForMe,
   deleteMessageForEveryone,
+  markMessagesRead,
   updateMessage,
   muteChat,
   clearChat,
@@ -36,6 +37,7 @@ import {
   accessOrCreateChat,
 } from '../../../lib/api';
 import { startOutgoingCall } from '../../../lib/callManager';
+import { useIsOnline } from '../../../lib/presence';
 import { authStorage } from '../../../lib/authStorage';
 import { Avatar } from '../../../components/Avatar';
 
@@ -72,6 +74,7 @@ export default function ChatScreen() {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isPulsing, setIsPulsing] = useState(true);
   const [ownUser, setOwnUser] = useState<any>(null);
+  const isPeerOnline = useIsOnline(chat?.otherUserId, !!chat?.isOnline);
 
   // User details for own-typing socket filters
   const currentUserIdRef = useRef<string | null>(null);
@@ -146,7 +149,14 @@ export default function ChatScreen() {
   const [aidaSuggestions, setAidaSuggestions] = useState<string[]>([]);
 
   const handleStartCall = (type: 'voice' | 'video') => {
-    startOutgoingCall(chat, type);
+    if (!chat?.otherUserId) return;
+    startOutgoingCall({
+      id: chat.otherUserId,
+      otherUserId: chat.otherUserId,
+      name: chat.name,
+      avatar: chat.avatar,
+      chatId: chat.id,
+    }, type);
   };
 
   useEffect(() => {
@@ -340,6 +350,14 @@ export default function ChatScreen() {
     socket.on('new_message', onNewMessage);
     socket.on('receive_message', onNewMessage);
 
+    // Real-time removal when the other side deletes a message for everyone.
+    const onMessageDeleted = (data: any) => {
+      if (!data?.messageId) return;
+      if (data.chatId && String(data.chatId) !== String(id)) return;
+      setMessages(prev => prev.filter((m: any) => String(m.id) !== String(data.messageId)));
+    };
+    socket.on('message_deleted', onMessageDeleted);
+
     if (socket.connected) {
       onConnect();
     }
@@ -351,6 +369,7 @@ export default function ChatScreen() {
       socket.off('connect', onConnect);
       socket.off('new_message', onNewMessage);
       socket.off('receive_message', onNewMessage);
+      socket.off('message_deleted', onMessageDeleted);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (chatRef.current) {
         socket.emit('typing_stop', { toUserId: chatRef.current.otherUserId, chatId: chatRef.current.id });
@@ -450,6 +469,16 @@ export default function ChatScreen() {
     const interval = setInterval(syncChatAndMessages, 5000);
     return () => clearInterval(interval);
   }, [id]);
+
+  // Clear the unread badge on open (and whenever new messages land while the chat is open).
+  // Tells the backend (which emits `messages_read` so the list zeros the badge) and updates
+  // the local cache immediately so it sticks even if the socket round-trip is missed.
+  useEffect(() => {
+    const chatId = chat?.id;
+    if (!chatId) return;
+    markMessagesRead(String(chatId)).catch(() => {});
+    chatCache.markChatReadLocally(String(chatId));
+  }, [chat?.id, messages.length]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -593,6 +622,19 @@ export default function ChatScreen() {
     setActiveContextMessage(null);
   };
 
+  const handleDeleteForEveryone = async (messageId: string) => {
+    setActiveContextMessage(null);
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    try {
+      await deleteMessageForEveryone(messageId);
+      showToast("Deleted for everyone");
+      await syncChatAndMessages();
+    } catch (err) {
+      showToast("Delete failed");
+      await syncChatAndMessages();
+    }
+  };
+
   const handleEditMessage = (msg: Message) => {
     setEditingMessageId(msg.id);
     setMessageText(msg.text);
@@ -730,7 +772,7 @@ export default function ChatScreen() {
                     size={40}
                     isGroup={!!(chat.isGroupChat || chat.organization)}
                   />
-                  {chat.isOnline && (
+                  {isPeerOnline && !chat.isGroupChat && (
                     <View style={{ position: 'absolute', bottom: -1, right: -1, width: 11, height: 11, borderRadius: 99, backgroundColor: '#22c55e', borderWidth: 2, borderColor: '#ffffff' }} />
                   )}
                 </View>
@@ -745,7 +787,7 @@ export default function ChatScreen() {
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: chat.status === 'typing' ? PURPLE : INK_SOFT, marginTop: 1 }}>
                     {chat.status === 'typing'
                       ? (typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…')
-                      : chat.isOnline ? 'Online' : chat.isGroupChat ? statusLine : 'Offline'}
+                      : chat.isGroupChat ? statusLine : isPeerOnline ? 'Online' : 'Offline'}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -1693,11 +1735,19 @@ export default function ChatScreen() {
               <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 8 }} />
 
               <ContextMenuItem
-                icon={<Trash2 size={16} color="red" />}
-                label="Delete Message"
-                labelStyle={{ color: 'red' }}
+                icon={<Trash2 size={16} color={INK_SOFT} />}
+                label="Delete for Me"
                 onPress={() => handleDeleteMessage(activeContextMessage.id)}
               />
+
+              {activeContextMessage.sender === 'me' && (
+                <ContextMenuItem
+                  icon={<Trash2 size={16} color="red" />}
+                  label="Delete for Everyone"
+                  labelStyle={{ color: 'red' }}
+                  onPress={() => handleDeleteForEveryone(activeContextMessage.id)}
+                />
+              )}
             </TouchableOpacity>
           )}
         </TouchableOpacity>

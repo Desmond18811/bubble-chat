@@ -227,6 +227,7 @@ export const initApiFromStorage = async (): Promise<void> => {
         if (token) {
             const sock = initSocket(token);
             import('./callManager').then(m => m.setupCallSocketListeners(sock));
+            import('./presence').then(m => m.setupPresenceListeners(sock));
         }
     } catch {
         tokenCache.accessToken = null;
@@ -239,6 +240,7 @@ export const setApiToken = (token: string | null): void => {
     if (token) {
         const sock = initSocket(token);
         import('./callManager').then(m => m.setupCallSocketListeners(sock));
+        import('./presence').then(m => m.setupPresenceListeners(sock));
     } else {
         disconnectSocket();
     }
