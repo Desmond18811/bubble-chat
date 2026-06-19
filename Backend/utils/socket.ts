@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/users';
 import mongoose from 'mongoose';
 import { sendPushNotification } from './push';
+import { logActivity } from '../controllers/activityLogController';
 
 
 let io: Server;
@@ -220,6 +221,16 @@ export const initSocket = (server: HttpServer) => {
         callerName,
       });
 
+      // Persist an auditable trace: who called whom, on which room, at what time.
+      logActivity({
+        actor: userId,
+        action: 'call_initiated',
+        entityId: data.toUserId,
+        entityType: 'Call',
+        entityLabel: callerName,
+        metadata: { roomId: data.roomId, callType: data.type || 'voice', to: data.toUserId },
+      });
+
       // Send push notification for incoming call asynchronously
       const typeStr = data.type === 'video' ? 'video call' : 'voice call';
       sendPushNotification(
@@ -250,6 +261,14 @@ export const initSocket = (server: HttpServer) => {
       }
 
       io.to(data.toUserId).emit('call_accepted', { byUserId: userId, roomId: data.roomId });
+
+      logActivity({
+        actor: userId,
+        action: 'call_accepted',
+        entityId: data.toUserId,
+        entityType: 'Call',
+        metadata: { roomId: data.roomId, from: data.toUserId },
+      });
     });
 
     socket.on('call_reject', async (data: { toUserId: string; roomId?: string }) => {
@@ -257,6 +276,14 @@ export const initSocket = (server: HttpServer) => {
       io.to(data.toUserId).emit('call_rejected', { byUserId: userId });
       io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
       io.to(userId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+
+      logActivity({
+        actor: userId,
+        action: 'call_rejected',
+        entityId: data.toUserId,
+        entityType: 'Call',
+        metadata: { roomId: data.roomId, from: data.toUserId },
+      });
     });
 
     socket.on('call_end', async (data: { toUserId?: string; roomId?: string }) => {
@@ -265,6 +292,14 @@ export const initSocket = (server: HttpServer) => {
       if (data.toUserId) io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
       io.to(userId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
       if (data.roomId) io.to(data.roomId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+
+      logActivity({
+        actor: userId,
+        action: 'call_ended',
+        entityId: data.toUserId,
+        entityType: 'Call',
+        metadata: { roomId: data.roomId, to: data.toUserId },
+      });
     });
 
     socket.on('disconnect', async () => {

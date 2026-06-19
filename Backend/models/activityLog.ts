@@ -19,6 +19,12 @@ export type ActivityAction =
   | 'meeting_joined'
   | 'meeting_left'
   | 'transcript_saved'
+  // Calls
+  | 'call_initiated'
+  | 'call_accepted'
+  | 'call_rejected'
+  | 'call_missed'
+  | 'call_ended'
   // Payments
   | 'payment_made'
   | 'invoice_created'
