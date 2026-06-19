@@ -341,3 +341,61 @@ export const initDailyDigestScheduler = () => {
   console.log('📅 [DailyDigest] Scheduler initialized (runs daily at 07:00 UTC).');
 };
 
+// ─── Weekly Digest Generator ────────────────────────────────────────────────────
+
+/**
+ * Sends a 7-day recap push to all active users across all orgs.
+ * Runs Mondays at 08:00 UTC.
+ */
+export const runWeeklyDigestJob = async () => {
+  try {
+    const { User } = await import('../models/users');
+    const { generateWeeklyBriefForUser } = await import('../controllers/digestController');
+    const { sendPushNotification } = await import('./push');
+
+    const users = await User.find({
+      organization: { $exists: true, $ne: '' },
+      $or: [
+        { 'digestPreferences.enabled': true },
+        { 'digestPreferences.enabled': { $exists: false } }, // default on
+      ],
+    }).select('_id full_name username').limit(500);
+
+    console.log(`🗓️ [WeeklyDigest] Generating weekly recaps for ${users.length} users...`);
+
+    let successCount = 0;
+    const today = new Date();
+
+    for (const user of users) {
+      try {
+        const brief = await generateWeeklyBriefForUser(user._id.toString(), today);
+        if (!brief) continue;
+
+        await sendPushNotification(
+          [user._id.toString()],
+          '🗓️ Your Weekly Recap',
+          brief.substring(0, 120),
+          { type: 'weekly_digest', date: today.toISOString().slice(0, 10) }
+        );
+        successCount++;
+      } catch (userErr) {
+        console.error(`[WeeklyDigest] Failed for user ${user._id}:`, userErr);
+      }
+    }
+
+    console.log(`✅ [WeeklyDigest] Completed: ${successCount}/${users.length} recaps sent.`);
+  } catch (err) {
+    console.error('❌ [WeeklyDigest] Job failed:', err);
+  }
+};
+
+export const initWeeklyDigestScheduler = () => {
+  // Run Mondays at 08:00 UTC
+  cron.schedule('0 8 * * 1', async () => {
+    console.log('🗓️ [WeeklyDigest] Monday 08:00 UTC — Running weekly digest job...');
+    await runWeeklyDigestJob();
+  });
+
+  console.log('🗓️ [WeeklyDigest] Scheduler initialized (runs Mondays at 08:00 UTC).');
+};
+

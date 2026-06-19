@@ -212,7 +212,8 @@ export const getLiveKitToken = async (req: Request, res: Response) => {
 
     const { generateLiveKitToken } = await import('../utils/livekitService');
     const token = await generateLiveKitToken(roomId, userName, userId, userAvatar);
-    res.json({ token });
+    const url = process.env.LIVEKIT_URL || process.env.VITE_LIVEKIT_URL || '';
+    res.json({ token, url, roomId });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

@@ -569,6 +569,24 @@ export const runBackgroundMeetingAI = async (
 ) => {
   try {
     const allParticipants = [meeting.host, ...meeting.attendees];
+
+    // If live speech-recognition produced little/no transcript, fall back to
+    // transcribing the LiveKit Egress recording via Whisper. No-ops (returns '')
+    // until Egress is enabled and meeting.recordingKey is set.
+    if ((!rawTranscript || rawTranscript.trim().length < 20) && meeting.recordingKey) {
+      try {
+        const { transcribeMeetingRecording } = await import('../utils/livekitEgress');
+        const fromAudio = await transcribeMeetingRecording(meeting.recordingKey);
+        if (fromAudio && fromAudio.trim()) {
+          rawTranscript = fromAudio;
+          await Meeting.findByIdAndUpdate(meeting._id, { $set: { transcriptRaw: fromAudio } });
+          console.log(`[Meeting AI] Transcribed Egress recording for meeting ${meeting._id} (${fromAudio.length} chars).`);
+        }
+      } catch (whisperErr) {
+        console.error('[Meeting AI] Egress transcription failed:', whisperErr);
+      }
+    }
+
     const intelligence = await extractMeetingIntelligence(
       rawTranscript,
       meeting.attendeeNames || []

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,6 +15,22 @@ import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maxi
 import { CameraView, Camera } from "expo-camera";
 import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, CallState } from "../lib/callManager";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
+import { getLiveKitToken } from "../lib/api";
+import { ensureLiveKitRegistered } from "../lib/liveKitInit";
+import type { LiveKitCallRoomProps } from "../components/liveKitCall";
+
+// LiveKit pulls in native WebRTC, which doesn't exist in Expo Go. Register once at
+// module load (no-ops in Expo Go) and only require the call component when available,
+// so importing this layout never crashes the Expo Go client.
+const liveKitReady = ensureLiveKitRegistered();
+let LiveKitCallRoom: React.ComponentType<LiveKitCallRoomProps> | null = null;
+if (liveKitReady) {
+  try {
+    LiveKitCallRoom = require("../components/liveKitCall").default;
+  } catch (e) {
+    console.warn("[LiveKit] failed to load call component:", e);
+  }
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -37,6 +53,8 @@ function GlobalCallOverlay() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [lkToken, setLkToken] = useState<string | null>(null);
+  const [lkUrl, setLkUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = subscribeCallState((state) => {
@@ -47,9 +65,35 @@ function GlobalCallOverlay() {
         setIsCameraActive(state.type === 'video');
         setIsMinimized(false);
       }
+      if (state.status === 'idle') {
+        setLkToken(null);
+        setLkUrl(null);
+      }
     });
     return unsubscribe;
   }, []);
+
+  // Fetch a LiveKit token once the call is connected. The component renders only
+  // in a dev/release build (LiveKitCallRoom is null in Expo Go), so the avatar UI
+  // remains the fallback everywhere else.
+  useEffect(() => {
+    if (!LiveKitCallRoom) return;
+    if (callState.status !== 'in_call') return;
+    if (lkToken) return;
+    let cancelled = false;
+    getLiveKitToken(callState.roomId)
+      .then((res: { token?: string; url?: string }) => {
+        if (cancelled) return;
+        if (res?.token && res?.url) {
+          setLkToken(res.token);
+          setLkUrl(res.url);
+        } else {
+          console.warn('[LiveKit] token endpoint returned no token/url');
+        }
+      })
+      .catch((err) => console.warn('[LiveKit] token fetch failed:', err));
+    return () => { cancelled = true; };
+  }, [callState.status, (callState as any).roomId, lkToken]);
 
   useEffect(() => {
     if (callState.status === 'in_call' && isCameraActive && hasPermission === null) {
@@ -191,7 +235,20 @@ function GlobalCallOverlay() {
 
         {/* Media / Video Stream area */}
         <View style={styles.mediaContainer}>
-          {callState.status === 'in_call' && isCameraActive && hasPermission ? (
+          {callState.status === 'in_call' && LiveKitCallRoom && lkToken && lkUrl ? (
+            <View style={isVideo ? styles.videoPreviewFrame : styles.avatarOuterRing}>
+              <LiveKitCallRoom
+                serverUrl={lkUrl}
+                token={lkToken}
+                isVideo={isVideo}
+                micEnabled={!isMuted}
+                cameraEnabled={isCameraActive}
+                speakerEnabled={isSpeaker}
+                fallback={renderAvatar(156)}
+                onError={(err) => console.warn('[LiveKit] room error:', err)}
+              />
+            </View>
+          ) : callState.status === 'in_call' && isCameraActive && hasPermission ? (
             <View style={styles.videoPreviewFrame}>
               <CameraView style={StyleSheet.absoluteFill} facing="front" />
               <View style={styles.remoteVideoPreviewOverlay}>
@@ -329,7 +386,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     // Pre-load stored token into in-memory cache for synchronous getAuthHeaders()
-    initApiFromStorage().catch(() => {});
+    initApiFromStorage().then(() => {
+      const { chatCache } = require("../lib/chatCache");
+      chatCache.initAvatarCache().then(() => {
+        chatCache.syncAvatarsWithBackend().catch(() => {});
+      });
+    }).catch(() => {});
 
     // Configure Google Sign-In
     const isExpoGo = Constants.appOwnership === 'expo';

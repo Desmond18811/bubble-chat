@@ -43,6 +43,8 @@ const formatMessagePreciseTime = (dateInput: any): string => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+let avatarMemoryCache: { [urlOrUserId: string]: string } = {};
+
 export const chatCache = {
   // ─── Folders & Mappings ─────────────────────────────────────────────────────
   
@@ -416,5 +418,55 @@ export const chatCache = {
       console.error('Failed to restore cloud backup:', err);
       return false;
     }
+  },
+
+  // ─── Avatar Caching ─────────────────────────────────────────────────────────
+  async initAvatarCache(): Promise<void> {
+    try {
+      const raw = await AsyncStorage.getItem('bubble_cached_avatars');
+      if (raw) {
+        avatarMemoryCache = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.warn("Failed to initialize avatar cache:", err);
+    }
+  },
+
+  async syncAvatarsWithBackend(): Promise<void> {
+    try {
+      const { getAllAvatars } = await import('./api');
+      const response = await getAllAvatars();
+      const list = response?.data || [];
+
+      const newCache: { [urlOrUserId: string]: string } = {};
+      for (const item of list) {
+        if (item.base64Data) {
+          if (item.imageUrl) {
+            // Key by both the raw stored URL and its query-stripped form, since the
+            // backend hands clients *signed* URLs (?X-Amz-…) that differ from the
+            // unsigned URL stored here.
+            newCache[item.imageUrl] = item.base64Data;
+            newCache[item.imageUrl.split('?')[0]] = item.base64Data;
+          }
+          if (item.userId) {
+            newCache[String(item.userId)] = item.base64Data;
+          }
+        }
+      }
+
+      avatarMemoryCache = newCache;
+      await AsyncStorage.setItem('bubble_cached_avatars', JSON.stringify(newCache));
+      console.log(`Synced ${list.length} avatars with backend.`);
+    } catch (err) {
+      console.warn("Failed to sync avatars with backend:", err);
+    }
+  },
+
+  getCachedAvatar(urlOrUserId: string | null | undefined): string | null {
+    if (!urlOrUserId) return null;
+    const key = String(urlOrUserId);
+    // Try the exact key (userId or full URL), then the query-stripped URL so that
+    // a signed URL resolves to the same cached base64 as the unsigned stored URL.
+    return avatarMemoryCache[key] || avatarMemoryCache[key.split('?')[0]] || null;
   }
 };

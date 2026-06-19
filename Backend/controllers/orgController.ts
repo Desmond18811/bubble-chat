@@ -238,6 +238,10 @@ export const joinOrganizationByInvite = async (req: AuthRequest, res: Response):
                 defaultChat.users.push(userId);
                 await defaultChat.save();
             }
+        } else {
+            // Org has no default chat — new joiners land in an org with nothing to talk in.
+            // Loud-log so ops can backfill before more users sign up against this org.
+            console.warn(`[org/join] Organization ${org._id} (${org.name}) has no default org chat — user ${userId} joined without group access.`);
         }
 
         // Send welcome email with company overview summary

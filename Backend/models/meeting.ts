@@ -60,6 +60,11 @@ export interface IMeeting extends Document {
   summary?: string;
   actionItems: IActionItem[];
 
+  // LiveKit Egress recording (audio composite written to Filebase/S3). Populated
+  // only when LIVEKIT_EGRESS_ENABLED is on; used as the Whisper source when the
+  // live speech-recognition transcript is empty/thin.
+  recordingKey?: string;
+
   // ── NEW: rich shared-file records ─────────────────────────────────────────
   filesShared: ISharedFile[];
 
@@ -144,6 +149,7 @@ const MeetingSchema = new Schema<IMeeting>(
       },
     ],
     summary: { type: String },
+    recordingKey: { type: String },
     actionItems: [ActionItemSchema],
 
     filesShared: [SharedFileSchema],

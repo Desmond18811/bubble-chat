@@ -17,89 +17,118 @@ if (!isExpoGo) {
     }
 }
 
-const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
+if (!ENV_API_URL) {
+  console.warn('[api] EXPO_PUBLIC_API_URL is not set — falling back to the public Railway URL. Set it via EAS secret for production builds.');
+}
+const BASE_URL = ENV_API_URL || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
 const API_BASE = BASE_URL.replace(/\/api\/v1\/?$/, '');
 
 const originalFetch = globalThis.fetch;
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
 
-const onRefreshed = (token: string) => {
-    refreshSubscribers.forEach(cb => cb(token));
-    refreshSubscribers = [];
+// Single in-flight refresh promise. All concurrent 401s await this same promise.
+let inFlightRefresh: Promise<string | null> | null = null;
+
+/**
+ * Decode a JWT's `exp` claim (seconds since epoch). Returns null on any parse failure.
+ * We do NOT verify the signature — that's the server's job. We only need `exp` to know
+ * if we should preemptively refresh.
+ */
+const getTokenExp = (token: string | null): number | null => {
+    if (!token) return null;
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        // base64url -> base64
+        const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
+        // atob is available in the Hermes / Expo runtime.
+        if (typeof atob !== 'function') return null;
+        const obj = JSON.parse(atob(padded));
+        return typeof obj.exp === 'number' ? obj.exp : null;
+    } catch {
+        return null;
+    }
 };
 
-const addRefreshSubscriber = (cb: (token: string) => void) => {
-    refreshSubscribers.push(cb);
+const isTokenExpiringSoon = (token: string | null, skewSec = 30): boolean => {
+    const exp = getTokenExp(token);
+    if (!exp) return false;
+    return exp <= Math.floor(Date.now() / 1000) + skewSec;
+};
+
+/**
+ * Refresh the access token. Returns the new access token, or null if refresh is
+ * not possible (no refresh token, server rejected). On null, the session is cleared.
+ *
+ * Multiple concurrent callers share a single in-flight refresh — no thundering herd.
+ */
+const refreshAccessToken = async (): Promise<string | null> => {
+    if (inFlightRefresh) return inFlightRefresh;
+
+    inFlightRefresh = (async (): Promise<string | null> => {
+        try {
+            const refreshToken = await AsyncStorage.getItem('bubble_refresh_token');
+            if (!refreshToken) return null;
+
+            const res = await originalFetch(`${BASE_URL}/auth/refresh-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+            });
+            if (!res.ok) return null;
+
+            const data = await res.json().catch(() => null);
+            const newAccess = data?.data?.accessToken;
+            const newRefresh = data?.data?.refreshToken;
+            if (!newAccess || !newRefresh) return null;
+
+            await AsyncStorage.multiSet([
+                ['bubble_access_token', newAccess],
+                ['bubble_refresh_token', newRefresh],
+                ['bubble_last_login', Date.now().toString()],
+            ]);
+            setApiToken(newAccess);
+            return newAccess;
+        } catch (err) {
+            console.error('[api] refresh failed:', err);
+            return null;
+        }
+    })();
+
+    try {
+        const result = await inFlightRefresh;
+        if (!result) {
+            // Refresh failed — clear session so the next request lands on /login cleanly.
+            await AsyncStorage.multiRemove([
+                'bubble_access_token',
+                'bubble_refresh_token',
+                'bubble_user',
+                'bubble_last_login',
+            ]);
+            setApiToken(null);
+        }
+        return result;
+    } finally {
+        inFlightRefresh = null;
+    }
 };
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const urlStr = typeof input === 'string' ? input : (input as any).url || String(input);
 
-    let res = await originalFetch(input, init);
+    const res = await originalFetch(input, init);
 
-    if (res.status === 401 && !urlStr.includes('/auth/refresh-token')) {
-        if (!isRefreshing) {
-            isRefreshing = true;
-            try {
-                const refreshToken = await AsyncStorage.getItem('bubble_refresh_token');
-                if (refreshToken) {
-                    const refreshRes = await originalFetch(`${BASE_URL}/auth/refresh-token`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ refreshToken }),
-                    });
-                    if (refreshRes.ok) {
-                        const refreshData = await refreshRes.json();
-                        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshData.data || {};
-                        if (newAccessToken && newRefreshToken) {
-                            await AsyncStorage.multiSet([
-                                ['bubble_access_token', newAccessToken],
-                                ['bubble_refresh_token', newRefreshToken],
-                                ['bubble_last_login', Date.now().toString()],
-                            ]);
-                            setApiToken(newAccessToken);
-                            onRefreshed(newAccessToken);
-                            isRefreshing = false;
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('Failed to auto-refresh token:', err);
-            }
-
-            if (isRefreshing) {
-                isRefreshing = false;
-                await AsyncStorage.multiRemove([
-                    'bubble_access_token',
-                    'bubble_refresh_token',
-                    'bubble_user',
-                    'bubble_last_login',
-                ]);
-                setApiToken(null);
-            }
-        }
-
-        if (isRefreshing) {
-            const retryPromise = new Promise<Response>((resolve) => {
-                addRefreshSubscriber((newToken) => {
-                    const headers = init?.headers ? { ...init.headers } : {};
-                    (headers as any)['Authorization'] = `Bearer ${newToken}`;
-                    resolve(originalFetch(input, { ...init, headers }));
-                });
-            });
-            return retryPromise;
-        } else {
-            const newToken = await AsyncStorage.getItem('bubble_access_token');
-            if (newToken) {
-                const headers = init?.headers ? { ...init.headers } : {};
-                (headers as any)['Authorization'] = `Bearer ${newToken}`;
-                return originalFetch(input, { ...init, headers });
-            }
-        }
+    if (res.status !== 401 || urlStr.includes('/auth/refresh-token')) {
+        return res;
     }
 
-    return res;
+    const newToken = await refreshAccessToken();
+    if (!newToken) return res;
+
+    const headers = init?.headers ? { ...init.headers } : {};
+    (headers as any)['Authorization'] = `Bearer ${newToken}`;
+    return originalFetch(input, { ...init, headers });
 };
 
 const fetch = customFetch;
@@ -222,8 +251,16 @@ const tokenCache: { accessToken: string | null } = { accessToken: null };
  */
 export const initApiFromStorage = async (): Promise<void> => {
     try {
-        const token = await AsyncStorage.getItem('bubble_access_token');
+        let token = await AsyncStorage.getItem('bubble_access_token');
         tokenCache.accessToken = token;
+
+        // If the stored access token is already expired (or within 30s), refresh it
+        // before any other code tries to use it. Cuts cold-start latency for returning users.
+        if (token && isTokenExpiringSoon(token)) {
+            const refreshed = await refreshAccessToken();
+            token = refreshed ?? null;
+        }
+
         if (token) {
             const sock = initSocket(token);
             import('./callManager').then(m => m.setupCallSocketListeners(sock));
@@ -1797,14 +1834,31 @@ export const getMyFollowing = async (userId: string) => {
 
 // ─── Profile: Avatar Upload ───────────────────────────────────────────────────
 
-export const uploadAvatar = async (file: File) => {
+export const uploadAvatar = async (file: File | string) => {
     const token = tokenCache.accessToken;
     const formData = new FormData();
-    formData.append('file', file);
+    if (typeof file === 'string') {
+        const fileUri = file;
+        const filename = fileUri.split('/').pop() || 'avatar.jpg';
+        formData.append('file', {
+            uri: Platform.OS === 'ios' ? fileUri.replace('file://', '') : fileUri,
+            name: filename,
+            type: 'image/jpeg',
+        } as any);
+    } else {
+        formData.append('file', file);
+    }
     const res = await fetch(`${BASE_URL}/profile/avatar`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
+    });
+    return handleResponse(res);
+};
+
+export const getAllAvatars = async () => {
+    const res = await fetch(`${BASE_URL}/profile/avatars`, {
+        headers: getAuthHeaders(),
     });
     return handleResponse(res);
 };

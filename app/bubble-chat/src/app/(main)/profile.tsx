@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Clipboard, Switch, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database, ChevronLeft } from 'lucide-react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database, ChevronLeft, Plus } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '../../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -354,6 +355,46 @@ export default function ProfileScreen() {
     }
   };
 
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'We need access to your gallery to upload a profile picture.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setIsAvatarModalOpen(false);
+        const { uploadAvatar } = await import('../../lib/api');
+        const res = await uploadAvatar(uri);
+        if (res?.data) {
+          const u = res.data.user;
+          if (u) {
+            await authStorage.updateUser(u);
+            setUser(prev => ({ ...prev, avatar: u.avatar }));
+          } else {
+            setUser(prev => ({ ...prev, avatar: res.data.avatarUrl }));
+          }
+          Alert.alert("Success", "Profile picture updated successfully!");
+          
+          // Also sync avatar cache
+          const { chatCache } = await import('../../lib/chatCache');
+          await chatCache.syncAvatarsWithBackend();
+        }
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to upload profile picture.");
+    }
+  };
+
   const handleSelectAvatar = async (url: string) => {
     try {
       const res = await updateProfile({ avatar: url });
@@ -441,6 +482,7 @@ export default function ProfileScreen() {
             >
               <Avatar
                 url={user.avatar}
+                userId={(user as any).id || (user as any)._id}
                 name={user.organization || user.full_name}
                 size={96}
                 isGroup={!!user.organization}
@@ -639,6 +681,7 @@ export default function ProfileScreen() {
                       <View key={member.username} className="flex-row items-center bg-purple-soft/5 p-3 rounded-2xl border border-black/5">
                         <Avatar
                           url={member.avatar}
+                          userId={member.id || member._id}
                           name={member.full_name || member.username}
                           size={36}
                           style={{ borderRadius: 10 }}
@@ -1015,6 +1058,25 @@ export default function ProfileScreen() {
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 10 }}>
+              {/* Pick from Gallery Option */}
+              <TouchableOpacity
+                onPress={handlePickFromGallery}
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 20,
+                  borderWidth: 1.5,
+                  borderColor: PURPLE,
+                  borderStyle: 'dashed',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(108,92,231,0.05)',
+                }}
+              >
+                <Plus color={PURPLE} size={22} />
+                <Text style={{ fontSize: 9, color: PURPLE, fontFamily: 'Poppins_600SemiBold', marginTop: 2 }}>Gallery</Text>
+              </TouchableOpacity>
+
               {AVATARS.map((url) => (
                 <TouchableOpacity
                   key={url}

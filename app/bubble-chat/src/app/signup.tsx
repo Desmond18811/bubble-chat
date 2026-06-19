@@ -72,6 +72,23 @@ const GoogleLogo = ({ size = 18 }: { size?: number }) => (
 
 const { width: W, height: H } = Dimensions.get("window");
 
+const INDUSTRIES = [
+  "Technology & Software",
+  "Healthcare & Life Sciences",
+  "Finance & Banking",
+  "Education & E-Learning",
+  "Retail & E-commerce",
+  "Real Estate & Construction",
+  "Manufacturing & Logistics",
+  "Media & Entertainment",
+  "Marketing & Advertising",
+  "Professional Services & Consulting",
+  "Hospitality & Tourism",
+  "Energy & Utilities",
+  "Non-Profit & Government",
+  "Other",
+];
+
 const PURPLE = "#6c5ce7";
 const PURPLE_SOFT = "rgba(108,92,231,0.08)";
 const BG_LIGHT = "#ffffff";
@@ -106,6 +123,21 @@ export default function Signup() {
       useNativeDriver: true,
     }).start();
   }, []);
+
+  const selectIndustry = () => {
+    Alert.alert(
+      "Select Industry",
+      "Choose your organization's industry:",
+      [
+        ...INDUSTRIES.map(ind => ({
+          text: ind,
+          onPress: () => { setOrgIndustry(ind); setError(""); },
+        })),
+        { text: "Cancel", style: "cancel" as const },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const selectCompanySize = () => {
     Alert.alert(
@@ -222,7 +254,7 @@ export default function Signup() {
         <Animated.View style={[styles.inner, { opacity: fadeAnim }]}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/login')} style={styles.backBtn}>
               <ArrowLeft size={18} color={INK_DARK} />
               <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
@@ -387,17 +419,23 @@ export default function Signup() {
                 {/* Industry & Company Size */}
                 <View style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
                   {/* Industry */}
-                  <View style={[styles.inputRow, { flex: 1, marginBottom: 0 }]}>
-                    <TextInput
-                      value={orgIndustry}
-                      onChangeText={t => { setOrgIndustry(t); setError(""); }}
-                      placeholder="Industry"
-                      placeholderTextColor="#b0b2c3"
-                      style={styles.input}
-                      autoComplete="off"
-                      importantForAutofill="no"
-                    />
-                  </View>
+                  <TouchableOpacity
+                    style={[styles.inputRow, { flex: 1, marginBottom: 0 }]}
+                    onPress={selectIndustry}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 15,
+                        fontFamily: "Poppins_500Medium",
+                        color: orgIndustry ? INK_DARK : "#b0b2c3",
+                        flex: 1,
+                      }}
+                    >
+                      {orgIndustry || "Industry"}
+                    </Text>
+                  </TouchableOpacity>
 
                   {/* Company Size */}
                   <TouchableOpacity

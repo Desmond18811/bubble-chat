@@ -25,6 +25,16 @@ const hasKey = (): boolean => {
   return !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
 };
 
+// Reject conversational requests loudly if the LLM is unconfigured — better than
+// silently returning a templated fallback that hides a misconfigured deploy.
+export const requireAidaKey = (_req: Request, res: Response, next: () => void): void => {
+  if (!hasKey()) {
+    res.status(503).json({ code: 'AIDA_UNCONFIGURED', message: 'Aida is not configured on this deployment.' });
+    return;
+  }
+  next();
+};
+
 // ─── Core AI call ─────────────────────────────────────────────────────────────
 const callAIDA = async (
   systemPrompt: string,

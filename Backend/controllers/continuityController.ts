@@ -153,10 +153,39 @@ export const searchBrain = async (req: Request, res: Response): Promise<any> => 
     const hasHighConfidence = matches.length > 0 && matches[0].score >= CONFIDENCE_THRESHOLD;
 
     if (hasHighConfidence) {
-      // Return high-confidence direct match
+      const rawAnswer = matches[0].metadata?.chunk || '';
+
+      // Synthesize a grounded natural-language answer from the retrieved chunks.
+      // Falls back to the raw top chunk if DeepSeek is unconfigured or errors.
+      let answer = rawAnswer;
+      const deepseek = getDeepSeekClient();
+      if (deepseek) {
+        try {
+          const context = matches
+            .map((m: any) => `[${m.metadata?.title || 'Knowledge'}]\n${m.metadata?.chunk || ''}`)
+            .join('\n\n');
+          const aiRes = await deepseek.chat.completions.create({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'system',
+                content: `You are Aida, an organizational knowledge assistant. Answer the user's question using ONLY the provided context. Be concise and direct. If the context does not contain enough information to answer, say so plainly.`,
+              },
+              { role: 'user', content: `Context:\n${context}\n\nQuestion: ${query}` },
+            ],
+            temperature: 0.3,
+            max_tokens: 400,
+          });
+          answer = aiRes.choices?.[0]?.message?.content?.trim() || rawAnswer;
+        } catch (aiErr) {
+          console.error('[Brain Search] DeepSeek synthesis failed, using raw chunk:', aiErr);
+        }
+      }
+
       return res.status(200).json({
         confidence: 'high',
-        answer: matches[0].metadata?.chunk || '',
+        answer,
+        rawAnswer,
         source: {
           title: matches[0].metadata?.title || 'Matching Fact',
           department: matches[0].metadata?.department || 'general',

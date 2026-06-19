@@ -63,7 +63,7 @@ export default function ResetPassword() {
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.inner}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/login')} style={styles.backBtn}>
             <ArrowLeft size={20} color="#6b7280" />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>

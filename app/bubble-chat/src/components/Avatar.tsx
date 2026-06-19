@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ImageStyle, TextStyle, ViewStyle } from 'react-native';
 import { getSecureMediaUrl } from '../lib/api';
+import { chatCache } from '../lib/chatCache';
 
 interface AvatarProps {
   url?: string | null;
   avatar?: string | null;
+  userId?: string | null;
   name?: string | null;
   size?: number;
   isGroup?: boolean;
@@ -49,6 +51,7 @@ const getInitials = (name: string, isGroup?: boolean): string => {
 export const Avatar: React.FC<AvatarProps> = ({
   url,
   avatar,
+  userId,
   name,
   size = 40,
   isGroup = false,
@@ -58,12 +61,17 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
   const displayName = name || 'User';
-  const resolvedUrl = getSecureMediaUrl(url || avatar);
+  // Prefer the locally cached base64 (keyed by userId, then by URL) so avatars
+  // render instantly and keep working with no network. Fall back to the secure
+  // (proxied/signed) URL only when nothing is cached.
+  const cachedBase64 =
+    chatCache.getCachedAvatar(userId) || chatCache.getCachedAvatar(url || avatar);
+  const resolvedUrl = cachedBase64 || getSecureMediaUrl(url || avatar);
 
-  // Reset error state if url changes
+  // Reset error state if the source changes
   useEffect(() => {
     setImgError(false);
-  }, [url]);
+  }, [url, avatar, userId]);
 
   const initials = getInitials(displayName, isGroup);
   const backgroundColor = getFallbackColor(displayName, isGroup);

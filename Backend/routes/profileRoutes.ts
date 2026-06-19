@@ -14,6 +14,7 @@ import {
   uploadBackground,
   saveBackup,
   getBackup,
+  getAllAvatars,
 } from '../controllers/profileController';
 
 const router = express.Router();
@@ -197,6 +198,7 @@ router.post('/background', jwtAuth, upload.single('file'), uploadBackground);
 
 router.post('/backup', jwtAuth, saveBackup);
 router.get('/backup', jwtAuth, getBackup);
+router.get('/avatars', jwtAuth, getAllAvatars);
 
 /**
  * @swagger

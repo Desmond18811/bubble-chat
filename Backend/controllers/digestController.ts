@@ -237,6 +237,97 @@ Be specific and actionable.`,
   return digest;
 };
 
+/**
+ * Generate a 7-day recap brief for one user. Returns a synthesized string (or
+ * null if the user has no org). Used by the weekly digest push cron.
+ */
+export const generateWeeklyBriefForUser = async (userId: string, date: Date = new Date()): Promise<string | null> => {
+  const weekEnd = endOfDay(date);
+  const weekStart = startOfDay(new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000));
+
+  const user = await User.findById(userId);
+  if (!user || (!user.organizationId && !user.organization)) return null;
+
+  const org = await resolveUserOrg(user);
+  if (!org) return null;
+
+  // Meetings attended over the past week
+  const meetings = await CalendarEvent.find({
+    organizationId: org._id,
+    attendees: userId,
+    status: 'ended',
+    endTime: { $gte: weekStart, $lte: weekEnd },
+  }).select('title summary decisions actionItems').lean();
+
+  // Action items still open for this user
+  const openActionEvents = await CalendarEvent.find({
+    organizationId: org._id,
+    attendees: userId,
+    'actionItems.status': 'pending',
+    'actionItems.assignedTo': userId,
+  }).select('title actionItems').lean();
+
+  const openActionItems = openActionEvents.flatMap((e: any) =>
+    (e.actionItems || [])
+      .filter((a: any) => a.status === 'pending' && String(a.assignedTo) === String(userId))
+      .map((a: any) => a.text)
+      .filter(Boolean)
+  );
+
+  // Events coming up in the next 7 days
+  const upcomingEvents = await CalendarEvent.find({
+    organizationId: org._id,
+    attendees: userId,
+    status: { $ne: 'cancelled' },
+    startTime: { $gt: weekEnd, $lte: new Date(weekEnd.getTime() + 7 * 24 * 60 * 60 * 1000) },
+  }).sort({ startTime: 1 }).select('title startTime').limit(10).lean();
+
+  // Nothing happened and nothing's coming up — skip this user
+  if (meetings.length === 0 && openActionItems.length === 0 && upcomingEvents.length === 0) {
+    return null;
+  }
+
+  let brief =
+    `This week: ${meetings.length} meeting(s) attended, ${openActionItems.length} open action item(s), ` +
+    `${upcomingEvents.length} event(s) coming up.`;
+
+  const deepseek = getDeepSeekClient();
+  if (deepseek) {
+    try {
+      const meetingLines = meetings
+        .map((m: any) => `  • ${m.title}${m.summary ? ` — ${m.summary.slice(0, 160)}` : ''}`)
+        .join('\n');
+      const actionLines = openActionItems.slice(0, 10).map((a: string) => `  • ${a}`).join('\n');
+      const upcomingLines = upcomingEvents
+        .map((e: any) => `  • ${e.title} (${new Date(e.startTime).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })})`)
+        .join('\n');
+
+      const aiRes = await deepseek.chat.completions.create({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: `You are Aida, a smart work assistant. Write a concise weekly recap for ${user.full_name || user.username}.
+Role: ${user.org_role || user.role}. Department: ${user.department || 'general'}.
+Plain text, no markdown headers. Lead with one reflective sentence on the week, then short bullets covering accomplishments, still-open action items, and what's ahead next week.`,
+          },
+          {
+            role: 'user',
+            content: `Meetings this week:\n${meetingLines || '  (none)'}\n\nOpen action items:\n${actionLines || '  (none)'}\n\nNext week:\n${upcomingLines || '  (none)'}`,
+          },
+        ],
+        temperature: 0.5,
+        max_tokens: 400,
+      });
+      brief = aiRes.choices?.[0]?.message?.content?.trim() || brief;
+    } catch (err) {
+      console.error('[WeeklyDigest] DeepSeek brief generation failed:', err);
+    }
+  }
+
+  return brief;
+};
+
 // ─── GET /api/v1/brain/digest ─────────────────────────────────────────────────
 
 export const getDailyDigest = async (req: Request, res: Response): Promise<any> => {

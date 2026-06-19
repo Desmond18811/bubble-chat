@@ -20,6 +20,7 @@ import {
   createOrgDoc,
   updateOrgDoc,
   deleteOrgDoc,
+  requireAidaKey,
 } from '../controllers/aidaController';
 import passport from 'passport';
 
@@ -28,15 +29,15 @@ const requireAuth = passport.authenticate('jwt', { session: false });
 
 // ── Aida as Chat Contact ─────────────────────────────────────────────────────
 router.get('/conversation', requireAuth, getAidaConversation);
-router.post('/chat-message', requireAuth, chatWithAidaInConversation);
-router.get('/conversation-summary/:id', requireAuth, summarizeConversation);
+router.post('/chat-message', requireAuth, requireAidaKey, chatWithAidaInConversation);
+router.get('/conversation-summary/:id', requireAuth, requireAidaKey, summarizeConversation);
 router.get('/conversation-context/:conversationId', requireAuth, getConversationContext);
 
 // ── Core conversational endpoints (AidaPage) ─────────────────────────────────
-router.post('/chat', requireAuth, chatWithAida);
-router.post('/writing-suggestions', requireAuth, getAidaWritingSuggestions);
-router.get('/daily-briefing', requireAuth, getDailyBriefing);
-router.get('/financial-advice', requireAuth, getFinancialAdvice);
+router.post('/chat', requireAuth, requireAidaKey, chatWithAida);
+router.post('/writing-suggestions', requireAuth, requireAidaKey, getAidaWritingSuggestions);
+router.get('/daily-briefing', requireAuth, requireAidaKey, getDailyBriefing);
+router.get('/financial-advice', requireAuth, requireAidaKey, getFinancialAdvice);
 
 // ── Agentic action endpoints ──────────────────────────────────────────────────
 router.post('/extract-action-items', requireAuth, extractActionItems);

@@ -182,6 +182,23 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       convo.users.forEach((u: any) => {
         io.to(u.toString()).emit('new_message', formatted);
       });
+
+      // Live unread badge: recompute each recipient's unread count for this chat
+      // and push it to their personal room. Skip system messages (they don't
+      // bump latestMessage above either).
+      if (!isSystem) {
+        const recipients = convo.users.filter((u: any) => String(u) !== String(req.user._id));
+        await Promise.all(
+          recipients.map(async (u: any) => {
+            const unreadCount = await Message.countDocuments({
+              chat: chatId,
+              readBy: { $ne: u },
+              deletedFor: { $ne: u },
+            });
+            io.to(u.toString()).emit('unread_count_updated', { chatId, unreadCount });
+          })
+        );
+      }
     } catch (socketErr) {
       console.error('Socket emit new_message failed:', socketErr);
     }
@@ -338,6 +355,8 @@ export const uploadMedia = async (req: AuthRequest, res: Response): Promise<void
  * Edit an existing message
  * PUT /api/v1/message/:messageId
  */
+const EDIT_WINDOW_MS = 4 * 60 * 1000;
+
 export const editMessage = async (req: AuthRequest, res: Response): Promise<void> => {
   const { content } = req.body;
   const { messageId } = req.params;
@@ -351,6 +370,12 @@ export const editMessage = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    const createdAt = (msg as any).createdAt ? new Date((msg as any).createdAt).getTime() : Date.now();
+    if (Date.now() - createdAt > EDIT_WINDOW_MS) {
+      res.status(403).json({ message: 'Edit window expired', code: 'EDIT_WINDOW_EXPIRED' });
+      return;
+    }
+
     const updated = await Message.findByIdAndUpdate(
       messageId,
       {
@@ -360,7 +385,21 @@ export const editMessage = async (req: AuthRequest, res: Response): Promise<void
       { returnDocument: 'after' }
     ).populate('sender', 'full_name username avatar');
 
-    res.status(200).json(await formatMessage(updated));
+    const formatted = await formatMessage(updated);
+    try {
+      const io = req.io || getIO();
+      io.to(String((updated as any).chat)).emit('message_edited', formatted);
+      const convo = await Conversation.findById((updated as any).chat);
+      if (convo) {
+        convo.users.forEach((u: any) => {
+          io.to(u.toString()).emit('message_edited', formatted);
+        });
+      }
+    } catch (socketErr) {
+      console.error('Socket emit message_edited failed:', socketErr);
+    }
+
+    res.status(200).json(formatted);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

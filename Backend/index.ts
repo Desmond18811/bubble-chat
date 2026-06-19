@@ -4,6 +4,9 @@ dotenv.config();
 
 console.log(`[Startup] DeepSeek API Key loaded status: ${process.env.DEEPSEEK_API_KEY ? 'YES (Length: ' + process.env.DEEPSEEK_API_KEY.length + ')' : 'NO'}`);
 
+import { assertCriticalEnv } from './utils/envCheck';
+assertCriticalEnv();
+
 import express, { Request, Response } from 'express';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
@@ -15,7 +18,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { initSocket, getIO } from './utils/socket';
-import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler, initDailyDigestScheduler } from './utils/scheduler';
+import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler, initDailyDigestScheduler, initWeeklyDigestScheduler } from './utils/scheduler';
 import { initBrainEventListener } from './utils/brainEventListener';
 import { processQueue } from './utils/queue';
 import { Conversation } from './models/conversations';
@@ -352,6 +355,7 @@ mongoose.connect(mongoURI, { family: 4 })
     initTranscriptProcessor();
     initTaskReminderScheduler();
     initDailyDigestScheduler();
+    initWeeklyDigestScheduler();
     initBrainEventListener();
 
     const systemUser = await import('./models/users').then(m => m.User.findOne({ is_bot: true }));

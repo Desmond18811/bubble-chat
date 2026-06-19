@@ -186,7 +186,7 @@ export default function Login() {
         <Animated.View style={[styles.inner, { opacity: fadeAnim }]}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/login')} style={styles.backBtn}>
               <ArrowLeft size={18} color={INK_DARK} />
               <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>

@@ -129,7 +129,7 @@ export default function VerifyOTP() {
     >
       <View style={styles.inner}>
         {/* Back */}
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/login')} style={styles.backBtn}>
           <ArrowLeft size={20} color="#6b7280" />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>

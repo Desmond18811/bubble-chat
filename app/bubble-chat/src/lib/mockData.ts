@@ -15,6 +15,8 @@ export interface Message {
   message_type?: string;
   is_announcement?: boolean;
   isSystem?: boolean;
+  mediaUrl?: string | null;
+  media_url?: string | null;
 }
 
 export interface Chat {

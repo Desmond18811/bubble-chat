@@ -630,3 +630,20 @@ export const getBackup = async (req: AuthRequest, res: Response): Promise<void> 
     res.status(500).json({ message: 'Failed to retrieve backup: ' + err.message });
   }
 };
+
+export const getAllAvatars = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  try {
+    const images = await UserImage.find({}).select('userId imageUrl base64Data mimetype');
+    res.status(200).json({
+      message: 'Avatars fetched successfully.',
+      data: images,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to fetch avatars: ' + err.message });
+  }
+};

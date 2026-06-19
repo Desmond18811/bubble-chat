@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch,
+  TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch, Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  ChevronLeft, Phone, Video, Search, MoreVertical,
+  ChevronLeft, ChevronRight, Forward, Phone, Video, Search, MoreVertical,
   Smile, Paperclip, Mic, Send, X, Mail, Briefcase,
   Camera, FileText, Image as ImageIcon,
   Info, Sparkles, BellOff, EyeOff, Archive, Trash2,
@@ -56,6 +56,14 @@ const AVATARS = [
   "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop",
 ];
 
+const EMOJI_CATEGORIES = [
+  { title: 'Smileys', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🫣', '🤭', '🤫', '🤥', '😶', '😶‍🌫️', '😐', '😑', '😬', '🫨', '🫠', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '😵‍💫', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕'] },
+  { title: 'Gestures', emojis: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🫰', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅', '👄', '💋', '🩸'] },
+  { title: 'Hearts & Expressions', emojis: ['❤️', '🩷', '🧡', '💛', '💚', '💙', '🩵', '💜', '🖤', '🩶', '🤍', '🤎', '💔', '❤️‍🔥', '❤️‍🩹', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🗣️', '👤', '👥', '🫂'] },
+  { title: 'Activities & Symbols', emojis: ['🔥', '✨', '🌟', '⭐', '🌈', '⚡', '💥', '❄️', '☀️', '🎈', '🎉', '🎊', '🎁', '🎂', '🎄', '🎆', '🎇', '🧨', '🧿', '🔮', '🎮', '🕹️', '🎲', '🧩', '🎯', '🎳', '🏆', '🥇', '🥈', '🥉', '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🛹', '🛼', '🚴', '🏃', '🚶', '🤫'] },
+  { title: 'Food & Drinks', emojis: ['🍎', '🍌', '🍇', '🍓', '🍉', '🍒', '🍑', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌽', '🥕', '🥔', '🍠', '🥐', '🍞', '🥖', '🥨', '🥯', '🥞', '🧇', '🧀', '🍖', '🍗', '🥩', '🥓', '🍔', '🍟', '🍕', '🌭', '🥪', '🌮', '🌯', '🍳', '🍲', '🍿', '🍱', '🍣', '🍤', '🍙', '🍘', '🍨', '🍧', '🍩', '🍪', '🎂', '🍰', '🧁', '🥧', '🍫', '🍬', '🍭', '🍯', '🍼', '🥛', '☕', '🍵', '🧉', '🥤', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🍾'] }
+];
+
 export default function ChatScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -75,6 +83,15 @@ export default function ChatScreen() {
   const [isPulsing, setIsPulsing] = useState(true);
   const [ownUser, setOwnUser] = useState<any>(null);
   const isPeerOnline = useIsOnline(chat?.otherUserId, !!chat?.isOnline);
+
+  // New States for Lightbox, Forwarding, and Emoji selector
+  const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
+  const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null);
+  const [isForwardLoading, setIsForwardLoading] = useState<string | null>(null);
+  const [recentChats, setRecentChats] = useState<any[]>([]);
+  const [activeEmojiCategoryIdx, setActiveEmojiCategoryIdx] = useState<number>(0);
+  const [forwardedChatIds, setForwardedChatIds] = useState<string[]>([]);
+  const sendingRef = useRef(false);
 
   // User details for own-typing socket filters
   const currentUserIdRef = useRef<string | null>(null);
@@ -109,6 +126,22 @@ export default function ChatScreen() {
       }
     });
   }, []);
+
+  // Load recent chats for forwarding
+  useEffect(() => {
+    async function loadRecentChats() {
+      try {
+        const chats = await chatCache.getCachedChats();
+        setRecentChats(chats);
+      } catch (err) {
+        console.warn("Failed to load recent chats for forwarding:", err);
+      }
+    }
+    if (forwardingMessage) {
+      loadRecentChats();
+      setForwardedChatIds([]);
+    }
+  }, [forwardingMessage]);
 
   useEffect(() => {
     chatRef.current = chat;
@@ -282,6 +315,7 @@ export default function ChatScreen() {
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
+    if (!id) return;
 
     const onTypingStart = (data: { fromUserId: string; chatId: string; fromName?: string; fromUsername?: string }) => {
       if (currentUserIdRef.current && String(data.fromUserId) === String(currentUserIdRef.current)) return;
@@ -358,6 +392,21 @@ export default function ChatScreen() {
     };
     socket.on('message_deleted', onMessageDeleted);
 
+    // Real-time edits from the other side. Payload is the formatted message from the backend.
+    const onMessageEdited = (data: any) => {
+      if (!data) return;
+      const editedId = String(data.id || data._id || '');
+      const editedChatId = String(data.chat || data.chatId || '');
+      if (!editedId) return;
+      if (editedChatId && editedChatId !== String(id)) return;
+      setMessages(prev => prev.map((m: any) =>
+        String(m.id) === editedId
+          ? { ...m, text: data.content ?? data.text ?? m.text, isEdited: true }
+          : m
+      ));
+    };
+    socket.on('message_edited', onMessageEdited);
+
     if (socket.connected) {
       onConnect();
     }
@@ -370,6 +419,7 @@ export default function ChatScreen() {
       socket.off('new_message', onNewMessage);
       socket.off('receive_message', onNewMessage);
       socket.off('message_deleted', onMessageDeleted);
+      socket.off('message_edited', onMessageEdited);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (chatRef.current) {
         socket.emit('typing_stop', { toUserId: chatRef.current.otherUserId, chatId: chatRef.current.id });
@@ -383,6 +433,7 @@ export default function ChatScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMuted, setIsMuted] = useState(false);
+  const [isChatPinned, setIsChatPinned] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
 
   // Message context & long-press actions
@@ -411,6 +462,7 @@ export default function ChatScreen() {
     if (foundChat) {
       setChat(foundChat);
       setIsMuted(!!foundChat.isMuted);
+      setIsChatPinned(!!foundChat.isPinned);
       if (String(foundChat.id) !== String(id)) {
         router.replace(`/chat/${foundChat.id}`);
         return;
@@ -433,6 +485,7 @@ export default function ChatScreen() {
       if (foundChat) {
         setChat(foundChat);
         setIsMuted(!!foundChat.isMuted);
+        setIsChatPinned(!!foundChat.isPinned);
         if (String(foundChat.id) !== String(id)) {
           router.replace(`/chat/${foundChat.id}`);
           return;
@@ -507,6 +560,8 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     let text = messageText.trim();
 
     const socket = getSocket();
@@ -518,11 +573,20 @@ export default function ChatScreen() {
     try {
       if (editingMessageId) {
         if (!text) return;
-        await updateMessage(editingMessageId, text);
-        setEditingMessageId(null);
-        setMessageText('');
-        showToast("Message edited");
-        await syncChatAndMessages();
+        try {
+          await updateMessage(editingMessageId, text);
+          setEditingMessageId(null);
+          setMessageText('');
+          showToast("Message edited");
+          await syncChatAndMessages();
+        } catch (editErr: any) {
+          const msg = String(editErr?.message || editErr || '');
+          if (msg.includes('Edit window expired') || msg.includes('EDIT_WINDOW_EXPIRED')) {
+            showToast("Edit window expired (4 min)");
+          } else {
+            showToast("Edit failed");
+          }
+        }
         return;
       }
 
@@ -533,37 +597,53 @@ export default function ChatScreen() {
           type: selectedFile.type === 'image' ? 'image/jpeg' : selectedFile.type === 'video' ? 'video/mp4' : 'application/pdf'
         } as any;
         await sendMediaMessage(chat.id, fileObj, { content: text });
+        setMessageText('');
+        setSelectedFile(null);
+        setIsAttachmentOpen(false);
+        setIsEmojiOpen(false);
+        await syncChatAndMessages();
       } else {
         if (!text) return;
+        // ── Optimistic send: bubble appears immediately, then resolves to ✓ or marks as failed.
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const tempMsg = {
+          id: tempId,
+          text,
+          sender: 'me',
+          senderName: 'Me',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: new Date().toISOString(),
+          reactions: [],
+          isPinned: false,
+          isRead: false,
+          status: 'sending',
+        } as any;
+        setMessages(prev => [...prev, tempMsg]);
+        setMessageText('');
+        setIsAttachmentOpen(false);
+        setIsEmojiOpen(false);
+
         try {
           await sendTextMessage(chat.id, text);
+          // Mark as sent; sync will reconcile the server id shortly.
+          setMessages(prev => prev.map((m: any) =>
+            m.id === tempId ? { ...m, status: 'sent' } : m
+          ));
+          await syncChatAndMessages();
         } catch (sendErr) {
           console.warn("API send failed, queuing offline:", sendErr);
-          const tempId = await chatCache.addToOfflineQueue(chat.id, text);
-          const tempMsg = {
-            id: tempId,
-            text: text,
-            sender: 'me',
-            senderName: 'Me',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            timestamp: new Date().toISOString(),
-            reactions: [],
-            isPinned: false,
-            isRead: false,
-            status: 'queued',
-          } as any;
-          setMessages(prev => [...prev, tempMsg]);
-          await chatCache.saveMessageLocally(chat.id, tempMsg);
+          // Replace the temp bubble's id with the queue id so retry can reference it.
+          const queueId = await chatCache.addToOfflineQueue(chat.id, text);
+          setMessages(prev => prev.map((m: any) =>
+            m.id === tempId ? { ...m, id: queueId, status: 'queued' } : m
+          ));
+          await chatCache.saveMessageLocally(chat.id, { ...tempMsg, id: queueId, status: 'queued' });
         }
       }
-
-      setMessageText('');
-      setSelectedFile(null);
-      setIsAttachmentOpen(false);
-      setIsEmojiOpen(false);
-      await syncChatAndMessages();
     } catch (err: any) {
       Alert.alert("Error", err.message || "Failed to send message.");
+    } finally {
+      sendingRef.current = false;
     }
   };
 
@@ -589,6 +669,14 @@ export default function ChatScreen() {
     if (!searchQuery.trim()) return true;
     return msg.text.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const imageMessages = messages.filter(msg =>
+    msg.message_type === 'image' &&
+    (msg.mediaUrl || msg.media_url) &&
+    !msg.isSystem &&
+    msg.sender !== 'system' &&
+    !(chat?.isGroupChat && msg.senderIsBot)
+  );
 
   const handleReactMessage = async (messageId: string, emoji: string) => {
     try {
@@ -624,14 +712,19 @@ export default function ChatScreen() {
 
   const handleDeleteForEveryone = async (messageId: string) => {
     setActiveContextMessage(null);
-    setMessages(prev => prev.filter(m => m.id !== messageId));
+    // Mark as deleting (greyed out) without removing — only drop on success.
+    setMessages(prev => prev.map((m: any) =>
+      m.id === messageId ? { ...m, status: 'deleting' } : m
+    ));
     try {
       await deleteMessageForEveryone(messageId);
+      setMessages(prev => prev.filter(m => m.id !== messageId));
       showToast("Deleted for everyone");
-      await syncChatAndMessages();
     } catch (err) {
+      setMessages(prev => prev.map((m: any) =>
+        m.id === messageId ? { ...m, status: undefined } : m
+      ));
       showToast("Delete failed");
-      await syncChatAndMessages();
     }
   };
 
@@ -645,6 +738,39 @@ export default function ChatScreen() {
     setSelectedMessageIds(prev =>
       prev.includes(msgId) ? prev.filter(id => id !== msgId) : [...prev, msgId]
     );
+  };
+
+  const handleForwardMessage = async (targetChatId: string) => {
+    if (!forwardingMessage) return;
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    setIsForwardLoading(targetChatId);
+    try {
+      const isMedia = forwardingMessage.message_type && forwardingMessage.message_type !== 'text';
+      if (isMedia && (forwardingMessage.mediaUrl || forwardingMessage.media_url)) {
+        const secureUrl = getSecureMediaUrl(forwardingMessage.mediaUrl || forwardingMessage.media_url);
+        const fileName = forwardingMessage.text || 'forwarded_file';
+        const fileObj = {
+          uri: secureUrl,
+          name: fileName,
+          type: forwardingMessage.message_type === 'image'
+            ? 'image/jpeg'
+            : forwardingMessage.message_type === 'video'
+              ? 'video/mp4'
+              : 'application/pdf',
+        } as any;
+        await sendMediaMessage(targetChatId, fileObj, { content: forwardingMessage.text || '' });
+      } else {
+        await sendTextMessage(targetChatId, forwardingMessage.text);
+      }
+      showToast("Message forwarded");
+      setForwardedChatIds(prev => [...prev, targetChatId]);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to forward message.");
+    } finally {
+      setIsForwardLoading(null);
+      sendingRef.current = false;
+    }
   };
 
   const renderedItems: Array<{ type: 'divider'; id: string; text: string } | { type: 'message'; id: string; data: Message }> = [];
@@ -859,12 +985,35 @@ export default function ChatScreen() {
           />
           <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.05)' }} />
           <DropdownItem
+            icon={<Pin size={16} color={INK_SOFT} />}
+            label={isChatPinned ? "Unpin Chat" : "Pin Chat"}
+            onPress={async () => {
+              setIsMenuOpen(false);
+              const next = !isChatPinned;
+              setIsChatPinned(next);
+              try {
+                await toggleChatPin(chat.id);
+                showToast(next ? "Chat pinned" : "Chat unpinned");
+              } catch (err) {
+                setIsChatPinned(!next);
+                showToast("Failed to update pin");
+              }
+            }}
+          />
+          <DropdownItem
             icon={<BellOff size={16} color={INK_SOFT} />}
             label={isMuted ? "Unmute" : "Mute"}
-            onPress={() => {
+            onPress={async () => {
               setIsMenuOpen(false);
-              setIsMuted(prev => !prev);
-              showToast(isMuted ? "Chat unmuted" : "Chat muted");
+              const next = !isMuted;
+              setIsMuted(next);
+              try {
+                await muteChat(chat.id);
+                showToast(next ? "Chat muted" : "Chat unmuted");
+              } catch (err) {
+                setIsMuted(!next);
+                showToast("Failed to update mute");
+              }
             }}
           />
           <DropdownItem
@@ -998,6 +1147,7 @@ export default function ChatScreen() {
                     <View style={{ marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
                       <Avatar
                         url={chat.avatar}
+                        userId={!chat.isGroupChat ? chat.otherUserId : undefined}
                         name={chat.isGroupChat && msg.senderName ? msg.senderName : chat.name}
                         size={28}
                         isGroup={chat.isGroupChat ? false : !!chat.organization}
@@ -1007,10 +1157,17 @@ export default function ChatScreen() {
 
                   <View style={{ maxWidth: '70%', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                     <TouchableOpacity
-                      activeOpacity={isSelectionMode ? 0.75 : 1}
+                      activeOpacity={isSelectionMode ? 0.75 : 0.9}
                       onPress={() => {
                         if (isSelectionMode) {
                           handleToggleMessageSelect(msg.id);
+                        } else if (msg.message_type === 'image' && (msg.mediaUrl || msg.media_url)) {
+                          const idx = imageMessages.findIndex(imgMsg => imgMsg.id === msg.id);
+                          if (idx !== -1) {
+                            setLightboxImageIndex(idx);
+                          }
+                        } else {
+                          setActiveContextMessage(msg);
                         }
                       }}
                       onLongPress={() => {
@@ -1141,6 +1298,7 @@ export default function ChatScreen() {
                     <View style={{ marginLeft: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
                       <Avatar
                         url={ownUser?.avatar || null}
+                        userId={ownUser?.id || ownUser?._id}
                         name={ownUser?.name || 'Me'}
                         size={28}
                         isGroup={false}
@@ -1346,41 +1504,7 @@ export default function ChatScreen() {
                 </View>
               )}
 
-              {/* ── Emoji reactions quick-select ── */}
-              {isEmojiOpen && (
-                <View style={{
-                  position: 'absolute',
-                  bottom: 70,
-                  right: 16,
-                  backgroundColor: '#ffffff',
-                  borderRadius: 20,
-                  paddingVertical: 10,
-                  paddingHorizontal: 14,
-                  borderWidth: 1,
-                  borderColor: 'rgba(108,92,231,0.08)',
-                  shadowColor: '#6c5ce7',
-                  shadowOpacity: 0.12,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 8,
-                  zIndex: 100,
-                  flexDirection: 'row',
-                  gap: 8,
-                }}>
-                  {['👍', '❤️', '😂', '😮', '😢', '🔥', '👎', '🎉'].map((emoji) => (
-                    <TouchableOpacity
-                      key={emoji}
-                      onPress={() => {
-                        setMessageText(prev => prev + emoji);
-                        setIsEmojiOpen(false);
-                      }}
-                      style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Text style={{ fontSize: 20 }}>{emoji}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+
 
               {/* ── Selected Attachment Preview Card ── */}
               {selectedFile && (
@@ -1500,6 +1624,8 @@ export default function ChatScreen() {
                     {/* Send voice message button */}
                     <TouchableOpacity
                       onPress={async () => {
+                        if (sendingRef.current) return;
+                        sendingRef.current = true;
                         const durationSecs = recordingSeconds;
                         setIsRecording(false);
                         try {
@@ -1519,6 +1645,8 @@ export default function ChatScreen() {
                           await syncChatAndMessages();
                         } catch (err: any) {
                           Alert.alert("Error", err.message || "Failed to send voice memo.");
+                        } finally {
+                          sendingRef.current = false;
                         }
                       }}
                       style={{
@@ -1578,13 +1706,19 @@ export default function ChatScreen() {
                     multiline
                     value={messageText}
                     onChangeText={handleTextChange}
+                    onFocus={() => setIsEmojiOpen(false)}
                   />
 
                   {/* Smile Emoji button inside the capsule */}
                   <TouchableOpacity
                     onPress={() => {
-                      setIsEmojiOpen(prev => !prev);
-                      setIsAttachmentOpen(false);
+                      if (!isEmojiOpen) {
+                        Keyboard.dismiss();
+                        setIsEmojiOpen(true);
+                        setIsAttachmentOpen(false);
+                      } else {
+                        setIsEmojiOpen(false);
+                      }
                     }}
                     style={{
                       width: 38,
@@ -1627,6 +1761,70 @@ export default function ChatScreen() {
                 </View>
               )}
             </View>
+
+            {isEmojiOpen && (
+              <View style={{
+                height: 250,
+                backgroundColor: '#ffffff',
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(0,0,0,0.05)',
+                paddingTop: 8,
+              }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 8, gap: 6 }}
+                  style={{ flexGrow: 0 }}
+                >
+                  {EMOJI_CATEGORIES.map((cat, idx) => (
+                    <TouchableOpacity
+                      key={cat.title}
+                      onPress={() => setActiveEmojiCategoryIdx(idx)}
+                      style={{
+                        backgroundColor: activeEmojiCategoryIdx === idx ? PURPLE : 'rgba(108,92,231,0.06)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                      }}
+                    >
+                      <Text style={{
+                        fontSize: 12,
+                        fontFamily: 'Poppins_600SemiBold',
+                        color: activeEmojiCategoryIdx === idx ? '#ffffff' : PURPLE,
+                      }}>
+                        {cat.title}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <ScrollView contentContainerStyle={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  paddingHorizontal: 12,
+                  paddingBottom: 20,
+                  gap: 12,
+                  justifyContent: 'flex-start',
+                }}>
+                  {EMOJI_CATEGORIES[activeEmojiCategoryIdx].emojis.map((emoji) => (
+                    <TouchableOpacity
+                      key={emoji}
+                      onPress={() => {
+                        setMessageText(prev => prev + emoji);
+                      }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: 26 }}>{emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
         )}
       </KeyboardAvoidingView>
@@ -1704,6 +1902,7 @@ export default function ChatScreen() {
                 icon={<Copy size={16} color={INK_SOFT} />}
                 label="Copy Text"
                 onPress={() => {
+                  Clipboard.setString(activeContextMessage.text || '');
                   showToast("Copied to clipboard!");
                   setActiveContextMessage(null);
                 }}
@@ -1714,13 +1913,18 @@ export default function ChatScreen() {
                 onPress={() => handleTogglePinMessage(activeContextMessage.id)}
               />
 
-              {activeContextMessage.sender === 'me' && (
-                <ContextMenuItem
-                  icon={<Edit2 size={16} color={INK_SOFT} />}
-                  label="Edit Message"
-                  onPress={() => handleEditMessage(activeContextMessage)}
-                />
-              )}
+              {activeContextMessage.sender === 'me' && (() => {
+                const ts = new Date((activeContextMessage as any).timestamp || 0).getTime();
+                const withinWindow = ts > 0 && Date.now() - ts <= 4 * 60 * 1000;
+                if (!withinWindow) return null;
+                return (
+                  <ContextMenuItem
+                    icon={<Edit2 size={16} color={INK_SOFT} />}
+                    label="Edit Message"
+                    onPress={() => handleEditMessage(activeContextMessage)}
+                  />
+                );
+              })()}
 
               <ContextMenuItem
                 icon={<Check size={16} color={INK_SOFT} />}
@@ -1728,6 +1932,14 @@ export default function ChatScreen() {
                 onPress={() => {
                   setIsSelectionMode(true);
                   setSelectedMessageIds([activeContextMessage.id]);
+                  setActiveContextMessage(null);
+                }}
+              />
+              <ContextMenuItem
+                icon={<Forward size={16} color={INK_SOFT} />}
+                label="Forward Message"
+                onPress={() => {
+                  setForwardingMessage(activeContextMessage);
                   setActiveContextMessage(null);
                 }}
               />
@@ -2190,6 +2402,206 @@ export default function ChatScreen() {
             </View>
           </ScrollView>
         </SafeAreaView>
+      </Modal>
+
+      {/* ── Image Lightbox Modal ── */}
+      <Modal visible={lightboxImageIndex !== null} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+          {/* Header */}
+          <View style={{
+            position: 'absolute',
+            top: Platform.OS === 'ios' ? 50 : 20,
+            left: 0,
+            right: 0,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            zIndex: 10,
+          }}>
+            <View>
+              <Text style={{ color: '#ffffff', fontSize: 14, fontFamily: 'Poppins_600SemiBold' }}>
+                {lightboxImageIndex !== null ? `${lightboxImageIndex + 1} of ${imageMessages.length}` : ''}
+              </Text>
+              {lightboxImageIndex !== null && imageMessages[lightboxImageIndex]?.senderName && (
+                <Text style={{ color: '#a0aec0', fontSize: 12, fontFamily: 'Poppins_400Regular' }}>
+                  Sent by {imageMessages[lightboxImageIndex].senderName}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={() => setLightboxImageIndex(null)}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <X size={20} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Main Image */}
+          {lightboxImageIndex !== null && imageMessages[lightboxImageIndex] && (
+            <View style={{ width: '100%', height: '70%', justifyContent: 'center', alignItems: 'center' }}>
+              <Image
+                source={{ uri: getSecureMediaUrl(imageMessages[lightboxImageIndex].mediaUrl || imageMessages[lightboxImageIndex].media_url) || undefined }}
+                style={{ width: '100%', height: '100%' }}
+                contentFit="contain"
+              />
+              {imageMessages[lightboxImageIndex].text && imageMessages[lightboxImageIndex].text !== (imageMessages[lightboxImageIndex].mediaUrl || imageMessages[lightboxImageIndex].media_url) && (
+                <View style={{
+                  position: 'absolute',
+                  bottom: -60,
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  maxWidth: '85%',
+                }}>
+                  <Text style={{ color: '#ffffff', fontSize: 14, textAlign: 'center', fontFamily: 'Poppins_400Regular' }}>
+                    {imageMessages[lightboxImageIndex].text}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Left / Right Nav Buttons */}
+          {lightboxImageIndex !== null && imageMessages.length > 1 && (
+            <View style={{
+              position: 'absolute',
+              bottom: 40,
+              flexDirection: 'row',
+              gap: 40,
+              alignItems: 'center',
+            }}>
+              <TouchableOpacity
+                disabled={lightboxImageIndex === 0}
+                onPress={() => setLightboxImageIndex(prev => prev !== null && prev > 0 ? prev - 1 : prev)}
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: lightboxImageIndex === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ChevronLeft size={24} color={lightboxImageIndex === 0 ? '#4a5568' : '#ffffff'} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={lightboxImageIndex === imageMessages.length - 1}
+                onPress={() => setLightboxImageIndex(prev => prev !== null && prev < imageMessages.length - 1 ? prev + 1 : prev)}
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  backgroundColor: lightboxImageIndex === imageMessages.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ChevronRight size={24} color={lightboxImageIndex === imageMessages.length - 1 ? '#4a5568' : '#ffffff'} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
+
+      {/* ── Forward Message Modal ── */}
+      <Modal visible={forwardingMessage !== null} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{
+            backgroundColor: '#ffffff',
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            padding: 24,
+            height: '65%',
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <View>
+                <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Forward Message</Text>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 2 }}>
+                  Select a contact or group chat to forward this message
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setForwardingMessage(null)} style={{ padding: 4 }}>
+                <X size={20} color={PURPLE} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+              {recentChats.length === 0 ? (
+                <Text style={{ fontSize: 13, color: INK_SOFT, fontStyle: 'italic', textAlign: 'center', marginTop: 40 }}>
+                  No recent chats found.
+                </Text>
+              ) : (
+                recentChats.map((chatItem) => {
+                  const isSent = forwardedChatIds.includes(String(chatItem.id));
+                  const isLoading = isForwardLoading === String(chatItem.id);
+                  return (
+                    <View key={chatItem.id} style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: 12,
+                      borderBottomWidth: 1,
+                      borderBottomColor: 'rgba(0,0,0,0.04)',
+                    }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 10 }}>
+                        <Avatar
+                          url={chatItem.avatar}
+                          userId={!chatItem.isGroupChat ? chatItem.otherUserId : undefined}
+                          name={chatItem.name}
+                          size={40}
+                          isGroup={!!(chatItem.isGroupChat || chatItem.organization)}
+                        />
+                        <View style={{ marginLeft: 12, flex: 1 }}>
+                          <Text numberOfLines={1} style={{ fontSize: 14, fontFamily: 'Poppins_600SemiBold', color: INK }}>
+                            {chatItem.name}
+                          </Text>
+                          <Text numberOfLines={1} style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>
+                            {chatItem.isGroupChat ? 'Group Chat' : 'Direct Chat'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <TouchableOpacity
+                        disabled={isSent || isLoading}
+                        onPress={() => handleForwardMessage(String(chatItem.id))}
+                        style={{
+                          backgroundColor: isSent ? '#f1f2f6' : PURPLE,
+                          paddingHorizontal: 16,
+                          paddingVertical: 8,
+                          borderRadius: 12,
+                          minWidth: 80,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {isLoading ? (
+                          <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Sending...</Text>
+                        ) : isSent ? (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Check size={12} color={INK_SOFT} />
+                            <Text style={{ color: INK_SOFT, fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Sent</Text>
+                          </View>
+                        ) : (
+                          <Text style={{ color: '#ffffff', fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Send</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

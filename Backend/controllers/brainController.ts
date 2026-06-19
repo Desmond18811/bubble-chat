@@ -122,6 +122,39 @@ const parseAIConversation = (rawContent: string): string => {
 
 
 /**
+ * Extract plain text from an uploaded document. Handles PDF and DOCX/DOC via
+ * binary parsers; everything else is read as UTF-8 (txt, md, csv, json, etc.).
+ */
+const extractFileText = async (filePath: string, originalName: string, mimetype: string): Promise<string> => {
+  const lower = originalName.toLowerCase();
+  const isPdf = mimetype === 'application/pdf' || lower.endsWith('.pdf');
+  const isDocx =
+    mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    lower.endsWith('.docx') ||
+    lower.endsWith('.doc');
+
+  if (isPdf) {
+    const { PDFParse } = await import('pdf-parse');
+    const buffer = fs.readFileSync(filePath);
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    try {
+      const result = await parser.getText();
+      return result.text || '';
+    } finally {
+      await parser.destroy();
+    }
+  }
+
+  if (isDocx) {
+    const mammoth = await import('mammoth');
+    const result = await mammoth.extractRawText({ path: filePath });
+    return result.value || '';
+  }
+
+  return fs.readFileSync(filePath, 'utf8');
+};
+
+/**
  * POST /api/brain/ingest
  * Universal ingestion route (Supports async processing, returns Job ID).
  */
@@ -186,7 +219,7 @@ export const ingest = async (req: Request, res: Response): Promise<any> => {
           if (isAudio) {
             extractedText = await transcribeAudio(file.path);
           } else {
-            extractedText = fs.readFileSync(file.path, 'utf8');
+            extractedText = await extractFileText(file.path, file.originalname, file.mimetype);
           }
 
           // Clean up temp multer file safely
