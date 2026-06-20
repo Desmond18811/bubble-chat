@@ -70,16 +70,18 @@ async function run() {
             email: EMAIL,
             password: hashedPassword,
             uniqueTag,
-            isVerified: false,                  // must verify via OTP
-            onboardingComplete: false,           // must go through onboarding
+            // Pre-verified so the seed user skips OTP entirely and goes
+            // straight to profile setup — we're testing onboarding, not OTP.
+            isVerified: true,
+            onboardingComplete: false,
             signupKind: SIGNUP_KIND,             // 'individual' | 'organization'
-            onboardingStep: 'awaiting_otp',      // entry point of the resumable state machine
+            onboardingStep: 'awaiting_profile',  // resume the wizard from step 1
             // org founders pick admin during register; mark this user now so the
             // setupProfile branch correctly advances to 'awaiting_org' afterwards.
             role: SIGNUP_KIND === 'organization' ? 'admin' : 'employee',
         });
 
-        console.log('🌱 Seeded one user at the start of the resumable signup flow:');
+        console.log('🌱 Seeded one pre-verified user (skips OTP, lands on profile setup):');
         console.log('──────────────────────────────────────────');
         console.log(`   Name:           ${user.full_name}`);
         console.log(`   Email:          ${user.email}`);
@@ -87,13 +89,13 @@ async function run() {
         console.log(`   Signup kind:    ${user.signupKind}`);
         console.log(`   Onboarding step:${user.onboardingStep}    Verified: ${user.isVerified}`);
         console.log('──────────────────────────────────────────');
-        console.log('   Flow on next login attempt:');
-        console.log('     awaiting_otp     → verify OTP (login screen detects and routes)');
-        console.log('     awaiting_profile → profile setup');
+        console.log('   On next login → straight to profile setup.');
         if (SIGNUP_KIND === 'organization') {
-            console.log('     awaiting_org     → create org + seed brain');
+            console.log('   Then: org setup + brain → main app.');
+        } else {
+            console.log('   Then: main app.');
         }
-        console.log('     complete         → main app\n');
+        console.log('');
 
         await mongoose.disconnect();
         console.log('🔌 Disconnected.');
