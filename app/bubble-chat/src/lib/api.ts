@@ -294,7 +294,9 @@ export const getAuthHeaders = () => {
 const handleResponse = async (res: Response) => {
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const error: any = new Error(err.message || `Request failed: ${res.status}`);
+        // Backend controllers inconsistently use `message` or `error` for error
+        // text — read either so the UI never falls back to "Request failed: NNN".
+        const error: any = new Error(err.message || err.error || `Request failed: ${res.status}`);
         error.status = res.status;
         error.code = err.code;
         error.data = err.data;
@@ -2009,6 +2011,42 @@ export const ingestOrgDocument = async (data: { title: string; content: string; 
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+// Brain ingestion from a URL — YouTube transcript or generic web page.
+export const ingestOrgDocumentFromUrl = async (data: { url: string; title?: string; department?: string; accessLevel?: string; tags?: string[] }) => {
+    const res = await fetch(`${BASE_URL}/org/documents/from-url`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+// Brain ingestion from a file (PDF/txt/md). `file` accepts an expo-image-picker /
+// document-picker shape ({ uri, name, mimeType }) — we wrap it in FormData.
+export const ingestOrgDocumentFromFile = async (params: {
+    file: { uri: string; name: string; type: string };
+    title?: string;
+    department?: string;
+    accessLevel?: string;
+    tags?: string[];
+}) => {
+    const form = new FormData();
+    // @ts-ignore — React Native FormData accepts an object with uri/name/type
+    form.append('file', { uri: params.file.uri, name: params.file.name, type: params.file.type });
+    if (params.title) form.append('title', params.title);
+    if (params.department) form.append('department', params.department);
+    if (params.accessLevel) form.append('accessLevel', params.accessLevel);
+    if (params.tags) form.append('tags', JSON.stringify(params.tags));
+
+    const token = tokenCache.accessToken;
+    const res = await fetch(`${BASE_URL}/org/documents/from-file`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form as any,
     });
     return handleResponse(res);
 };

@@ -22,12 +22,172 @@ export interface AuthRequest extends Request {
 }
 
 /**
+ * Idempotently ensure the founder of an organization has an Organization document.
+ * Created on demand when a `signupKind: 'organization'` admin reaches onboarding
+ * without having gone through the legacy register-time org-creation path (e.g. the
+ * seed user, an OAuth signup that picked "organization" later, or any flow that
+ * collects the org name during profile setup instead of at register).
+ *
+ * Returns the org (existing or newly created), or null if the user isn't a founder
+ * or doesn't yet have an organization name to anchor the create on.
+ */
+export const ensureOrganizationForFounder = async (userId: any) => {
+    // 1. Existing org by ownership.
+    let org = await Organization.findOne({ owner: userId });
+    if (org) return org;
+
+    const user = await User.findById(userId);
+    if (!user) return null;
+
+    // 2. Existing org matched by the user's "organization" string field.
+    if (user.organization) {
+        org = await Organization.findOne({ name: user.organization });
+        if (org) return org;
+    }
+
+    // 3. Auto-create only for org founders (signupKind=organization + admin role)
+    // who have provided an org name. Skips individuals and invited employees.
+    const isFounder = user.signupKind === 'organization' && user.role === 'admin' && !!user.organization;
+    if (!isFounder) return null;
+
+    const inviteCode = crypto.randomBytes(16).toString('hex').toUpperCase();
+    org = await Organization.create({
+        name: user.organization,
+        industry: user.org_industry || undefined,
+        size: user.org_size,
+        owner: userId,
+        inviteCode,
+        pineconeNamespace: `org-${userId}`,
+    });
+
+    // Canonical org reference on the user.
+    await User.findByIdAndUpdate(userId, { organizationId: org._id });
+
+    // Default group chat with the Aida bot — same shape as the register flow.
+    try {
+        const existingChat = await Conversation.findOne({
+            organizationId: org._id,
+            isDefaultOrgChat: true,
+        });
+        if (!existingChat) {
+            const bot = await getAidaBotUser();
+            const botId = bot ? bot._id : null;
+            const defaultChat = await Conversation.create({
+                chatName: org.name,
+                isGroupChat: true,
+                users: botId ? [userId, botId] : [userId],
+                groupAdmin: userId,
+                groupIcon: 'black',
+                groupDescription: `Default group chat for ${org.name}`,
+                organizationId: org._id,
+                isDefaultOrgChat: true,
+            });
+            if (botId) {
+                const welcomeContent = `👋 **Welcome to the ${org.name} Workspace on Bubble!**\n\nI am **Aida**, your workspace intelligence assistant. I will automatically index shared resources and meeting transcripts to grow our collective business brain.\n\nAll members who join will automatically be added to this default group chat. Feel free to collaborate, share documents, schedule calls, and ask me anything!`;
+                const initialMsg = await Message.create({
+                    chat: defaultChat._id,
+                    sender: botId,
+                    content: welcomeContent,
+                    message_type: 'text',
+                });
+                defaultChat.latestMessage = (initialMsg as any)._id;
+                await defaultChat.save();
+            }
+        }
+    } catch (chatErr) {
+        // Group chat creation is best-effort — the org itself is the contract.
+        console.error('[ensureOrganizationForFounder] default chat init failed:', chatErr);
+    }
+
+    return org;
+};
+
+/**
+ * Shared core: persist + embed an extracted body of text as an OrgDocument.
+ * Used by ingestDocument, ingestDocumentFromUrl, and ingestDocumentFromFile.
+ */
+const persistOrgDocument = async (params: {
+    userId: any;
+    title: string;
+    content: string;
+    department?: string;
+    accessLevel?: string;
+    tags?: string[];
+    organizationId?: any;
+    source?: { kind: 'text' | 'url' | 'file'; ref?: string };
+}) => {
+    const {
+        userId,
+        title,
+        content,
+        department = 'general',
+        accessLevel = 'public',
+        tags = [],
+        organizationId,
+        source,
+    } = params;
+
+    // Locate the user's org via explicit id, ownership, or org-name fallback.
+    let org = null;
+    if (organizationId) org = await Organization.findById(organizationId);
+    if (!org) org = await Organization.findOne({ owner: userId });
+    if (!org) {
+        const user = await User.findById(userId);
+        if (user && user.organization) org = await Organization.findOne({ name: user.organization });
+    }
+
+    const orgId = org ? org._id : undefined;
+    const namespace = org ? (org.pineconeNamespace || `org-${org._id}`) : undefined;
+
+    const chunks = chunkText(content, 500, 100);
+    const pineconeIds: string[] = [];
+
+    if (hasPinecone() && namespace) {
+        const vectors = [];
+        for (const chunk of chunks) {
+            const embedding = await generateEmbedding(chunk);
+            if (embedding.length > 0) {
+                const id = `org-${crypto.randomUUID()}`;
+                pineconeIds.push(id);
+                vectors.push({
+                    id,
+                    values: embedding,
+                    metadata: {
+                        title,
+                        chunk,
+                        department,
+                        accessLevel,
+                        organizationId: orgId,
+                        sourceKind: source?.kind || 'text',
+                        sourceRef: source?.ref || '',
+                    },
+                });
+            }
+        }
+        if (vectors.length > 0) await upsertVectors(vectors, namespace);
+    }
+
+    const doc = await OrgDocument.create({
+        title,
+        content,
+        department,
+        accessLevel,
+        createdBy: userId,
+        organizationId: orgId,
+        pineconeIds,
+        tags,
+    });
+
+    return { doc, pineconeIds };
+};
+
+/**
  * POST /api/v1/org/documents
  * Ingest a company document: save to MongoDB + chunk → embed → upsert to Pinecone
  */
 export const ingestDocument = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { title, content, department = 'general', accessLevel = 'public', tags = [], organizationId } = req.body;
+        const { title, content, department, accessLevel, tags, organizationId } = req.body;
         const userId = (req.user as any)?._id;
 
         if (!title || !content) {
@@ -35,53 +195,9 @@ export const ingestDocument = async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        // Find organization
-        let org = null;
-        if (organizationId) {
-            org = await Organization.findById(organizationId);
-        }
-        if (!org) {
-            org = await Organization.findOne({ owner: userId });
-        }
-        if (!org) {
-            const user = await User.findById(userId);
-            if (user && user.organization) {
-                org = await Organization.findOne({ name: user.organization });
-            }
-        }
-
-        const orgId = org ? org._id : undefined;
-        const namespace = org ? (org.pineconeNamespace || `org-${org._id}`) : undefined;
-
-        const chunks = chunkText(content, 500, 100);
-        const pineconeIds: string[] = [];
-
-        if (hasPinecone() && namespace) {
-            const vectors = [];
-            for (const chunk of chunks) {
-                const embedding = await generateEmbedding(chunk);
-                if (embedding.length > 0) {
-                    const id = `org-${crypto.randomUUID()}`;
-                    pineconeIds.push(id);
-                    vectors.push({
-                        id,
-                        values: embedding,
-                        metadata: { title, chunk, department, accessLevel, organizationId: orgId },
-                    });
-                }
-            }
-            if (vectors.length > 0) await upsertVectors(vectors, namespace);
-        }
-
-        const doc = await OrgDocument.create({
-            title,
-            content,
-            department,
-            accessLevel,
-            createdBy: userId,
-            organizationId: orgId,
-            pineconeIds,
-            tags,
+        const { doc, pineconeIds } = await persistOrgDocument({
+            userId, title, content, department, accessLevel, tags, organizationId,
+            source: { kind: 'text' },
         });
 
         res.status(201).json({
@@ -93,6 +209,164 @@ export const ingestDocument = async (req: AuthRequest, res: Response): Promise<v
     } catch (error: any) {
         console.error('[OrgController] Ingest error:', error);
         res.status(500).json({ error: 'Failed to ingest document.' });
+    }
+};
+
+// Extract the YouTube video ID from any reasonable URL shape.
+const extractYouTubeId = (url: string): string | null => {
+    const patterns = [
+        /[?&]v=([a-zA-Z0-9_-]{11})/,
+        /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/(?:embed|shorts|live)\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
+    }
+    return null;
+};
+
+/**
+ * POST /api/v1/org/documents/from-url
+ * Ingest a document by URL. YouTube URLs → fetch transcript. Other URLs →
+ * fetch + strip HTML to text. Stored exactly like a manual paste afterwards.
+ */
+export const ingestDocumentFromUrl = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { url, title: titleInput, department, accessLevel, tags, organizationId } = req.body;
+        const userId = (req.user as any)?._id;
+
+        if (!url || typeof url !== 'string') {
+            res.status(400).json({ error: 'url is required' });
+            return;
+        }
+
+        let content = '';
+        let title = titleInput?.trim() || '';
+        let sourceRef = url;
+
+        const videoId = extractYouTubeId(url);
+        if (videoId) {
+            // YouTube path — pull transcript via youtube-transcript.
+            try {
+                const { YoutubeTranscript } = await import('youtube-transcript');
+                const items = await YoutubeTranscript.fetchTranscript(videoId);
+                content = items.map((i: any) => i.text).join(' ').replace(/\s+/g, ' ').trim();
+                if (!title) title = `YouTube transcript — ${videoId}`;
+                sourceRef = `https://youtube.com/watch?v=${videoId}`;
+            } catch (err: any) {
+                res.status(422).json({ error: 'Could not fetch a transcript for that YouTube video. It may be missing captions.' });
+                return;
+            }
+        } else {
+            // Generic web page path — fetch and crudely strip HTML.
+            try {
+                const fetchRes = await fetch(url);
+                if (!fetchRes.ok) {
+                    res.status(422).json({ error: `Could not fetch ${url} (HTTP ${fetchRes.status}).` });
+                    return;
+                }
+                const html = await fetchRes.text();
+                content = html
+                    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (!title) {
+                    const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+                    title = m ? m[1].trim() : url;
+                }
+            } catch (err: any) {
+                res.status(422).json({ error: `Could not fetch content from ${url}.` });
+                return;
+            }
+        }
+
+        if (!content || content.length < 20) {
+            res.status(422).json({ error: 'Extracted content was empty or too short to ingest.' });
+            return;
+        }
+
+        const { doc, pineconeIds } = await persistOrgDocument({
+            userId, title, content, department, accessLevel,
+            tags: Array.isArray(tags) ? tags : ['url-import'],
+            organizationId,
+            source: { kind: 'url', ref: sourceRef },
+        });
+
+        res.status(201).json({
+            message: `Imported from URL. ${pineconeIds.length} chunk(s) embedded.`,
+            document: doc,
+            embeddedChunks: pineconeIds.length,
+            extractedLength: content.length,
+        });
+    } catch (error: any) {
+        console.error('[OrgController] ingestDocumentFromUrl error:', error);
+        res.status(500).json({ error: 'Failed to ingest from URL.' });
+    }
+};
+
+/**
+ * POST /api/v1/org/documents/from-file (multipart 'file' field)
+ * Accepts PDF or text/markdown uploads, extracts text, then ingests.
+ */
+export const ingestDocumentFromFile = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const file = (req as any).file;
+        if (!file) {
+            res.status(400).json({ error: 'No file uploaded (multipart field name must be "file").' });
+            return;
+        }
+
+        const { title: titleInput, department, accessLevel, tags, organizationId } = req.body || {};
+        const userId = (req.user as any)?._id;
+        const filename = file.originalname || 'document';
+        const mime = (file.mimetype || '').toLowerCase();
+
+        let content = '';
+        if (mime === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
+            const pdfParse = (await import('pdf-parse')).default as any;
+            const parsed = await pdfParse(file.buffer);
+            content = (parsed?.text || '').replace(/\s+\n/g, '\n').trim();
+        } else if (mime.startsWith('text/') || /\.(txt|md|markdown|csv)$/i.test(filename)) {
+            content = file.buffer.toString('utf8').trim();
+        } else {
+            res.status(415).json({ error: `Unsupported file type: ${mime || filename}. Use PDF or text files.` });
+            return;
+        }
+
+        if (!content || content.length < 20) {
+            res.status(422).json({ error: 'File contained no extractable text.' });
+            return;
+        }
+
+        const parsedTags = (() => {
+            if (!tags) return ['file-import'];
+            if (Array.isArray(tags)) return tags;
+            try { return JSON.parse(tags); } catch { return [tags]; }
+        })();
+
+        const { doc, pineconeIds } = await persistOrgDocument({
+            userId,
+            title: titleInput?.trim() || filename,
+            content,
+            department,
+            accessLevel,
+            tags: parsedTags,
+            organizationId,
+            source: { kind: 'file', ref: filename },
+        });
+
+        res.status(201).json({
+            message: `Imported from file. ${pineconeIds.length} chunk(s) embedded.`,
+            document: doc,
+            embeddedChunks: pineconeIds.length,
+            extractedLength: content.length,
+        });
+    } catch (error: any) {
+        console.error('[OrgController] ingestDocumentFromFile error:', error);
+        res.status(500).json({ error: 'Failed to ingest file.' });
     }
 };
 
@@ -284,18 +558,13 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    // Find the organization owned by this user
-    let org = await Organization.findOne({ owner: userId });
+    // Find or create the organization for this founder. Self-heals for users who
+    // didn't get an Organization document at register time (seed users, OAuth, etc.).
+    const org = await ensureOrganizationForFounder(userId);
     if (!org) {
-      // Fallback: search for any organization matching the user's organization string
-      const user = await User.findById(userId);
-      if (user && user.organization) {
-        org = await Organization.findOne({ name: user.organization });
-      }
-    }
-
-    if (!org) {
-      res.status(404).json({ error: 'Organization not found. Please create an organization first.' });
+      res.status(404).json({
+        error: 'Organization not found. Make sure you finished organization info in the previous step.',
+      });
       return;
     }
 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/users';
+import { ensureOrganizationForFounder } from './orgController';
 import { UserImage } from '../models/userImage';
 import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
 import { Conversation } from '../models/conversations';
@@ -571,6 +572,17 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     if (!updated) {
       res.status(404).json({ message: 'User not found.' });
       return;
+    }
+
+    // For org founders transitioning to awaiting_org, materialize the Organization
+    // document now so the brain-onboarding step (and anything else) finds it.
+    // Idempotent — no-op if the org already exists.
+    if (isOrgFounder) {
+      try {
+        await ensureOrganizationForFounder(req.user._id);
+      } catch (orgErr) {
+        console.warn('[setupProfile] ensureOrganizationForFounder failed:', orgErr);
+      }
     }
 
     res.status(200).json({

@@ -414,7 +414,12 @@ export const chatCache = {
         return true;
       }
       return false;
-    } catch (err) {
+    } catch (err: any) {
+      // 404 = no backup yet (fresh account). That's expected, not an error.
+      if (err?.status === 404) {
+        console.log('No cloud backup yet for this user — nothing to restore.');
+        return false;
+      }
       console.error('Failed to restore cloud backup:', err);
       return false;
     }

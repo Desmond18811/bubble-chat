@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Text,
   View,
@@ -17,8 +18,13 @@ import {
   Sparkles, Globe, MapPin, Smile, Bookmark, Plus, Copy, Share, Info, Trash2
 } from "lucide-react-native";
 import { authStorage } from "../lib/authStorage";
-import { getMyProfile, setupProfile, onboardOrgBrain, ingestOrgDocument, getOrgInviteCode } from "../lib/api";
+import {
+  getMyProfile, setupProfile, onboardOrgBrain,
+  ingestOrgDocument, ingestOrgDocumentFromUrl, ingestOrgDocumentFromFile,
+  getOrgInviteCode,
+} from "../lib/api";
 import { Clipboard } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 
 const PURPLE = "#6c5ce7";
 const INK = "#1f2030";
@@ -47,6 +53,9 @@ const INDUSTRIES = [
 const ORG_SIZES = [
   "solo", "2-10", "11-50", "51-200", "201-500", "500+"
 ];
+
+// Per-user storage key so multiple test accounts on the same device don't collide.
+const draftKeyFor = (id?: string) => `bubble_profile_setup_draft_v1_${id || "anon"}`;
 
 export default function ProfileSetup() {
   const router = useRouter();
@@ -78,10 +87,22 @@ export default function ProfileSetup() {
   const [docContent, setDocContent] = useState("");
   const [documents, setDocuments] = useState<{ title: string; content: string }[]>([]);
 
+  // Queued files (PDF/TXT/MD) and URLs (YouTube + web pages) to ingest after onboard.
+  const [pendingFiles, setPendingFiles] = useState<{ uri: string; name: string; type: string }[]>([]);
+  const [pendingUrls, setPendingUrls] = useState<{ url: string; title: string }[]>([]);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlTitleInput, setUrlTitleInput] = useState("");
+  const [ingestProgress, setIngestProgress] = useState("");
+
   // Step 4 Details
   const [inviteCode, setInviteCode] = useState("");
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Draft persistence: only start writing AFTER we've hydrated from disk, so the
+  // first render doesn't blow away a saved draft with empty initial state.
+  const hydratedRef = useRef(false);
+  const draftUserKeyRef = useRef<string>("");
 
   useEffect(() => {
     async function loadUser() {
@@ -105,15 +126,74 @@ export default function ProfileSetup() {
           if (u.onboardingStep === "awaiting_org") {
             setStep(2);
           }
+
+          // ── Hydrate any locally-saved draft (form fields the user typed but
+          // never submitted). Draft fields win over server values only when they
+          // contain something. pendingFiles intentionally excluded — file URIs
+          // from DocumentPicker are ephemeral and won't survive an app restart.
+          const userKey = u.id || u._id || u.email || "anon";
+          draftUserKeyRef.current = userKey;
+          try {
+            const raw = await AsyncStorage.getItem(draftKeyFor(userKey));
+            if (raw) {
+              const d = JSON.parse(raw);
+              if (typeof d.fullName === "string" && d.fullName) setFullName(d.fullName);
+              if (typeof d.username === "string" && d.username) setUsername(d.username);
+              if (typeof d.phone === "string" && d.phone) setPhone(d.phone);
+              if (typeof d.bio === "string" && d.bio) setBio(d.bio);
+              if (typeof d.role === "string" && d.role) setRole(d.role);
+              if (typeof d.selectedAvatar === "string" && d.selectedAvatar) setSelectedAvatar(d.selectedAvatar);
+              if (typeof d.orgName === "string" && d.orgName) setOrgName(d.orgName);
+              if (typeof d.orgIndustry === "string" && d.orgIndustry) setOrgIndustry(d.orgIndustry);
+              if (d.orgSize) setOrgSize(d.orgSize);
+              if (typeof d.businessDesc === "string" && d.businessDesc) setBusinessDesc(d.businessDesc);
+              if (typeof d.docTitle === "string") setDocTitle(d.docTitle);
+              if (typeof d.docContent === "string") setDocContent(d.docContent);
+              if (Array.isArray(d.documents)) setDocuments(d.documents);
+              if (Array.isArray(d.pendingUrls)) setPendingUrls(d.pendingUrls);
+              if (typeof d.urlInput === "string") setUrlInput(d.urlInput);
+              if (typeof d.urlTitleInput === "string") setUrlTitleInput(d.urlTitleInput);
+              if (d.step === 2 || d.step === 3) setStep(d.step);
+            }
+          } catch {
+            // Corrupt draft — ignore. Worst case is the user re-types.
+          }
         }
       } catch (err: any) {
         setError("Could not load user profile details.");
       } finally {
         setLoadingProfile(false);
+        hydratedRef.current = true;
       }
     }
     loadUser();
   }, []);
+
+  // Auto-save the draft to AsyncStorage on every meaningful change. Skipped
+  // until hydration completes so we never overwrite a saved draft with empties.
+  useEffect(() => {
+    if (!hydratedRef.current || !draftUserKeyRef.current) return;
+    const draft = {
+      fullName, username, phone, bio, role, selectedAvatar,
+      orgName, orgIndustry, orgSize, businessDesc,
+      docTitle, docContent, documents,
+      pendingUrls, urlInput, urlTitleInput,
+      step,
+    };
+    AsyncStorage.setItem(draftKeyFor(draftUserKeyRef.current), JSON.stringify(draft)).catch(() => {});
+  }, [
+    fullName, username, phone, bio, role, selectedAvatar,
+    orgName, orgIndustry, orgSize, businessDesc,
+    docTitle, docContent, documents,
+    pendingUrls, urlInput, urlTitleInput,
+    step,
+  ]);
+
+  // Wipe the draft once setup truly succeeds, so the next account starts clean.
+  const clearDraft = async () => {
+    if (!draftUserKeyRef.current) return;
+    try { await AsyncStorage.removeItem(draftKeyFor(draftUserKeyRef.current)); } catch {}
+  };
 
   const generateUsername = () => {
     const base = fullName.toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 10) || "bubble";
@@ -161,6 +241,7 @@ export default function ProfileSetup() {
       if (res?.data) {
         await authStorage.updateUser(res.data);
       }
+      await clearDraft();
       setStep(4);
     } catch (err: any) {
       setError(err.message || "Failed to save profile. Please try again.");
@@ -197,6 +278,52 @@ export default function ProfileSetup() {
     setDocuments(prev => prev.filter((_, i) => i !== idx));
   };
 
+  // Pick one or more PDF/TXT/MD files to queue for ingestion.
+  const handlePickFiles = async () => {
+    setError("");
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "text/plain", "text/markdown", "text/csv"],
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const picked = (result.assets || []).map(a => ({
+        uri: a.uri,
+        name: a.name || "document",
+        type: a.mimeType || "application/octet-stream",
+      }));
+      setPendingFiles(prev => [...prev, ...picked]);
+    } catch (err: any) {
+      setError(err.message || "Could not open the document picker.");
+    }
+  };
+
+  const handleRemoveFile = (idx: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  // Queue a YouTube / web URL — extraction happens on the server during onboarding.
+  const handleAddUrl = () => {
+    setError("");
+    const url = urlInput.trim();
+    if (!url) {
+      setError("Paste a URL (YouTube, ChatGPT share link, article, etc.) to add it.");
+      return;
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      setError("URL must start with http:// or https://");
+      return;
+    }
+    setPendingUrls(prev => [...prev, { url, title: urlTitleInput.trim() }]);
+    setUrlInput("");
+    setUrlTitleInput("");
+  };
+
+  const handleRemoveUrl = (idx: number) => {
+    setPendingUrls(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleCompleteAdmin = async () => {
     setError("");
     setLoading(true);
@@ -220,23 +347,70 @@ export default function ProfileSetup() {
       const inviteCodeVal = brainRes?.organization?.inviteCode || "";
       setInviteCode(inviteCodeVal);
 
-      // 3. Ingest documents
-      if (documents.length > 0) {
-        for (const doc of documents) {
+      // 3. Drain all three brain-ingestion queues. Partial failures are reported
+      // but do not abort the whole flow — onboarding is the priority.
+      const ingestionFailures: string[] = [];
+      const totalAssets = documents.length + pendingFiles.length + pendingUrls.length;
+      let done = 0;
+
+      for (const doc of documents) {
+        done++;
+        setIngestProgress(`Ingesting ${done}/${totalAssets}: ${doc.title}`);
+        try {
           await ingestOrgDocument({
             title: doc.title,
             content: doc.content,
             department: "general",
             accessLevel: "public",
-            tags: ["onboarding", "mobile-upload"],
+            tags: ["onboarding", "mobile-text"],
           });
+        } catch (e: any) {
+          ingestionFailures.push(`text "${doc.title}"`);
         }
       }
+
+      for (const f of pendingFiles) {
+        done++;
+        setIngestProgress(`Ingesting ${done}/${totalAssets}: ${f.name}`);
+        try {
+          await ingestOrgDocumentFromFile({
+            file: f,
+            department: "general",
+            accessLevel: "public",
+            tags: ["onboarding", "mobile-file"],
+          });
+        } catch (e: any) {
+          ingestionFailures.push(`file "${f.name}"`);
+        }
+      }
+
+      for (const u of pendingUrls) {
+        done++;
+        setIngestProgress(`Ingesting ${done}/${totalAssets}: ${u.title || u.url}`);
+        try {
+          await ingestOrgDocumentFromUrl({
+            url: u.url,
+            title: u.title || undefined,
+            department: "general",
+            accessLevel: "public",
+            tags: ["onboarding", "mobile-url"],
+          });
+        } catch (e: any) {
+          ingestionFailures.push(`url "${u.url}"`);
+        }
+      }
+
+      setIngestProgress("");
 
       if (profileRes?.data) {
         await authStorage.updateUser(profileRes.data);
       }
 
+      if (ingestionFailures.length > 0) {
+        setError(`Workspace created, but ${ingestionFailures.length} item(s) could not be ingested: ${ingestionFailures.join(", ")}. You can re-add them later in the Brain section.`);
+      }
+
+      await clearDraft();
       setStep(4);
     } catch (err: any) {
       setError(err.message || "Failed to onboard organization. Please try again.");
@@ -288,7 +462,7 @@ export default function ProfileSetup() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.inner}>
-          
+
           {/* Header Progress indicator (only on steps 1-3) */}
           {step <= 3 && (
             <View style={styles.header}>
@@ -580,7 +754,80 @@ export default function ProfileSetup() {
                 </TouchableOpacity>
               </View>
 
-              {/* Document List */}
+              {/* ── File Upload (PDF / TXT / MD) ── */}
+              <View style={styles.documentForm}>
+                <Text style={styles.formSubLabel}>Upload Files (PDF, TXT, MD)</Text>
+                <Text style={styles.helpText}>Pick one or more documents — handbooks, briefs, policies, transcripts.</Text>
+                <TouchableOpacity onPress={handlePickFiles} style={styles.addDocBtn}>
+                  <Plus size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.addDocBtnText}>Pick Files</Text>
+                </TouchableOpacity>
+              </View>
+
+              {pendingFiles.length > 0 && (
+                <View style={styles.documentListSection}>
+                  <Text style={styles.label}>Files Queued ({pendingFiles.length})</Text>
+                  {pendingFiles.map((f, idx) => (
+                    <View key={idx} style={styles.docCard}>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={styles.docCardTitle} numberOfLines={1}>{f.name}</Text>
+                        <Text style={styles.docCardSnippet} numberOfLines={1}>{f.type}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => handleRemoveFile(idx)} style={styles.deleteDocBtn}>
+                        <Trash2 size={16} color="red" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* ── URL / YouTube / Article Link ── */}
+              <View style={styles.documentForm}>
+                <Text style={styles.formSubLabel}>Import from URL</Text>
+                <Text style={styles.helpText}>
+                  Paste a YouTube link (we fetch the transcript), a ChatGPT share link, or any public article URL.
+                </Text>
+                <TextInput
+                  value={urlTitleInput}
+                  onChangeText={setUrlTitleInput}
+                  placeholder="Optional title (e.g. Q3 Strategy Talk)"
+                  placeholderTextColor="#b0b4c6"
+                  style={styles.docTitleInput}
+                />
+                <TextInput
+                  value={urlInput}
+                  onChangeText={setUrlInput}
+                  placeholder="https://youtube.com/watch?v=…  or  https://…"
+                  placeholderTextColor="#b0b4c6"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  style={styles.docTitleInput}
+                />
+                <TouchableOpacity onPress={handleAddUrl} style={styles.addDocBtn}>
+                  <Plus size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={styles.addDocBtnText}>Add URL to Brain</Text>
+                </TouchableOpacity>
+              </View>
+
+              {pendingUrls.length > 0 && (
+                <View style={styles.documentListSection}>
+                  <Text style={styles.label}>URLs Queued ({pendingUrls.length})</Text>
+                  {pendingUrls.map((u, idx) => (
+                    <View key={idx} style={styles.docCard}>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={styles.docCardTitle} numberOfLines={1}>{u.title || u.url}</Text>
+                        <Text style={styles.docCardSnippet} numberOfLines={1}>{u.url}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => handleRemoveUrl(idx)} style={styles.deleteDocBtn}>
+                        <Trash2 size={16} color="red" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Document List (pasted text) */}
               {documents.length > 0 && (
                 <View style={styles.documentListSection}>
                   <Text style={styles.label}>Documents to Ingest ({documents.length})</Text>
@@ -597,6 +844,10 @@ export default function ProfileSetup() {
                   ))}
                 </View>
               )}
+
+              {ingestProgress ? (
+                <Text style={[styles.helpText, { textAlign: "center", marginTop: 8 }]}>{ingestProgress}</Text>
+              ) : null}
 
               <TouchableOpacity
                 onPress={handleCompleteAdmin}
