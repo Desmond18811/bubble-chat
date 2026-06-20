@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, useNavigation, useRouter } from "expo-router";
-import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus, UserPlus, FolderPlus, X, Trash2, Archive, Ban } from "lucide-react-native";
+import { Search, Pin, BellOff, Check, CheckCheck, MessageSquarePlus, UserPlus, FolderPlus, X, Trash2, Archive, Ban, Users } from "lucide-react-native";
 import { Image } from "expo-image";
 import { Avatar } from "../../components/Avatar";
 import { 
@@ -29,6 +29,7 @@ import {
   removeContact,
   blockUser,
   getSecureMediaUrl,
+  joinOrganizationByInvite,
 } from "../../lib/api";
 import { authStorage } from "../../lib/authStorage";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
@@ -146,6 +147,11 @@ export default function Messages() {
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isCreateTabOpen, setIsCreateTabOpen] = useState(false);
+  const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
+
+  // Join Org/Group Input
+  const [joinOrgCode, setJoinOrgCode] = useState("");
+  const [isJoiningOrg, setIsJoiningOrg] = useState(false);
 
   // New Contact Inputs
   const [newContactName, setNewContactName] = useState("");
@@ -620,6 +626,17 @@ export default function Messages() {
             <FolderPlus size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
             <Text style={styles.fabMenuText}>New Folder Tab</Text>
           </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.fabMenuItem}
+            onPress={() => {
+              setIsFabMenuOpen(false);
+              setIsJoinOrgOpen(true);
+            }}
+          >
+            <Users size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
+            <Text style={styles.fabMenuText}>Join Group / Org</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -666,6 +683,58 @@ export default function Messages() {
               }}
             >
               <Text style={styles.saveBtnText}>Save Contact</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── Join Group / Org Modal ── */}
+      <Modal visible={isJoinOrgOpen} transparent animationType="slide">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsJoinOrgOpen(false)}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity activeOpacity={1} style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Join Group / Org</Text>
+              <TouchableOpacity onPress={() => setIsJoinOrgOpen(false)}>
+                <X size={20} color="#6c5ce7" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.inputLabel}>Organization / Group Code</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Paste your invite code"
+              value={joinOrgCode}
+              onChangeText={setJoinOrgCode}
+              placeholderTextColor="#9a9aab"
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+
+            <TouchableOpacity
+              style={[styles.saveBtn, isJoiningOrg && { opacity: 0.6 }]}
+              disabled={isJoiningOrg}
+              onPress={async () => {
+                const code = joinOrgCode.trim();
+                if (!code) return;
+                setIsJoiningOrg(true);
+                try {
+                  const result = await joinOrganizationByInvite(code);
+                  showToast(result?.message || "Joined successfully!");
+                  setJoinOrgCode("");
+                  setIsJoinOrgOpen(false);
+                  await syncWithBackend();
+                } catch (err: any) {
+                  Alert.alert("Error", err.message || "Failed to join. Check the code and try again.");
+                } finally {
+                  setIsJoiningOrg(false);
+                }
+              }}
+            >
+              <Text style={styles.saveBtnText}>{isJoiningOrg ? "Joining…" : "Join"}</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
