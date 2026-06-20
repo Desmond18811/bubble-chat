@@ -58,6 +58,9 @@ export interface IUser extends Document {
   org_industry?: string;
   org_size?: 'solo' | '2-10' | '11-50' | '51-200' | '201-500' | '500+';
   onboardingComplete?: boolean;
+  // Resumable signup state machine. Set at register, advanced server-side.
+  signupKind?: 'individual' | 'organization';
+  onboardingStep?: 'awaiting_otp' | 'awaiting_profile' | 'awaiting_org' | 'complete';
   department?: string;              // engineering, product, hr, finance, etc.
   onboardingBriefSeen: boolean;     // true after new hire views their first brief
   digestPreferences?: {
@@ -138,6 +141,13 @@ const UserSchema: Schema<IUser> = new Schema(
     org_industry: { type: String, trim: true, default: '' },
     org_size: { type: String, enum: ['solo', '2-10', '11-50', '51-200', '201-500', '500+'] },
     onboardingComplete: { type: Boolean, default: false },
+    signupKind: { type: String, enum: ['individual', 'organization'], default: 'individual' },
+    onboardingStep: {
+      type: String,
+      enum: ['awaiting_otp', 'awaiting_profile', 'awaiting_org', 'complete'],
+      default: 'awaiting_otp',
+      index: true,
+    },
     department: { type: String, trim: true, default: '' },
     onboardingBriefSeen: { type: Boolean, default: false },
     digestPreferences: {

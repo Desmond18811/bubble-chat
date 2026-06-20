@@ -99,6 +99,12 @@ export default function ProfileSetup() {
           if (u.avatar) setSelectedAvatar(u.avatar);
           if (u.org_industry) setOrgIndustry(u.org_industry);
           if (u.org_size) setOrgSize(u.org_size);
+
+          // Resume the wizard at the step the backend says the user is on.
+          // 'awaiting_org' means profile was saved before — jump straight to org setup.
+          if (u.onboardingStep === "awaiting_org") {
+            setStep(2);
+          }
         }
       } catch (err: any) {
         setError("Could not load user profile details.");

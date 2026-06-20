@@ -13,7 +13,7 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import Svg, { Path, Rect, Ellipse, Circle, Text as SvgText } from "react-native-svg";
 import { login as apiLogin, startGoogleAuth } from "../lib/api";
@@ -78,9 +78,17 @@ const CARD_BG = "#f8f9fc";
 const INK_DARK = "#1f2030";
 const INK_SOFT = "#7d7e96";
 
+// Map signup-state to the screen we should land on after login.
+const routeForStep = (step?: string, onboardingComplete?: boolean): any => {
+  if (onboardingComplete || step === "complete") return "/(main)/messages";
+  if (step === "awaiting_org" || step === "awaiting_profile") return "/profile-setup";
+  return "/profile-setup";
+};
+
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const params = useLocalSearchParams<{ email?: string }>();
+  const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -124,8 +132,9 @@ export default function Login() {
           console.warn("Failed silent restore on login:", restoreErr);
         }
         
-        // Dynamic redirection to avoid setup errors
-        if (data.user?.onboardingComplete) {
+        // Dynamic redirection — resume at the exact step the user is on.
+        const target = routeForStep(data.user?.onboardingStep, data.user?.onboardingComplete);
+        if (target === "/(main)/messages") {
           router.replace("/(main)/messages" as any);
         } else {
           router.replace("/profile-setup" as any);

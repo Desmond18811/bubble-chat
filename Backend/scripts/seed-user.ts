@@ -15,9 +15,10 @@
  *   npx ts-node scripts/seed-user.ts
  *
  * Optional overrides (env):
- *   SEED_NAME      full name.  Default: 'Test Founder'
- *   SEED_EMAIL     email.      Default: 'founder@bubble.test'
- *   SEED_PASSWORD  password.   Default: 'BubbleTest2026!'
+ *   SEED_NAME      full name.    Default: 'Test Founder'
+ *   SEED_EMAIL     email.        Default: 'founder@bubble.test'
+ *   SEED_PASSWORD  password.     Default: 'BubbleTest2026!'
+ *   SEED_KIND      individual|organization. Default: 'organization'
  */
 
 import mongoose from 'mongoose';
@@ -34,6 +35,9 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bubble
 const NAME = process.env.SEED_NAME || 'Test Founder';
 const EMAIL = (process.env.SEED_EMAIL || 'founder@bubble.test').toLowerCase();
 const PASSWORD = process.env.SEED_PASSWORD || 'BubbleTest2026!';
+const KIND_INPUT = (process.env.SEED_KIND || 'organization').toLowerCase();
+const SIGNUP_KIND: 'individual' | 'organization' =
+    KIND_INPUT === 'individual' ? 'individual' : 'organization';
 
 async function uniqueTagFor(name: string): Promise<string> {
     const base = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 6) || 'user';
@@ -66,20 +70,30 @@ async function run() {
             email: EMAIL,
             password: hashedPassword,
             uniqueTag,
-            isVerified: false,        // must verify via OTP
-            onboardingComplete: false, // must go through onboarding
-            // no organization / organizationId — created during onboarding in-app
-            role: 'employee',
+            isVerified: false,                  // must verify via OTP
+            onboardingComplete: false,           // must go through onboarding
+            signupKind: SIGNUP_KIND,             // 'individual' | 'organization'
+            onboardingStep: 'awaiting_otp',      // entry point of the resumable state machine
+            // org founders pick admin during register; mark this user now so the
+            // setupProfile branch correctly advances to 'awaiting_org' afterwards.
+            role: SIGNUP_KIND === 'organization' ? 'admin' : 'employee',
         });
 
-        console.log('🌱 Seeded one unverified user (no org, no brain):');
+        console.log('🌱 Seeded one user at the start of the resumable signup flow:');
         console.log('──────────────────────────────────────────');
-        console.log(`   Name:      ${user.full_name}`);
-        console.log(`   Email:     ${user.email}`);
-        console.log(`   Password:  ${PASSWORD}`);
-        console.log(`   Verified:  ${user.isVerified}   Onboarded: ${user.onboardingComplete}`);
+        console.log(`   Name:           ${user.full_name}`);
+        console.log(`   Email:          ${user.email}`);
+        console.log(`   Password:       ${PASSWORD}`);
+        console.log(`   Signup kind:    ${user.signupKind}`);
+        console.log(`   Onboarding step:${user.onboardingStep}    Verified: ${user.isVerified}`);
         console.log('──────────────────────────────────────────');
-        console.log('   → Verify (resend-otp → verify-otp), then onboard + create the org/brain in-app.\n');
+        console.log('   Flow on next login attempt:');
+        console.log('     awaiting_otp     → verify OTP (login screen detects and routes)');
+        console.log('     awaiting_profile → profile setup');
+        if (SIGNUP_KIND === 'organization') {
+            console.log('     awaiting_org     → create org + seed brain');
+        }
+        console.log('     complete         → main app\n');
 
         await mongoose.disconnect();
         console.log('🔌 Disconnected.');

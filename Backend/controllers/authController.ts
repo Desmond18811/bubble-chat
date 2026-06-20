@@ -42,6 +42,8 @@ const formatUser = (u: any) => ({
   org_industry: u.org_industry || null,
   org_size: u.org_size || null,
   onboardingComplete: u.onboardingComplete ?? false,
+  signupKind: u.signupKind || 'individual',
+  onboardingStep: u.onboardingStep || (u.onboardingComplete ? 'complete' : (u.isVerified ? 'awaiting_profile' : 'awaiting_otp')),
   isVerified: u.isVerified ?? false,
   isPremium: u.isPremium ?? false,
   is_bot: u.is_bot ?? false,
@@ -80,6 +82,75 @@ const validatePassword = (password: string): string | null => {
   return null;
 };
 
+// ─── CHECK USER STATUS ────────────────────────────────────────────────────────
+/**
+ * GET /api/v1/auth/status?email=...&phone_number=...
+ * Public, no-auth probe so the signup/login UI can predict the user's state
+ * before issuing destructive calls. Returns whether the identifier already has
+ * an account and, if so, where they are in the signup state machine.
+ *
+ * Response shape:
+ *   { exists, isVerified, onboardingStep, signupKind, hasOrg, role, nextAction }
+ *
+ * `nextAction` is a hint for the client:
+ *   - 'register'        → no account; safe to call /auth/register
+ *   - 'verify_otp'      → account exists but not verified
+ *   - 'login_then_setup'→ verified but onboarding incomplete; user should log in
+ *   - 'login'           → fully onboarded; user should just log in
+ */
+export const checkUserStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const emailRaw = (req.query.email as string | undefined)?.trim().toLowerCase();
+    const phoneRaw = (req.query.phone_number as string | undefined)?.trim();
+
+    if (!emailRaw && !phoneRaw) {
+      res.status(400).json({ message: 'email or phone_number is required.' });
+      return;
+    }
+
+    const filter: any = emailRaw ? { email: emailRaw } : { phone_number: phoneRaw };
+    const user = await User.findOne(filter).select(
+      'isVerified onboardingComplete onboardingStep signupKind organization organizationId role'
+    );
+
+    if (!user) {
+      res.status(200).json({
+        data: {
+          exists: false,
+          nextAction: 'register',
+        },
+      });
+      return;
+    }
+
+    // Derive step for legacy users that pre-date the field.
+    const step =
+      user.onboardingStep ||
+      (user.onboardingComplete ? 'complete' : user.isVerified ? 'awaiting_profile' : 'awaiting_otp');
+
+    const nextAction =
+      step === 'awaiting_otp'
+        ? 'verify_otp'
+        : step === 'complete'
+        ? 'login'
+        : 'login_then_setup';
+
+    res.status(200).json({
+      data: {
+        exists: true,
+        isVerified: !!user.isVerified,
+        onboardingStep: step,
+        signupKind: user.signupKind || 'individual',
+        hasOrg: !!user.organizationId,
+        role: user.role || 'employee',
+        nextAction,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Status check failed: ' + err.message });
+  }
+};
+
 // ─── REGISTER ─────────────────────────────────────────────────────────────────
 /**
  * POST /api/v1/auth/register
@@ -87,7 +158,7 @@ const validatePassword = (password: string): string | null => {
  */
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { full_name, email, phone_number, password, publicKey, org_name, org_industry, org_size } = req.body;
+    const { full_name, email, phone_number, password, publicKey, org_name, org_industry, org_size, signupKind: signupKindInput } = req.body;
 
     if (!email && !phone_number) {
       res.status(400).json({ message: 'Email or phone number is required.' });
@@ -105,22 +176,69 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Check for existing account email
-    if (email) {
-      const existingEmail = await User.findOne({ email: email.toLowerCase() });
-      if (existingEmail) {
-        res.status(409).json({ message: 'An account with this email already exists.' });
-        return;
-      }
-    }
+    // Derive signupKind: explicit input wins, else infer from org_name / inviteCode.
+    const cleanOrgName = org_name ? org_name.trim() : '';
+    const hasInviteCode = !!req.body.inviteCode;
+    const signupKind: 'individual' | 'organization' =
+      signupKindInput === 'individual' || signupKindInput === 'organization'
+        ? signupKindInput
+        : (cleanOrgName || hasInviteCode) ? 'organization' : 'individual';
 
-    // Check for existing account phone number
-    if (phone_number) {
-      const existingPhone = await User.findOne({ phone_number });
-      if (existingPhone) {
-        res.status(409).json({ message: 'An account with this phone number already exists.' });
+    // ── Resume-friendly conflict handling ─────────────────────────────────
+    // If an UNVERIFIED account exists for this email/phone, treat this call as
+    // a resume of a prior interrupted signup: regenerate an OTP and return the
+    // same 201 shape. Only block (409) when the existing account is verified.
+    const existingByEmail = email ? await User.findOne({ email: email.toLowerCase() }) : null;
+    const existingByPhone = !existingByEmail && phone_number ? await User.findOne({ phone_number }) : null;
+    const existing = existingByEmail || existingByPhone;
+
+    if (existing) {
+      if (existing.isVerified) {
+        res.status(409).json({
+          message: 'An account with this identifier already exists. Please log in.',
+          data: { onboardingStep: existing.onboardingStep || 'complete', requiresLogin: true },
+        });
         return;
       }
+
+      // Unverified — resume. Regenerate OTP, refresh password/signupKind in case they changed it.
+      const otp = generateOTP();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+      const hashedPasswordResume = await bcrypt.hash(password, 12);
+      existing.password = hashedPasswordResume;
+      existing.signupKind = signupKind;
+      existing.onboardingStep = 'awaiting_otp';
+      await existing.save();
+
+      await Otp.create({
+        userId: existing._id,
+        otp,
+        type: 'verification',
+        expiresAt: otpExpires,
+      });
+
+      if (existing.email) {
+        try {
+          await sendOTPEmail(existing.email, existing.full_name || 'User', otp);
+        } catch (emailErr: any) {
+          console.warn(`⚠️ Could not send OTP email to ${existing.email}:`, emailErr.message);
+          console.log(`[DEV/TESTING] OTP for ${existing.email} is: ${otp}`);
+        }
+      }
+
+      res.status(201).json({
+        message: 'Resuming signup. A fresh OTP has been sent.',
+        data: {
+          email: existing.email || null,
+          phone_number: existing.phone_number || null,
+          requiresVerification: true,
+          expiresInMinutes: 10,
+          onboardingStep: 'awaiting_otp',
+          signupKind,
+          resumed: true,
+        },
+      });
+      return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -129,7 +247,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const uniqueTag = await generateUniqueTag(full_name || 'user');
 
     // Clean org values to prevent enum validation crashes
-    const cleanOrgName = org_name ? org_name.trim() : '';
     const cleanOrgIndustry = cleanOrgName ? (org_industry || '') : '';
     const validOrgSizes = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
     const cleanOrgSize = (cleanOrgName && org_size && validOrgSizes.includes(org_size)) ? org_size : undefined;
@@ -143,6 +260,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       isVerified: false,
       uniqueTag,
       onboardingComplete: false,
+      signupKind,
+      onboardingStep: 'awaiting_otp',
       publicKey,
       organization: cleanOrgName,
       org_industry: cleanOrgIndustry,
@@ -255,6 +374,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         phone_number: newUser.phone_number || null,
         requiresVerification: true,
         expiresInMinutes: 10,
+        onboardingStep: 'awaiting_otp',
+        signupKind,
+        resumed: false,
       },
     });
   } catch (err: any) {
@@ -304,13 +426,16 @@ export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
     otpRecord.isUsed = true;
     await otpRecord.save();
 
-    // Mark verified
+    // Mark verified and advance signup state machine to the next step.
+    // Individuals go to profile only. Organization founders also need profile first; we
+    // advance to awaiting_org during profile setup if they still have org work to do.
     const refreshToken = generateRefreshToken(String(user._id));
     await User.findByIdAndUpdate(user._id, {
       isVerified: true,
       isOnline: true,
       lastSeen: new Date(),
       refreshToken,
+      onboardingStep: 'awaiting_profile',
     });
 
     const accessToken = generateAccessToken(String(user._id));

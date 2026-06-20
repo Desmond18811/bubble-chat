@@ -536,9 +536,16 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
   }
 
   try {
-    const updateData: Record<string, any> = {
-      onboardingComplete: true,
-    };
+    // Read the user's current signup state to decide the next step.
+    // Org founders (signupKind=organization + role=admin) still need to seed the brain
+    // after profile setup → advance to 'awaiting_org', leave onboardingComplete=false.
+    // Everyone else (individuals, invited employees) → 'complete', onboardingComplete=true.
+    const current = await User.findById(req.user._id).select('signupKind role onboardingStep');
+    const isOrgFounder = current?.signupKind === 'organization' && current?.role === 'admin';
+
+    const updateData: Record<string, any> = isOrgFounder
+      ? { onboardingStep: 'awaiting_org' }
+      : { onboardingStep: 'complete', onboardingComplete: true };
     if (organization !== undefined) updateData.organization = organization;
     if (org_role !== undefined) updateData.org_role = org_role;
     if (org_industry !== undefined) updateData.org_industry = org_industry;
@@ -567,7 +574,9 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     res.status(200).json({
-      message: 'Profile setup complete. Welcome to Bubble Space!',
+      message: isOrgFounder
+        ? 'Profile saved. Next: set up your organization brain.'
+        : 'Profile setup complete. Welcome to Bubble Space!',
       data: await formatUser(updated, true),
     });
   } catch (err: any) {

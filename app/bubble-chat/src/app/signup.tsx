@@ -17,7 +17,7 @@ import {
 import { useRouter } from "expo-router";
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, Building2, Sparkles, Briefcase } from "lucide-react-native";
 import Svg, { Path, Rect, Ellipse, Circle, Text as SvgText } from "react-native-svg";
-import { register as apiRegister, startGoogleAuth } from "../lib/api";
+import { register as apiRegister, startGoogleAuth, checkUserStatus } from "../lib/api";
 import { authStorage } from "../lib/authStorage";
 
 const BubbleLogo = ({ size = 40 }: { size?: number }) => (
@@ -179,10 +179,33 @@ export default function Signup() {
 
     setLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Pre-flight: if this email already exists, route the user instead of POSTing
+      // /register. Predictively prevents the "I already started signup" failure.
+      try {
+        const status = await checkUserStatus(normalizedEmail);
+        if (status.exists) {
+          if (status.nextAction === "verify_otp") {
+            setError("We already started signup for this email — let's finish OTP verification.");
+            router.push(`/verify-otp?email=${encodeURIComponent(normalizedEmail)}&mode=verify` as any);
+            return;
+          }
+          if (status.nextAction === "login_then_setup" || status.nextAction === "login") {
+            setError("An account with this email already exists. Please log in.");
+            router.push(`/login?email=${encodeURIComponent(normalizedEmail)}` as any);
+            return;
+          }
+        }
+      } catch {
+        // Probe is best-effort; if it fails we fall through to the normal register call.
+      }
+
       const payload: any = {
         full_name: fullName.trim(),
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         password,
+        signupKind: activeTab, // 'individual' | 'organization'
       };
 
       if (activeTab === "individual") {
@@ -198,9 +221,16 @@ export default function Signup() {
       await apiRegister(payload);
 
       // Navigate to OTP verification screen
-      router.push(`/verify-otp?email=${encodeURIComponent(email.trim().toLowerCase())}&mode=verify` as any);
+      router.push(`/verify-otp?email=${encodeURIComponent(normalizedEmail)}&mode=verify` as any);
     } catch (err: any) {
-      setError(err.message || "Registration failed. Please try again.");
+      // Server may signal that the account already exists but is verified —
+      // surface a useful nudge instead of a generic failure.
+      if (err?.status === 409 && err?.data?.requiresLogin) {
+        setError("An account with this email already exists. Please log in.");
+        router.push(`/login?email=${encodeURIComponent(email.trim().toLowerCase())}` as any);
+      } else {
+        setError(err.message || "Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

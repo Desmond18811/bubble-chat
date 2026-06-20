@@ -367,9 +367,17 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
       tags: ['profile', 'about', 'onboarding'],
     });
 
-    // Update org description
+    // Update org description + brain-seeded flags
     org.description = aiSummary;
+    org.brainSeeded = true;
+    org.brainSeedCompletedAt = new Date();
     await org.save();
+
+    // Advance the founder's signup state machine to 'complete'.
+    await User.findByIdAndUpdate(userId, {
+      onboardingStep: 'complete',
+      onboardingComplete: true,
+    });
 
     // Create/update default group chat
     let defaultChat = await Conversation.findOne({

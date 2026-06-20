@@ -1,6 +1,7 @@
 import express from 'express';
 import passport from 'passport';
 import {
+  checkUserStatus,
   register,
   verifyOTP,
   resendOTP,
@@ -83,6 +84,11 @@ router.post('/verify-2fa', jwtAuth, verify2FA);
  *         description: Internal Server Error.
  */
 router.post('/register', register);
+
+// Pre-auth status probe — used by the signup/login UI to route users to the
+// right next step (verify_otp / login_then_setup / login / register) based on
+// the existing account state, without leaking sensitive data.
+router.get('/status', checkUserStatus);
 
 /**
  * @swagger

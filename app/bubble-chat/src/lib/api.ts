@@ -297,6 +297,7 @@ const handleResponse = async (res: Response) => {
         const error: any = new Error(err.message || `Request failed: ${res.status}`);
         error.status = res.status;
         error.code = err.code;
+        error.data = err.data;
         throw error;
     }
     // 204 No Content — nothing to parse
@@ -313,6 +314,24 @@ export const register = async (data: any) => {
         body: JSON.stringify(data),
     });
     return handleResponse(res);
+};
+
+// Pre-auth probe: ask the backend what state an email is already in, so the
+// UI can route users to the correct next step (OTP / login / register).
+export type UserStatus = {
+    exists: boolean;
+    isVerified?: boolean;
+    onboardingStep?: 'awaiting_otp' | 'awaiting_profile' | 'awaiting_org' | 'complete';
+    signupKind?: 'individual' | 'organization';
+    hasOrg?: boolean;
+    role?: 'employee' | 'admin' | 'HR';
+    nextAction: 'register' | 'verify_otp' | 'login_then_setup' | 'login';
+};
+
+export const checkUserStatus = async (email: string): Promise<UserStatus> => {
+    const res = await fetch(`${BASE_URL}/auth/status?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+    const body = await handleResponse(res);
+    return (body?.data || body) as UserStatus;
 };
 
 export const verifyOTP = async (email: string, otp: string) => {
