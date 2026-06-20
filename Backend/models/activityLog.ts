@@ -25,6 +25,10 @@ export type ActivityAction =
   | 'call_rejected'
   | 'call_missed'
   | 'call_ended'
+  // Messaging
+  | 'message_sent'
+  // Brain / Knowledge
+  | 'document_ingested'
   // Payments
   | 'payment_made'
   | 'invoice_created'

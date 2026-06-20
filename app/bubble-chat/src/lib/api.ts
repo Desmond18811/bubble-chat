@@ -294,7 +294,10 @@ export const getAuthHeaders = () => {
 const handleResponse = async (res: Response) => {
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `Request failed: ${res.status}`);
+        const error: any = new Error(err.message || `Request failed: ${res.status}`);
+        error.status = res.status;
+        error.code = err.code;
+        throw error;
     }
     // 204 No Content — nothing to parse
     if (res.status === 204) return null;

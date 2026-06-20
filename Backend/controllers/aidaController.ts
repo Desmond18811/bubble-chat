@@ -1165,6 +1165,29 @@ export const createOrgDoc = async (req: Request, res: Response): Promise<void> =
     });
 
     console.log(`[OrgDocs] New doc created: "${doc.title}" (dept: ${doc.department}, access: ${doc.accessLevel})`);
+
+    // Embed the document into the vector brain so it's retrievable via RAG, not
+    // just Mongo full-text. Resolve the creator's org and fire the brain event.
+    try {
+      const { resolveUserOrg } = await import('../utils/orgResolver');
+      const creator = await User.findById(userId);
+      const org = creator ? await resolveUserOrg(creator) : null;
+      if (org) {
+        const { brainEventBus } = await import('../utils/brainEventListener');
+        brainEventBus.emit('document_uploaded', {
+          documentId: doc._id.toString(),
+          organizationId: org._id.toString(),
+          uploadedBy: String(userId),
+          title: doc.title,
+          content: doc.content,
+          tags: doc.tags,
+          department: doc.department,
+        });
+      }
+    } catch (emitErr) {
+      console.error('[OrgDocs] document_uploaded emit failed:', emitErr);
+    }
+
     res.status(201).json({ doc, message: `Org document "${doc.title}" added to AIda's knowledge base.` });
   } catch (error: any) {
     console.error('[OrgDocs] Create error:', error);
@@ -1291,7 +1314,36 @@ export const getConversationContext = async (req: Request, res: Response): Promi
     let summary = '';
     let suggestions: string[] = [];
 
+    // Ground reply suggestions in the org brain — surfaces facts the user might
+    // not remember, mirroring the writing-suggestions retrieval pattern.
+    let brainKnowledge = '';
+    try {
+      const { resolveUserOrg } = await import('../utils/orgResolver');
+      const callerUser = await User.findById(userId);
+      const org = callerUser ? await resolveUserOrg(callerUser) : null;
+      if (org && hasPinecone()) {
+        const seed = transcript.slice(-1500);
+        const embedding = await generateEmbedding(seed);
+        if (embedding.length > 0) {
+          const namespace = org.pineconeNamespace || `org-${org._id}`;
+          const matches = await queryVectors(embedding, 3, org._id.toString(), namespace);
+          brainKnowledge = matches
+            .filter((m: any) => m.score >= 0.55)
+            .map((m: any) => `• ${m.metadata?.chunk || ''}`)
+            .join('\n');
+        }
+      }
+    } catch (brainErr) {
+      console.error('[Conversation Context] brain seed failed:', brainErr);
+    }
+
     if (hasKey()) {
+      const suggestUserPrompt = [
+        `Conversation:\n${transcript.substring(0, 2000)}`,
+        brainKnowledge ? `Brain knowledge from this organization (use any relevant fact):\n${brainKnowledge}` : '',
+        'Generate 3 reply suggestions as a JSON array:',
+      ].filter(Boolean).join('\n\n');
+
       const [summaryRes, suggestRes] = await Promise.all([
         callAIDA(
           'You are Aida, a professional workspace AI. Summarize conversations in 1-2 concise sentences, focusing on key decisions and pending items.',
@@ -1300,8 +1352,8 @@ export const getConversationContext = async (req: Request, res: Response): Promi
           0.4
         ),
         callAIDA(
-          `You are Aida, a professional workspace AI. Generate 3 short, contextually-appropriate reply suggestions for ${callerName}${callerRole ? ` (${callerRole})` : ''} to send next. ${contextNote} Keep each suggestion under 15 words. Return ONLY a JSON array of 3 strings, no markdown, no explanation.`,
-          `Conversation:\n${transcript.substring(0, 2000)}\n\nGenerate 3 reply suggestions as a JSON array:`,
+          `You are Aida, a professional workspace AI. Generate 3 short, contextually-appropriate reply suggestions for ${callerName}${callerRole ? ` (${callerRole})` : ''} to send next. ${contextNote} If the brain-knowledge block contains a fact relevant to the conversation, use it — these are facts the user may not know off the top of their head. Keep each suggestion under 15 words. Return ONLY a JSON array of 3 strings, no markdown, no explanation.`,
+          suggestUserPrompt,
           200,
           0.7
         ),

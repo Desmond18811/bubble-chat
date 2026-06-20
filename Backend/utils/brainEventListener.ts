@@ -7,6 +7,7 @@ import { OrgDocument } from '../models/orgDocument';
 import { chunkText, generateEmbedding } from '../utils/embeddings';
 import { upsertVectors, hasPinecone } from '../utils/pinecone';
 import { updateExpertiseRadar } from '../controllers/continuityController';
+import { logActivity } from '../controllers/activityLogController';
 import { getSignedMediaUrl } from './filebase';
 import { transcribeAudio } from './whisperService';
 import * as crypto from 'crypto';
@@ -243,6 +244,17 @@ brainEventBus.on('document_uploaded', async (payload: {
     );
 
     console.log(`[Brain Event] Ingested uploaded document "${title}" for org ${org.name}`);
+
+    if (uploadedBy) {
+      logActivity({
+        actor: uploadedBy,
+        action: 'document_ingested',
+        entityId: payload.documentId,
+        entityType: 'OrgDocument',
+        entityLabel: title,
+        metadata: { department, tags, organizationId },
+      });
+    }
   } catch (err) {
     console.error('[Brain Event] document_uploaded ingestion failed:', err);
   }

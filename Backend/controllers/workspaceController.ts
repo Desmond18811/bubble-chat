@@ -4,6 +4,7 @@ import { uploadToFilebase, getSignedMediaUrl, extractKeyFromUrl, streamS3Object 
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '../utils/filebase';
 import * as fs from 'fs';
+import { logActivity } from './activityLogController';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -106,6 +107,17 @@ export const uploadWorkspaceFile = async (req: AuthRequest, res: Response): Prom
 
     await wFile.populate('uploadedBy', 'full_name avatar uniqueTag');
 
+    logActivity({
+      actor: req.user._id,
+      action: 'file_uploaded',
+      entityId: String(wFile._id),
+      entityType: 'WorkspaceFile',
+      entityLabel: wFile.name,
+      metadata: { fileType: wFile.fileType, workspace: wFile.workspace, fileSize: wFile.fileSize },
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
     res.status(201).json({ message: 'File uploaded successfully.', file: formatFile(wFile) });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -135,6 +147,15 @@ export const createWorkspaceFolder = async (req: AuthRequest, res: Response): Pr
     });
 
     await wFile.populate('uploadedBy', 'full_name avatar uniqueTag');
+
+    logActivity({
+      actor: req.user._id,
+      action: 'folder_created',
+      entityId: String(wFile._id),
+      entityType: 'WorkspaceFile',
+      entityLabel: wFile.name,
+      metadata: { workspace: wFile.workspace },
+    });
 
     res.status(201).json({ message: 'Folder created successfully.', file: formatFile(wFile) });
   } catch (err: any) {
@@ -273,6 +294,16 @@ export const deleteWorkspaceFile = async (req: AuthRequest, res: Response): Prom
     }
 
     await WorkspaceFile.findByIdAndDelete(req.params.fileId);
+
+    logActivity({
+      actor: req.user._id,
+      action: 'file_deleted',
+      entityId: String(file._id),
+      entityType: 'WorkspaceFile',
+      entityLabel: file.name,
+      metadata: { isFolder: file.isFolder },
+    });
+
     res.status(200).json({ message: 'File deleted.', deleted_id: req.params.fileId });
   } catch (err: any) {
     res.status(500).json({ message: err.message });

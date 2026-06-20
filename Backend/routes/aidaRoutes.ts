@@ -31,7 +31,7 @@ const requireAuth = passport.authenticate('jwt', { session: false });
 router.get('/conversation', requireAuth, getAidaConversation);
 router.post('/chat-message', requireAuth, requireAidaKey, chatWithAidaInConversation);
 router.get('/conversation-summary/:id', requireAuth, requireAidaKey, summarizeConversation);
-router.get('/conversation-context/:conversationId', requireAuth, getConversationContext);
+router.get('/conversation-context/:conversationId', requireAuth, requireAidaKey, getConversationContext);
 
 // ── Core conversational endpoints (AidaPage) ─────────────────────────────────
 router.post('/chat', requireAuth, requireAidaKey, chatWithAida);

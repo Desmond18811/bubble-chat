@@ -271,6 +271,15 @@ export default function Messages() {
       }
     };
 
+    // ── Authoritative unread badge ─ backend pushes the exact server-side count
+    // so every device stays in sync regardless of which one read/received.
+    const handleUnreadCountUpdated = (data: { chatId: string; unreadCount: number }) => {
+      if (!data?.chatId) return;
+      setChatsList(prev => prev.map(c =>
+        String(c.id) === String(data.chatId) ? { ...c, unreadCount: data.unreadCount } : c
+      ));
+    };
+
     const handleConnect = () => {
       console.log("Socket connected/reconnected in Messages screen. Flushing offline queue and syncing...");
       chatCache.processOfflineQueue().then(() => {
@@ -283,6 +292,7 @@ export default function Messages() {
     socket.on('new_message', handleNewMessage);
     socket.on('receive_message', handleNewMessage);
     socket.on('messages_read', handleMessagesRead);
+    socket.on('unread_count_updated', handleUnreadCountUpdated);
     socket.on('connect', handleConnect);
 
     if (socket.connected) {
@@ -295,6 +305,7 @@ export default function Messages() {
       socket.off('new_message', handleNewMessage);
       socket.off('receive_message', handleNewMessage);
       socket.off('messages_read', handleMessagesRead);
+      socket.off('unread_count_updated', handleUnreadCountUpdated);
       socket.off('connect', handleConnect);
     };
   }, []);

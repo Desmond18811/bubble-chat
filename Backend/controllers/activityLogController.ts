@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ActivityLog, ActivityAction } from '../models/activityLog';
+import { User } from '../models/users';
 
 // ─── Internal helper — called by other controllers ────────────────────────────
 
@@ -49,8 +50,23 @@ export const getActivityLog = async (req: Request, res: Response): Promise<any> 
     const skip    = (page - 1) * limit;
     const action  = req.query.action as string | undefined;
     const entity  = req.query.entityType as string | undefined;
+    const scope   = req.query.scope as string | undefined;
 
-    const filter: any = { actor: userId };
+    const filter: any = {};
+    if (scope === 'org') {
+      // Org-wide feed: all activity by members of the caller's organization.
+      const { resolveUserOrg } = await import('../utils/orgResolver');
+      const org = await resolveUserOrg(String(userId));
+      if (!org) {
+        return res.status(200).json({ logs: [], total: 0, page, limit });
+      }
+      const memberIds = await User.find({
+        $or: [{ organizationId: org._id }, { organization: org.name }],
+      }).distinct('_id');
+      filter.actor = { $in: memberIds };
+    } else {
+      filter.actor = userId;
+    }
     if (action) filter.action = action;
     if (entity) filter.entityType = entity;
 
@@ -59,6 +75,7 @@ export const getActivityLog = async (req: Request, res: Response): Promise<any> 
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .populate('actor', 'full_name username avatar')
         .lean(),
       ActivityLog.countDocuments(filter),
     ]);

@@ -7,6 +7,7 @@ import { enqueueMessage } from '../utils/queue';
 import { getIO } from '../utils/socket';
 import { sendPushNotification } from '../utils/push';
 import { brainEventBus } from '../utils/brainEventListener';
+import { logActivity } from './activityLogController';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -284,6 +285,17 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       });
     }
 
+    if (!isSystem) {
+      logActivity({
+        actor: req.user._id,
+        action: 'message_sent',
+        entityId: String(chatId),
+        entityType: convo.isGroupChat ? 'GroupChat' : 'Chat',
+        entityLabel: convo.isGroupChat ? (convo.chatName || 'Group Chat') : undefined,
+        metadata: { messageType: newMessage.message_type, messageId: String(newMessage._id) },
+      });
+    }
+
     res.status(201).json(formatted);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -527,6 +539,15 @@ export const markAsRead = async (req: AuthRequest, res: Response): Promise<void>
     try {
       const io = req.io || getIO();
       io.to(chatId).emit('messages_read', { chatId, userId });
+
+      // Keep the badge authoritative: recompute this user's unread count for the
+      // chat (now zero) and push it to their personal room so every device syncs.
+      const unreadCount = await Message.countDocuments({
+        chat: chatId,
+        readBy: { $ne: userId },
+        deletedFor: { $ne: userId },
+      });
+      io.to(String(userId)).emit('unread_count_updated', { chatId, unreadCount });
     } catch (socketErr) {
       console.error('Socket emit messages_read failed:', socketErr);
     }

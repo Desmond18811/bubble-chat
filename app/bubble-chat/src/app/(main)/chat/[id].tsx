@@ -180,6 +180,7 @@ export default function ChatScreen() {
 
   // Aida Suggestions state
   const [aidaSuggestions, setAidaSuggestions] = useState<string[]>([]);
+  const [aidaUnavailable, setAidaUnavailable] = useState(false);
 
   const handleStartCall = (type: 'voice' | 'video') => {
     if (!chat?.otherUserId) return;
@@ -202,12 +203,19 @@ export default function ChatScreen() {
       return;
     }
 
+    if (aidaUnavailable) return;
+
     const fetchSuggestions = async () => {
       try {
         const response = await getAidaWritingSuggestions(lastReceived.text, String(id));
         const suggestionsList = response?.suggestions || response?.data || [];
         setAidaSuggestions(suggestionsList);
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.status === 503 || err?.code === 'AIDA_UNCONFIGURED') {
+          setAidaUnavailable(true);
+          setAidaSuggestions([]);
+          return;
+        }
         // Fallback suggestions
         setAidaSuggestions([
           "Sounds good!",
@@ -229,6 +237,7 @@ export default function ChatScreen() {
   useEffect(() => {
     if (suggestDraftTimer.current) clearTimeout(suggestDraftTimer.current);
     if (!messageText || messageText.trim().length < 3) return;
+    if (aidaUnavailable) return;
     suggestDraftTimer.current = setTimeout(async () => {
       try {
         const response = await getAidaWritingSuggestions(messageText, String(id));
@@ -236,8 +245,12 @@ export default function ChatScreen() {
         if (Array.isArray(list) && list.length > 0) {
           setAidaSuggestions(list);
         }
-      } catch {
-        // silent — keep whatever suggestions are already there
+      } catch (err: any) {
+        if (err?.status === 503 || err?.code === 'AIDA_UNCONFIGURED') {
+          setAidaUnavailable(true);
+          setAidaSuggestions([]);
+        }
+        // otherwise silent — keep whatever suggestions are already there
       }
     }, 800);
     return () => {
@@ -407,6 +420,24 @@ export default function ChatScreen() {
     };
     socket.on('message_edited', onMessageEdited);
 
+    // Real-time reaction updates from the other side. Backend sends the full
+    // reactions array so we just replace it on the matching message.
+    const onMessageReaction = (data: any) => {
+      if (!data?.messageId) return;
+      if (data.chatId && String(data.chatId) !== String(id)) return;
+      // Backend sends reactions as objects ({ user, emoji, timestamp }); the UI
+      // renders a flat list of emoji strings, so normalize here.
+      const emojis = Array.isArray(data.reactions)
+        ? data.reactions.map((r: any) => (typeof r === 'string' ? r : r?.emoji)).filter(Boolean)
+        : [];
+      setMessages(prev => prev.map((m: any) =>
+        String(m.id) === String(data.messageId)
+          ? { ...m, reactions: emojis }
+          : m
+      ));
+    };
+    socket.on('message_reaction', onMessageReaction);
+
     if (socket.connected) {
       onConnect();
     }
@@ -420,6 +451,7 @@ export default function ChatScreen() {
       socket.off('receive_message', onNewMessage);
       socket.off('message_deleted', onMessageDeleted);
       socket.off('message_edited', onMessageEdited);
+      socket.off('message_reaction', onMessageReaction);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (chatRef.current) {
         socket.emit('typing_stop', { toUserId: chatRef.current.otherUserId, chatId: chatRef.current.id });
@@ -1577,6 +1609,15 @@ export default function ChatScreen() {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+              )}
+
+              {/* Aida unavailable notice */}
+              {aidaUnavailable && (
+                <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(31,32,48,0.45)' }}>
+                    Aida suggestions are unavailable on this workspace
+                  </Text>
+                </View>
               )}
 
               {/* ── Main Input Bar Row styled as a single continuous capsule ── */}

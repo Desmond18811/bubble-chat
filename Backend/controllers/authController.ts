@@ -12,6 +12,7 @@ import { seedOrgKnowledge } from './orgController';
 import { Conversation } from '../models/conversations';
 import { Message } from '../models/messages';
 import { getAidaBotUser } from './aidaController';
+import { logActivity } from './activityLogController';
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
@@ -469,6 +470,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       lastSeen: new Date(),
     });
 
+    logActivity({
+      actor: user._id,
+      action: 'login',
+      entityType: 'Auth',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
     res.status(200).json({
       message: 'Login successful. Welcome back!',
       data: {
@@ -498,6 +507,14 @@ export const logout = async (req: any, res: Response): Promise<void> => {
       isOnline: false,
       lastSeen: new Date(),
       socketId: '',
+    });
+
+    logActivity({
+      actor: req.user._id,
+      action: 'logout',
+      entityType: 'Auth',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     });
 
     res.status(200).json({ message: 'Logged out successfully.' });
