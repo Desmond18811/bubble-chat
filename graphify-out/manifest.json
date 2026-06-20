@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/setup-profile-view.tsx": {
-    "mtime": 1780695069.1761093,
-    "ast_hash": "17407506bfc29ddd3dd432b08fac39b4",
+    "mtime": 1781984505.389112,
+    "ast_hash": "2f2ec5ce64b97eb905a3f87abdcd7f89",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
@@ -455,8 +455,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/lib/api.ts": {
-    "mtime": 1781944693.5522635,
-    "ast_hash": "58250daa889e64fde2c1d9859b72742d",
+    "mtime": 1781984405.3598752,
+    "ast_hash": "b6fa487336428441308fac52c3ebc044",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/lib/chat-data.ts": {
@@ -585,8 +585,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/login.tsx": {
-    "mtime": 1781899820.5756226,
-    "ast_hash": "9a47d544d6daf50b150034270db4b903",
+    "mtime": 1781984462.6643996,
+    "ast_hash": "6474c6500dbf09d91975f70acf08fb66",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/setup-profile.tsx": {
@@ -595,13 +595,13 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/signup.tsx": {
-    "mtime": 1781120207.6343079,
-    "ast_hash": "bd1298d1359a07262532d661154c23d2",
+    "mtime": 1781984437.0291712,
+    "ast_hash": "feb76e493000b65645b9504b8f098dee",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/verify-otp.tsx": {
-    "mtime": 1781899814.8877392,
-    "ast_hash": "7d345929e80071358c9b793de4b9862a",
+    "mtime": 1781984482.1166348,
+    "ast_hash": "1d3818fa526907b26093e324688b4709",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/vite-env.d.ts": {
@@ -2230,8 +2230,8 @@
     "semantic_hash": ""
   },
   "Backend/scripts/seed-user.ts": {
-    "mtime": 1781983810.516234,
-    "ast_hash": "6102fc36ac23db3506e8b096641e5dff",
+    "mtime": 1781984351.7495787,
+    "ast_hash": "ffdcf10cebf1818ba7a8922614636288",
     "semantic_hash": ""
   }
 }
