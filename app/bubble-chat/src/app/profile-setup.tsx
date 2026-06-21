@@ -283,7 +283,11 @@ export default function ProfileSetup() {
     setError("");
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/pdf", "text/plain", "text/markdown", "text/csv"],
+        type: [
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "text/plain", "text/markdown", "text/csv",
+        ],
         multiple: true,
         copyToCacheDirectory: true,
       });
@@ -350,6 +354,7 @@ export default function ProfileSetup() {
       // 3. Drain all three brain-ingestion queues. Partial failures are reported
       // but do not abort the whole flow — onboarding is the priority.
       const ingestionFailures: string[] = [];
+      let embedWarnings = 0; // saved but not embedded (searchable)
       const totalAssets = documents.length + pendingFiles.length + pendingUrls.length;
       let done = 0;
 
@@ -357,13 +362,14 @@ export default function ProfileSetup() {
         done++;
         setIngestProgress(`Ingesting ${done}/${totalAssets}: ${doc.title}`);
         try {
-          await ingestOrgDocument({
+          const r = await ingestOrgDocument({
             title: doc.title,
             content: doc.content,
             department: "general",
             accessLevel: "public",
             tags: ["onboarding", "mobile-text"],
           });
+          if (r?.warning) embedWarnings++;
         } catch (e: any) {
           ingestionFailures.push(`text "${doc.title}"`);
         }
@@ -373,12 +379,13 @@ export default function ProfileSetup() {
         done++;
         setIngestProgress(`Ingesting ${done}/${totalAssets}: ${f.name}`);
         try {
-          await ingestOrgDocumentFromFile({
+          const r = await ingestOrgDocumentFromFile({
             file: f,
             department: "general",
             accessLevel: "public",
             tags: ["onboarding", "mobile-file"],
           });
+          if (r?.warning) embedWarnings++;
         } catch (e: any) {
           ingestionFailures.push(`file "${f.name}"`);
         }
@@ -388,13 +395,14 @@ export default function ProfileSetup() {
         done++;
         setIngestProgress(`Ingesting ${done}/${totalAssets}: ${u.title || u.url}`);
         try {
-          await ingestOrgDocumentFromUrl({
+          const r = await ingestOrgDocumentFromUrl({
             url: u.url,
             title: u.title || undefined,
             department: "general",
             accessLevel: "public",
             tags: ["onboarding", "mobile-url"],
           });
+          if (r?.warning) embedWarnings++;
         } catch (e: any) {
           ingestionFailures.push(`url "${u.url}"`);
         }
@@ -408,6 +416,8 @@ export default function ProfileSetup() {
 
       if (ingestionFailures.length > 0) {
         setError(`Workspace created, but ${ingestionFailures.length} item(s) could not be ingested: ${ingestionFailures.join(", ")}. You can re-add them later in the Brain section.`);
+      } else if (embedWarnings > 0) {
+        setError(`Workspace created, but ${embedWarnings} item(s) were saved without being made searchable (embeddings unavailable). Aida can't recall them yet — re-add later from the Brain section.`);
       }
 
       await clearDraft();

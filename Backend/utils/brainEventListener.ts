@@ -3,9 +3,8 @@ import { User } from '../models/users';
 import { Organization } from '../models/organizations';
 import { Conversation } from '../models/conversations';
 import { Message } from '../models/messages';
-import { OrgDocument } from '../models/orgDocument';
-import { chunkText, generateEmbedding } from '../utils/embeddings';
-import { upsertVectors, hasPinecone } from '../utils/pinecone';
+import { ingestToBrain, BrainSourceKind } from './brainIngest';
+import { extractTextFromFile } from './fileText';
 import { updateExpertiseRadar } from '../controllers/continuityController';
 import { logActivity } from '../controllers/activityLogController';
 import { getSignedMediaUrl } from './filebase';
@@ -35,45 +34,22 @@ const ingestTextToOrg = async (
   orgId: string,
   namespace: string,
   createdBy: string,
-  department = 'general'
+  department = 'general',
+  sourceKind: BrainSourceKind = 'document'
 ) => {
-  const chunks = chunkText(text, 500, 100);
-  const pineconeIds: string[] = [];
-
-  if (hasPinecone()) {
-    const vectors = [];
-    for (const chunk of chunks) {
-      const embedding = await generateEmbedding(chunk);
-      if (embedding && embedding.length > 0) {
-        const vectorId = `brain-evt-${crypto.randomUUID()}`;
-        pineconeIds.push(vectorId);
-        vectors.push({
-          id: vectorId,
-          values: embedding,
-          metadata: {
-            title,
-            chunk,
-            department,
-            accessLevel: 'public',
-            organizationId: orgId,
-          },
-        });
-      }
-    }
-    if (vectors.length > 0) {
-      await upsertVectors(vectors, namespace);
-    }
-  }
-
-  await OrgDocument.create({
+  // Delegate to the single shared brain-ingestion core so the event-bus path and
+  // the HTTP/onboarding path stay byte-for-byte consistent (same chunking, same
+  // embedding model, same metadata incl. the createdAtTs timestamp for recall).
+  await ingestToBrain({
+    orgId,
+    namespace,
     title,
     content: text,
+    createdBy,
+    tags,
     department,
     accessLevel: 'public',
-    createdBy,
-    organizationId: orgId,
-    pineconeIds,
-    tags,
+    source: { kind: sourceKind },
   });
 
   if (tags.length > 0) {
@@ -112,7 +88,8 @@ brainEventBus.on('group_message_sent', async (payload: { messageId: string; chat
       org._id.toString(),
       namespace,
       senderId,
-      'communications'
+      'communications',
+      'chat'
     );
 
     console.log(`[Brain Event] Ingested group message ${messageId} for org ${org.name}`);
@@ -154,7 +131,8 @@ brainEventBus.on('meeting_ended', async (payload: {
       org._id.toString(),
       namespace,
       hostId,
-      'meetings'
+      'meetings',
+      'meeting'
     );
 
     console.log(`[Brain Event] Re-indexed meeting ${meetingId} into org ${org.name} brain`);
@@ -201,7 +179,8 @@ brainEventBus.on('calendar_event_created', async (payload: {
       org._id.toString(),
       namespace,
       createdBy,
-      'meetings'
+      'meetings',
+      'calendar'
     );
 
     console.log(`[Brain Event] Ingested calendar event "${title}" for org ${org.name}`);
@@ -288,14 +267,19 @@ brainEventBus.on('chat_file_shared', async (payload: {
     const org = await Organization.findById(chat.organizationId);
     if (!org) return;
 
+    const lowerUrl = mediaUrl.toLowerCase().split('?')[0];
     const isAudioVideo =
       (mimeType && (mimeType.startsWith('audio/') || mimeType.startsWith('video/'))) ||
-      AUDIO_VIDEO_EXT.some((ext) => mediaUrl.toLowerCase().endsWith(ext));
+      AUDIO_VIDEO_EXT.some((ext) => lowerUrl.endsWith(ext));
     const isTextLike = mimeType ? TEXT_LIKE_MIME.test(mimeType) : false;
+    // PDFs and DOCX now have a real text extractor (shared with HTTP uploads).
+    const isDoc =
+      (mimeType === 'application/pdf' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+      /\.(pdf|docx)$/i.test(lowerUrl);
 
-    if (!isAudioVideo && !isTextLike) {
-      // PDFs, docx, images — no text extractor wired. Skip silently rather than
-      // poison the brain with binary garbage.
+    if (!isAudioVideo && !isTextLike && !isDoc) {
+      // Images and other binaries — no text extractor. Skip rather than poison
+      // the brain with binary garbage.
       console.log(`[Brain Event] chat_file_shared skipped (unsupported mime: ${mimeType || 'unknown'})`);
       return;
     }
@@ -318,6 +302,10 @@ brainEventBus.on('chat_file_shared', async (payload: {
       } finally {
         try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
       }
+    } else if (isDoc) {
+      const buf = Buffer.from(await res.arrayBuffer());
+      extractedText = (await extractTextFromFile(buf, mimeType || '', lowerUrl)) || '';
+      title = `Document in ${chat.chatName}`;
     } else {
       extractedText = await res.text();
     }
@@ -336,10 +324,11 @@ brainEventBus.on('chat_file_shared', async (payload: {
       org._id.toString(),
       namespace,
       senderId,
-      'communications'
+      'communications',
+      isAudioVideo ? 'chat' : 'chat_file'
     );
 
-    console.log(`[Brain Event] Ingested chat file (${isAudioVideo ? 'transcript' : 'text'}) for org ${org.name}`);
+    console.log(`[Brain Event] Ingested chat file (${isAudioVideo ? 'transcript' : isDoc ? 'document' : 'text'}) for org ${org.name}`);
   } catch (err) {
     console.error('[Brain Event] chat_file_shared ingestion failed:', err);
   }
@@ -379,7 +368,8 @@ brainEventBus.on('qa_resolved', async (payload: { questionMessageId: string; rep
       org._id.toString(),
       namespace,
       answererId,
-      'general'
+      'general',
+      'qa'
     );
 
     // Reward the expert for closing the loop.

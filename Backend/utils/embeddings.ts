@@ -1,35 +1,75 @@
-import { HfInference } from '@huggingface/inference';
+// ─── Local embeddings (Transformers.js) ──────────────────────────────────────
+// We run the embedding model LOCALLY via @xenova/transformers instead of HF's
+// hosted Inference API. The hosted API is now credit-gated ("Inference
+// Providers") and was silently returning [] for our token. Local inference has
+// no key, no rate limits, no network — the brain can't silently go empty.
+//
+// Model: Xenova/bge-small-en-v1.5 (ONNX port of BAAI/bge-small-en-v1.5).
+// 384 dimensions — MUST match the Pinecone index dimension.
+const EMBEDDING_MODEL = 'Xenova/bge-small-en-v1.5';
+export const EMBEDDING_DIMENSIONS = 384;
 
-const hf = new HfInference(process.env.HF_API_KEY || '');
+// Lazily-initialized singleton pipeline. The first call downloads + caches the
+// model (~30MB); every call after is fully in-process.
+let extractorPromise: Promise<any> | null = null;
 
-// Free embedding model — 384 dimensions, fast
-const EMBEDDING_MODEL = 'BAAI/bge-small-en-v1.5';
+const getExtractor = async (): Promise<any> => {
+    if (!extractorPromise) {
+        extractorPromise = (async () => {
+            // Dynamic import so the (ESM) library loads cleanly under CommonJS.
+            const TJS: any = await import('@xenova/transformers');
+            // Don't look for local model files; pull the ONNX weights from the hub.
+            if (TJS?.env) TJS.env.allowLocalModels = false;
+            console.log('[Embeddings] Loading local model', EMBEDDING_MODEL, '(first run downloads ~30MB)…');
+            const pipe = await TJS.pipeline('feature-extraction', EMBEDDING_MODEL);
+            console.log('[Embeddings] Local embedding model ready.');
+            return pipe;
+        })().catch((err) => {
+            // Reset so a later call can retry instead of being stuck on a bad promise.
+            extractorPromise = null;
+            throw err;
+        });
+    }
+    return extractorPromise;
+};
+
+/**
+ * Local embeddings are always available (no API key required). Kept as a helper
+ * so callers can branch on "embeddings on" without caring about the backend.
+ */
+export const embeddingsConfigured = (): boolean => true;
+
+/**
+ * Eagerly warm the embedding model (call once at boot so the first real ingest
+ * isn't slowed by the model download/load). Safe to call repeatedly.
+ */
+export const warmEmbeddings = async (): Promise<void> => {
+    try { await getExtractor(); } catch (err: any) {
+        console.error('[Embeddings] Warm-up failed:', err?.message || err);
+    }
+};
 
 /**
  * Generate a single embedding vector for a piece of text.
- * Returns an empty array if the HF key is not configured.
+ * Returns an empty array only if the model fails to load/run.
  */
 export const generateEmbedding = async (text: string): Promise<number[]> => {
-    const key = process.env.HF_API_KEY;
-    if (!key || key === 'your_hugging_face_api_key_here') return [];
+    const clean = (text || '').trim();
+    if (!clean) return [];
 
     try {
-        const response = await hf.featureExtraction({
-            model: EMBEDDING_MODEL,
-            inputs: text.trim().substring(0, 8192),
-        });
-
-        // featureExtraction can return number[] | number[][] | number[][][]
-        if (Array.isArray(response)) {
-            // If it's a nested array (batch), take the first element
-            if (Array.isArray(response[0])) {
-                return response[0] as number[];
-            }
-            return response as number[];
+        const extractor = await getExtractor();
+        // BGE was trained with CLS pooling; normalize for cosine similarity.
+        const output = await extractor(clean.substring(0, 8192), { pooling: 'cls', normalize: true });
+        const vector: number[] = Array.from(output.data as Float32Array | number[]);
+        if (vector.length !== EMBEDDING_DIMENSIONS) {
+            console.error(`[Embeddings] Unexpected vector length ${vector.length} (expected ${EMBEDDING_DIMENSIONS}).`);
+            return [];
         }
-        return [];
-    } catch (err) {
-        console.error('[Embeddings] Failed to generate embedding:', err);
+        return vector;
+    } catch (err: any) {
+        // Surface the real reason — never swallow into a silent empty brain.
+        console.error('[Embeddings] Failed to generate embedding:', err?.message || err);
         return [];
     }
 };

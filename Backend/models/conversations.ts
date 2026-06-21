@@ -122,11 +122,12 @@ const ConversationSchema: Schema<IConversation> = new Schema(
 
 // Enforce: every group chat must belong to an organization. 1:1 DMs may remain
 // org-less so users can contact peers in other companies.
-(ConversationSchema as any).pre('validate', function (this: IConversation, next: (err?: Error) => void) {
+// Mongoose 9+ dropped callback-style middleware (the `next` parameter is no
+// longer passed). Use the async/throw form instead.
+ConversationSchema.pre('validate', async function (this: IConversation) {
   if (this.isGroupChat && !this.organizationId) {
-    return next(new Error('Group chats require organizationId'));
+    throw new Error('Group chats require organizationId');
   }
-  next();
 });
 
 export const Conversation = mongoose.model<IConversation>('Conversation', ConversationSchema);

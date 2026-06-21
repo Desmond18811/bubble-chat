@@ -20,6 +20,7 @@ import helmet from 'helmet';
 import { initSocket, getIO } from './utils/socket';
 import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler, initDailyDigestScheduler, initWeeklyDigestScheduler } from './utils/scheduler';
 import { initBrainEventListener } from './utils/brainEventListener';
+import { warmEmbeddings } from './utils/embeddings';
 import { processQueue } from './utils/queue';
 import { Conversation } from './models/conversations';
 import './middleware/passport';
@@ -357,6 +358,9 @@ mongoose.connect(mongoURI, { family: 4 })
     initDailyDigestScheduler();
     initWeeklyDigestScheduler();
     initBrainEventListener();
+    // Warm the local embedding model in the background so the first brain ingest
+    // isn't blocked on the one-time model download/load.
+    warmEmbeddings();
 
     const systemUser = await import('./models/users').then(m => m.User.findOne({ is_bot: true }));
     if (systemUser) await seedDefaultTemplates(String(systemUser._id));

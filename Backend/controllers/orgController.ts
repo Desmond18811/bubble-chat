@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import { OrgDocument } from '../models/orgDocument';
 import { Organization } from '../models/organizations';
 import { User } from '../models/users';
-import { chunkText, generateEmbedding } from '../utils/embeddings';
+import { chunkText, generateEmbedding, embeddingsConfigured } from '../utils/embeddings';
 import { upsertVectors, deleteVectors, hasPinecone } from '../utils/pinecone';
+import { ingestToBrain, BrainSourceKind } from '../utils/brainIngest';
+import { extractTextFromFile } from '../utils/fileText';
 import * as crypto from 'crypto';
 import { Conversation } from '../models/conversations';
 import { Message } from '../models/messages';
@@ -120,7 +122,7 @@ const persistOrgDocument = async (params: {
     accessLevel?: string;
     tags?: string[];
     organizationId?: any;
-    source?: { kind: 'text' | 'url' | 'file'; ref?: string };
+    source?: { kind: BrainSourceKind; ref?: string };
 }) => {
     const {
         userId,
@@ -142,49 +144,30 @@ const persistOrgDocument = async (params: {
         if (user && user.organization) org = await Organization.findOne({ name: user.organization });
     }
 
-    const orgId = org ? org._id : undefined;
-    const namespace = org ? (org.pineconeNamespace || `org-${org._id}`) : undefined;
-
-    const chunks = chunkText(content, 500, 100);
-    const pineconeIds: string[] = [];
-
-    if (hasPinecone() && namespace) {
-        const vectors = [];
-        for (const chunk of chunks) {
-            const embedding = await generateEmbedding(chunk);
-            if (embedding.length > 0) {
-                const id = `org-${crypto.randomUUID()}`;
-                pineconeIds.push(id);
-                vectors.push({
-                    id,
-                    values: embedding,
-                    metadata: {
-                        title,
-                        chunk,
-                        department,
-                        accessLevel,
-                        organizationId: orgId,
-                        sourceKind: source?.kind || 'text',
-                        sourceRef: source?.ref || '',
-                    },
-                });
-            }
-        }
-        if (vectors.length > 0) await upsertVectors(vectors, namespace);
+    if (!org) {
+        // No org context — persist a plain doc with no vectors so we never crash,
+        // but it won't be part of any searchable brain.
+        const doc = await OrgDocument.create({
+            title, content, department, accessLevel: accessLevel as any,
+            createdBy: userId, organizationId: undefined, pineconeIds: [], tags,
+        });
+        return { doc, pineconeIds: [] as string[], totalChunks: 0, embeddingsSkipped: false };
     }
 
-    const doc = await OrgDocument.create({
+    const namespace = org.pineconeNamespace || `org-${org._id}`;
+
+    // Single source of truth for chunk → embed → upsert → OrgDocument.
+    return ingestToBrain({
+        orgId: String(org._id),
+        namespace,
         title,
         content,
-        department,
-        accessLevel,
-        createdBy: userId,
-        organizationId: orgId,
-        pineconeIds,
+        createdBy: String(userId),
         tags,
+        department,
+        accessLevel: accessLevel as any,
+        source: source as any,
     });
-
-    return { doc, pineconeIds };
 };
 
 /**
@@ -201,7 +184,7 @@ export const ingestDocument = async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        const { doc, pineconeIds } = await persistOrgDocument({
+        const { doc, pineconeIds, embeddingsSkipped } = await persistOrgDocument({
             userId, title, content, department, accessLevel, tags, organizationId,
             source: { kind: 'text' },
         });
@@ -211,6 +194,7 @@ export const ingestDocument = async (req: AuthRequest, res: Response): Promise<v
             document: doc,
             embeddedChunks: pineconeIds.length,
             pineconeEnabled: hasPinecone(),
+            ...(embeddingsSkipped ? { warning: 'Saved, but NOT yet searchable by Aida — embeddings failed.' } : {}),
         });
     } catch (error: any) {
         console.error('[OrgController] Ingest error:', error);
@@ -251,6 +235,23 @@ export const ingestDocumentFromUrl = async (req: AuthRequest, res: Response): Pr
         let title = titleInput?.trim() || '';
         let sourceRef = url;
 
+        // Browser-like headers — many sites (and YouTube) 403 requests without a UA.
+        const BROWSER_HEADERS = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        };
+
+        // ChatGPT links can't be read server-side: chatgpt.com/c/<id> is a private,
+        // auth-gated conversation, and /share/<id> is JS-rendered. Fetching them
+        // returns a login/JS shell — refuse rather than poison the brain.
+        if (/^https?:\/\/(chatgpt\.com|chat\.openai\.com)\//i.test(url)) {
+            res.status(422).json({
+                error: 'ChatGPT conversation links can’t be imported automatically (they’re private or rendered in-browser). Please copy the conversation text and paste it into "Quick Upload Text Document" instead.',
+            });
+            return;
+        }
+
         const videoId = extractYouTubeId(url);
         if (videoId) {
             // YouTube path — pull transcript via youtube-transcript.
@@ -261,27 +262,48 @@ export const ingestDocumentFromUrl = async (req: AuthRequest, res: Response): Pr
                 if (!title) title = `YouTube transcript — ${videoId}`;
                 sourceRef = `https://youtube.com/watch?v=${videoId}`;
             } catch (err: any) {
-                res.status(422).json({ error: 'Could not fetch a transcript for that YouTube video. It may be missing captions.' });
+                // Distinguish the common failure modes for a useful message.
+                const name = err?.constructor?.name || '';
+                let msg = 'Could not fetch a transcript for that YouTube video.';
+                if (/Disabled|NotAvailable/i.test(name)) msg = 'That YouTube video has transcripts/captions disabled.';
+                else if (/TooMany/i.test(name)) msg = 'YouTube is rate-limiting transcript requests right now. Try again shortly.';
+                else if (/Unavailable/i.test(name)) msg = 'That YouTube video is unavailable or private.';
+                res.status(422).json({ error: msg });
                 return;
             }
         } else {
             // Generic web page path — fetch and crudely strip HTML.
             try {
-                const fetchRes = await fetch(url);
+                const fetchRes = await fetch(url, { headers: BROWSER_HEADERS });
                 if (!fetchRes.ok) {
                     res.status(422).json({ error: `Could not fetch ${url} (HTTP ${fetchRes.status}).` });
                     return;
                 }
                 const html = await fetchRes.text();
-                content = html
-                    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-                    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-                    .replace(/<[^>]+>/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim();
                 if (!title) {
                     const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
                     title = m ? m[1].trim() : url;
+                }
+                content = html
+                    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+                    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+                    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&nbsp;/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                // JS-shell / bot-wall guard: a client-rendered SPA or a Cloudflare
+                // challenge yields almost no real text — refuse instead of storing
+                // "You need to enable JavaScript to run this app." as knowledge.
+                const looksLikeShell =
+                    /enable JavaScript|Just a moment|Please turn on JavaScript|requires JavaScript/i.test(content) &&
+                    content.length < 600;
+                if (looksLikeShell || content.replace(/\s/g, '').length < 200) {
+                    res.status(422).json({
+                        error: 'That page didn’t return readable text (it may need JavaScript or a login). Try a direct article URL, or paste the content into "Quick Upload Text Document".',
+                    });
+                    return;
                 }
             } catch (err: any) {
                 res.status(422).json({ error: `Could not fetch content from ${url}.` });
@@ -294,7 +316,7 @@ export const ingestDocumentFromUrl = async (req: AuthRequest, res: Response): Pr
             return;
         }
 
-        const { doc, pineconeIds } = await persistOrgDocument({
+        const { doc, pineconeIds, embeddingsSkipped } = await persistOrgDocument({
             userId, title, content, department, accessLevel,
             tags: Array.isArray(tags) ? tags : ['url-import'],
             organizationId,
@@ -306,6 +328,7 @@ export const ingestDocumentFromUrl = async (req: AuthRequest, res: Response): Pr
             document: doc,
             embeddedChunks: pineconeIds.length,
             extractedLength: content.length,
+            ...(embeddingsSkipped ? { warning: 'Saved, but NOT yet searchable by Aida — embeddings failed.' } : {}),
         });
     } catch (error: any) {
         console.error('[OrgController] ingestDocumentFromUrl error:', error);
@@ -330,19 +353,14 @@ export const ingestDocumentFromFile = async (req: AuthRequest, res: Response): P
         const filename = file.originalname || 'document';
         const mime = (file.mimetype || '').toLowerCase();
 
-        let content = '';
-        if (mime === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
-            const pdfParse = (await import('pdf-parse')).default as any;
-            const parsed = await pdfParse(file.buffer);
-            content = (parsed?.text || '').replace(/\s+\n/g, '\n').trim();
-        } else if (mime.startsWith('text/') || /\.(txt|md|markdown|csv)$/i.test(filename)) {
-            content = file.buffer.toString('utf8').trim();
-        } else {
-            res.status(415).json({ error: `Unsupported file type: ${mime || filename}. Use PDF or text files.` });
+        const lower = filename.toLowerCase();
+        const content = await extractTextFromFile(file.buffer, mime, lower);
+        if (content === null) {
+            res.status(415).json({ error: `Unsupported file type: ${mime || filename}. Use PDF, DOCX, TXT, MD, or CSV.` });
             return;
         }
 
-        if (!content || content.length < 20) {
+        if (!content || content.trim().length < 20) {
             res.status(422).json({ error: 'File contained no extractable text.' });
             return;
         }
@@ -353,7 +371,7 @@ export const ingestDocumentFromFile = async (req: AuthRequest, res: Response): P
             try { return JSON.parse(tags); } catch { return [tags]; }
         })();
 
-        const { doc, pineconeIds } = await persistOrgDocument({
+        const { doc, pineconeIds, embeddingsSkipped } = await persistOrgDocument({
             userId,
             title: titleInput?.trim() || filename,
             content,
@@ -369,6 +387,7 @@ export const ingestDocumentFromFile = async (req: AuthRequest, res: Response): P
             document: doc,
             embeddedChunks: pineconeIds.length,
             extractedLength: content.length,
+            ...(embeddingsSkipped ? { warning: 'Saved, but NOT yet searchable by Aida — embeddings failed.' } : {}),
         });
     } catch (error: any) {
         console.error('[OrgController] ingestDocumentFromFile error:', error);
