@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/ZegoMeetingModal.tsx": {
-    "mtime": 1780492268.1660602,
-    "ast_hash": "96d7d34b492134a6f971bb07925116c5",
+    "mtime": 1782022241.0690985,
+    "ast_hash": "113ea06f6df56449aeb9bc9f5413bcd0",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/bubble-background.tsx": {
@@ -635,8 +635,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/aidaController.ts": {
-    "mtime": 1781899873.7610543,
-    "ast_hash": "674bc38b12fbc57e53a9adc580b0ae39",
+    "mtime": 1782022138.9339807,
+    "ast_hash": "78f1ec378315867c458dc11da4d36118",
     "semantic_hash": ""
   },
   "Backend/controllers/authController.ts": {
@@ -675,8 +675,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/meetingController.ts": {
-    "mtime": 1781868951.177236,
-    "ast_hash": "2cee24618ca80b7533e0eb98e5d28037",
+    "mtime": 1782021963.9691575,
+    "ast_hash": "066f31cc3de3a68d67e28f5b2580ba30",
     "semantic_hash": ""
   },
   "Backend/controllers/messageController.ts": {
@@ -695,8 +695,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/orgController.ts": {
-    "mtime": 1782019151.9271545,
-    "ast_hash": "32ec4e4b89884614172b68a794f7b9d0",
+    "mtime": 1782022092.5548315,
+    "ast_hash": "43e42268b5afdde939abdb5ad87c8056",
     "semantic_hash": ""
   },
   "Backend/controllers/paymentController.ts": {
@@ -785,8 +785,8 @@
     "semantic_hash": ""
   },
   "Backend/models/meeting.ts": {
-    "mtime": 1781868920.7774358,
-    "ast_hash": "9a9489bbaff2d0c9a7ac2136761250bd",
+    "mtime": 1782021816.2533622,
+    "ast_hash": "90fa4a8e26f124bfbfc0c1c8e3cde907",
     "semantic_hash": ""
   },
   "Backend/models/messageRequest.ts": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/mailer.ts": {
-    "mtime": 1781852875.2544174,
-    "ast_hash": "e5f2c2d29e20f48f37d73d1449d27b80",
+    "mtime": 1782021945.3763099,
+    "ast_hash": "bdb55d10e10975822066a22adde2b8e6",
     "semantic_hash": ""
   },
   "Backend/utils/pinecone.ts": {
@@ -1080,8 +1080,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/scheduler.ts": {
-    "mtime": 1781896744.497598,
-    "ast_hash": "4b29c8ffd3e8ef6299bfa85f617a1147",
+    "mtime": 1782022032.9122653,
+    "ast_hash": "69eebe0e1f382a685884c55e5eb840bf",
     "semantic_hash": ""
   },
   "Backend/utils/socket.ts": {
@@ -1955,8 +1955,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/livekitEgress.ts": {
-    "mtime": 1781868939.7867327,
-    "ast_hash": "0a01137e21d36efb6c434ee17d1896b7",
+    "mtime": 1782021780.622693,
+    "ast_hash": "d4d7922f0d59ee6ebf10b21f399b79fe",
     "semantic_hash": ""
   },
   "app/bubble-chat/android/app/build.gradle": {
