@@ -620,9 +620,9 @@ export default function ProfileScreen() {
                 <View style={{ gap: 10 }}>
                   {orgData.inviteCode ? (
                     <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
-                      <View className="flex-1 pr-2">
-                        <Text className="text-[13px] font-bold text-ink font-sans">Organization Invite Code</Text>
-                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Share this code with employees to let them join</Text>
+                      <View className="flex-1 pr-3">
+                        <Text className="text-[13px] font-bold text-ink font-sans">Invite Code</Text>
+                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Share with employees to let them join</Text>
                       </View>
                       <TouchableOpacity
                         onPress={() => {
@@ -631,8 +631,10 @@ export default function ProfileScreen() {
                         }}
                         className="bg-white px-3 py-1.5 rounded-xl border border-black/5 flex-row items-center"
                       >
-                        <Copy color="#6c5ce7" size={13} style={{ marginRight: 4 }} />
-                        <Text className="text-purple font-bold text-[11.5px] font-sans">{orgData.inviteCode}</Text>
+                        <Copy color="#6c5ce7" size={12} style={{ marginRight: 4 }} />
+                        <Text className="text-purple font-mono font-bold text-[11px]">
+                          {orgData.inviteCode.slice(0, 6)}...{orgData.inviteCode.slice(-4)}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -781,9 +783,9 @@ export default function ProfileScreen() {
               </Text>
               
               <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
-                <Text className="text-[13px] font-bold text-ink font-sans mb-1">Have an Organization Code?</Text>
-                <Text className="text-[11px] text-ink-soft mb-3 font-sans leading-tight">
-                  Enter the invite code provided by your organization admin to gain access to workspace resources and chats immediately.
+                <Text className="text-[13px] font-bold text-ink font-sans mb-0.5">Have an Organization Code?</Text>
+                <Text className="text-[11px] text-ink-soft mb-2.5 font-sans leading-tight">
+                  Enter code to access workspace resources and chats
                 </Text>
                 
                 <View className="flex-row gap-2.5 items-center">

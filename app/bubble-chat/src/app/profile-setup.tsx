@@ -895,12 +895,10 @@ export default function ProfileSetup() {
               {isAdmin && inviteCode && (
                 <View style={styles.inviteContainer}>
                   <Text style={styles.inviteLabel}>WORKSPACE INVITE CODE</Text>
-                  <View style={styles.codeRow}>
-                    {inviteCode.split("").map((char, index) => (
-                      <View key={index} style={styles.codeCharBox}>
-                        <Text style={styles.codeCharText}>{char}</Text>
-                      </View>
-                    ))}
+                  <View style={{ backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(108,92,231,0.15)', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 18, width: '100%', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: PURPLE, letterSpacing: 0.5 }} numberOfLines={1}>
+                      {inviteCode}
+                    </Text>
                   </View>
 
                   <View style={styles.successActions}>
