@@ -277,7 +277,7 @@
       "label": "getAidaWritingSuggestions()",
       "file_type": "code",
       "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1416",
+      "source_location": "L1418",
       "_origin": "ast",
       "id": "controllers_aidacontroller_getaidawritingsuggestions",
       "community": 1,
@@ -289,9 +289,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller",
       "community": 20,
-      "norm_label": "meetingcontroller.ts"
+      "norm_label": "meetingcontroller.ts",
+      "id": "controllers_meetingcontroller"
     },
     {
       "label": "deepseekClient",
@@ -299,9 +299,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_deepseekclient",
       "community": 20,
-      "norm_label": "deepseekclient"
+      "norm_label": "deepseekclient",
+      "id": "controllers_meetingcontroller_deepseekclient"
     },
     {
       "label": "hasDeepSeekKey()",
@@ -309,9 +309,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_hasdeepseekkey",
       "community": 20,
-      "norm_label": "hasdeepseekkey()"
+      "norm_label": "hasdeepseekkey()",
+      "id": "controllers_meetingcontroller_hasdeepseekkey"
     },
     {
       "label": "extractMeetingIntelligence()",
@@ -319,9 +319,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_extractmeetingintelligence",
       "community": 20,
-      "norm_label": "extractmeetingintelligence()"
+      "norm_label": "extractmeetingintelligence()",
+      "id": "controllers_meetingcontroller_extractmeetingintelligence"
     },
     {
       "label": "createMeeting()",
@@ -329,9 +329,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L93",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_createmeeting",
       "community": 112,
-      "norm_label": "createmeeting()"
+      "norm_label": "createmeeting()",
+      "id": "controllers_meetingcontroller_createmeeting"
     },
     {
       "label": "getMeetings()",
@@ -339,9 +339,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L166",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetings",
       "community": 20,
-      "norm_label": "getmeetings()"
+      "norm_label": "getmeetings()",
+      "id": "controllers_meetingcontroller_getmeetings"
     },
     {
       "label": "getMeetingStatsWithUser()",
@@ -349,9 +349,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L199",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingstatswithuser",
       "community": 20,
-      "norm_label": "getmeetingstatswithuser()"
+      "norm_label": "getmeetingstatswithuser()",
+      "id": "controllers_meetingcontroller_getmeetingstatswithuser"
     },
     {
       "label": "getMeetingById()",
@@ -359,9 +359,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L237",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingbyid",
       "community": 20,
-      "norm_label": "getmeetingbyid()"
+      "norm_label": "getmeetingbyid()",
+      "id": "controllers_meetingcontroller_getmeetingbyid"
     },
     {
       "label": "addTranscriptChunk()",
@@ -369,9 +369,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L268",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_addtranscriptchunk",
       "community": 20,
-      "norm_label": "addtranscriptchunk()"
+      "norm_label": "addtranscriptchunk()",
+      "id": "controllers_meetingcontroller_addtranscriptchunk"
     },
     {
       "label": "logSharedFile()",
@@ -379,9 +379,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L316",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_logsharedfile",
       "community": 20,
-      "norm_label": "logsharedfile()"
+      "norm_label": "logsharedfile()",
+      "id": "controllers_meetingcontroller_logsharedfile"
     },
     {
       "label": "getMeetingFiles()",
@@ -389,9 +389,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L373",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingfiles",
       "community": 20,
-      "norm_label": "getmeetingfiles()"
+      "norm_label": "getmeetingfiles()",
+      "id": "controllers_meetingcontroller_getmeetingfiles"
     },
     {
       "label": "startScreenShare()",
@@ -399,9 +399,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L401",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_startscreenshare",
       "community": 20,
-      "norm_label": "startscreenshare()"
+      "norm_label": "startscreenshare()",
+      "id": "controllers_meetingcontroller_startscreenshare"
     },
     {
       "label": "endScreenShare()",
@@ -409,9 +409,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L453",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_endscreenshare",
       "community": 20,
-      "norm_label": "endscreenshare()"
+      "norm_label": "endscreenshare()",
+      "id": "controllers_meetingcontroller_endscreenshare"
     },
     {
       "label": "endMeeting()",
@@ -419,9 +419,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L493",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_endmeeting",
       "community": 20,
-      "norm_label": "endmeeting()"
+      "norm_label": "endmeeting()",
+      "id": "controllers_meetingcontroller_endmeeting"
     },
     {
       "label": "runBackgroundMeetingAI()",
@@ -429,9 +429,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L580",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_runbackgroundmeetingai",
       "community": 211,
-      "norm_label": "runbackgroundmeetingai()"
+      "norm_label": "runbackgroundmeetingai()",
+      "id": "controllers_meetingcontroller_runbackgroundmeetingai"
     },
     {
       "label": "transcribeUpload()",
@@ -439,9 +439,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L895",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_transcribeupload",
       "community": 24,
-      "norm_label": "transcribeupload()"
+      "norm_label": "transcribeupload()",
+      "id": "controllers_meetingcontroller_transcribeupload"
     },
     {
       "label": "getMeetingActionItems()",
@@ -449,9 +449,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L1016",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingactionitems",
       "community": 20,
-      "norm_label": "getmeetingactionitems()"
+      "norm_label": "getmeetingactionitems()",
+      "id": "controllers_meetingcontroller_getmeetingactionitems"
     },
     {
       "label": "downloadTranscriptMarkdown()",
@@ -459,9 +459,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L1047",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_downloadtranscriptmarkdown",
       "community": 20,
-      "norm_label": "downloadtranscriptmarkdown()"
+      "norm_label": "downloadtranscriptmarkdown()",
+      "id": "controllers_meetingcontroller_downloadtranscriptmarkdown"
     },
     {
       "label": "orgController.ts",
@@ -469,9 +469,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_orgcontroller",
       "community": 87,
-      "norm_label": "orgcontroller.ts"
+      "norm_label": "orgcontroller.ts",
+      "id": "controllers_orgcontroller"
     },
     {
       "label": "deepseekClient",
@@ -479,9 +479,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_deepseekclient",
       "community": 87,
-      "norm_label": "deepseekclient"
+      "norm_label": "deepseekclient",
+      "id": "controllers_orgcontroller_deepseekclient"
     },
     {
       "label": "AuthRequest",
@@ -489,9 +489,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L22",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_authrequest",
       "community": 87,
-      "norm_label": "authrequest"
+      "norm_label": "authrequest",
+      "id": "controllers_orgcontroller_authrequest"
     },
     {
       "label": "ensureOrganizationForFounder()",
@@ -499,9 +499,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_ensureorganizationforfounder",
       "community": 49,
-      "norm_label": "ensureorganizationforfounder()"
+      "norm_label": "ensureorganizationforfounder()",
+      "id": "controllers_orgcontroller_ensureorganizationforfounder"
     },
     {
       "label": "persistOrgDocument()",
@@ -509,9 +509,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L117",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_persistorgdocument",
       "community": 87,
-      "norm_label": "persistorgdocument()"
+      "norm_label": "persistorgdocument()",
+      "id": "controllers_orgcontroller_persistorgdocument"
     },
     {
       "label": "ingestDocument()",
@@ -519,9 +519,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L177",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_ingestdocument",
       "community": 211,
-      "norm_label": "ingestdocument()"
+      "norm_label": "ingestdocument()",
+      "id": "controllers_orgcontroller_ingestdocument"
     },
     {
       "label": "extractYouTubeId()",
@@ -529,9 +529,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L206",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_extractyoutubeid",
       "community": 87,
-      "norm_label": "extractyoutubeid()"
+      "norm_label": "extractyoutubeid()",
+      "id": "controllers_orgcontroller_extractyoutubeid"
     },
     {
       "label": "ingestDocumentFromUrl()",
@@ -539,9 +539,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L224",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_ingestdocumentfromurl",
       "community": 87,
-      "norm_label": "ingestdocumentfromurl()"
+      "norm_label": "ingestdocumentfromurl()",
+      "id": "controllers_orgcontroller_ingestdocumentfromurl"
     },
     {
       "label": "ingestDocumentFromFile()",
@@ -549,9 +549,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L343",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_ingestdocumentfromfile",
       "community": 87,
-      "norm_label": "ingestdocumentfromfile()"
+      "norm_label": "ingestdocumentfromfile()",
+      "id": "controllers_orgcontroller_ingestdocumentfromfile"
     },
     {
       "label": "listDocuments()",
@@ -559,9 +559,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L402",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_listdocuments",
       "community": 87,
-      "norm_label": "listdocuments()"
+      "norm_label": "listdocuments()",
+      "id": "controllers_orgcontroller_listdocuments"
     },
     {
       "label": "deleteDocument()",
@@ -569,9 +569,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L440",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_deletedocument",
       "community": 87,
-      "norm_label": "deletedocument()"
+      "norm_label": "deletedocument()",
+      "id": "controllers_orgcontroller_deletedocument"
     },
     {
       "label": "seedOrgKnowledge()",
@@ -579,9 +579,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L458",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_seedorgknowledge",
       "community": 211,
-      "norm_label": "seedorgknowledge()"
+      "norm_label": "seedorgknowledge()",
+      "id": "controllers_orgcontroller_seedorgknowledge"
     },
     {
       "label": "joinOrganizationByInvite()",
@@ -589,9 +589,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L504",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_joinorganizationbyinvite",
       "community": 139,
-      "norm_label": "joinorganizationbyinvite()"
+      "norm_label": "joinorganizationbyinvite()",
+      "id": "controllers_orgcontroller_joinorganizationbyinvite"
     },
     {
       "label": "onboardOrgBrain()",
@@ -599,9 +599,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L604",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_onboardorgbrain",
       "community": 211,
-      "norm_label": "onboardorgbrain()"
+      "norm_label": "onboardorgbrain()",
+      "id": "controllers_orgcontroller_onboardorgbrain"
     },
     {
       "label": "getOrgInviteCode()",
@@ -609,9 +609,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L768",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_getorginvitecode",
       "community": 87,
-      "norm_label": "getorginvitecode()"
+      "norm_label": "getorginvitecode()",
+      "id": "controllers_orgcontroller_getorginvitecode"
     },
     {
       "label": "updateOrgProfile()",
@@ -619,9 +619,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L804",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_updateorgprofile",
       "community": 87,
-      "norm_label": "updateorgprofile()"
+      "norm_label": "updateorgprofile()",
+      "id": "controllers_orgcontroller_updateorgprofile"
     },
     {
       "label": "getOrgMembers()",
@@ -629,9 +629,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L856",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_getorgmembers",
       "community": 87,
-      "norm_label": "getorgmembers()"
+      "norm_label": "getorgmembers()",
+      "id": "controllers_orgcontroller_getorgmembers"
     },
     {
       "label": "getOrgTranscripts()",
@@ -639,9 +639,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L881",
       "_origin": "ast",
-      "id": "controllers_orgcontroller_getorgtranscripts",
       "community": 87,
-      "norm_label": "getorgtranscripts()"
+      "norm_label": "getorgtranscripts()",
+      "id": "controllers_orgcontroller_getorgtranscripts"
     },
     {
       "label": "meeting.ts",
@@ -649,9 +649,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "models_meeting",
       "community": 20,
-      "norm_label": "meeting.ts"
+      "norm_label": "meeting.ts",
+      "id": "models_meeting"
     },
     {
       "label": "IActionItem",
@@ -659,9 +659,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "id": "models_meeting_iactionitem",
       "community": 20,
-      "norm_label": "iactionitem"
+      "norm_label": "iactionitem",
+      "id": "models_meeting_iactionitem"
     },
     {
       "label": "ISharedFile",
@@ -669,9 +669,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "id": "models_meeting_isharedfile",
       "community": 20,
-      "norm_label": "isharedfile"
+      "norm_label": "isharedfile",
+      "id": "models_meeting_isharedfile"
     },
     {
       "label": "IScreenShare",
@@ -679,9 +679,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "id": "models_meeting_iscreenshare",
       "community": 20,
-      "norm_label": "iscreenshare"
+      "norm_label": "iscreenshare",
+      "id": "models_meeting_iscreenshare"
     },
     {
       "label": "IMeeting",
@@ -689,9 +689,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L40",
       "_origin": "ast",
-      "id": "models_meeting_imeeting",
       "community": 20,
-      "norm_label": "imeeting"
+      "norm_label": "imeeting",
+      "id": "models_meeting_imeeting"
     },
     {
       "label": "ActionItemSchema",
@@ -699,9 +699,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L83",
       "_origin": "ast",
-      "id": "models_meeting_actionitemschema",
       "community": 20,
-      "norm_label": "actionitemschema"
+      "norm_label": "actionitemschema",
+      "id": "models_meeting_actionitemschema"
     },
     {
       "label": "SharedFileSchema",
@@ -709,9 +709,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L95",
       "_origin": "ast",
-      "id": "models_meeting_sharedfileschema",
       "community": 20,
-      "norm_label": "sharedfileschema"
+      "norm_label": "sharedfileschema",
+      "id": "models_meeting_sharedfileschema"
     },
     {
       "label": "ScreenShareSchema",
@@ -719,9 +719,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L115",
       "_origin": "ast",
-      "id": "models_meeting_screenshareschema",
       "community": 20,
-      "norm_label": "screenshareschema"
+      "norm_label": "screenshareschema",
+      "id": "models_meeting_screenshareschema"
     },
     {
       "label": "MeetingSchema",
@@ -729,9 +729,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L130",
       "_origin": "ast",
-      "id": "models_meeting_meetingschema",
       "community": 20,
-      "norm_label": "meetingschema"
+      "norm_label": "meetingschema",
+      "id": "models_meeting_meetingschema"
     },
     {
       "label": "Meeting",
@@ -739,9 +739,9 @@
       "source_file": "Backend/models/meeting.ts",
       "source_location": "L172",
       "_origin": "ast",
-      "id": "models_meeting_meeting",
       "community": 20,
-      "norm_label": "meeting"
+      "norm_label": "meeting",
+      "id": "models_meeting_meeting"
     },
     {
       "label": "livekitEgress.ts",
@@ -749,9 +749,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "utils_livekitegress",
       "community": 112,
-      "norm_label": "livekitegress.ts"
+      "norm_label": "livekitegress.ts",
+      "id": "utils_livekitegress"
     },
     {
       "label": "BUCKET",
@@ -759,9 +759,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "id": "utils_livekitegress_bucket",
       "community": 112,
-      "norm_label": "bucket"
+      "norm_label": "bucket",
+      "id": "utils_livekitegress_bucket"
     },
     {
       "label": "isEgressEnabled()",
@@ -769,9 +769,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "id": "utils_livekitegress_isegressenabled",
       "community": 112,
-      "norm_label": "isegressenabled()"
+      "norm_label": "isegressenabled()",
+      "id": "utils_livekitegress_isegressenabled"
     },
     {
       "label": "getEgressClient()",
@@ -779,9 +779,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "id": "utils_livekitegress_getegressclient",
       "community": 112,
-      "norm_label": "getegressclient()"
+      "norm_label": "getegressclient()",
+      "id": "utils_livekitegress_getegressclient"
     },
     {
       "label": "startRoomAudioEgress()",
@@ -789,9 +789,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "id": "utils_livekitegress_startroomaudioegress",
       "community": 112,
-      "norm_label": "startroomaudioegress()"
+      "norm_label": "startroomaudioegress()",
+      "id": "utils_livekitegress_startroomaudioegress"
     },
     {
       "label": "stopRoomAudioEgress()",
@@ -799,9 +799,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L94",
       "_origin": "ast",
-      "id": "utils_livekitegress_stoproomaudioegress",
       "community": 112,
-      "norm_label": "stoproomaudioegress()"
+      "norm_label": "stoproomaudioegress()",
+      "id": "utils_livekitegress_stoproomaudioegress"
     },
     {
       "label": "downloadToTempFile()",
@@ -809,9 +809,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L107",
       "_origin": "ast",
-      "id": "utils_livekitegress_downloadtotempfile",
       "community": 112,
-      "norm_label": "downloadtotempfile()"
+      "norm_label": "downloadtotempfile()",
+      "id": "utils_livekitegress_downloadtotempfile"
     },
     {
       "label": "transcribeMeetingRecording()",
@@ -819,9 +819,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L132",
       "_origin": "ast",
-      "id": "utils_livekitegress_transcribemeetingrecording",
       "community": 112,
-      "norm_label": "transcribemeetingrecording()"
+      "norm_label": "transcribemeetingrecording()",
+      "id": "utils_livekitegress_transcribemeetingrecording"
     },
     {
       "label": "mailer.ts",
@@ -829,9 +829,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "utils_mailer",
       "community": 139,
-      "norm_label": "mailer.ts"
+      "norm_label": "mailer.ts",
+      "id": "utils_mailer"
     },
     {
       "label": "resend",
@@ -839,9 +839,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "id": "utils_mailer_resend",
       "community": 139,
-      "norm_label": "resend"
+      "norm_label": "resend",
+      "id": "utils_mailer_resend"
     },
     {
       "label": "sendMail()",
@@ -849,9 +849,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "id": "utils_mailer_sendmail",
       "community": 139,
-      "norm_label": "sendmail()"
+      "norm_label": "sendmail()",
+      "id": "utils_mailer_sendmail"
     },
     {
       "label": "sendOTPEmail()",
@@ -859,9 +859,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L47",
       "_origin": "ast",
-      "id": "utils_mailer_sendotpemail",
       "community": 19,
-      "norm_label": "sendotpemail()"
+      "norm_label": "sendotpemail()",
+      "id": "utils_mailer_sendotpemail"
     },
     {
       "label": "sendPasswordResetEmail()",
@@ -869,9 +869,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L88",
       "_origin": "ast",
-      "id": "utils_mailer_sendpasswordresetemail",
       "community": 139,
-      "norm_label": "sendpasswordresetemail()"
+      "norm_label": "sendpasswordresetemail()",
+      "id": "utils_mailer_sendpasswordresetemail"
     },
     {
       "label": "sendTaskReminderEmail()",
@@ -879,9 +879,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L130",
       "_origin": "ast",
-      "id": "utils_mailer_sendtaskreminderemail",
       "community": 139,
-      "norm_label": "sendtaskreminderemail()"
+      "norm_label": "sendtaskreminderemail()",
+      "id": "utils_mailer_sendtaskreminderemail"
     },
     {
       "label": "sendMessageRequestEmail()",
@@ -889,9 +889,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L171",
       "_origin": "ast",
-      "id": "utils_mailer_sendmessagerequestemail",
       "community": 139,
-      "norm_label": "sendmessagerequestemail()"
+      "norm_label": "sendmessagerequestemail()",
+      "id": "utils_mailer_sendmessagerequestemail"
     },
     {
       "label": "sendMeetingTranscriptEmail()",
@@ -899,9 +899,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L208",
       "_origin": "ast",
-      "id": "utils_mailer_sendmeetingtranscriptemail",
       "community": 139,
-      "norm_label": "sendmeetingtranscriptemail()"
+      "norm_label": "sendmeetingtranscriptemail()",
+      "id": "utils_mailer_sendmeetingtranscriptemail"
     },
     {
       "label": "sendWelcomeNewMemberEmail()",
@@ -909,9 +909,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L306",
       "_origin": "ast",
-      "id": "utils_mailer_sendwelcomenewmemberemail",
       "community": 19,
-      "norm_label": "sendwelcomenewmemberemail()"
+      "norm_label": "sendwelcomenewmemberemail()",
+      "id": "utils_mailer_sendwelcomenewmemberemail"
     },
     {
       "label": "sendMeetingRecapEmail()",
@@ -919,9 +919,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L354",
       "_origin": "ast",
-      "id": "utils_mailer_sendmeetingrecapemail",
       "community": 139,
-      "norm_label": "sendmeetingrecapemail()"
+      "norm_label": "sendmeetingrecapemail()",
+      "id": "utils_mailer_sendmeetingrecapemail"
     },
     {
       "label": "sendDigestEmail()",
@@ -929,9 +929,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L385",
       "_origin": "ast",
-      "id": "utils_mailer_senddigestemail",
       "community": 139,
-      "norm_label": "senddigestemail()"
+      "norm_label": "senddigestemail()",
+      "id": "utils_mailer_senddigestemail"
     },
     {
       "label": "sendCalendarEventEmail()",
@@ -939,9 +939,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L414",
       "_origin": "ast",
-      "id": "utils_mailer_sendcalendareventemail",
       "community": 139,
-      "norm_label": "sendcalendareventemail()"
+      "norm_label": "sendcalendareventemail()",
+      "id": "utils_mailer_sendcalendareventemail"
     },
     {
       "label": "scheduler.ts",
@@ -949,9 +949,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "utils_scheduler",
       "community": 15,
-      "norm_label": "scheduler.ts"
+      "norm_label": "scheduler.ts",
+      "id": "utils_scheduler"
     },
     {
       "label": "rotateSecurityCode()",
@@ -959,9 +959,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "id": "utils_scheduler_rotatesecuritycode",
       "community": 15,
-      "norm_label": "rotatesecuritycode()"
+      "norm_label": "rotatesecuritycode()",
+      "id": "utils_scheduler_rotatesecuritycode"
     },
     {
       "label": "initSecurityScheduler()",
@@ -969,9 +969,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L33",
       "_origin": "ast",
-      "id": "utils_scheduler_initsecurityscheduler",
       "community": 15,
-      "norm_label": "initsecurityscheduler()"
+      "norm_label": "initsecurityscheduler()",
+      "id": "utils_scheduler_initsecurityscheduler"
     },
     {
       "label": "processTranscriptQueue()",
@@ -979,9 +979,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L55",
       "_origin": "ast",
-      "id": "utils_scheduler_processtranscriptqueue",
       "community": 20,
-      "norm_label": "processtranscriptqueue()"
+      "norm_label": "processtranscriptqueue()",
+      "id": "utils_scheduler_processtranscriptqueue"
     },
     {
       "label": "initTranscriptProcessor()",
@@ -989,9 +989,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L169",
       "_origin": "ast",
-      "id": "utils_scheduler_inittranscriptprocessor",
       "community": 15,
-      "norm_label": "inittranscriptprocessor()"
+      "norm_label": "inittranscriptprocessor()",
+      "id": "utils_scheduler_inittranscriptprocessor"
     },
     {
       "label": "processTaskReminders()",
@@ -999,9 +999,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L189",
       "_origin": "ast",
-      "id": "utils_scheduler_processtaskreminders",
       "community": 139,
-      "norm_label": "processtaskreminders()"
+      "norm_label": "processtaskreminders()",
+      "id": "utils_scheduler_processtaskreminders"
     },
     {
       "label": "initTaskReminderScheduler()",
@@ -1009,9 +1009,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L263",
       "_origin": "ast",
-      "id": "utils_scheduler_inittaskreminderscheduler",
       "community": 15,
-      "norm_label": "inittaskreminderscheduler()"
+      "norm_label": "inittaskreminderscheduler()",
+      "id": "utils_scheduler_inittaskreminderscheduler"
     },
     {
       "label": "runDailyDigestJob()",
@@ -1019,9 +1019,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L278",
       "_origin": "ast",
-      "id": "utils_scheduler_rundailydigestjob",
       "community": 139,
-      "norm_label": "rundailydigestjob()"
+      "norm_label": "rundailydigestjob()",
+      "id": "utils_scheduler_rundailydigestjob"
     },
     {
       "label": "initDailyDigestScheduler()",
@@ -1029,9 +1029,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L343",
       "_origin": "ast",
-      "id": "utils_scheduler_initdailydigestscheduler",
       "community": 15,
-      "norm_label": "initdailydigestscheduler()"
+      "norm_label": "initdailydigestscheduler()",
+      "id": "utils_scheduler_initdailydigestscheduler"
     },
     {
       "label": "runWeeklyDigestJob()",
@@ -1039,9 +1039,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L359",
       "_origin": "ast",
-      "id": "utils_scheduler_runweeklydigestjob",
       "community": 139,
-      "norm_label": "runweeklydigestjob()"
+      "norm_label": "runweeklydigestjob()",
+      "id": "utils_scheduler_runweeklydigestjob"
     },
     {
       "label": "initWeeklyDigestScheduler()",
@@ -1049,9 +1049,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L416",
       "_origin": "ast",
-      "id": "utils_scheduler_initweeklydigestscheduler",
       "community": 15,
-      "norm_label": "initweeklydigestscheduler()"
+      "norm_label": "initweeklydigestscheduler()",
+      "id": "utils_scheduler_initweeklydigestscheduler"
     },
     {
       "label": "index.ts",
@@ -27068,9 +27068,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L58",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_scheduler_processtranscriptqueue",
-      "target": "controllers_meetingcontroller",
-      "confidence_score": 1.0
+      "target": "controllers_meetingcontroller"
     },
     {
       "relation": "calls",
@@ -27134,9 +27134,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L119",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "controllers_meetingcontroller_createmeeting",
-      "target": "utils_livekitegress",
-      "confidence_score": 1.0
+      "target": "utils_livekitegress"
     },
     {
       "relation": "calls",
@@ -28338,9 +28338,9 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L571",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "controllers_orgcontroller_joinorganizationbyinvite",
-      "target": "utils_mailer",
-      "confidence_score": 1.0
+      "target": "utils_mailer"
     },
     {
       "relation": "calls",
@@ -28634,9 +28634,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L30",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_livekitegress",
-      "target": "utils_livekitegress_getegressclient",
-      "confidence_score": 1.0
+      "target": "utils_livekitegress_getegressclient"
     },
     {
       "relation": "contains",
@@ -28664,9 +28664,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L94",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_livekitegress",
-      "target": "utils_livekitegress_stoproomaudioegress",
-      "confidence_score": 1.0
+      "target": "utils_livekitegress_stoproomaudioegress"
     },
     {
       "relation": "contains",
@@ -28718,9 +28718,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L95",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_livekitegress_stoproomaudioegress",
-      "target": "utils_livekitegress_isegressenabled",
-      "confidence_score": 1.0
+      "target": "utils_livekitegress_isegressenabled"
     },
     {
       "relation": "calls",
@@ -28729,9 +28729,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_livekitegress_startroomaudioegress",
-      "target": "utils_livekitegress_getegressclient",
-      "confidence_score": 1.0
+      "target": "utils_livekitegress_getegressclient"
     },
     {
       "relation": "calls",
@@ -28740,9 +28740,9 @@
       "source_file": "Backend/utils/livekitEgress.ts",
       "source_location": "L96",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_livekitegress_stoproomaudioegress",
-      "target": "utils_livekitegress_getegressclient",
-      "confidence_score": 1.0
+      "target": "utils_livekitegress_getegressclient"
     },
     {
       "relation": "calls",
@@ -28836,9 +28836,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L385",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_mailer",
-      "target": "utils_mailer_senddigestemail",
-      "confidence_score": 1.0
+      "target": "utils_mailer_senddigestemail"
     },
     {
       "relation": "contains",
@@ -28856,9 +28856,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L354",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_mailer",
-      "target": "utils_mailer_sendmeetingrecapemail",
-      "confidence_score": 1.0
+      "target": "utils_mailer_sendmeetingrecapemail"
     },
     {
       "relation": "contains",
@@ -28938,9 +28938,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L318",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_scheduler_rundailydigestjob",
-      "target": "utils_mailer",
-      "confidence_score": 1.0
+      "target": "utils_mailer"
     },
     {
       "relation": "imports_from",
@@ -28949,9 +28949,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L393",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_scheduler_runweeklydigestjob",
-      "target": "utils_mailer",
-      "confidence_score": 1.0
+      "target": "utils_mailer"
     },
     {
       "relation": "calls",
@@ -28982,9 +28982,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L408",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_mailer_senddigestemail",
-      "target": "utils_mailer_sendmail",
-      "confidence_score": 1.0
+      "target": "utils_mailer_sendmail"
     },
     {
       "relation": "calls",
@@ -28993,9 +28993,9 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L378",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_mailer_sendmeetingrecapemail",
-      "target": "utils_mailer_sendmail",
-      "confidence_score": 1.0
+      "target": "utils_mailer_sendmail"
     },
     {
       "relation": "calls",
@@ -76401,5 +76401,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ce296b45388831d38aa5374c5bb8712f8ab62063"
+  "built_at_commit": "de00ed8070c5636b08cc14a46a599f23e9e3f8ff"
 }
