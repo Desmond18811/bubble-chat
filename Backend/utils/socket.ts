@@ -157,28 +157,12 @@ export const initSocket = (server: HttpServer) => {
       const speakerName = (socket as any).fullName || (socket as any).username || data.speaker || 'Participant';
       const speakerId = userId || data.userId;
       
-      const enrichedData = { ...data, speaker: speakerName, userId: speakerId };
+      // Relay for LIVE display only. Persistence is intentionally NOT done here:
+      // each speaking client saves its own chunk exactly once via the HTTP
+      // addMeetingTranscriptChunk endpoint (with its speakerId). Saving here too caused
+      // every line to be written twice and show up duplicated in the saved/emailed transcript.
+      const enrichedData = { ...data, speaker: speakerName, speakerId, userId: speakerId };
       socket.to(data.roomId).emit('meeting_transcript_chunk', enrichedData);
-
-      // Save directly to MongoDB in real-time with speaker userId for accurate diarization
-      try {
-        const { Meeting } = await import('../models/meeting');
-        await Meeting.updateOne(
-          { roomId: data.roomId, status: 'live' },
-          {
-            $push: {
-              transcriptChunks: {
-                speaker: speakerName,
-                speakerId,
-                text: data.text,
-                timestamp: Date.now()
-              }
-            }
-          }
-        );
-      } catch (err) {
-        console.error('[Socket] Failed to save transcript chunk to DB:', err);
-      }
     });
 
     socket.on('meeting_started', (data: { roomId: string, meetingId: string }) => {

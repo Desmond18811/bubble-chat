@@ -74,6 +74,9 @@ const formatConversation = async (c: any, userId?: any) => ({
   is_broadcast: c.is_broadcast ?? false,
   inviteCode: c.inviteCode || null,
   allowMembersToShareInvite: c.allowMembersToShareInvite ?? true,
+  maxMembers: c.maxMembers ?? 0,
+  transcriptPolicy: c.transcriptPolicy || 'save',
+  resources: c.resources || [],
 
   // User context
   mutedBy: c.mutedBy || [],
@@ -372,9 +375,22 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
   const { chatId, userId } = req.body;
 
   try {
+    // Enforce the admin-configured member cap (maxMembers === 0 means unlimited).
+    const existing = await Conversation.findById(chatId).select('users maxMembers');
+    if (!existing) {
+      res.status(404).json({ message: 'Conversation not found' });
+      return;
+    }
+    const cap = existing.maxMembers || 0;
+    const alreadyMember = existing.users.some((u: any) => String(u) === String(userId));
+    if (cap > 0 && !alreadyMember && existing.users.length >= cap) {
+      res.status(400).json({ message: `This group has reached its member limit (${cap}).` });
+      return;
+    }
+
     const updated = await Conversation.findByIdAndUpdate(
       chatId,
-      { $push: { users: userId } },
+      { $addToSet: { users: userId } },
       { returnDocument: 'after' }
     )
       .populate('users', '-password -refreshToken -privateKey')
@@ -711,7 +727,7 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
  * PUT /api/v1/chat/group/update
  */
 export const updateGroupSettings = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { chatId, chatName, groupIcon, groupDescription, allowMembersToShareInvite } = req.body;
+  const { chatId, chatName, groupIcon, groupDescription, allowMembersToShareInvite, maxMembers, transcriptPolicy, resources } = req.body;
   const userId = req.user?._id;
 
   if (!chatId) {
@@ -737,6 +753,21 @@ export const updateGroupSettings = async (req: AuthRequest, res: Response): Prom
     if (groupIcon !== undefined) updates.groupIcon = groupIcon;
     if (groupDescription !== undefined) updates.groupDescription = groupDescription;
     if (allowMembersToShareInvite !== undefined) updates.allowMembersToShareInvite = allowMembersToShareInvite;
+    if (maxMembers !== undefined) {
+      const cap = Number(maxMembers) || 0;
+      // Don't allow a cap below the current member count.
+      if (cap > 0 && cap < convo.users.length) {
+        res.status(400).json({ message: `Member cap cannot be lower than the current member count (${convo.users.length}).` });
+        return;
+      }
+      updates.maxMembers = cap;
+    }
+    if (transcriptPolicy !== undefined && ['email', 'save', 'off'].includes(transcriptPolicy)) {
+      updates.transcriptPolicy = transcriptPolicy;
+    }
+    if (resources !== undefined && Array.isArray(resources)) {
+      updates.resources = resources;
+    }
 
     const updated = await Conversation.findByIdAndUpdate(
       chatId,

@@ -271,7 +271,7 @@ export const addTranscriptChunk = async (
 ): Promise<any> => {
   try {
     const userId = (req as any).user?._id;
-    const { speaker, text, timestamp } = req.body;
+    const { speaker, speakerId, text, timestamp } = req.body;
 
     if (!text?.trim()) {
       return res.status(400).json({ message: 'text is required' });
@@ -287,6 +287,9 @@ export const addTranscriptChunk = async (
         $push: {
           transcriptChunks: {
             speaker: speaker || 'Unknown',
+            // Attribute each chunk to the speaking user. Fall back to the authenticated
+            // caller's id since Web Speech only captures the local user's own mic.
+            speakerId: speakerId || String(userId || ''),
             text: text.trim(),
             timestamp: timestamp || Date.now(),
           },
@@ -565,9 +568,26 @@ export const endMeeting = async (
       meeting,
     });
 
+    // A group's admin-set transcript policy overrides the caller's ad-hoc choice for that
+    // group's meetings: 'off' = keep nothing, 'save' = store only, 'email' = email members.
+    let effectiveSave = saveToStorage;
+    let effectiveEmail = sendEmail;
+    try {
+      if (meeting.chatId) {
+        const convo = await Conversation.findById(meeting.chatId).select('isGroupChat transcriptPolicy');
+        if (convo && convo.isGroupChat && convo.transcriptPolicy) {
+          if (convo.transcriptPolicy === 'off') { effectiveSave = false; effectiveEmail = false; }
+          else if (convo.transcriptPolicy === 'save') { effectiveSave = true; effectiveEmail = false; }
+          else if (convo.transcriptPolicy === 'email') { effectiveSave = true; effectiveEmail = true; }
+        }
+      }
+    } catch (policyErr) {
+      console.error('[endMeeting] Failed to apply group transcript policy:', policyErr);
+    }
+
     // ── Background AI extraction (non-blocking) ───────────────────────────
     setImmediate(async () => {
-      await runBackgroundMeetingAI(meeting, rawTranscript, String(userId), saveToStorage, sendEmail);
+      await runBackgroundMeetingAI(meeting, rawTranscript, String(userId), effectiveSave, effectiveEmail);
     });
   } catch (err: any) {
     res

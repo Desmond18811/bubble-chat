@@ -56,7 +56,7 @@ export interface IMeeting extends Document {
 
   // Transcript & Intelligence
   transcriptRaw?: string;
-  transcriptChunks?: { speaker?: string; text: string; timestamp?: number }[];
+  transcriptChunks?: { speaker?: string; speakerId?: string; text: string; timestamp?: number }[];
   summary?: string;
   actionItems: IActionItem[];
 
@@ -145,6 +145,7 @@ const MeetingSchema = new Schema<IMeeting>(
     transcriptChunks: [
       {
         speaker: { type: String },
+        speakerId: { type: String },
         text: { type: String },
         timestamp: { type: Number },
       },

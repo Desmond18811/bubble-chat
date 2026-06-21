@@ -29,7 +29,12 @@ export interface IConversation extends Document {
   isDefaultOrgChat?: boolean;
   inviteCode?: string;
   allowMembersToShareInvite?: boolean;
-  
+
+  // Admin-configurable group settings
+  maxMembers?: number; // 0/undefined = unlimited
+  transcriptPolicy?: 'email' | 'save' | 'off'; // how this group's meeting transcripts are handled
+  resources?: { label: string; url?: string; type?: 'link' | 'file'; addedAt?: Date }[]; // group docs/links that feed the AI
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -114,6 +119,22 @@ const ConversationSchema: Schema<IConversation> = new Schema(
       type: Boolean,
       default: true,
     },
+
+    // Admin-configurable group settings
+    maxMembers: { type: Number, default: 0 }, // 0 = unlimited
+    transcriptPolicy: {
+      type: String,
+      enum: ['email', 'save', 'off'],
+      default: 'save',
+    },
+    resources: [
+      {
+        label: { type: String, required: true },
+        url: { type: String },
+        type: { type: String, enum: ['link', 'file'], default: 'link' },
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,
