@@ -1326,7 +1326,9 @@ export const getConversationContext = async (req: Request, res: Response): Promi
         const embedding = await generateEmbedding(seed);
         if (embedding.length > 0) {
           const namespace = org.pineconeNamespace || `org-${org._id}`;
-          const matches = await queryVectors(embedding, 3, org._id.toString(), namespace);
+          // Pull richer recall (top 6) so cross-chat/meeting facts the user may
+          // have missed surface in the summary + reply suggestions.
+          const matches = await queryVectors(embedding, 6, org._id.toString(), namespace);
           brainKnowledge = matches
             .filter((m: any) => m.score >= 0.55)
             .map((m: any) => `• ${m.metadata?.chunk || ''}`)
