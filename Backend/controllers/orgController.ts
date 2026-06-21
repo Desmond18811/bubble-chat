@@ -50,11 +50,17 @@ export const ensureOrganizationForFounder = async (userId: any) => {
     const isFounder = user.signupKind === 'organization' && user.role === 'admin' && !!user.organization;
     if (!isFounder) return null;
 
+    // Defensive: only forward `size` if it matches the Organization enum.
+    // An empty string or stale legacy value would otherwise throw a Mongoose
+    // ValidationError at create time and surface as a generic 500.
+    const VALID_SIZES = ['solo', '2-10', '11-50', '51-200', '201-500', '500+'];
+    const safeSize = VALID_SIZES.includes(user.org_size as any) ? user.org_size : undefined;
+
     const inviteCode = crypto.randomBytes(16).toString('hex').toUpperCase();
     org = await Organization.create({
         name: user.organization,
         industry: user.org_industry || undefined,
-        size: user.org_size,
+        size: safeSize,
         owner: userId,
         inviteCode,
         pineconeNamespace: `org-${userId}`,
@@ -549,6 +555,9 @@ export const joinOrganizationByInvite = async (req: AuthRequest, res: Response):
  * Setup initial detailed company brain profile
  */
 export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<void> => {
+  // Track the stage we're in so any thrown error tells the client exactly
+  // which step blew up (instead of a single opaque "Failed to onboard…").
+  let stage: string = 'init';
   try {
     const userId = (req.user as any)?._id;
     const { description } = req.body;
@@ -558,16 +567,20 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
+    stage = 'ensure_organization';
+
     // Find or create the organization for this founder. Self-heals for users who
     // didn't get an Organization document at register time (seed users, OAuth, etc.).
     const org = await ensureOrganizationForFounder(userId);
     if (!org) {
       res.status(404).json({
         error: 'Organization not found. Make sure you finished organization info in the previous step.',
+        stage,
       });
       return;
     }
 
+    stage = 'prepare_text';
     let detailedProfileText = `Company Name: ${org.name}\n\nUser Description:\n${description}`;
     let aiSummary = description;
 
@@ -608,6 +621,7 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
     const namespace = org.pineconeNamespace || `org-${org._id}`;
 
     if (hasPinecone()) {
+      stage = 'embed_and_upsert';
       const vectors = [];
       for (const chunk of chunks) {
         const embedding = await generateEmbedding(chunk);
@@ -624,7 +638,7 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
       if (vectors.length > 0) await upsertVectors(vectors, namespace);
     }
 
-    // Save MongoDB OrgDocument
+    stage = 'persist_org_document';
     const doc = await OrgDocument.create({
       title,
       content: detailedProfileText,
@@ -636,19 +650,19 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
       tags: ['profile', 'about', 'onboarding'],
     });
 
-    // Update org description + brain-seeded flags
+    stage = 'update_org_brain_flags';
     org.description = aiSummary;
     org.brainSeeded = true;
     org.brainSeedCompletedAt = new Date();
     await org.save();
 
-    // Advance the founder's signup state machine to 'complete'.
+    stage = 'advance_onboarding_step';
     await User.findByIdAndUpdate(userId, {
       onboardingStep: 'complete',
       onboardingComplete: true,
     });
 
-    // Create/update default group chat
+    stage = 'find_or_create_default_chat';
     let defaultChat = await Conversation.findOne({
       organizationId: org._id,
       isDefaultOrgChat: true,
@@ -690,8 +704,13 @@ export const onboardOrgBrain = async (req: AuthRequest, res: Response): Promise<
       defaultChatId: defaultChat._id,
     });
   } catch (error: any) {
-    console.error('[OnboardOrgBrain] error:', error);
-    res.status(500).json({ error: 'Failed to onboard organization brain.' });
+    console.error(`[OnboardOrgBrain] error at stage=${stage}:`, error);
+    // Surface the underlying message so the UI shows something actionable
+    // instead of a generic "Failed to onboard organization brain."
+    res.status(500).json({
+      error: `Failed to onboard organization brain at ${stage}: ${error?.message || 'unknown error'}`,
+      stage,
+    });
   }
 };
 
