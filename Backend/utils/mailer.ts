@@ -348,6 +348,67 @@ export const sendWelcomeNewMemberEmail = async (
 };
 
 /**
+ * Short "you missed a meeting" recap for org members who did NOT attend, so the
+ * whole team stays caught up without receiving the full transcript.
+ */
+export const sendMeetingRecapEmail = async (
+  to: string,
+  name: string,
+  meetingTitle: string,
+  summary: string
+) => {
+  const subject = `Recap: ${meetingTitle}`;
+  const html = `
+    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #eae7fa;">
+      <div style="background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%); padding: 32px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 900; letter-spacing: 4px; color: #fff; text-transform: uppercase;">BUBBLESPACE</div>
+        <div style="font-size: 10px; color: rgba(255,255,255,0.75); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; font-weight: 700;">Meeting Recap</div>
+      </div>
+      <div style="padding: 32px;">
+        <p style="font-size: 14px; line-height: 1.7; color: #4a5568; margin: 0 0 14px;">Hi ${name}, you weren't in <strong style="color:#6c5ce7;">${meetingTitle}</strong> — here's the short version so you're caught up:</p>
+        <div style="background-color: #efedfb; border-left: 5px solid #6c5ce7; padding: 20px; border-radius: 16px; font-size: 14px; line-height: 1.7; color: #2d3748;">
+          ${(summary || 'No summary available.').replace(/\n/g, '<br />')}
+        </div>
+      </div>
+      <div style="padding: 20px 32px; background-color: #fbfbfe; border-top: 1px solid #eae7fa; text-align: center;">
+        <p style="font-size: 10px; color: #9a9aab; margin: 0; letter-spacing: 1px; font-weight: 700; text-transform: uppercase;">BUBBLESPACE · WORKSPACE BRAIN</p>
+      </div>
+    </div>
+  `;
+  return await sendMail(to, subject, html);
+};
+
+/**
+ * Generic short digest/recap email (daily + weekly recaps, new-joiner catch-up).
+ * `bodyText` is plain text; newlines become line breaks.
+ */
+export const sendDigestEmail = async (
+  to: string,
+  name: string,
+  title: string,
+  bodyText: string
+) => {
+  const html = `
+    <div style="font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #eae7fa;">
+      <div style="background: linear-gradient(135deg, #6c5ce7 0%, #4834d4 100%); padding: 32px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 900; letter-spacing: 4px; color: #fff; text-transform: uppercase;">BUBBLESPACE</div>
+        <div style="font-size: 10px; color: rgba(255,255,255,0.75); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; font-weight: 700;">${title}</div>
+      </div>
+      <div style="padding: 32px;">
+        <p style="font-size: 14px; line-height: 1.7; color: #4a5568; margin: 0 0 14px;">Hi ${name},</p>
+        <div style="background-color: #efedfb; border-left: 5px solid #6c5ce7; padding: 20px; border-radius: 16px; font-size: 14px; line-height: 1.7; color: #2d3748;">
+          ${(bodyText || '').replace(/\n/g, '<br />')}
+        </div>
+      </div>
+      <div style="padding: 20px 32px; background-color: #fbfbfe; border-top: 1px solid #eae7fa; text-align: center;">
+        <p style="font-size: 10px; color: #9a9aab; margin: 0; letter-spacing: 1px; font-weight: 700; text-transform: uppercase;">BUBBLESPACE · WORKSPACE BRAIN</p>
+      </div>
+    </div>
+  `;
+  return await sendMail(to, title, html);
+};
+
+/**
  * Send calendar event invitation/notification email
  */
 export const sendCalendarEventEmail = async (

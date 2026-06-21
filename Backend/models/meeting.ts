@@ -64,6 +64,7 @@ export interface IMeeting extends Document {
   // only when LIVEKIT_EGRESS_ENABLED is on; used as the Whisper source when the
   // live speech-recognition transcript is empty/thin.
   recordingKey?: string;
+  egressId?: string; // running egress id — used to stop the recording on meeting end
 
   // ── NEW: rich shared-file records ─────────────────────────────────────────
   filesShared: ISharedFile[];
@@ -150,6 +151,7 @@ const MeetingSchema = new Schema<IMeeting>(
     ],
     summary: { type: String },
     recordingKey: { type: String },
+    egressId: { type: String },
     actionItems: [ActionItemSchema],
 
     filesShared: [SharedFileSchema],

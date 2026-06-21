@@ -22,7 +22,9 @@ const hasDeepSeekKey = (): boolean => {
 };
 
 // ─── Helper: AI-powered transcript processing via DeepSeek ───────────────────
-const extractMeetingIntelligence = async (
+// Exported so the background catch-up processor (scheduler.ts) uses the SAME
+// DeepSeek intelligence as the live meeting-end path — one source of truth.
+export const extractMeetingIntelligence = async (
   transcript: string,
   attendeeNames: string[]
 ): Promise<{
@@ -109,6 +111,21 @@ export const createMeeting = async (
       startedAt: new Date(),
       status: 'live',
     });
+
+    // Start the audio recording immediately so transcription always works, even
+    // on clients without live captions (Safari/Firefox/mobile). Best-effort: no-ops
+    // unless LIVEKIT_EGRESS_ENABLED + the egress worker are provisioned.
+    try {
+      const { startRoomAudioEgress } = await import('../utils/livekitEgress');
+      const egress = await startRoomAudioEgress(meeting.roomId);
+      if (egress) {
+        meeting.recordingKey = egress.recordingKey;
+        meeting.egressId = egress.egressId;
+        await meeting.save();
+      }
+    } catch (egressErr) {
+      console.error('[Meeting] Failed to start audio egress:', egressErr);
+    }
 
     if (attendees && attendees.length > 0) {
       const hostUser = await User.findById(userId).select('full_name username');
@@ -570,11 +587,25 @@ export const runBackgroundMeetingAI = async (
   try {
     const allParticipants = [meeting.host, ...meeting.attendees];
 
-    // If live speech-recognition produced little/no transcript, fall back to
-    // transcribing the LiveKit Egress recording via Whisper. No-ops (returns '')
-    // until Egress is enabled and meeting.recordingKey is set.
+    // Stop the audio recording now that the meeting ended (unconditional — halts
+    // egress and its cost even when live captions were sufficient).
+    if (meeting.egressId) {
+      try {
+        const { stopRoomAudioEgress } = await import('../utils/livekitEgress');
+        await stopRoomAudioEgress(meeting.egressId);
+      } catch (stopErr) {
+        console.error('[Meeting AI] Failed to stop egress:', stopErr);
+      }
+    }
+
+    // BACKSTOP: if live speech-recognition produced little/no transcript (e.g. the
+    // call was on Safari/Firefox/mobile), transcribe the LiveKit Egress recording
+    // via Whisper so every meeting still yields a transcript. No-ops until Egress
+    // is enabled and meeting.recordingKey is set.
     if ((!rawTranscript || rawTranscript.trim().length < 20) && meeting.recordingKey) {
       try {
+        // Give LiveKit a moment to finalize + upload the recording to S3.
+        await new Promise((r) => setTimeout(r, 6000));
         const { transcribeMeetingRecording } = await import('../utils/livekitEgress');
         const fromAudio = await transcribeMeetingRecording(meeting.recordingKey);
         if (fromAudio && fromAudio.trim()) {
@@ -718,6 +749,39 @@ export const runBackgroundMeetingAI = async (
           }
         } catch (emailErr) {
           console.error('[Meeting Email] Failed sending transcript email:', emailErr);
+        }
+      }
+
+      // Absentee catch-up: org members who were NOT in the meeting get a SHORT
+      // recap (summary only) so the whole team stays caught up. Best-effort.
+      if (org && intelligence.summary) {
+        try {
+          const { sendMeetingRecapEmail } = await import('../utils/mailer');
+          const participantIds = new Set(allParticipants.map((p: any) => String(p)));
+          const absentees = await User.find({
+            organizationId: org._id,
+            _id: { $nin: Array.from(participantIds) },
+            email: { $exists: true, $ne: '' },
+            is_bot: { $ne: true },
+          }).select('email full_name username').limit(200);
+
+          for (const member of absentees) {
+            try {
+              if (member.email) {
+                await sendMeetingRecapEmail(
+                  member.email,
+                  member.full_name || member.username || 'there',
+                  meeting.title,
+                  intelligence.summary
+                );
+              }
+            } catch (recapErr) {
+              console.error('[Meeting Email] Failed sending absentee recap:', recapErr);
+            }
+          }
+          console.log(`[Meeting Email] Absentee recap sent to ${absentees.length} org member(s).`);
+        } catch (absErr) {
+          console.error('[Meeting Email] Absentee recap pass failed:', absErr);
         }
       }
     }

@@ -557,6 +557,34 @@ export const joinOrganizationByInvite = async (req: AuthRequest, res: Response):
                 : 'Welcome to the organization! The brain is currently ready and listening.';
             
             await sendWelcomeNewMemberEmail(joinedUser.email, joinedUser.full_name || joinedUser.username || 'Employee', org.name, summaryHtml);
+
+            // Catch-up: email a short recap of what's happened recently so the new
+            // member arrives up to speed. Reuses the brain's own AI meeting summaries.
+            try {
+                const recent = await OrgDocument.find({
+                    organizationId: org._id,
+                    tags: { $in: ['meeting', 'transcript', 'announcement'] },
+                    createdAt: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) },
+                }).sort({ createdAt: -1 }).select('title content createdAt').limit(8).lean();
+
+                if (recent.length > 0) {
+                    const { sendDigestEmail } = await import('../utils/mailer');
+                    const lines = recent.map((d: any) => {
+                        const when = new Date(d.createdAt).toLocaleDateString();
+                        const snippet = (d.content || '').replace(/\s+/g, ' ').slice(0, 220);
+                        return `• ${d.title} (${when})\n  ${snippet}…`;
+                    });
+                    const body = `Here's what's happened at ${org.name} in the last 2 weeks so you're caught up:\n\n${lines.join('\n\n')}`;
+                    await sendDigestEmail(
+                        joinedUser.email,
+                        joinedUser.full_name || joinedUser.username || 'there',
+                        `📌 Catch up on ${org.name}`,
+                        body
+                    );
+                }
+            } catch (catchupErr) {
+                console.error('[org/join] New-joiner catch-up email failed:', catchupErr);
+            }
         }
 
         res.status(200).json({

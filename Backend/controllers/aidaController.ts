@@ -1431,6 +1431,7 @@ export const getAidaWritingSuggestions = async (req: Request, res: Response): Pr
     // a brain seed query — surfaces facts the typing user might not remember.
     let conversationContext = '';
     let brainKnowledge = '';
+    let contextRecall = ''; // a named recall hint when a missed meeting/announcement is relevant
     if (conversationId) {
       const recent = await Message.find({ chat: conversationId })
         .sort({ createdAt: -1 })
@@ -1452,11 +1453,25 @@ export const getAidaWritingSuggestions = async (req: Request, res: Response): Pr
           const embedding = await generateEmbedding(seed);
           if (embedding.length > 0) {
             const namespace = org.pineconeNamespace || `org-${org._id}`;
-            const matches = await queryVectors(embedding, 3, org._id.toString(), namespace);
-            brainKnowledge = matches
-              .filter((m) => m.score >= 0.55)
+            // Pull more context (top 6) so cross-thread facts the user wasn't part
+            // of (e.g. a meeting they missed) can surface.
+            const matches = await queryVectors(embedding, 6, org._id.toString(), namespace);
+            const relevant = matches.filter((m) => m.score >= 0.55);
+            brainKnowledge = relevant
               .map((m: any) => `• ${m.metadata?.chunk || ''}`)
               .join('\n');
+
+            // contextRecall: if the strongest match comes from a meeting/calendar
+            // source the user likely missed, name it so they *remember* it.
+            const meetingMatch = relevant.find(
+              (m: any) => m.metadata?.sourceKind === 'meeting' || m.metadata?.sourceKind === 'calendar'
+            );
+            if (meetingMatch) {
+              const title = (meetingMatch.metadata as any)?.title || 'a recent meeting';
+              const ts = (meetingMatch.metadata as any)?.createdAtTs;
+              const when = ts ? new Date(Number(ts)).toLocaleDateString() : '';
+              contextRecall = `Heads up: "${title}"${when ? ` (${when})` : ''} covered this — ${((meetingMatch.metadata as any)?.chunk || '').slice(0, 180)}…`;
+            }
           }
         } catch (brainErr) {
           console.error('[Writing Suggestions] brain seed failed:', brainErr);
@@ -1482,8 +1497,8 @@ export const getAidaWritingSuggestions = async (req: Request, res: Response): Pr
       suggestions = raw.split('\n').map(s => s.replace(/^\d+\.\s*/, '').trim()).filter(s => s.length > 0).slice(0, 3);
     }
 
-    res.status(200).json({ suggestions });
+    res.status(200).json({ suggestions, contextRecall: contextRecall || null });
   } catch (error) {
-    res.status(200).json({ suggestions: ['How are you?', 'Let me know if you can help.', 'Thanks!'] });
+    res.status(200).json({ suggestions: ['How are you?', 'Let me know if you can help.', 'Thanks!'], contextRecall: null });
   }
 };

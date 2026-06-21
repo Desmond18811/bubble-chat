@@ -3,6 +3,12 @@ import * as os from 'os';
 import * as path from 'path';
 import { Readable } from 'stream';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  EgressClient,
+  EncodedFileOutput,
+  EncodedFileType,
+  S3Upload,
+} from 'livekit-server-sdk';
 import { s3Client, extractKeyFromUrl } from './filebase';
 import { transcribeAudio } from './whisperService';
 
@@ -10,24 +16,91 @@ const BUCKET = process.env.FILEBASE_BUCKET as string;
 
 /**
  * LiveKit Egress is the room-recording feature that composites a call's audio and
- * drops it in object storage. It's wired but intentionally OFF until we provision
- * the egress worker — flip LIVEKIT_EGRESS_ENABLED=true to turn it on.
+ * drops it in Filebase/S3. It is the cross-platform RELIABILITY BACKSTOP for
+ * transcription: live captions (Socket.io) are primary, but on browsers/devices
+ * without client STT (Safari, Firefox, mobile) we transcribe this recording with
+ * Whisper so every meeting still produces a transcript.
+ *
+ * Requires the LiveKit egress worker (LiveKit Cloud provides it; self-host needs
+ * the egress container). Gated by LIVEKIT_EGRESS_ENABLED so it degrades gracefully.
  */
 export const isEgressEnabled = (): boolean =>
   process.env.LIVEKIT_EGRESS_ENABLED === 'true';
 
+const getEgressClient = (): EgressClient | null => {
+  const url = process.env.LIVEKIT_URL;
+  const key = process.env.LIVEKIT_API_KEY;
+  const secret = process.env.LIVEKIT_API_SECRET;
+  if (!url || !key || !secret) return null;
+  // EgressClient needs an https(s) host, not the wss:// realtime URL.
+  const httpUrl = url.replace(/^wss:/i, 'https:').replace(/^ws:/i, 'http:');
+  return new EgressClient(httpUrl, key, secret);
+};
+
 /**
- * Start room composite-audio egress to Filebase/S3.
- * Stub for now: returns null so callers no-op until the worker is provisioned.
- * When enabled, this should call the LiveKit EgressClient and return the
- * destination object key.
+ * Start room composite **audio-only** egress to Filebase/S3.
+ * Returns `{ egressId, recordingKey }` so the caller can persist them on the
+ * Meeting (recordingKey → later Whisper transcription; egressId → stop on end).
+ * Returns null when egress is disabled or misconfigured (caller no-ops).
  */
-export const startRoomAudioEgress = async (_roomId: string): Promise<string | null> => {
+export const startRoomAudioEgress = async (
+  roomName: string
+): Promise<{ egressId: string; recordingKey: string } | null> => {
   if (!isEgressEnabled()) return null;
-  // TODO: wire @livekit/server-sdk EgressClient.startRoomCompositeEgress here,
-  // targeting the Filebase bucket, and return the resulting object key.
-  console.warn('[Egress] LIVEKIT_EGRESS_ENABLED is on but startRoomAudioEgress is not implemented yet.');
-  return null;
+  const client = getEgressClient();
+  if (!client) {
+    console.warn('[Egress] enabled but LIVEKIT_URL/API key/secret missing — skipping.');
+    return null;
+  }
+
+  // Deterministic, unique key under a meetings/ prefix.
+  const recordingKey = `meetings/${roomName}-${Date.now()}.ogg`;
+
+  try {
+    const fileOutput = new EncodedFileOutput({
+      fileType: EncodedFileType.OGG, // audio container; Whisper handles .ogg/.oga
+      filepath: recordingKey,
+      output: {
+        case: 's3',
+        value: new S3Upload({
+          accessKey: process.env.FILEBASE_ACCESS_KEY as string,
+          secret: process.env.FILEBASE_SECRET_KEY as string,
+          bucket: BUCKET,
+          endpoint: 'https://s3.filebase.com',
+          region: 'us-east-1',
+          forcePathStyle: true,
+        }),
+      },
+    });
+
+    const info = await client.startRoomCompositeEgress(
+      roomName,
+      { file: fileOutput },
+      { audioOnly: true }
+    );
+
+    console.log(`[Egress] Started audio egress ${info.egressId} for room ${roomName} → ${recordingKey}`);
+    return { egressId: info.egressId, recordingKey };
+  } catch (err) {
+    console.error('[Egress] startRoomAudioEgress failed:', err);
+    return null;
+  }
+};
+
+/**
+ * Stop a running egress (called when the meeting ends, before transcription).
+ * Best-effort: never throws to the caller.
+ */
+export const stopRoomAudioEgress = async (egressId?: string): Promise<void> => {
+  if (!egressId || !isEgressEnabled()) return;
+  const client = getEgressClient();
+  if (!client) return;
+  try {
+    await client.stopEgress(egressId);
+    console.log(`[Egress] Stopped egress ${egressId}`);
+  } catch (err) {
+    console.error('[Egress] stopRoomAudioEgress failed:', err);
+  }
 };
 
 /** Download a Filebase/S3 object to a temp file and return the local path. */

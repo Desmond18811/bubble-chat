@@ -55,9 +55,9 @@ export const initSecurityScheduler = () => {
 export const processTranscriptQueue = async () => {
   try {
     const { Meeting } = await import('../models/meeting');
-    const { HfInference } = await import('@huggingface/inference');
-
-    const hasHfKey = () => process.env.HF_API_KEY && process.env.HF_API_KEY !== 'your_hugging_face_api_key_here';
+    const { extractMeetingIntelligence } = await import('../controllers/meetingController');
+    const { resolveUserOrg } = await import('./orgResolver');
+    const { brainEventBus } = await import('./brainEventListener');
 
     // Find ended meetings with raw transcript but no summary yet
     const unprocessed = await Meeting.find({
@@ -90,78 +90,72 @@ export const processTranscriptQueue = async () => {
           continue;
         }
 
-        // Extract action items via local pattern matching (always available)
-        const lines = fullText.split(/[.\n!?]/);
-        const actionPatterns = /\b(will|should|must|needs? to|action:|todo:|task:|going to|i'll|we'll)\b/i;
-        const localActionItems: { text: string; assignedToName: string | null; deadline: null }[] = [];
         const attendeeNames = meeting.attendeeNames || [];
 
+        // Local regex extraction as the safety-net fallback (always available).
+        const lines = fullText.split(/[.\n!?]/);
+        const actionPatterns = /\b(will|should|must|needs? to|action:|todo:|task:|going to|i'll|we'll)\b/i;
+        const localActionItems: { text: string; assignedToName: string | null }[] = [];
         lines.forEach(line => {
           const trimmed = line.trim();
           if (trimmed.length > 15 && actionPatterns.test(trimmed)) {
             const assignedTo = attendeeNames.find(n => trimmed.toLowerCase().includes(n.toLowerCase())) || null;
-            localActionItems.push({ text: trimmed, assignedToName: assignedTo, deadline: null });
+            localActionItems.push({ text: trimmed, assignedToName: assignedTo });
           }
         });
 
-        let summary = `Meeting: ${meeting.title}. Duration: ${meeting.duration ? Math.floor(meeting.duration / 60) + ' minutes' : 'unknown'}. `;
-        if (localActionItems.length > 0) {
-          summary += `${localActionItems.length} action item(s) identified.`;
-        } else {
-          summary += 'No action items detected.';
+        // Primary: the SAME DeepSeek intelligence the live meeting-end path uses.
+        let summary = '';
+        try {
+          const intelligence = await extractMeetingIntelligence(fullText, attendeeNames);
+          if (intelligence.summary) summary = intelligence.summary;
+          if (intelligence.actionItems?.length > 0) {
+            meeting.actionItems = intelligence.actionItems.map((item: any) => ({
+              text: item.text,
+              assignedToName: item.assignedToName || null,
+              status: 'pending',
+            })) as any;
+          }
+        } catch (aiErr) {
+          console.warn(`[Transcript] DeepSeek processing failed for meeting ${meeting._id}, using local extraction.`, aiErr);
         }
 
-        // Try AI enhancement if HF key available
-        if (hasHfKey()) {
-          try {
-            const hf = new HfInference(process.env.HF_API_KEY!);
-            const modelId = process.env.MIXTRAL_MODEL_ID || 'mistralai/Mixtral-8x7B-Instruct-v0.1';
-
-            const prompt = `Summarize this meeting transcript in 2-3 sentences. Be concise.\n\nTranscript:\n${fullText.substring(0, 2000)}\n\nSummary:`;
-
-            const aiRes = await hf.chatCompletion({
-              model: modelId,
-              messages: [{ role: 'user', content: prompt }],
-              max_tokens: 200,
-              temperature: 0.4,
-            });
-            const aiSummary = aiRes.choices?.[0]?.message?.content?.trim();
-            if (aiSummary) summary = aiSummary;
-
-            // AI action item extraction
-            const actionPrompt = `Extract action items from this transcript as JSON.\nTranscript: ${fullText.substring(0, 1500)}\nReturn: {"actionItems":[{"text":"...","assignedToName":"...or null"}]}\nJSON:`;
-            const aiActionRes = await hf.chatCompletion({
-              model: modelId,
-              messages: [{ role: 'user', content: actionPrompt }],
-              max_tokens: 400,
-              temperature: 0.2,
-            });
-            const rawAction = aiActionRes.choices?.[0]?.message?.content || '';
-            const jsonMatch = rawAction.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed.actionItems?.length > 0) {
-                meeting.actionItems = parsed.actionItems.map((item: any) => ({
-                  text: item.text,
-                  assignedToName: item.assignedToName || null,
-                  status: 'pending',
-                }));
-              }
-            }
-          } catch (aiErr) {
-            console.warn(`[Transcript] AI processing failed for meeting ${meeting._id}, using local extraction.`, aiErr);
+        // Fallback summary/action items if DeepSeek returned nothing usable.
+        if (!summary) {
+          summary = `Meeting: ${meeting.title}. Duration: ${meeting.duration ? Math.floor(meeting.duration / 60) + ' minutes' : 'unknown'}. ` +
+            (localActionItems.length > 0 ? `${localActionItems.length} action item(s) identified.` : 'No action items detected.');
+          if (localActionItems.length > 0 && (!meeting.actionItems || meeting.actionItems.length === 0)) {
+            meeting.actionItems = localActionItems.map(item => ({
+              text: item.text,
+              assignedToName: item.assignedToName || null,
+              status: 'pending',
+            })) as any;
           }
-        } else if (localActionItems.length > 0) {
-          meeting.actionItems = localActionItems.map(item => ({
-            text: item.text,
-            assignedToName: item.assignedToName || null,
-            status: 'pending',
-          } as any));
         }
 
         meeting.summary = summary;
         await meeting.save();
         console.log(`✅ [Transcript] Processed meeting ${meeting._id}: "${meeting.title}"`);
+
+        // Close the safety-net brain gap: meetings the live path missed still get
+        // ingested. The meeting_ended listener handles chunk/embed/upsert.
+        try {
+          const host = await (await import('../models/users')).User.findById(meeting.host);
+          const org = host ? await resolveUserOrg(host) : null;
+          if (org) {
+            brainEventBus.emit('meeting_ended', {
+              meetingId: String(meeting._id),
+              organizationId: String(org._id),
+              hostId: String(meeting.host),
+              title: meeting.title,
+              transcript: fullText,
+              summary,
+              tags: ['transcript', 'meeting', meeting.title.toLowerCase()],
+            });
+          }
+        } catch (brainErr) {
+          console.error(`[Transcript] Brain emit failed for meeting ${meeting._id}:`, brainErr);
+        }
       } catch (meetingErr) {
         console.error(`❌ [Transcript] Failed for meeting ${meeting._id}:`, meetingErr);
       }
@@ -295,7 +289,7 @@ export const runDailyDigestJob = async () => {
         { 'digestPreferences.enabled': true },
         { 'digestPreferences.enabled': { $exists: false } }, // default on
       ],
-    }).select('_id full_name username digestPreferences').limit(500);
+    }).select('_id full_name username email digestPreferences').limit(500);
 
     console.log(`📅 [DailyDigest] Generating briefs for ${users.length} users...`);
 
@@ -317,6 +311,21 @@ export const runDailyDigestJob = async () => {
           );
           digest.pushSent = true;
           await digest.save();
+
+          // Also email the same brief (in addition to push). Best-effort.
+          if ((user as any).email) {
+            try {
+              const { sendDigestEmail } = await import('./mailer');
+              await sendDigestEmail(
+                (user as any).email,
+                user.full_name || user.username || 'there',
+                '🌅 Your Daily Brief',
+                digest.morningBrief
+              );
+            } catch (mailErr) {
+              console.error(`[DailyDigest] Email failed for ${user._id}:`, mailErr);
+            }
+          }
         }
 
         successCount++;
@@ -359,7 +368,7 @@ export const runWeeklyDigestJob = async () => {
         { 'digestPreferences.enabled': true },
         { 'digestPreferences.enabled': { $exists: false } }, // default on
       ],
-    }).select('_id full_name username').limit(500);
+    }).select('_id full_name username email').limit(500);
 
     console.log(`🗓️ [WeeklyDigest] Generating weekly recaps for ${users.length} users...`);
 
@@ -377,6 +386,21 @@ export const runWeeklyDigestJob = async () => {
           brief.substring(0, 120),
           { type: 'weekly_digest', date: today.toISOString().slice(0, 10) }
         );
+
+        // Also email the 7-day recap (in addition to push). Best-effort.
+        if ((user as any).email) {
+          try {
+            const { sendDigestEmail } = await import('./mailer');
+            await sendDigestEmail(
+              (user as any).email,
+              user.full_name || user.username || 'there',
+              '🗓️ Your Weekly Recap',
+              brief
+            );
+          } catch (mailErr) {
+            console.error(`[WeeklyDigest] Email failed for ${user._id}:`, mailErr);
+          }
+        }
         successCount++;
       } catch (userErr) {
         console.error(`[WeeklyDigest] Failed for user ${user._id}:`, userErr);
