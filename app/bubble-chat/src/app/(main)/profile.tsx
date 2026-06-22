@@ -519,7 +519,20 @@ export default function ProfileScreen() {
             const me = await authStorage.getUser();
             const chatsRes = await fetchAllUserChats();
             const chatsList: any[] = Array.isArray(chatsRes) ? chatsRes : (chatsRes?.chats || []);
-            const defaultChat = chatsList.find((c: any) => c.isDefaultOrgChat);
+            // Prefer the explicit flag (requires the newer backend); fall back to heuristics so
+            // this still works against an older/production backend that doesn't expose
+            // `isDefaultOrgChat` yet: the org-wide chat is a group chat named after the org and
+            // is normally the group with the most members.
+            const orgName = (orgRes?.name || '').trim().toLowerCase();
+            const groupChats = chatsList.filter((c: any) => c.isGroupChat);
+            const defaultChat =
+              chatsList.find((c: any) => c.isDefaultOrgChat) ||
+              (orgName
+                ? groupChats.find((c: any) => String(c.name || c.chatName || '').trim().toLowerCase() === orgName)
+                : undefined) ||
+              groupChats
+                .slice()
+                .sort((a: any, b: any) => (b.users?.length || 0) - (a.users?.length || 0))[0];
             if (defaultChat) {
               setOrgDefaultChat({
                 id: defaultChat.id,
