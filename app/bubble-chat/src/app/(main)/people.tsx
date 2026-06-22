@@ -247,7 +247,7 @@ function ContactsTab({
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         {/* Section header */}
         <View className="flex-row items-center mb-3 mt-1">
           <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
@@ -562,7 +562,7 @@ function WorkroomTab({
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         {/* Active Collaborative Groups */}
         {filteredGroups.length > 0 && (
           <View className="mb-4">
@@ -863,7 +863,7 @@ export default function PeopleScreen() {
           bottom: 96,
           right: 16,
           width: 175,
-          backgroundColor: "#ffffff",
+          backgroundColor: colors.card,
           borderRadius: 18,
           paddingVertical: 6,
           shadowColor: "#6c5ce7",
@@ -872,7 +872,7 @@ export default function PeopleScreen() {
           shadowOffset: { width: 0, height: 4 },
           elevation: 10,
           borderWidth: 1,
-          borderColor: "rgba(108,92,231,0.08)",
+          borderColor: colors.border,
           zIndex: 100,
         }}>
           <TouchableOpacity
@@ -883,9 +883,9 @@ export default function PeopleScreen() {
             }}
           >
             <UserPlus size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
-            <Text style={{ fontSize: 13, color: "#1f2030", fontFamily: "Poppins_500Medium" }}>Add Contact</Text>
+            <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Poppins_500Medium" }}>Add Contact</Text>
           </TouchableOpacity>
-          <View style={{ height: 1, backgroundColor: "rgba(0,0,0,0.05)" }} />
+          <View style={{ height: 1, backgroundColor: colors.border }} />
           <TouchableOpacity
             style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 14 }}
             onPress={() => {
@@ -894,7 +894,7 @@ export default function PeopleScreen() {
             }}
           >
             <Users size={16} color="#6c5ce7" style={{ marginRight: 10 }} />
-            <Text style={{ fontSize: 13, color: "#1f2030", fontFamily: "Poppins_500Medium" }}>Create Group</Text>
+            <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Poppins_500Medium" }}>Create Group</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -906,21 +906,21 @@ export default function PeopleScreen() {
           onPress={() => setShowCreateGroupModal(false)}
           style={{ flex: 1, backgroundColor: "rgba(31,32,48,0.4)", justifyContent: "center", alignItems: "center", padding: 20 }}
         >
-          <TouchableOpacity activeOpacity={1} style={{ width: "100%", maxWidth: 320, backgroundColor: "#ffffff", borderRadius: 24, padding: 20, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
+          <TouchableOpacity activeOpacity={1} style={{ width: "100%", maxWidth: 320, backgroundColor: colors.bg, borderRadius: 24, padding: 20, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={{ fontSize: 17, fontFamily: "SpaceGrotesk_700Bold", color: "#1f2030" }}>Create Group Chat</Text>
+              <Text style={{ fontSize: 17, fontFamily: "SpaceGrotesk_700Bold", color: colors.text }}>Create Group Chat</Text>
               <TouchableOpacity onPress={() => setShowCreateGroupModal(false)}>
                 <X size={20} color="#6c5ce7" />
               </TouchableOpacity>
             </View>
-            
-            <Text style={{ fontSize: 11, fontFamily: "Poppins_700Bold", color: "#9a9aab", textTransform: "uppercase", marginBottom: 6, letterSpacing: 0.5 }}>Group Name</Text>
+
+            <Text style={{ fontSize: 11, fontFamily: "Poppins_700Bold", color: colors.textSoft, textTransform: "uppercase", marginBottom: 6, letterSpacing: 0.5 }}>Group Name</Text>
             <TextInput
-              style={{ width: "100%", backgroundColor: "rgba(108,92,231,0.05)", borderWidth: 1, borderColor: "rgba(108,92,231,0.08)", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: "Poppins_400Regular", color: "#1f2030", marginBottom: 16 }}
+              style={{ width: "100%", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: "Poppins_400Regular", color: colors.text, marginBottom: 16 }}
               placeholder="e.g. Design Sync"
               value={newGroupName}
               onChangeText={setNewGroupName}
-              placeholderTextColor="#9a9aab"
+              placeholderTextColor={colors.textSoft}
             />
 
             <TouchableOpacity
@@ -947,19 +947,19 @@ export default function PeopleScreen() {
       {/* QR Code Scanner Modal (Lifted) */}
       <Modal visible={isScannerOpen} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.85)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ width: '90%', maxWidth: 360, backgroundColor: '#ffffff', borderRadius: 28, padding: 24, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
+          <View style={{ width: '90%', maxWidth: 360, backgroundColor: colors.bg, borderRadius: 28, padding: 24, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <View>
-                <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030' }}>Scan QR Code</Text>
-                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: '#9a9aab', marginTop: 2 }}>Scan coworker's profile QR code</Text>
+                <Text style={{ fontSize: 18, fontFamily: 'SpaceGrotesk_700Bold', color: colors.text }}>Scan QR Code</Text>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: colors.textSoft, marginTop: 2 }}>Scan coworker's profile QR code</Text>
               </View>
-              <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}>
-                <X color="#1f2030" size={16} />
+              <TouchableOpacity onPress={() => setIsScannerOpen(false)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <X color={colors.text} size={16} />
               </TouchableOpacity>
             </View>
 
             {/* Camera Frame */}
-            <View style={{ width: '100%', height: 260, borderRadius: 20, overflow: 'hidden', backgroundColor: '#f1f2f6', position: 'relative', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ width: '100%', height: 260, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.surface, position: 'relative', justifyContent: 'center', alignItems: 'center', marginBottom: 20 }}>
               {permission?.granted ? (
                 <CameraView
                   style={{ width: '100%', height: '100%' }}
@@ -968,7 +968,7 @@ export default function PeopleScreen() {
                 />
               ) : (
                 <View style={{ padding: 20, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: '#9a9aab', textAlign: 'center', marginBottom: 10 }}>
+                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_500Medium', color: colors.textSoft, textAlign: 'center', marginBottom: 10 }}>
                     Camera permission required to scan QR codes.
                   </Text>
                   <TouchableOpacity onPress={() => requestPermission()} style={{ backgroundColor: '#6c5ce7', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 }}>
@@ -979,8 +979,8 @@ export default function PeopleScreen() {
             </View>
 
             {/* Sandbox Fallback for simulator */}
-            <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)', paddingTop: 16 }}>
-              <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', color: '#9a9aab', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+            <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 16 }}>
+              <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', color: colors.textSoft, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
                 Simulator Fallback (Enter Bubble ID)
               </Text>
               <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -988,10 +988,10 @@ export default function PeopleScreen() {
                   value={scanFallbackInput}
                   onChangeText={setScanFallbackInput}
                   placeholder="e.g. bubble-X89F2"
-                  placeholderTextColor="#9a9aab"
+                  placeholderTextColor={colors.textSoft}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  style={{ flex: 1, backgroundColor: 'rgba(108,92,231,0.05)', borderWidth: 1, borderColor: 'rgba(108,92,231,0.08)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, fontFamily: 'Poppins_400Regular', color: '#1f2030' }}
+                  style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, fontFamily: 'Poppins_400Regular', color: colors.text }}
                 />
                 <TouchableOpacity
                   onPress={async () => {

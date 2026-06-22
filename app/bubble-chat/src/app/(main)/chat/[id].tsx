@@ -2137,10 +2137,14 @@ export default function ChatScreen() {
                 <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10, marginBottom: 10 }}>
                     <Text style={{ fontSize: 14, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Group Administration</Text>
-                    {isGroupAdmin && (
+                    {isGroupAdmin ? (
                       <TouchableOpacity onPress={handleStartEditGroup} style={{ backgroundColor: PURPLE, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 }}>
                         <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Edit Info</Text>
                       </TouchableOpacity>
+                    ) : (
+                      <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT, fontStyle: 'italic' }}>
+                        Only the group admin can edit info
+                      </Text>
                     )}
                   </View>
 

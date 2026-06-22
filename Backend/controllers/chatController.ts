@@ -77,6 +77,7 @@ const formatConversation = async (c: any, userId?: any) => ({
   maxMembers: c.maxMembers ?? 0,
   transcriptPolicy: c.transcriptPolicy || 'save',
   resources: c.resources || [],
+  isDefaultOrgChat: c.isDefaultOrgChat ?? false,
 
   // User context
   mutedBy: c.mutedBy || [],

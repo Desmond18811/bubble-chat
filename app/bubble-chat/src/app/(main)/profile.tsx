@@ -354,6 +354,7 @@ export default function ProfileScreen() {
   const [orgTranscripts, setOrgTranscripts] = useState<any[]>([]);
   const [expandedTranscriptId, setExpandedTranscriptId] = useState<string | null>(null);
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [orgDefaultChat, setOrgDefaultChat] = useState<{ id: string; transcriptPolicy: 'email' | 'save' | 'off'; isAdmin: boolean } | null>(null);
 
   const [user, setUser] = useState({
     full_name: 'John Doe',
@@ -513,6 +514,18 @@ export default function ProfileScreen() {
             const transcriptsRes = await getOrgTranscripts();
             if (transcriptsRes?.transcripts) {
               setOrgTranscripts(transcriptsRes.transcripts);
+            }
+            const { fetchAllUserChats } = await import('../../lib/api');
+            const me = await authStorage.getUser();
+            const chatsRes = await fetchAllUserChats();
+            const chatsList: any[] = Array.isArray(chatsRes) ? chatsRes : (chatsRes?.chats || []);
+            const defaultChat = chatsList.find((c: any) => c.isDefaultOrgChat);
+            if (defaultChat) {
+              setOrgDefaultChat({
+                id: defaultChat.id,
+                transcriptPolicy: defaultChat.transcriptPolicy || 'save',
+                isAdmin: !!(me?.id && defaultChat.groupAdmin && String(defaultChat.groupAdmin.id || defaultChat.groupAdmin._id || defaultChat.groupAdmin) === String(me.id)),
+              });
             }
           } catch (orgErr) {
             console.warn("Failed to fetch organization details:", orgErr);
@@ -929,6 +942,53 @@ export default function ProfileScreen() {
               {/* Transcripts Tab */}
               {activeOrgTab === 'transcripts' && (
                 <View style={{ gap: 10 }}>
+                  {orgDefaultChat && (
+                    <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 6 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.text }}>Send transcripts to members?</Text>
+                      <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSoft, marginTop: 2, marginBottom: 10 }}>
+                        {orgDefaultChat.isAdmin
+                          ? 'Controls whether company-wide meeting transcripts are emailed to participants.'
+                          : 'Only the org admin can change this. Current setting:'}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 6 }}>
+                        {([
+                          { key: 'email', label: 'Email members' },
+                          { key: 'save', label: 'Save only' },
+                          { key: 'off', label: 'Off' },
+                        ] as const).map((opt) => {
+                          const active = orgDefaultChat.transcriptPolicy === opt.key;
+                          return (
+                            <TouchableOpacity
+                              key={opt.key}
+                              disabled={!orgDefaultChat.isAdmin}
+                              onPress={async () => {
+                                if (!orgDefaultChat.isAdmin) return;
+                                try {
+                                  const { updateGroupSettings } = await import('../../lib/api');
+                                  const res = await updateGroupSettings(orgDefaultChat.id, { transcriptPolicy: opt.key });
+                                  if (res?.conversation) {
+                                    setOrgDefaultChat(prev => prev ? { ...prev, transcriptPolicy: opt.key } : prev);
+                                  }
+                                } catch (e: any) {
+                                  Alert.alert("Error", e.message || "Failed to update transcript setting.");
+                                }
+                              }}
+                              style={{
+                                flex: 1,
+                                alignItems: 'center',
+                                paddingVertical: 9,
+                                borderRadius: 12,
+                                backgroundColor: active ? colors.purple : colors.purpleSoft,
+                                opacity: !orgDefaultChat.isAdmin && !active ? 0.5 : 1,
+                              }}
+                            >
+                              <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_700Bold', color: active ? '#fff' : colors.purple }}>{opt.label}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
                   <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-wider mb-1">Meeting History ({orgTranscripts.length})</Text>
                   {orgTranscripts.length === 0 ? (
                     <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] italic font-sans">No meeting history found</Text>
@@ -1064,10 +1124,20 @@ export default function ProfileScreen() {
           </View>
 
           {/* Logout */}
-          <View className="bg-white dark:bg-[#1a1b28] w-full p-6">
+          <View className="w-full p-6" style={{ backgroundColor: colors.card }}>
             <TouchableOpacity
               onPress={handleLogout}
-              className="flex-row items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-6 py-4"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 18,
+                paddingHorizontal: 24,
+                paddingVertical: 16,
+                backgroundColor: colors.isDark ? 'rgba(239,68,68,0.12)' : '#fef2f2',
+                borderWidth: 1,
+                borderColor: colors.isDark ? 'rgba(239,68,68,0.28)' : '#fee2e2',
+              }}
             >
               <LogOut color="#ef4444" size={18} />
               <Text className="text-red-500 text-[15px] font-bold ml-2 font-sans">Log Out</Text>
@@ -1399,17 +1469,17 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* ── View All Org Members Modal ── */}
-      <Modal visible={showAllMembers} animationType="slide" presentationStyle="pageSheet">
+      {/* ── Employee Directory Page (full-screen, not a popup) ── */}
+      <Modal visible={showAllMembers} animationType="slide" presentationStyle="fullScreen">
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-          <View className="flex-row items-center justify-between px-6 py-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+          <View className="flex-row items-center px-4 py-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <TouchableOpacity onPress={() => setShowAllMembers(false)} style={{ padding: 8, marginRight: 6 }}>
+              <ChevronLeft color={colors.text} size={24} />
+            </TouchableOpacity>
             <View>
               <Text className="text-xl font-bold" style={{ color: colors.text }}>Employee Directory</Text>
               <Text className="text-xs" style={{ color: colors.textSoft }}>{orgMembers.length} member{orgMembers.length === 1 ? '' : 's'} in {orgData?.name || 'your organization'}</Text>
             </View>
-            <TouchableOpacity onPress={() => setShowAllMembers(false)} style={{ padding: 6 }}>
-              <X color={colors.purple} size={20} />
-            </TouchableOpacity>
           </View>
           <ScrollView className="flex-1 px-6 pt-4" contentContainerStyle={{ gap: 10, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
             {orgMembers.map((member) => (
