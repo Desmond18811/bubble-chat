@@ -1762,6 +1762,7 @@ export const createTaskFull = async (data: {
     isRecurring?: boolean;
     recurrence?: 'daily' | 'weekly' | 'monthly';
     recipients?: string[];
+    externalEmails?: string[];
 }) => {
     const res = await fetch(`${BASE_URL}/tasks`, {
         method: 'POST',
@@ -2135,64 +2136,7 @@ export const getOrgTranscripts = async () => {
     return handleResponse(res);
 };
 
-// ─── Org Knowledge Base (the documents/files that build the company brain) ──────
-
-/** List knowledge-base documents (content omitted in the list payload). */
-export const listOrgDocs = async (q?: string) => {
-    const params = new URLSearchParams();
-    if (q) params.append('q', q);
-    params.append('limit', '100');
-    const res = await fetch(`${BASE_URL}/aida/org-docs?${params}`, {
-        headers: getAuthHeaders(),
-    });
-    return handleResponse(res);
-};
-
-/** Fetch a single knowledge-base document with its full content. */
-export const getOrgDoc = async (id: string) => {
-    const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
-        headers: getAuthHeaders(),
-    });
-    return handleResponse(res);
-};
-
-/** Create a knowledge-base document (also embedded into the brain). */
-export const createOrgDoc = async (data: {
-    title: string;
-    content: string;
-    department?: string;
-    accessLevel?: 'public' | 'restricted' | 'admin';
-    tags?: string[];
-}) => {
-    const res = await fetch(`${BASE_URL}/aida/org-docs`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-    });
-    return handleResponse(res);
-};
-
-/** Update an existing knowledge-base document. */
-export const updateOrgDoc = async (
-    id: string,
-    data: { title?: string; content?: string; department?: string; accessLevel?: 'public' | 'restricted' | 'admin'; tags?: string[] }
-) => {
-    const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-    });
-    return handleResponse(res);
-};
-
-/** Delete a knowledge-base document. */
-export const deleteOrgDoc = async (id: string) => {
-    const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-    });
-    return handleResponse(res);
-};
+// ─── Org Knowledge Base file upload (org-doc CRUD lives above as fetchOrgDocs/…) ─
 
 /** Upload a file (PDF/DOCX/TXT/…) into the brain; becomes a knowledge-base document. */
 export const ingestOrgFile = async (file: { uri: string; name: string; type: string }, title?: string) => {

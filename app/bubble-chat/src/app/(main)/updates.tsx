@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator, Platform } from 'react-native';
-import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator, Platform, Switch } from 'react-native';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper, Mail } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useNavigation } from 'expo-router';
@@ -84,6 +84,15 @@ const formatHour = (h: number) => {
   return d.toLocaleTimeString([], { hour: 'numeric' });
 };
 
+// Recurrence summary helpers (plain-language cadence preview).
+const formatClock = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const weekdayName = (d: Date) => d.toLocaleDateString([], { weekday: 'long' });
+const ordinal = (n: number) => {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
+
 // Pre-made event templates the user can tap to prefill the form (one-tap personal events).
 const TEMPLATES: { label: string; type: 'meeting' | 'task' | 'event'; start: string; end: string; recurrence: 'none' | 'daily' | 'weekly' | 'monthly'; desc: string }[] = [
   { label: 'Daily Standup', type: 'meeting', start: '09:00', end: '09:15', recurrence: 'daily', desc: 'Quick sync on progress, blockers, and the plan for today.' },
@@ -109,6 +118,8 @@ export default function UpdatesScreen() {
   const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [recipients, setRecipients] = useState<string[]>([]);
+  const [externalEmails, setExternalEmails] = useState<string[]>([]);
+  const [externalInput, setExternalInput] = useState('');
   const currentUserIdRef = useRef<string | null>(null);
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
@@ -304,6 +315,17 @@ export default function UpdatesScreen() {
     setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  const addExternalEmail = () => {
+    const email = externalInput.trim().toLowerCase();
+    if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert('Invalid email', 'Enter a valid email address.');
+      return;
+    }
+    setExternalEmails((prev) => (prev.includes(email) ? prev : [...prev, email]));
+    setExternalInput('');
+  };
+
   useEffect(() => {
     authStorage.getUser().then((u) => {
       if (u) currentUserIdRef.current = String(u.id || u._id);
@@ -445,6 +467,8 @@ export default function UpdatesScreen() {
     setType('meeting');
     setRecurrence('none');
     setRecipients([]);
+    setExternalEmails([]);
+    setExternalInput('');
     setSelectedGroupIds([]);
     setRecSuggestion(null);
   };
@@ -507,6 +531,7 @@ export default function UpdatesScreen() {
         isRecurring: recurrence !== 'none',
         ...(recurrence !== 'none' ? { recurrence } : {}),
         ...(finalRecipients.length ? { recipients: finalRecipients } : {}),
+        ...(externalEmails.length ? { externalEmails } : {}),
       };
 
       await createTaskFull(payload);
@@ -1043,23 +1068,44 @@ export default function UpdatesScreen() {
                 </View>
               )}
 
-              {/* Repeat selector */}
-              <View>
-                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1.5">Repeat</Text>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {(['none', 'daily', 'weekly', 'monthly'] as const).map(r => {
-                    const active = recurrence === r;
-                    return (
-                      <TouchableOpacity
-                        key={r}
-                        onPress={() => setRecurrence(r)}
-                        style={{ flex: 1, backgroundColor: active ? '#eab308' : 'rgba(234,179,8,0.10)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
-                      >
-                        <Text style={{ color: active ? '#fff' : '#a16207', fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' }}>{r === 'none' ? "Doesn't" : r}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+              {/* Recurrence — redesigned: a toggle that reveals a cadence picker + plain-language summary */}
+              <View style={{ backgroundColor: 'rgba(234,179,8,0.08)', borderRadius: 18, borderWidth: 1, borderColor: 'rgba(234,179,8,0.22)', padding: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: 'rgba(234,179,8,0.18)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                    <Repeat size={15} color="#a16207" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.text }}>Repeats</Text>
+                    <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSoft }}>
+                      {recurrence === 'none'
+                        ? 'One-time event'
+                        : `${recurrence === 'daily' ? 'Every day' : recurrence === 'weekly' ? `Every ${weekdayName(startTime)}` : `Monthly on the ${ordinal(startTime.getDate())}`} · ${formatClock(startTime)}`}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={recurrence !== 'none'}
+                    onValueChange={(on) => setRecurrence(on ? 'weekly' : 'none')}
+                    trackColor={{ false: 'rgba(0,0,0,0.12)', true: '#eab308' }}
+                    thumbColor={Platform.OS === 'ios' ? undefined : recurrence !== 'none' ? '#fff' : '#f4f3f4'}
+                  />
                 </View>
+
+                {recurrence !== 'none' && (
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
+                    {(['daily', 'weekly', 'monthly'] as const).map(r => {
+                      const active = recurrence === r;
+                      return (
+                        <TouchableOpacity
+                          key={r}
+                          onPress={() => setRecurrence(r)}
+                          style={{ flex: 1, backgroundColor: active ? '#eab308' : 'transparent', borderWidth: 1, borderColor: active ? '#eab308' : 'rgba(234,179,8,0.3)', borderRadius: 11, paddingVertical: 9, alignItems: 'center' }}
+                        >
+                          <Text style={{ color: active ? '#fff' : '#a16207', fontSize: 11.5, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' }}>{r}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
 
               {/* Type Select Tabs */}
@@ -1180,6 +1226,46 @@ export default function UpdatesScreen() {
                   )}
                 </View>
               )}
+
+              {/* External participants (people outside your organization) */}
+              <View>
+                <View className="flex-row items-center gap-1.5 mb-1.5">
+                  <Mail size={13} color={colors.purple} />
+                  <Text className="text-xs font-bold uppercase" style={{ color: colors.text }}>External participants</Text>
+                </View>
+                <Text className="text-[10.5px] mb-2 font-sans" style={{ color: colors.textSoft }}>
+                  Invite anyone outside your org by email — they'll receive the same invite.
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TextInput
+                    value={externalInput}
+                    onChangeText={setExternalInput}
+                    placeholder="name@company.com"
+                    placeholderTextColor={colors.textSoft}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    onSubmitEditing={addExternalEmail}
+                    style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: colors.text, borderWidth: 1, borderColor: colors.border }}
+                  />
+                  <TouchableOpacity onPress={addExternalEmail} style={{ backgroundColor: colors.purple, borderRadius: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 12 }}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+                {externalEmails.length > 0 && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {externalEmails.map((em) => (
+                      <TouchableOpacity
+                        key={em}
+                        onPress={() => setExternalEmails((prev) => prev.filter((x) => x !== em))}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
+                      >
+                        <Text style={{ color: colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>{em}</Text>
+                        <X size={11} color={colors.purple} />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
             </ScrollView>
 
             <TouchableOpacity

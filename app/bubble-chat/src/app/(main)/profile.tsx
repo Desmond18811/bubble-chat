@@ -5,7 +5,7 @@ import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Ch
 import { useTheme, Scheme } from '../../lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { listOrgDocs, createOrgDoc, updateOrgDoc, deleteOrgDoc, ingestOrgFile } from '../../lib/api';
+import { fetchOrgDocs, fetchOrgDoc, createOrgDoc, updateOrgDoc, deleteOrgDoc, ingestOrgFile } from '../../lib/api';
 import { Avatar } from '../../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -77,6 +77,250 @@ function OrgMemberRow({ member }: { member: any }) {
       <View className="px-2 py-0.5 rounded-lg ml-2" style={{ backgroundColor: colors.purpleSoft }}>
         <Text className="font-bold text-[9px] uppercase font-sans" style={{ color: colors.purple }}>{role}</Text>
       </View>
+    </View>
+  );
+}
+
+// ── Org Knowledge Base manager (the files/docs that build the company brain) ──
+// Lives inside Edit Organization; admins can view, edit, delete and upload the
+// documents that feed AIda's brain.
+function OrgKnowledgeBase({ active, isAdmin }: { active: boolean; isAdmin: boolean }) {
+  const { colors } = useTheme();
+  const [docs, setDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [newDoc, setNewDoc] = useState({ title: '', content: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDoc, setEditDoc] = useState({ title: '', content: '' });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetchOrgDocs({ page: 1 });
+      setDocs(res?.docs || []);
+    } catch (e: any) {
+      // keep silent — empty state will show
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (active) load();
+  }, [active]);
+
+  const handleCreate = async () => {
+    if (!newDoc.title.trim() || !newDoc.content.trim()) {
+      Alert.alert('Add document', 'Give the entry a title and some content.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await createOrgDoc({ title: newDoc.title.trim(), content: newDoc.content.trim() });
+      setNewDoc({ title: '', content: '' });
+      setShowNew(false);
+      await load();
+      Alert.alert('Added', 'Entry added to your knowledge base. AIda is indexing it now.');
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to add the document.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.length) return;
+      const asset = result.assets[0];
+      setBusy(true);
+      await ingestOrgFile({ uri: asset.uri, name: asset.name, type: asset.mimeType || 'application/octet-stream' }, asset.name);
+      Alert.alert('Uploading', `"${asset.name}" is being processed into the brain. It'll appear here once indexed.`);
+      // Give the async job a moment, then refresh.
+      setTimeout(load, 2500);
+    } catch (e: any) {
+      Alert.alert('Upload failed', e.message || 'Could not upload the file.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const startEdit = async (doc: any) => {
+    setEditingId(doc._id);
+    setEditDoc({ title: doc.title || '', content: '' });
+    try {
+      const res = await getOrgDocSafe(doc._id);
+      setEditDoc({ title: res?.title || doc.title || '', content: res?.content || '' });
+    } catch {}
+  };
+
+  const getOrgDocSafe = async (id: string) => {
+    const res = await fetchOrgDoc(id);
+    return res?.doc;
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    setBusy(true);
+    try {
+      await updateOrgDoc(id, { title: editDoc.title.trim(), content: editDoc.content.trim() });
+      setEditingId(null);
+      await load();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to save changes.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = (doc: any) => {
+    Alert.alert('Remove document', `Remove "${doc.title}" from the knowledge base?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove', style: 'destructive', onPress: async () => {
+          setBusy(true);
+          try {
+            await deleteOrgDoc(doc._id);
+            await load();
+          } catch (e: any) {
+            Alert.alert('Error', e.message || 'Failed to remove the document.');
+          } finally {
+            setBusy(false);
+          }
+        }
+      },
+    ]);
+  };
+
+  return (
+    <View className="rounded-3xl p-5 mb-8" style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}>
+      <View className="flex-row items-center justify-between mb-1">
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <BrainCircuit color={colors.purple} size={18} />
+          <Text className="text-[15px] font-bold" style={{ color: colors.text }}>Knowledge Base</Text>
+        </View>
+        <Text className="text-[11px] font-bold" style={{ color: colors.textSoft }}>{docs.length}</Text>
+      </View>
+      <Text className="text-[11px] mb-3" style={{ color: colors.textSoft }}>
+        The documents AIda uses to answer questions about {`your org`}. {isAdmin ? 'Add, edit or remove them.' : 'Viewable by your team.'}
+      </Text>
+
+      {/* Actions */}
+      {isAdmin && (
+        <View className="flex-row" style={{ gap: 8, marginBottom: 12 }}>
+          <TouchableOpacity
+            onPress={handleUpload}
+            disabled={busy}
+            className="flex-1 flex-row items-center justify-center rounded-xl py-2.5"
+            style={{ backgroundColor: colors.purpleSoft, borderWidth: 1, borderColor: colors.border, gap: 6, opacity: busy ? 0.6 : 1 }}
+          >
+            <Upload color={colors.purple} size={15} />
+            <Text className="text-[12px] font-bold" style={{ color: colors.purple }}>Upload file</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowNew((v) => !v)}
+            className="flex-1 flex-row items-center justify-center rounded-xl py-2.5"
+            style={{ backgroundColor: colors.purple, gap: 6 }}
+          >
+            <Plus color="#fff" size={15} />
+            <Text className="text-[12px] font-bold text-white">New entry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* New entry form */}
+      {showNew && isAdmin && (
+        <View className="rounded-2xl p-3 mb-3" style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 8 }}>
+          <TextInput
+            value={newDoc.title}
+            onChangeText={(t) => setNewDoc({ ...newDoc, title: t })}
+            placeholder="Title (e.g. Refund Policy)"
+            placeholderTextColor={colors.textSoft}
+            style={{ backgroundColor: colors.card, borderRadius: 12, padding: 12, color: colors.text, borderWidth: 1, borderColor: colors.border }}
+          />
+          <TextInput
+            value={newDoc.content}
+            onChangeText={(t) => setNewDoc({ ...newDoc, content: t })}
+            placeholder="Paste or write the knowledge content…"
+            placeholderTextColor={colors.textSoft}
+            multiline
+            textAlignVertical="top"
+            style={{ backgroundColor: colors.card, borderRadius: 12, padding: 12, color: colors.text, borderWidth: 1, borderColor: colors.border, minHeight: 90 }}
+          />
+          <TouchableOpacity onPress={handleCreate} disabled={busy} className="rounded-xl py-3 items-center" style={{ backgroundColor: colors.purple, opacity: busy ? 0.6 : 1 }}>
+            <Text className="text-white font-bold text-[12px]">{busy ? 'Saving…' : 'Add to knowledge base'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Doc list */}
+      {loading ? (
+        <Text className="text-[12px] italic" style={{ color: colors.textSoft }}>Loading…</Text>
+      ) : docs.length === 0 ? (
+        <View className="items-center py-6 rounded-2xl" style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+          <FileText color={colors.textSoft} size={24} />
+          <Text className="text-[12px] mt-2 font-semibold" style={{ color: colors.text }}>No documents yet</Text>
+          <Text className="text-[10.5px] mt-0.5" style={{ color: colors.textSoft }}>{isAdmin ? 'Upload a file or add an entry to teach AIda.' : 'Your admins haven\'t added any yet.'}</Text>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          {docs.map((doc) => (
+            <View key={String(doc._id)} className="rounded-2xl p-3" style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+              {editingId === doc._id ? (
+                <View style={{ gap: 8 }}>
+                  <TextInput
+                    value={editDoc.title}
+                    onChangeText={(t) => setEditDoc({ ...editDoc, title: t })}
+                    placeholder="Title"
+                    placeholderTextColor={colors.textSoft}
+                    style={{ backgroundColor: colors.card, borderRadius: 12, padding: 10, color: colors.text, borderWidth: 1, borderColor: colors.border }}
+                  />
+                  <TextInput
+                    value={editDoc.content}
+                    onChangeText={(t) => setEditDoc({ ...editDoc, content: t })}
+                    placeholder="Content"
+                    placeholderTextColor={colors.textSoft}
+                    multiline
+                    textAlignVertical="top"
+                    style={{ backgroundColor: colors.card, borderRadius: 12, padding: 10, color: colors.text, borderWidth: 1, borderColor: colors.border, minHeight: 100 }}
+                  />
+                  <View className="flex-row" style={{ gap: 8 }}>
+                    <TouchableOpacity onPress={() => setEditingId(null)} className="flex-1 rounded-xl py-2.5 items-center" style={{ borderWidth: 1, borderColor: colors.border }}>
+                      <Text className="text-[12px] font-bold" style={{ color: colors.textSoft }}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleSaveEdit(doc._id)} disabled={busy} className="flex-1 rounded-xl py-2.5 items-center" style={{ backgroundColor: colors.purple, opacity: busy ? 0.6 : 1 }}>
+                      <Text className="text-[12px] font-bold text-white">{busy ? 'Saving…' : 'Save'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View className="flex-row items-center">
+                  <FileText color={colors.purple} size={16} />
+                  <View className="flex-1 min-w-0 ml-2.5">
+                    <Text className="text-[13px] font-bold" numberOfLines={1} style={{ color: colors.text }}>{doc.title}</Text>
+                    <Text className="text-[10px]" numberOfLines={1} style={{ color: colors.textSoft }}>
+                      {(doc.department || 'general')}{doc.tags?.length ? ` · ${doc.tags.slice(0, 3).join(', ')}` : ''}
+                    </Text>
+                  </View>
+                  {isAdmin && (
+                    <View className="flex-row" style={{ gap: 6 }}>
+                      <TouchableOpacity onPress={() => startEdit(doc)} className="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: colors.purpleSoft }}>
+                        <Pencil color={colors.purple} size={13} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDelete(doc)} className="w-8 h-8 rounded-lg items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
+                        <Trash2 color="#ef4444" size={13} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -993,6 +1237,9 @@ export default function ProfileScreen() {
                 <Text className="text-white font-bold ml-2">Save Settings</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Knowledge Base — the documents that build the company brain */}
+            <OrgKnowledgeBase active={isEditingOrg} isAdmin={!!orgData?.isAdmin} />
           </ScrollView>
         </SafeAreaView>
       </Modal>

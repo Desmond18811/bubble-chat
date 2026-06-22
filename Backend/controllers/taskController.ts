@@ -57,8 +57,13 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
     const {
       title, description, start_time, end_time, status, type, priority,
       assignedTo, color, source, meetingRef, isRecurring, recurrence, recipients,
-      meetingType
+      externalEmails, meetingType
     } = req.body;
+
+    // Normalise external (non-org) participant emails.
+    const externalList: string[] = Array.isArray(externalEmails)
+      ? externalEmails.map((e: any) => String(e).trim().toLowerCase()).filter((e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+      : [];
 
     const finalPriority = priority || 'medium';
 
@@ -76,6 +81,7 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
       user_id: userId,
       assignedTo: assignedTo || userId,
       recipients: recipients || [],
+      externalEmails: externalList,
       type: type || 'task',
       meetingType,
       title,
@@ -151,6 +157,13 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
         const recUser = await User.findById(assignedTo).select('email full_name username');
         if (recUser && recUser.email) {
           emailList.push({ email: recUser.email, name: recUser.full_name || recUser.username || 'Assignee' });
+        }
+      }
+
+      // External (non-org) participants — invite them by email too.
+      for (const email of externalList) {
+        if (!emailList.some((e) => e.email.toLowerCase() === email)) {
+          emailList.push({ email, name: email.split('@')[0] });
         }
       }
 

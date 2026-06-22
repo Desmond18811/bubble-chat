@@ -10,6 +10,7 @@ export interface ITask extends Document {
   assignedTo?: mongoose.Types.ObjectId;   // who is responsible
   assignedToName?: string;
   recipients?: mongoose.Types.ObjectId[]; // people invited / notified
+  externalEmails?: string[];              // non-org participants invited by email
 
   type: TaskType;
   meetingType?: 'voice' | 'video';
@@ -45,6 +46,7 @@ const TaskSchema = new Schema<ITask>(
     assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
     assignedToName: { type: String },
     recipients: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    externalEmails: [{ type: String, trim: true, lowercase: true }],
 
     type: { type: String, enum: ['event', 'task', 'synced', 'meeting'], default: 'task' },
     meetingType: { type: String, enum: ['voice', 'video'] },
