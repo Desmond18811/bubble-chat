@@ -1248,6 +1248,7 @@ function ContactRow({
   onPress: () => void;
   onLongPress: () => void;
 }) {
+  const { colors } = useTheme();
   const unreadCount = matchingChat?.unreadCount || 0;
 
   return (
@@ -1263,8 +1264,8 @@ function ContactRow({
           height: 20,
           borderRadius: 10,
           borderWidth: 2,
-          borderColor: isSelected ? "#6c5ce7" : "#9a9aab",
-          backgroundColor: isSelected ? "#6c5ce7" : "transparent",
+          borderColor: isSelected ? colors.purple : colors.textSoft,
+          backgroundColor: isSelected ? colors.purple : "transparent",
           alignItems: "center",
           justifyContent: "center",
           marginRight: 10,
@@ -1284,13 +1285,13 @@ function ContactRow({
           imageStyle={{ borderRadius: 14 }}
         />
         {contact.isOnline && (
-          <View style={{ position: "absolute", bottom: -1, right: -1, width: 13, height: 13, borderRadius: 99, backgroundColor: "#22c55e", borderWidth: 2, borderColor: "#f8f7ff" }} />
+          <View style={{ position: "absolute", bottom: -1, right: -1, width: 13, height: 13, borderRadius: 99, backgroundColor: "#22c55e", borderWidth: 2, borderColor: colors.bg }} />
         )}
       </View>
 
       <View style={{ flex: 1, minWidth: 0, marginLeft: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: matchingChat && unreadCount > 0 ? "Poppins_700Bold" : "Poppins_600SemiBold", color: "#1f2030", flex: 1 }}>
+          <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: matchingChat && unreadCount > 0 ? "Poppins_700Bold" : "Poppins_600SemiBold", color: colors.text, flex: 1 }}>
             {contact.name}
           </Text>
           {unreadCount > 0 && (
@@ -1302,21 +1303,21 @@ function ContactRow({
           )}
         </View>
         {isTyping ? (
-          <Text style={{ fontSize: 12, fontFamily: "Poppins_600SemiBold", color: "#6c5ce7", marginTop: 2 }}>
+          <Text style={{ fontSize: 12, fontFamily: "Poppins_600SemiBold", color: colors.purple, marginTop: 2 }}>
             {isTyping.fromUsername ? `@${isTyping.fromUsername} is typing...` : isTyping.fromName ? `${isTyping.fromName} is typing...` : 'typing...'}
           </Text>
         ) : matchingChat?.latestMessage ? (
-          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: unreadCount > 0 ? "Poppins_600SemiBold" : "Poppins_400Regular", color: unreadCount > 0 ? "#1f2030" : "rgba(31,32,48,0.45)", marginTop: 2 }}>
+          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: unreadCount > 0 ? "Poppins_600SemiBold" : "Poppins_400Regular", color: unreadCount > 0 ? colors.text : colors.textSoft, marginTop: 2 }}>
             {matchingChat.latestMessage}
           </Text>
         ) : (
-          <Text style={{ fontSize: 12, fontFamily: "Poppins_400Regular", color: "rgba(31,32,48,0.3)", fontStyle: "italic", marginTop: 2 }}>
+          <Text style={{ fontSize: 12, fontFamily: "Poppins_400Regular", color: colors.textSoft, fontStyle: "italic", marginTop: 2 }}>
             Not messaged yet • Tap to chat
           </Text>
         )}
       </View>
 
-      <MessageSquarePlus size={16} color="#6c5ce7" style={{ opacity: 0.4, marginLeft: 8, flexShrink: 0 }} />
+      <MessageSquarePlus size={16} color={colors.purple} style={{ opacity: 0.65, marginLeft: 8, flexShrink: 0 }} />
     </TouchableOpacity>
   );
 }

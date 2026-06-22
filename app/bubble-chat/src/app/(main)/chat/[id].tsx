@@ -117,6 +117,7 @@ export default function ChatScreen() {
     groupIcon: '',
     maxMembers: 0,
     transcriptPolicy: 'save' as 'email' | 'save' | 'off',
+    allowMembersToShareInvite: true,
     resources: [] as { label: string; url?: string; type?: 'link' | 'file' }[],
   });
   // Draft inputs for adding a new group resource (label + url)
@@ -133,6 +134,7 @@ export default function ChatScreen() {
       groupIcon: chat?.avatar || '',
       maxMembers: chat?.maxMembers || 0,
       transcriptPolicy: chat?.transcriptPolicy || 'save',
+      allowMembersToShareInvite: chat?.allowMembersToShareInvite ?? true,
       resources: Array.isArray(chat?.resources) ? chat.resources : [],
     });
     setNewResLabel('');
@@ -856,6 +858,7 @@ export default function ChatScreen() {
   });
 
   if (isInfoOpen) {
+    const isGroupAdmin = chat.isGroupChat && chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
         {/* Page Header */}
@@ -873,7 +876,12 @@ export default function ChatScreen() {
 
         <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
           {/* Profile Card */}
-          <View style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+          <TouchableOpacity
+            disabled={!isGroupAdmin}
+            onPress={handleStartEditGroup}
+            activeOpacity={isGroupAdmin ? 0.7 : 1}
+            style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}
+          >
             <View style={{ marginBottom: 14 }}>
               <Avatar
                 url={chat.avatar}
@@ -891,7 +899,7 @@ export default function ChatScreen() {
             <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: INK_SOFT, textAlign: 'center', marginTop: 10, lineHeight: 20, paddingHorizontal: 10 }}>
               {chat.bio}
             </Text>
-          </View>
+          </TouchableOpacity>
 
           {/* Info Cards - Only displayed for 1-on-1 chats */}
           {!chat.isGroupChat && (
@@ -902,60 +910,6 @@ export default function ChatScreen() {
             </>
           )}
 
-          {/* Group Administration settings */}
-          {chat.isGroupChat && (() => {
-            const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
-            if (!isGroupAdmin) return null;
-            return (
-              <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10, marginBottom: 10 }}>
-                  <Text style={{ fontSize: 14, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Group Administration</Text>
-                  <TouchableOpacity onPress={handleStartEditGroup} style={{ backgroundColor: PURPLE, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 }}>
-                    <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Edit Info</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>Admin Permission</Text>
-                    <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 2 }}>Allow members to share invite</Text>
-                  </View>
-                  <Switch
-                    value={chat.allowMembersToShareInvite ?? true}
-                    onValueChange={async (val) => {
-                      try {
-                        const { updateGroupSettings } = await import('../../../lib/api');
-                        const res = await updateGroupSettings(chat.id, { allowMembersToShareInvite: val });
-                        if (res?.conversation) {
-                          setChat(res.conversation);
-                        }
-                      } catch (e: any) {
-                        Alert.alert("Error", e.message || "Failed to update group settings.");
-                      }
-                    }}
-                    trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
-                    thumbColor={Platform.OS === 'ios' ? undefined : (chat.allowMembersToShareInvite ?? true) ? "#6c5ce7" : "#f4f3f4"}
-                  />
-                </View>
-
-                {/* Current settings (reflect what Edit Info saves) */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Member limit</Text>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{chat.maxMembers ? chat.maxMembers : 'Unlimited'}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Transcripts</Text>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT, textTransform: 'capitalize' }}>
-                    {chat.transcriptPolicy === 'email' ? 'Email members' : chat.transcriptPolicy === 'off' ? 'Off' : 'Save only'}
-                  </Text>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Resources</Text>
-                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{(chat.resources || []).length}</Text>
-                </View>
-              </View>
-            );
-          })()}
 
           {/* Group Invite Code Card */}
           {chat.isGroupChat && chat.inviteCode && (() => {
@@ -1336,6 +1290,20 @@ export default function ChatScreen() {
                   />
                 </View>
 
+                {/* Admin Permission Switch */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase' }}>Admin Permission</Text>
+                    <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 2 }}>Allow members to share invite</Text>
+                  </View>
+                  <Switch
+                    value={groupFormData.allowMembersToShareInvite}
+                    onValueChange={(val) => setGroupFormData({ ...groupFormData, allowMembersToShareInvite: val })}
+                    trackColor={{ false: "#e2e8f0", true: PURPLE }}
+                    thumbColor={Platform.OS === 'ios' ? undefined : groupFormData.allowMembersToShareInvite ? PURPLE : "#f4f3f4"}
+                  />
+                </View>
+
                 {/* Member limit */}
                 <View style={{ marginBottom: 16 }}>
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Member Limit</Text>
@@ -1455,6 +1423,7 @@ export default function ChatScreen() {
                         groupIcon: groupFormData.groupIcon,
                         maxMembers: groupFormData.maxMembers,
                         transcriptPolicy: groupFormData.transcriptPolicy,
+                        allowMembersToShareInvite: groupFormData.allowMembersToShareInvite,
                         resources: groupFormData.resources,
                       });
                       if (res?.conversation) {
@@ -2801,260 +2770,6 @@ export default function ChatScreen() {
               )}
             </ScrollView>
           )}
-        </SafeAreaView>
-      </Modal>
-
-      {/* Edit Group Info Modal */}
-      <Modal visible={isEditingGroup} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <View>
-              <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Edit Group Info</Text>
-              <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Update group details</Text>
-            </View>
-            <TouchableOpacity onPress={() => setIsEditingGroup(false)}>
-              <X color={PURPLE} size={20} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
-            <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Avatar</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
-                  {AVATARS.map((url) => (
-                    <TouchableOpacity
-                      key={url}
-                      onPress={() => setGroupFormData({ ...groupFormData, groupIcon: url })}
-                      style={{
-                        width: 54,
-                        height: 54,
-                        borderRadius: 16,
-                        borderWidth: groupFormData.groupIcon === url ? 3 : 0,
-                        borderColor: PURPLE,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-                  <TouchableOpacity
-                    onPress={async () => {
-                      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                      if (!permissionResult.granted) {
-                        Alert.alert("Permission Denied", "Camera roll permissions are required to choose a group icon.");
-                        return;
-                      }
-
-                      const pickerResult = await ImagePicker.launchImageLibraryAsync({
-                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                        allowsEditing: true,
-                        quality: 0.8,
-                      });
-
-                      if (pickerResult.canceled) return;
-                      const uri = pickerResult.assets[0].uri;
-                      try {
-                        const uploadedUrl = await uploadGroupOrOrgImage(uri);
-                        setGroupFormData({ ...groupFormData, groupIcon: uploadedUrl });
-                        Alert.alert("Success", "Custom avatar uploaded!");
-                      } catch (err: any) {
-                        Alert.alert("Error", err.message || "Failed to upload image.");
-                      }
-                    }}
-                    style={{
-                      flex: 1,
-                      backgroundColor: PURPLE_SOFT,
-                      borderWidth: 1,
-                      borderColor: 'rgba(108,92,231,0.2)',
-                      borderRadius: 12,
-                      paddingVertical: 10,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text style={{ color: PURPLE, fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Upload Custom</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      setGroupFormData({ ...groupFormData, groupIcon: '' });
-                    }}
-                    style={{
-                      flex: 1,
-                      backgroundColor: 'rgba(239,68,68,0.05)',
-                      borderWidth: 1,
-                      borderColor: 'rgba(239,68,68,0.1)',
-                      borderRadius: 12,
-                      paddingVertical: 10,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text style={{ color: '#ef4444', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Remove Avatar</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Name</Text>
-                <TextInput
-                  value={groupFormData.chatName}
-                  onChangeText={(t) => setGroupFormData({ ...groupFormData, chatName: t })}
-                  style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
-                />
-              </View>
-
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Description / Bio</Text>
-                <TextInput
-                  value={groupFormData.groupDescription}
-                  onChangeText={(t) => setGroupFormData({ ...groupFormData, groupDescription: t })}
-                  style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border, minHeight: 80 }}
-                  multiline
-                  textAlignVertical="top"
-                />
-              </View>
-
-              {/* Member limit */}
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Member Limit</Text>
-                <TextInput
-                  value={groupFormData.maxMembers ? String(groupFormData.maxMembers) : ''}
-                  onChangeText={(t) => setGroupFormData({ ...groupFormData, maxMembers: parseInt(t.replace(/[^0-9]/g, ''), 10) || 0 })}
-                  keyboardType="number-pad"
-                  placeholder="0 = unlimited"
-                  placeholderTextColor={INK_SOFT}
-                  style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
-                />
-                <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
-                  Cap how many people can join. Currently {chat?.users?.length || 0} member(s).
-                </Text>
-              </View>
-
-              {/* Meeting transcript policy */}
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Meeting Transcripts</Text>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {([
-                    { key: 'email', label: 'Email members' },
-                    { key: 'save', label: 'Save only' },
-                    { key: 'off', label: 'Off' },
-                  ] as const).map((opt) => {
-                    const active = groupFormData.transcriptPolicy === opt.key;
-                    return (
-                      <TouchableOpacity
-                        key={opt.key}
-                        onPress={() => setGroupFormData({ ...groupFormData, transcriptPolicy: opt.key })}
-                        style={{ flex: 1, backgroundColor: active ? PURPLE : 'rgba(108,92,231,0.08)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
-                      >
-                        <Text style={{ color: active ? '#fff' : INK_SOFT, fontSize: 11, fontFamily: 'Poppins_600SemiBold' }}>{opt.label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
-                  How this group's meeting transcripts are handled when a call ends.
-                </Text>
-              </View>
-
-              {/* Group resources */}
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Resources</Text>
-                {groupFormData.resources.length > 0 && (
-                  <View style={{ gap: 8, marginBottom: 10 }}>
-                    {groupFormData.resources.map((r, idx) => (
-                      <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10 }}>
-                        <View style={{ flex: 1, marginRight: 8 }}>
-                          <Text style={{ fontSize: 12.5, fontFamily: 'Poppins_600SemiBold', color: INK }} numberOfLines={1}>{r.label}</Text>
-                          {!!r.url && <Text style={{ fontSize: 10.5, color: PURPLE }} numberOfLines={1}>{r.url}</Text>}
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => setGroupFormData({ ...groupFormData, resources: groupFormData.resources.filter((_, i) => i !== idx) })}
-                          style={{ padding: 4 }}
-                        >
-                          <X size={15} color="#ef4444" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-                <View style={{ gap: 8 }}>
-                  <TextInput
-                    value={newResLabel}
-                    onChangeText={setNewResLabel}
-                    placeholder="Label (e.g. Brand kit)"
-                    placeholderTextColor={INK_SOFT}
-                    style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: colors.border }}
-                  />
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <TextInput
-                      value={newResUrl}
-                      onChangeText={setNewResUrl}
-                      placeholder="https://…"
-                      placeholderTextColor={INK_SOFT}
-                      autoCapitalize="none"
-                      style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: colors.border }}
-                    />
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (!newResLabel.trim() || !newResUrl.trim()) {
-                          Alert.alert('Add resource', 'Enter both a label and a URL.');
-                          return;
-                        }
-                        setGroupFormData({
-                          ...groupFormData,
-                          resources: [...groupFormData.resources, { label: newResLabel.trim(), url: newResUrl.trim(), type: 'link' }],
-                        });
-                        setNewResLabel('');
-                        setNewResUrl('');
-                      }}
-                      style={{ backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Text style={{ color: PURPLE, fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Add</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
-                  Links/docs that give this group's AI helpful context.
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={async () => {
-                  const memberCount = chat?.users?.length || 0;
-                  if (groupFormData.maxMembers > 0 && groupFormData.maxMembers < memberCount) {
-                    Alert.alert('Member limit too low', `The cap can't be below the current ${memberCount} member(s).`);
-                    return;
-                  }
-                  try {
-                    const { updateGroupSettings } = await import('../../../lib/api');
-                    const res = await updateGroupSettings(chat.id, {
-                      chatName: groupFormData.chatName.trim(),
-                      groupDescription: groupFormData.groupDescription.trim(),
-                      groupIcon: groupFormData.groupIcon,
-                      maxMembers: groupFormData.maxMembers,
-                      transcriptPolicy: groupFormData.transcriptPolicy,
-                      resources: groupFormData.resources,
-                    });
-                    if (res?.conversation) {
-                      setChat(res.conversation);
-                      Alert.alert("Success", "Group settings updated successfully.");
-                      setIsEditingGroup(false);
-                    }
-                  } catch (err: any) {
-                    Alert.alert("Error", err.message || "Failed to update group settings.");
-                  }
-                }}
-                style={{ backgroundColor: PURPLE, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 14 }}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save Changes</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
         </SafeAreaView>
       </Modal>
 

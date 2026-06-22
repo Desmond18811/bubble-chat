@@ -458,6 +458,7 @@ function WorkroomTab({
   onStartCall: (user: any, type: 'voice' | 'video') => void;
   onOpenScanner: () => void;
 }) {
+  const { colors } = useTheme();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [chats, setChats] = useState<any[]>([]);
@@ -540,12 +541,12 @@ function WorkroomTab({
       {/* Search Bar */}
       <View className="px-5 pb-3 pt-2 flex-row items-center gap-3">
         <View className="flex-1 flex-row items-center bg-purple/10 rounded-3xl border border-purple/5 px-4 py-2.5 shadow-sm shadow-purple/5">
-          <Search color="#6c5ce7" size={16} />
+          <Search color={colors.purple} size={16} />
           <TextInput
             placeholder="Search groups or members..."
             value={search}
             onChangeText={setSearch}
-            placeholderTextColor="rgba(108,92,231,0.4)"
+            placeholderTextColor={colors.textSoft}
             className="flex-1 text-[14px] text-ink dark:text-[#f4f5fb] font-medium font-sans ml-2"
           />
           {search.length > 0 && (
@@ -556,9 +557,9 @@ function WorkroomTab({
         </View>
         <TouchableOpacity
           onPress={onOpenScanner}
-          style={{ width: 40, height: 40, backgroundColor: 'rgba(108,92,231,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 40, height: 40, backgroundColor: colors.purpleSoft, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Scan color="#6c5ce7" size={18} />
+          <Scan color={colors.purple} size={18} />
         </TouchableOpacity>
       </View>
 
@@ -645,22 +646,25 @@ function WorkroomTab({
                   {/* FIX: message icon also opens 1-on-1 DM */}
                   <TouchableOpacity
                     onPress={() => handleOpenDm(member)}
-                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                    className="w-8 h-8 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: colors.purpleSoft }}
                     disabled={loadingDm === member.id}
                   >
-                    <MessageSquare color="#6c5ce7" size={14} />
+                    <MessageSquare color={colors.purple} size={14} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => onStartCall(member, 'voice')}
-                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                    className="w-8 h-8 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: colors.purpleSoft }}
                   >
-                    <Phone color="#6c5ce7" size={14} />
+                    <Phone color={colors.purple} size={14} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => onStartCall(member, 'video')}
-                    className="w-8 h-8 rounded-xl bg-purple-soft/40 items-center justify-center"
+                    className="w-8 h-8 rounded-xl items-center justify-center"
+                    style={{ backgroundColor: colors.purpleSoft }}
                   >
-                    <Video color="#6c5ce7" size={14} />
+                    <Video color={colors.purple} size={14} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -670,8 +674,8 @@ function WorkroomTab({
 
         {filteredGroups.length === 0 && filteredMembers.length === 0 && (
           <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50 dark:bg-white/[0.04]">
-            <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
-              <Briefcase color="#6c5ce7" size={28} />
+            <View className="w-16 h-16 rounded-3xl items-center justify-center mb-4" style={{ backgroundColor: colors.purpleSoft }}>
+              <Briefcase color={colors.purple} size={28} />
             </View>
             <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No workroom members</Text>
             <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-1 text-center max-w-[220px] leading-relaxed font-sans">

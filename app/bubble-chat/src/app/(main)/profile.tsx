@@ -963,7 +963,7 @@ export default function ProfileScreen() {
                     <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 6 }}>
                       <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.text }}>Send transcripts to members?</Text>
                       <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSoft, marginTop: 2, marginBottom: 10 }}>
-                        {orgDefaultChat.isAdmin
+                        {(orgDefaultChat.isAdmin || orgData?.isAdmin)
                           ? 'Controls whether company-wide meeting transcripts are emailed to participants.'
                           : 'Only the org admin can change this. Current setting:'}
                       </Text>
@@ -974,12 +974,13 @@ export default function ProfileScreen() {
                           { key: 'off', label: 'Off' },
                         ] as const).map((opt) => {
                           const active = orgDefaultChat.transcriptPolicy === opt.key;
+                          const canEdit = !!(orgDefaultChat.isAdmin || orgData?.isAdmin);
                           return (
                             <TouchableOpacity
                               key={opt.key}
-                              disabled={!orgDefaultChat.isAdmin}
+                              disabled={!canEdit}
                               onPress={async () => {
-                                if (!orgDefaultChat.isAdmin) return;
+                                if (!canEdit) return;
                                 try {
                                   const { updateGroupSettings } = await import('../../lib/api');
                                   const res = await updateGroupSettings(orgDefaultChat.id, { transcriptPolicy: opt.key });
@@ -996,7 +997,7 @@ export default function ProfileScreen() {
                                 paddingVertical: 9,
                                 borderRadius: 12,
                                 backgroundColor: active ? colors.purple : colors.purpleSoft,
-                                opacity: !orgDefaultChat.isAdmin && !active ? 0.5 : 1,
+                                opacity: !canEdit && !active ? 0.5 : 1,
                               }}
                             >
                               <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_700Bold', color: active ? '#fff' : colors.purple }}>{opt.label}</Text>
