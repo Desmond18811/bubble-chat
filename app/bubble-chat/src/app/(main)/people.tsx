@@ -41,6 +41,7 @@ import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { BlurView } from 'expo-blur';
 import { Avatar as SharedAvatar } from '../../components/Avatar';
 
 // ─────────────────────────────────────────────
@@ -120,6 +121,7 @@ function ContactsTab({
   onStartCall: (user: any, type: 'voice' | 'video') => void;
   onOpenScanner: () => void;
 }) {
+  const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [addIdentifier, setAddIdentifier] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -260,7 +262,10 @@ function ContactsTab({
         </View>
 
         {filtered.length === 0 ? (
-          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50 dark:bg-white/[0.04]">
+          <View
+            className="py-16 items-center justify-center border-2 border-dashed rounded-3xl mt-2"
+            style={{ backgroundColor: colors.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', borderColor: colors.border }}
+          >
             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
               <Users color="#6c5ce7" size={28} />
             </View>
@@ -294,7 +299,8 @@ function ContactsTab({
             return (
               <View
                 key={contact.id}
-                className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
+                className="flex-row items-center rounded-2xl px-4 py-3.5 mb-3 shadow-sm shadow-purple/5"
+                style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderStrong }}
               >
                 <Link href={`/chat/${chatTarget}`} asChild>
                   <TouchableOpacity
@@ -362,6 +368,16 @@ function ContactsTab({
         )}
       </ScrollView>
 
+      {/* Soft bottom fade — list gently blurs out as it scrolls past the edge */}
+      {filtered.length > 4 && (
+        <BlurView
+          intensity={18}
+          tint={colors.isDark ? 'dark' : 'light'}
+          pointerEvents="none"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 44 }}
+        />
+      )}
+
       {/* Add Friend Modal */}
       <Modal visible={showAddModal} transparent animationType="slide">
         <TouchableOpacity
@@ -379,7 +395,7 @@ function ContactsTab({
                   <View>
                     <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] font-display">Add a Contact</Text>
                     <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
-                      Enter their unique ID or @username
+                      Add by @username, Bubble ID, or email — or scan their QR
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -397,7 +413,7 @@ function ContactsTab({
                   <TextInput
                     value={addIdentifier}
                     onChangeText={setAddIdentifier}
-                    placeholder="e.g. bubble-A3F9X7K2 or @username"
+                    placeholder="@username · Bubble ID · email"
                     placeholderTextColor="#9a9aab"
                     className="text-[15px] text-ink dark:text-[#f4f5fb] font-sans"
                     autoCapitalize="none"
@@ -1378,7 +1394,7 @@ export default function PeopleScreen() {
 //                   <TextInput
 //                     value={addIdentifier}
 //                     onChangeText={setAddIdentifier}
-//                     placeholder="e.g. bubble-A3F9X7K2 or @username"
+//                     placeholder="@username · Bubble ID · email"
 //                     placeholderTextColor="#9a9aab"
 //                     className="text-[15px] text-ink dark:text-[#f4f5fb] font-sans"
 //                     autoCapitalize="none"

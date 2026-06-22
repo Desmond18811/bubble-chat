@@ -67,6 +67,11 @@ const EMOJI_CATEGORIES = [
 
 export default function ChatScreen() {
   const { colors } = useTheme();
+  // Theme-aware shadows of the module constants. In light mode these resolve to the
+  // exact original hex (#1f2030 / #9a9aab), so every modal/inline `INK` usage below is
+  // a no-op in light and automatically themes to the dark palette in dark mode.
+  const INK = colors.text;
+  const INK_SOFT = colors.textSoft;
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -899,7 +904,7 @@ export default function ChatScreen() {
         {isSearching ? (
           <View style={{
             flexDirection: 'row', alignItems: 'center', flex: 1,
-            backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 14,
+            backgroundColor: colors.card, borderRadius: 14,
             paddingHorizontal: 12, paddingVertical: 8, marginHorizontal: 4,
           }}>
             <Search size={16} color={PURPLE} style={{ marginRight: 8 }} />
@@ -1031,7 +1036,7 @@ export default function ChatScreen() {
               setIsSearching(true);
             }}
           />
-          <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.05)' }} />
+          <View style={{ height: 1, backgroundColor: colors.border }} />
           <DropdownItem
             icon={<Pin size={16} color={INK_SOFT} />}
             label={isChatPinned ? "Unpin Chat" : "Pin Chat"}
@@ -1082,7 +1087,7 @@ export default function ChatScreen() {
               showToast(isArchived ? "Chat unarchived" : "Chat archived");
             }}
           />
-          <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.05)' }} />
+          <View style={{ height: 1, backgroundColor: colors.border }} />
           <DropdownItem
             icon={<Trash2 size={16} color="red" />}
             label="Delete Chat"
@@ -1467,7 +1472,7 @@ export default function ChatScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                backgroundColor: 'rgba(108,92,231,0.06)',
+                backgroundColor: colors.card,
                 paddingHorizontal: 16,
                 paddingVertical: 8,
                 borderBottomWidth: 1,
@@ -1586,7 +1591,7 @@ export default function ChatScreen() {
                   </View>
                   <TouchableOpacity
                     onPress={() => setSelectedFile(null)}
-                    style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <X size={12} color={INK} />
                   </TouchableOpacity>
@@ -1670,7 +1675,7 @@ export default function ChatScreen() {
                         width: 32,
                         height: 32,
                         borderRadius: 16,
-                        backgroundColor: 'rgba(0,0,0,0.05)',
+                        backgroundColor: colors.border,
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
@@ -1824,7 +1829,7 @@ export default function ChatScreen() {
                 height: 250,
                 backgroundColor: '#ffffff',
                 borderTopWidth: 1,
-                borderTopColor: 'rgba(0,0,0,0.05)',
+                borderTopColor: colors.border,
                 paddingTop: 8,
               }}>
                 <ScrollView
@@ -1952,7 +1957,7 @@ export default function ChatScreen() {
                 ))}
               </View>
 
-              <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginBottom: 8 }} />
+              <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 8 }} />
 
               {/* Actions */}
               <ContextMenuItem
@@ -2001,7 +2006,7 @@ export default function ChatScreen() {
                 }}
               />
 
-              <View style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.05)', marginVertical: 8 }} />
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
 
               <ContextMenuItem
                 icon={<Trash2 size={16} color={INK_SOFT} />}
@@ -2080,9 +2085,9 @@ export default function ChatScreen() {
 
       {/* ── Info Modal ── */}
       <Modal visible={isInfoOpen} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
           {/* Modal Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <View>
               <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Information</Text>
               <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>
@@ -2096,7 +2101,7 @@ export default function ChatScreen() {
 
           <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
             {/* Profile Card */}
-            <View style={{ alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+            <View style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
               <View style={{ marginBottom: 14 }}>
                 <Avatar
                   url={chat.avatar}
@@ -2129,8 +2134,8 @@ export default function ChatScreen() {
             {chat.isGroupChat && (() => {
               const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
               return (
-                <View style={{ backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)', paddingBottom: 10, marginBottom: 10 }}>
+                <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10, marginBottom: 10 }}>
                     <Text style={{ fontSize: 14, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Group Administration</Text>
                     {isGroupAdmin && (
                       <TouchableOpacity onPress={handleStartEditGroup} style={{ backgroundColor: PURPLE, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 }}>
@@ -2167,7 +2172,7 @@ export default function ChatScreen() {
                   </View>
 
                   {/* Current settings (reflect what Edit Info saves) */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
                     <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Member limit</Text>
                     <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{chat.maxMembers ? chat.maxMembers : 'Unlimited'}</Text>
                   </View>
@@ -2190,7 +2195,7 @@ export default function ChatScreen() {
               const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
               if (isGroupAdmin || (chat.allowMembersToShareInvite ?? true)) {
                 return (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(108,92,231,0.06)', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, padding: 16, borderRadius: 18, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}>
                     <View style={{ flex: 1, marginRight: 10 }}>
                       <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', letterSpacing: 1 }}>Group Invite Code</Text>
                       <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT, marginTop: 2 }}>Anyone with this code can join the group</Text>
@@ -2200,7 +2205,7 @@ export default function ChatScreen() {
                         Clipboard.setString(chat.inviteCode);
                         Alert.alert("Copied", "Group invite code copied to clipboard!");
                       }}
-                      style={{ backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', flexDirection: 'row', alignItems: 'center' }}
+                      style={{ backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }}
                     >
                       <Copy size={12} color={PURPLE} style={{ marginRight: 4 }} />
                       <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: PURPLE }}>{chat.inviteCode}</Text>
@@ -2225,7 +2230,7 @@ export default function ChatScreen() {
                         key={member.id || member._id || member}
                         activeOpacity={0.7}
                         onPress={() => setSelectedMember({ ...member, isAdmin })}
-                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.04)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}
+                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}
                       >
                         <Avatar
                           url={member.avatar}
@@ -2284,7 +2289,7 @@ export default function ChatScreen() {
               return accordionSections.map((section) => {
                 const isOpen = openSection === section.key;
                 return (
-                  <View key={section.key} style={{ backgroundColor: 'rgba(108,92,231,0.03)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', marginBottom: 8, overflow: 'hidden' }}>
+                  <View key={section.key} style={{ backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', marginBottom: 8, overflow: 'hidden' }}>
                     <TouchableOpacity
                       onPress={() => setOpenSection(isOpen ? null : section.key)}
                       activeOpacity={0.7}
@@ -2343,8 +2348,8 @@ export default function ChatScreen() {
 
       {/* ── Group Member Profile Modal ── */}
       <Modal visible={selectedMember !== null} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <View>
               <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Profile</Text>
               <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Group member</Text>
@@ -2357,7 +2362,7 @@ export default function ChatScreen() {
           {selectedMember && (
             <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
               {/* Hero */}
-              <View style={{ alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+              <View style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
                 <View style={{ marginBottom: 14 }}>
                   <Avatar
                     url={selectedMember.avatar}
@@ -2438,8 +2443,8 @@ export default function ChatScreen() {
 
       {/* Edit Group Info Modal */}
       <Modal visible={isEditingGroup} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
             <View>
               <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Edit Group Info</Text>
               <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Update group details</Text>
@@ -2450,7 +2455,7 @@ export default function ChatScreen() {
           </View>
 
           <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
-            <View style={{ backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+            <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Avatar</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
@@ -2536,7 +2541,7 @@ export default function ChatScreen() {
                 <TextInput
                   value={groupFormData.chatName}
                   onChangeText={(t) => setGroupFormData({ ...groupFormData, chatName: t })}
-                  style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                  style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
                 />
               </View>
 
@@ -2545,7 +2550,7 @@ export default function ChatScreen() {
                 <TextInput
                   value={groupFormData.groupDescription}
                   onChangeText={(t) => setGroupFormData({ ...groupFormData, groupDescription: t })}
-                  style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', minHeight: 80 }}
+                  style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border, minHeight: 80 }}
                   multiline
                   textAlignVertical="top"
                 />
@@ -2560,7 +2565,7 @@ export default function ChatScreen() {
                   keyboardType="number-pad"
                   placeholder="0 = unlimited"
                   placeholderTextColor={INK_SOFT}
-                  style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                  style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
                 />
                 <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
                   Cap how many people can join. Currently {chat?.users?.length || 0} member(s).
@@ -2599,7 +2604,7 @@ export default function ChatScreen() {
                 {groupFormData.resources.length > 0 && (
                   <View style={{ gap: 8, marginBottom: 10 }}>
                     {groupFormData.resources.map((r, idx) => (
-                      <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', paddingHorizontal: 12, paddingVertical: 10 }}>
+                      <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10 }}>
                         <View style={{ flex: 1, marginRight: 8 }}>
                           <Text style={{ fontSize: 12.5, fontFamily: 'Poppins_600SemiBold', color: INK }} numberOfLines={1}>{r.label}</Text>
                           {!!r.url && <Text style={{ fontSize: 10.5, color: PURPLE }} numberOfLines={1}>{r.url}</Text>}
@@ -2620,7 +2625,7 @@ export default function ChatScreen() {
                     onChangeText={setNewResLabel}
                     placeholder="Label (e.g. Brand kit)"
                     placeholderTextColor={INK_SOFT}
-                    style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                    style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: colors.border }}
                   />
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TextInput
@@ -2629,7 +2634,7 @@ export default function ChatScreen() {
                       placeholder="https://…"
                       placeholderTextColor={INK_SOFT}
                       autoCapitalize="none"
-                      style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                      style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: colors.border }}
                     />
                     <TouchableOpacity
                       onPress={() => {
@@ -2904,12 +2909,13 @@ function IconBtn({ icon, onPress }: { icon: React.ReactNode; onPress?: () => voi
 }
 
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  const { colors } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 10 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, padding: 16, borderRadius: 18, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}>
       {icon}
       <View style={{ marginLeft: 12, flex: 1 }}>
-        <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</Text>
-        <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: '#1f2030', marginTop: 2 }}>{value}</Text>
+        <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: colors.textSoft, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</Text>
+        <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: colors.text, marginTop: 2 }}>{value}</Text>
       </View>
     </View>
   );

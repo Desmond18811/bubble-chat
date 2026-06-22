@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Clipboard, Switch, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database, ChevronLeft, Plus, Moon, Sun, Smartphone } from 'lucide-react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, ChevronLeft, Plus, Moon, Sun, Smartphone } from 'lucide-react-native';
 import { useTheme, Scheme } from '../../lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '../../components/Avatar';
@@ -10,7 +10,6 @@ import { useNavigation, useRouter } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { authStorage } from '../../lib/authStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { getMyProfile, updateProfile, getSecureMediaUrl } from '../../lib/api';
 
@@ -48,10 +47,6 @@ export default function ProfileScreen() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
 
-  const [autoBackup, setAutoBackup] = useState(true);
-  const [lastBackupTime, setLastBackupTime] = useState<string>("Today at 2:00 AM");
-  const [isBackingUp, setIsBackingUp] = useState(false);
-
   // Organization settings states
   const [orgData, setOrgData] = useState<{
     name: string;
@@ -73,57 +68,6 @@ export default function ProfileScreen() {
   const [orgTranscripts, setOrgTranscripts] = useState<any[]>([]);
   const [expandedTranscriptId, setExpandedTranscriptId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadBackupSettings() {
-      try {
-        const auto = await AsyncStorage.getItem("bubble_auto_backup");
-        if (auto !== null) {
-          setAutoBackup(auto === "true");
-        }
-        const last = await AsyncStorage.getItem("bubble_last_backup_time");
-        if (last !== null) {
-          setLastBackupTime(last);
-        }
-      } catch (err) {
-        console.warn("Failed to load backup settings:", err);
-      }
-    }
-    loadBackupSettings();
-  }, []);
-
-  const toggleAutoBackup = async (value: boolean) => {
-    setAutoBackup(value);
-    try {
-      await AsyncStorage.setItem("bubble_auto_backup", value ? "true" : "false");
-    } catch (err) {
-      console.warn("Failed to save backup toggle state:", err);
-    }
-  };
-
-  const handleManualBackup = async () => {
-    setIsBackingUp(true);
-    try {
-      const { chatCache } = await import('../../lib/chatCache');
-      const success = await chatCache.performCloudBackup();
-      setIsBackingUp(false);
-      if (success) {
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const dateStr = new Date().toLocaleDateString([], { month: 'short', day: 'numeric' });
-        const fullTime = `${dateStr} at ${timeStr}`;
-        setLastBackupTime(fullTime);
-        await AsyncStorage.setItem("bubble_last_backup_time", fullTime);
-        Alert.alert(
-          "Backup Complete",
-          "All end-to-end encrypted chats, message history, and private keypairs have been backed up securely to the cloud."
-        );
-      } else {
-        Alert.alert("Backup Failed", "Failed to backup E2E databases to the cloud. Please check your network and try again.");
-      }
-    } catch (err: any) {
-      setIsBackingUp(false);
-      Alert.alert("Backup Failed", err.message || "An unexpected error occurred during backup.");
-    }
-  };
   const [user, setUser] = useState({
     full_name: 'John Doe',
     username: 'johndoe123',
@@ -841,46 +785,6 @@ export default function ProfileScreen() {
             <Text style={{ fontSize: 11, color: colors.textSoft, marginTop: 10 }}>
               Dark mode applies across the mobile app. "System" follows your phone settings.
             </Text>
-          </View>
-
-          {/* Backup & Restore Card */}
-          <View className="bg-white dark:bg-[#1a1b28] w-full p-6 border-b border-black/5 dark:border-white/10 mt-3" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
-            <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] border-b border-black/10 dark:border-white/20 pb-3 mb-5 font-sans" style={{ color: colors.text, borderColor: colors.borderStrong }}>
-              Backup & Encrypted Storage
-            </Text>
-            
-            <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center flex-1 pr-2">
-                  <Database color="#6c5ce7" size={20} style={{ marginRight: 10 }} />
-                  <View className="flex-1">
-                    <Text className="text-[14px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Automatic Backup</Text>
-                    <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Cloud backup of E2E keys and chats at 2:00 AM</Text>
-                  </View>
-                </View>
-                <Switch
-                  value={autoBackup}
-                  onValueChange={toggleAutoBackup}
-                  trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
-                  thumbColor={Platform.OS === 'ios' ? undefined : autoBackup ? "#6c5ce7" : "#f4f3f4"}
-                />
-              </View>
-              
-              <View className="border-t border-black/5 dark:border-white/10 pt-3 flex-row items-center justify-between">
-                <Text className="text-[11.5px] font-semibold text-ink-soft dark:text-[#9a9bb6] font-sans">
-                  Last Backup: {lastBackupTime || 'Never'}
-                </Text>
-                <TouchableOpacity 
-                  onPress={handleManualBackup}
-                  disabled={isBackingUp}
-                  className="bg-purple/10 px-4 py-1.5 rounded-xl border border-purple/20"
-                >
-                  <Text className="text-purple text-[11px] font-bold font-sans">
-                    {isBackingUp ? 'Backing up...' : 'Backup Now'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
 
           {/* Logout */}
