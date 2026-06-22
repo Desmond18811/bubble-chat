@@ -15,6 +15,7 @@ import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maxi
 import { CameraView, Camera } from "expo-camera";
 import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, CallState } from "../lib/callManager";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
+import { ThemeProvider } from "../lib/theme";
 import { getLiveKitToken } from "../lib/api";
 import { ensureLiveKitRegistered } from "../lib/liveKitInit";
 import type { LiveKitCallRoomProps } from "../components/liveKitCall";
@@ -436,10 +437,10 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }} />
       <GlobalCallOverlay />
-    </>
+    </ThemeProvider>
   );
 }
 

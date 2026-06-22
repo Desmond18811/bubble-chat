@@ -18,7 +18,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { initSocket, getIO } from './utils/socket';
-import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler, initDailyDigestScheduler, initWeeklyDigestScheduler } from './utils/scheduler';
+import { initSecurityScheduler, initTranscriptProcessor, initTaskReminderScheduler, initDailyDigestScheduler, initWeeklyDigestScheduler, initHolidayReminderScheduler } from './utils/scheduler';
 import { initBrainEventListener } from './utils/brainEventListener';
 import { warmEmbeddings } from './utils/embeddings';
 import { processQueue } from './utils/queue';
@@ -357,6 +357,7 @@ mongoose.connect(mongoURI, { family: 4 })
     initTaskReminderScheduler();
     initDailyDigestScheduler();
     initWeeklyDigestScheduler();
+    initHolidayReminderScheduler();
     initBrainEventListener();
     // Warm the local embedding model in the background so the first brain ingest
     // isn't blocked on the one-time model download/load.

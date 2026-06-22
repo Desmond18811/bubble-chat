@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator } from 'react-native';
-import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2 } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator, Platform } from 'react-native';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../lib/theme';
 import { useNavigation } from 'expo-router';
 import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchTasks, createTaskFull, uploadMeetingRecording } from '../../lib/api';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { fetchTasks, createTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -54,14 +56,43 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-// Type-based calendar dot colors
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  meeting: '#3b82f6',  // blue
-  event: '#22c55e',   // green
-  task: '#eab308',    // yellow
+// Calendar dot colors
+const COLOR_HOLIDAY = '#f4663b';   // festive orange — public holidays
+const COLOR_RECURRING = '#eab308'; // yellow — repeated/recurring events
+const COLOR_MEETING = '#22c55e';   // green — meetings
+const COLOR_EVENT = '#3b82f6';     // blue — one-off events
+const COLOR_TASK = '#6c5ce7';      // purple — tasks
+
+// Resolve a calendar item's dot color. Holidays and recurring items take precedence
+// over the plain type so a weekly meeting reads as "recurring (yellow)".
+const getDotColor = (item: any): string => {
+  if (item?.eventType === 'holiday' || item?.type === 'holiday') return COLOR_HOLIDAY;
+  if (item?.isRecurring) return COLOR_RECURRING;
+  if (item?.type === 'meeting') return COLOR_MEETING;
+  if (item?.type === 'event') return COLOR_EVENT;
+  return COLOR_TASK;
 };
 
+// A calendar item's date works for both tasks (start_time) and calendar events (startTime).
+const itemDate = (it: any): Date => new Date(it?.start_time || it?.startTime || Date.now());
+
+// Friendly hour label e.g. "7 PM" used in recurrence suggestions.
+const formatHour = (h: number) => {
+  const d = new Date();
+  d.setHours(h, 0, 0, 0);
+  return d.toLocaleTimeString([], { hour: 'numeric' });
+};
+
+// Pre-made event templates the user can tap to prefill the form (one-tap personal events).
+const TEMPLATES: { label: string; type: 'meeting' | 'task' | 'event'; start: string; end: string; recurrence: 'none' | 'daily' | 'weekly' | 'monthly'; desc: string }[] = [
+  { label: 'Daily Standup', type: 'meeting', start: '09:00', end: '09:15', recurrence: 'daily', desc: 'Quick sync on progress, blockers, and the plan for today.' },
+  { label: 'Weekly Sync', type: 'meeting', start: '10:00', end: '11:00', recurrence: 'weekly', desc: 'Team alignment on priorities and updates for the week.' },
+  { label: '1:1 Check-in', type: 'meeting', start: '15:00', end: '15:30', recurrence: 'weekly', desc: 'One-on-one check-in.' },
+  { label: 'Focus Block', type: 'task', start: '13:00', end: '15:00', recurrence: 'none', desc: 'Deep-work block — no meetings.' },
+];
+
 export default function UpdatesScreen() {
+  const { colors } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,10 +100,20 @@ export default function UpdatesScreen() {
   // Event creation states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startTimeText, setStartTimeText] = useState('10:00');
-  const [endTimeText, setEndTimeText] = useState('11:00');
+  const [startTime, setStartTime] = useState<Date>(() => { const d = new Date(); d.setHours(10, 0, 0, 0); return d; });
+  const [endTime, setEndTime] = useState<Date>(() => { const d = new Date(); d.setHours(11, 0, 0, 0); return d; });
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
+  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
+  const [recipients, setRecipients] = useState<string[]>([]);
+  const [orgMembers, setOrgMembers] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [holidayEvents, setHolidayEvents] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [recSuggestion, setRecSuggestion] = useState<{ recurrence: 'daily' | 'weekly' | 'monthly'; message: string } | null>(null);
 
   // Calling states
   const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
@@ -203,9 +244,52 @@ export default function UpdatesScreen() {
     }
   };
 
+  // Pull org calendar events (public holidays) + org members (for the notify-team picker).
+  // Holidays are shown read-only on the calendar; both are best-effort and non-blocking.
+  const syncAux = async () => {
+    try {
+      const evRes = await getCalendarEvents({ type: 'holiday' });
+      const evList = evRes?.events || evRes?.data || (Array.isArray(evRes) ? evRes : []);
+      setHolidayEvents((evList || []).filter((e: any) => e?.eventType === 'holiday'));
+    } catch (err) {
+      console.warn("Failed to fetch holidays in updates.tsx:", err);
+    }
+    try {
+      const memRes = await getOrgMembers();
+      if (memRes?.members) setOrgMembers(memRes.members);
+    } catch (err) {
+      console.warn("Failed to fetch org members in updates.tsx:", err);
+    }
+    try {
+      const { chatCache } = await import('../../lib/chatCache');
+      const cached = await chatCache.getCachedChats();
+      setGroups((cached || []).filter((c: any) => c.isGroupChat));
+    } catch (err) {
+      console.warn("Failed to load groups in updates.tsx:", err);
+    }
+  };
+
+  // Expand selected groups → their member user-ids, unioned with individually picked recipients.
+  const memberIdsOf = (group: any): string[] =>
+    (group?.users || []).map((u: any) => String(u?.id || u?._id || u)).filter(Boolean);
+
+  const resolveRecipients = (): string[] => {
+    const ids = new Set<string>(recipients);
+    for (const gid of selectedGroupIds) {
+      const g = groups.find((x) => String(x.id || x._id) === String(gid));
+      if (g) memberIdsOf(g).forEach((id) => ids.add(id));
+    }
+    return Array.from(ids);
+  };
+
+  const toggleGroup = (id: string) => {
+    setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   useEffect(() => {
     loadCache();
     syncTasks();
+    syncAux();
   }, []);
 
   useEffect(() => {
@@ -304,6 +388,13 @@ export default function UpdatesScreen() {
   const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
 
   const selectedDayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === selectedDate.toDateString());
+  const selectedDayHolidays = holidayEvents.filter(h => itemDate(h).toDateString() === selectedDate.toDateString());
+
+  // Upcoming holidays (next 90 days) — used as one-tap "pre-made" templates.
+  const upcomingHolidays = holidayEvents
+    .filter(h => { const d = itemDate(h); const now = new Date(); return d >= new Date(now.toDateString()) && d.getTime() - now.getTime() < 90 * 86400000; })
+    .sort((a, b) => itemDate(a).getTime() - itemDate(b).getTime())
+    .slice(0, 6);
 
   // Check if any high priority meeting is happening right now to show as a quick join option
   const activeNowMeeting = tasks.find(t => {
@@ -314,6 +405,59 @@ export default function UpdatesScreen() {
     return now >= start && now <= end;
   });
 
+  // Combine the selected calendar day with a chosen time-of-day.
+  const combineDayAndTime = (day: Date, t: Date) => {
+    const d = new Date(day);
+    d.setHours(t.getHours(), t.getMinutes(), 0, 0);
+    return d;
+  };
+
+  const resetEventForm = () => {
+    setTitle('');
+    setDescription('');
+    const s = new Date(); s.setHours(10, 0, 0, 0); setStartTime(s);
+    const e = new Date(); e.setHours(11, 0, 0, 0); setEndTime(e);
+    setPriority('medium');
+    setType('meeting');
+    setRecurrence('none');
+    setRecipients([]);
+    setSelectedGroupIds([]);
+    setRecSuggestion(null);
+  };
+
+  const toggleRecipient = (id: string) => {
+    setRecipients(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  // AI-describe: ask DeepSeek (via the existing endpoint) to write a description from the title.
+  const runAiDescribe = async () => {
+    const prompt = title.trim() || description.trim();
+    if (!prompt) { Alert.alert('Add a title', 'Type an event title first so the AI knows what to describe.'); return; }
+    setAiLoading(true);
+    try {
+      const res = await fetchAiDescription(prompt);
+      const desc = res?.description || res?.data?.description;
+      if (desc) setDescription(desc);
+      else Alert.alert('AI', 'Could not generate a description right now.');
+    } catch (err: any) {
+      Alert.alert('AI', err.message || 'Could not generate a description.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Prefill the form from a pre-made template.
+  const applyTemplate = (tpl: typeof TEMPLATES[number]) => {
+    setTitle(tpl.label);
+    setType(tpl.type);
+    setDescription(tpl.desc);
+    setRecurrence(tpl.recurrence);
+    const [sH, sM] = tpl.start.split(':').map(Number);
+    const [eH, eM] = tpl.end.split(':').map(Number);
+    const s = new Date(); s.setHours(sH, sM, 0, 0); setStartTime(s);
+    const e = new Date(); e.setHours(eH, eM, 0, 0); setEndTime(e);
+  };
+
   const handleCreateEvent = async () => {
     if (!title.trim()) {
       Alert.alert('Validation Error', 'Please enter a title for the event.');
@@ -321,51 +465,53 @@ export default function UpdatesScreen() {
     }
 
     try {
-      const start = new Date(selectedDate);
-      const [sH, sM] = startTimeText.split(':').map(Number);
-      start.setHours(sH || 10, sM || 0, 0, 0);
+      const start = combineDayAndTime(selectedDate, startTime);
+      const end = combineDayAndTime(selectedDate, endTime);
+      if (end <= start) {
+        Alert.alert('Check times', 'End time must be after the start time.');
+        return;
+      }
 
-      const end = new Date(selectedDate);
-      const [eH, eM] = endTimeText.split(':').map(Number);
-      end.setHours(eH || 11, eM || 0, 0, 0);
-
-      const payload = {
+      const finalRecipients = resolveRecipients();
+      const payload: any = {
         title: title.trim(),
         description: description.trim(),
         start_time: start.toISOString(),
         end_time: end.toISOString(),
         priority,
         type,
+        isRecurring: recurrence !== 'none',
+        ...(recurrence !== 'none' ? { recurrence } : {}),
+        ...(finalRecipients.length ? { recipients: finalRecipients } : {}),
       };
 
       await createTaskFull(payload);
-      
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setStartTimeText('10:00');
-      setEndTimeText('11:00');
-      setPriority('medium');
-      setType('meeting');
-      
+
+      const wasUrgentMeeting = (priority === 'high' || priority === 'urgent') && type === 'meeting';
+      const eventTitle = payload.title;
+      const notifiedCount = finalRecipients.length;
+
+      resetEventForm();
       setIsModalOpen(false);
       await syncTasks();
 
       // If urgent meeting scheduled immediately, prompt trigger
-      if ((payload.priority === 'high' || payload.priority === 'urgent') && payload.type === 'meeting') {
+      if (wasUrgentMeeting) {
         Alert.alert(
           'Priority Meeting Scheduled',
-          'Everybody in the group is notified to come online for this call.',
+          notifiedCount > 0
+            ? `${notifiedCount} teammate(s) are notified to come online for this call.`
+            : 'This priority meeting is on your calendar.',
           [
             { text: 'Later', style: 'cancel' },
-            { 
-              text: 'Start Call Now', 
+            {
+              text: 'Start Call Now',
               onPress: () => {
                 setActiveCall({
-                  user: { name: payload.title, avatar: null },
+                  user: { name: eventTitle, avatar: null },
                   type: 'voice'
                 });
-              } 
+              }
             }
           ]
         );
@@ -375,9 +521,36 @@ export default function UpdatesScreen() {
     }
   };
 
+  // Smart recurrence suggestion: when the typed event repeats a past pattern (same title +
+  // start hour seen before), suggest making it recurring. DeepSeek-phrased, local fallback.
+  useEffect(() => {
+    if (!isModalOpen || recurrence !== 'none' || title.trim().length < 3) { setRecSuggestion(null); return; }
+    const hour = startTime.getHours();
+    const norm = (s: string) => (s || '').trim().toLowerCase();
+    const priorMatches = tasks.filter(t => norm(t.title) === norm(title) && new Date(t.start_time).getHours() === hour);
+    if (priorMatches.length < 1) { setRecSuggestion(null); return; }
+    let cancelled = false;
+    const handle = setTimeout(async () => {
+      let suggestion: { recurrence: 'daily' | 'weekly' | 'monthly'; message: string } = {
+        recurrence: 'weekly',
+        message: `You schedule "${title.trim()}" around ${formatHour(hour)} often — repeat it weekly?`,
+      };
+      try {
+        const res = await suggestRecurrence({
+          title: title.trim(),
+          startTime: startTime.toISOString(),
+          recentEvents: tasks.slice(0, 25).map(t => ({ title: t.title, start_time: t.start_time })),
+        });
+        if (res?.suggest && res.recurrence) suggestion = { recurrence: res.recurrence, message: res.message || suggestion.message };
+      } catch { /* fall back to local phrasing */ }
+      if (!cancelled) setRecSuggestion(suggestion);
+    }, 600);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [title, startTime, isModalOpen, recurrence, tasks]);
+
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5">
+    <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: colors.bg }}>
+      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5 dark:border-white/10">
         <View>
           <Svg height="36" width="140">
             <Defs>
@@ -397,7 +570,7 @@ export default function UpdatesScreen() {
               Updates
             </SvgText>
           </Svg>
-          <Text className="text-xs text-ink-soft font-sans mt-0.5">Plan and sync team agendas</Text>
+          <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] font-sans mt-0.5">Plan and sync team agendas</Text>
         </View>
         <TouchableOpacity
           onPress={() => setIsModalOpen(true)}
@@ -424,23 +597,23 @@ export default function UpdatesScreen() {
               <Text className="text-white font-bold text-xs uppercase tracking-widest">🔴 LIVE TEAM CALL ACTIVE</Text>
               <Text className="text-white font-bold text-sm mt-1" numberOfLines={1}>{activeNowMeeting.title}</Text>
             </View>
-            <View className="bg-white px-4 py-2 rounded-xl">
+            <View className="bg-white dark:bg-[#1a1b28] px-4 py-2 rounded-xl">
               <Text className="text-red-500 text-xs font-bold font-sans">JOIN NOW</Text>
             </View>
           </TouchableOpacity>
         )}
 
-        <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
+        <View className="bg-purple-soft/20 p-6 border-b border-black/5 dark:border-white/10 w-full">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-lg font-bold text-ink font-sans">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
+            <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] font-sans">{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</Text>
             <View className="flex-row gap-2">
-              <TouchableOpacity onPress={prevMonth} className="p-2 border border-black/5 rounded-xl bg-white">
+              <TouchableOpacity onPress={prevMonth} className="p-2 border border-black/5 dark:border-white/10 rounded-xl bg-white dark:bg-[#1a1b28]">
                 <ChevronLeft color="#6c5ce7" size={16} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setCurrentDate(new Date())} className="px-3 py-2 border border-black/5 rounded-xl bg-white">
-                <Text className="text-xs font-bold text-ink font-sans">Today</Text>
+              <TouchableOpacity onPress={() => setCurrentDate(new Date())} className="px-3 py-2 border border-black/5 dark:border-white/10 rounded-xl bg-white dark:bg-[#1a1b28]">
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] font-sans">Today</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={nextMonth} className="p-2 border border-black/5 rounded-xl bg-white">
+              <TouchableOpacity onPress={nextMonth} className="p-2 border border-black/5 dark:border-white/10 rounded-xl bg-white dark:bg-[#1a1b28]">
                 <ChevronRight color="#6c5ce7" size={16} />
               </TouchableOpacity>
             </View>
@@ -448,7 +621,7 @@ export default function UpdatesScreen() {
 
           <View className="flex-row justify-between mb-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <Text key={day} className="text-[10px] font-bold text-black/30 uppercase flex-1 text-center font-sans">{day}</Text>
+              <Text key={day} className="text-[10px] font-bold text-black/30 dark:text-white/40 uppercase flex-1 text-center font-sans">{day}</Text>
             ))}
           </View>
 
@@ -457,7 +630,9 @@ export default function UpdatesScreen() {
               const selected = isSelected(cell.date);
               const today = isToday(cell.date);
               const dayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === cell.date.toDateString());
-              const hasMeeting = dayTasks.length > 0;
+              const dayHolidays = holidayEvents.filter(h => itemDate(h).toDateString() === cell.date.toDateString());
+              const dayItems = [...dayTasks, ...dayHolidays];
+              const hasMeeting = dayItems.length > 0;
 
               return (
                 <TouchableOpacity
@@ -466,21 +641,18 @@ export default function UpdatesScreen() {
                   className="w-[14.28%] aspect-square p-1"
                 >
                   <View className={`flex-1 rounded-[14px] p-1.5 justify-between border ${
-                    selected ? 'bg-purple border-purple' : 
-                    today ? 'border-purple/50 bg-purple/5' : 
-                    cell.isCurrentMonth ? 'bg-white border-black/5' : 'bg-slate-50 border-black/5 opacity-50'
+                    selected ? 'bg-purple border-purple' :
+                    today ? 'border-purple/50 bg-purple/5' :
+                    cell.isCurrentMonth ? 'bg-white dark:bg-[#1a1b28] border-black/5 dark:border-white/10' : 'bg-slate-50 dark:bg-[#23243a] border-black/5 dark:border-white/10 opacity-50'
                   }`}>
-                    <Text className={`text-xs font-bold font-sans ${selected ? 'text-white' : 'text-ink'}`}>
+                    <Text className={`text-xs font-bold font-sans ${selected ? 'text-white' : 'text-ink dark:text-[#f4f5fb]'}`}>
                       {cell.date.getDate()}
                     </Text>
                     {hasMeeting && (
                       <View className="flex-row gap-0.5 mt-auto flex-wrap">
-                        {dayTasks.map(t => {
-                          const dotColor = EVENT_TYPE_COLORS[t.type] || '#6c5ce7';
-                          return (
-                            <View key={t._id} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: selected ? '#ffffff' : dotColor, marginRight: 1 }} />
-                          );
-                        })}
+                        {dayItems.slice(0, 4).map((t, i) => (
+                          <View key={t._id || i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: selected ? '#ffffff' : getDotColor(t), marginRight: 1 }} />
+                        ))}
                       </View>
                     )}
                   </View>
@@ -491,20 +663,48 @@ export default function UpdatesScreen() {
         </View>
 
         <View className="p-6">
-          <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1 font-sans">Agenda for</Text>
-          <Text className="text-lg font-bold text-ink mb-4 font-sans">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
+          <Text className="text-xs font-bold uppercase tracking-wider text-black/30 dark:text-white/40 italic mb-1 font-sans">Agenda for</Text>
+          <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] mb-3 font-sans">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
 
-          {selectedDayTasks.length === 0 ? (
-            <View className="py-10 border-2 border-dashed border-black/5 rounded-[24px] bg-white/50 items-center justify-center">
+          {/* Dot legend */}
+          <View className="flex-row flex-wrap gap-x-3 gap-y-1 mb-4">
+            {[
+              { c: COLOR_MEETING, l: 'Meeting' },
+              { c: COLOR_RECURRING, l: 'Recurring' },
+              { c: COLOR_HOLIDAY, l: 'Holiday' },
+              { c: COLOR_EVENT, l: 'Event' },
+              { c: COLOR_TASK, l: 'Task' },
+            ].map(item => (
+              <View key={item.l} className="flex-row items-center gap-1">
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: item.c }} />
+                <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-sans">{item.l}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Public holidays for the day (read-only) */}
+          {selectedDayHolidays.map((h, i) => (
+            <View key={h._id || `hol-${i}`} style={{ borderLeftWidth: 3, borderLeftColor: COLOR_HOLIDAY }} className="p-4 rounded-2xl bg-orange-50/60 border border-orange-100 mb-3">
+              <View className="flex-row items-center gap-1.5 mb-1">
+                <PartyPopper size={13} color={COLOR_HOLIDAY} />
+                <Text style={{ color: COLOR_HOLIDAY }} className="text-[9px] font-bold uppercase font-sans">Public Holiday</Text>
+              </View>
+              <Text className="font-bold text-ink dark:text-[#f4f5fb] text-sm font-sans">{h.title}</Text>
+              {h.description ? <Text className="text-[12px] text-ink-soft dark:text-[#9a9bb6] mt-1 font-sans" numberOfLines={2}>{h.description}</Text> : null}
+            </View>
+          ))}
+
+          {selectedDayTasks.length === 0 && selectedDayHolidays.length === 0 ? (
+            <View className="py-10 border-2 border-dashed border-black/5 dark:border-white/10 rounded-[24px] bg-white/50 items-center justify-center">
               <Calendar color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
-              <Text className="text-sm text-ink-soft font-medium font-sans">No events scheduled.</Text>
+              <Text className="text-sm text-ink-soft dark:text-[#9a9bb6] font-medium font-sans">No events scheduled.</Text>
             </View>
           ) : (
             selectedDayTasks.map(task => {
               const typeLabel = task.type === 'meeting' ? { bg: '#eff6ff', text: '#3b82f6' } : task.type === 'event' ? { bg: '#f0fdf4', text: '#22c55e' } : { bg: '#fefce8', text: '#ca8a04' };
               const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
               return (
-                <View key={task._id} style={{ borderLeftWidth: 3, borderLeftColor: EVENT_TYPE_COLORS[task.type] || '#6c5ce7' }} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
+                <View key={task._id} style={{ borderLeftWidth: 3, borderLeftColor: getDotColor(task) }} className="p-4 rounded-2xl bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 mb-3 shadow-sm">
                   <View className="flex-row items-center gap-2 mb-2">
                     <Text style={{ backgroundColor: typeLabel.bg, color: typeLabel.text }} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase font-sans">
                       {task.type || 'task'}
@@ -512,15 +712,21 @@ export default function UpdatesScreen() {
                     <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${pColor}`}>
                       {task.priority || 'medium'}
                     </Text>
+                    {task.isRecurring && (
+                      <View className="flex-row items-center gap-1 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(234,179,8,0.14)' }}>
+                        <Repeat size={9} color="#a16207" />
+                        <Text className="text-[9px] font-bold uppercase font-sans" style={{ color: '#a16207' }}>{task.recurrence || 'repeats'}</Text>
+                      </View>
+                    )}
                   </View>
-                  <Text className="font-bold text-ink text-sm mb-2 font-sans">{task.title}</Text>
+                  <Text className="font-bold text-ink dark:text-[#f4f5fb] text-sm mb-2 font-sans">{task.title}</Text>
                   {task.description ? (
-                    <Text className="text-[12px] text-ink-soft mb-2 font-sans" numberOfLines={2}>{task.description}</Text>
+                    <Text className="text-[12px] text-ink-soft dark:text-[#9a9bb6] mb-2 font-sans" numberOfLines={2}>{task.description}</Text>
                   ) : null}
                   <View className="flex-row items-center gap-4">
                     <View className="flex-row items-center gap-1.5">
                       <Clock color="#6c5ce7" size={14} />
-                      <Text className="text-[11px] text-ink-soft font-medium font-sans">
+                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] font-medium font-sans">
                         {new Date(task.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(task.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </Text>
                     </View>
@@ -668,64 +874,173 @@ export default function UpdatesScreen() {
           onPress={() => setIsModalOpen(false)}
           className="flex-1 bg-black/60 justify-end"
         >
-          <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl p-6 pb-12 shadow-2xl">
+          <TouchableOpacity activeOpacity={1} className="bg-white dark:bg-[#1a1b28] rounded-t-3xl p-6 pb-12 shadow-2xl">
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <View>
-                <Text className="text-lg font-bold text-ink">Schedule Agenda</Text>
-                <Text className="text-xs text-ink-soft">Plan for {selectedDate.toLocaleDateString('en-US', { dateStyle: 'short' })}</Text>
+                <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb]">Schedule Agenda</Text>
+                <Text className="text-xs text-ink-soft dark:text-[#9a9bb6]">Plan for {selectedDate.toLocaleDateString('en-US', { dateStyle: 'short' })}</Text>
               </View>
               <TouchableOpacity onPress={() => setIsModalOpen(false)} style={{ padding: 4 }}>
                 <X color="#6c5ce7" size={20} />
               </TouchableOpacity>
             </View>
             
-            <ScrollView style={{ maxHeight: 400 }} contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 440 }} contentContainerStyle={{ gap: 16 }} showsVerticalScrollIndicator={false}>
+              {/* Pre-made templates */}
               <View>
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Title</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1.5">Quick templates</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
+                  {TEMPLATES.map(tpl => (
+                    <TouchableOpacity
+                      key={tpl.label}
+                      onPress={() => applyTemplate(tpl)}
+                      style={{ backgroundColor: 'rgba(108,92,231,0.08)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: 'rgba(108,92,231,0.15)' }}
+                    >
+                      <Text style={{ color: '#6c5ce7', fontSize: 12, fontFamily: 'Poppins_600SemiBold' }}>{tpl.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {upcomingHolidays.map((h, i) => (
+                    <TouchableOpacity
+                      key={h._id || `htpl-${i}`}
+                      onPress={() => {
+                        setTitle(h.title);
+                        setType('event');
+                        setRecurrence('none');
+                        setDescription(h.description || `${h.title} — public holiday.`);
+                        const d = itemDate(h);
+                        setSelectedDate(d);
+                        const s = new Date(); s.setHours(9, 0, 0, 0); setStartTime(s);
+                        const e = new Date(); e.setHours(10, 0, 0, 0); setEndTime(e);
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(244,102,59,0.08)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: 'rgba(244,102,59,0.2)' }}
+                    >
+                      <PartyPopper size={12} color={COLOR_HOLIDAY} />
+                      <Text style={{ color: COLOR_HOLIDAY, fontSize: 12, fontFamily: 'Poppins_600SemiBold' }}>{h.title}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Title</Text>
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
                   placeholder="e.g. Design Sync Meeting"
-                  className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
+                  className="bg-purple-soft/30 rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                 />
               </View>
 
               <View>
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Description</Text>
+                <View className="flex-row items-center justify-between mb-1">
+                  <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase">Description</Text>
+                  <TouchableOpacity
+                    onPress={runAiDescribe}
+                    disabled={aiLoading}
+                    className="flex-row items-center gap-1 px-2.5 py-1 rounded-lg"
+                    style={{ backgroundColor: 'rgba(108,92,231,0.1)' }}
+                  >
+                    {aiLoading ? <ActivityIndicator size="small" color="#6c5ce7" /> : <Sparkles size={12} color="#6c5ce7" />}
+                    <Text className="text-[11px] font-bold text-purple font-sans">{aiLoading ? 'Writing…' : 'Generate'}</Text>
+                  </TouchableOpacity>
+                </View>
                 <TextInput
                   value={description}
                   onChangeText={setDescription}
-                  placeholder="Agenda notes..."
-                  className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
+                  placeholder="Describe what you need, or tap Generate…"
+                  className="bg-purple-soft/30 rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                   multiline
                   numberOfLines={2}
                 />
               </View>
 
+              {/* Start / End time pickers (no more hh/mm typing) */}
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text className="text-xs font-bold text-ink uppercase mb-1">Start Time (HH:MM)</Text>
-                  <TextInput
-                    value={startTimeText}
-                    onChangeText={setStartTimeText}
-                    placeholder="10:00"
-                    className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
-                  />
+                  <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Start time</Text>
+                  <TouchableOpacity
+                    onPress={() => { setShowStartPicker(v => !v); setShowEndPicker(false); }}
+                    className="bg-purple-soft/30 rounded-2xl p-4 border border-black/5 dark:border-white/10 flex-row items-center justify-between"
+                  >
+                    <Text className="text-ink dark:text-[#f4f5fb] font-sans">{startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Text>
+                    <Clock size={15} color="#6c5ce7" />
+                  </TouchableOpacity>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text className="text-xs font-bold text-ink uppercase mb-1">End Time (HH:MM)</Text>
-                  <TextInput
-                    value={endTimeText}
-                    onChangeText={setEndTimeText}
-                    placeholder="11:00"
-                    className="bg-purple-soft/30 rounded-2xl p-4 text-ink border border-black/5"
-                  />
+                  <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">End time</Text>
+                  <TouchableOpacity
+                    onPress={() => { setShowEndPicker(v => !v); setShowStartPicker(false); }}
+                    className="bg-purple-soft/30 rounded-2xl p-4 border border-black/5 dark:border-white/10 flex-row items-center justify-between"
+                  >
+                    <Text className="text-ink dark:text-[#f4f5fb] font-sans">{endTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</Text>
+                    <Clock size={15} color="#6c5ce7" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {showStartPicker && (
+                <DateTimePicker
+                  value={startTime}
+                  mode="time"
+                  is24Hour={false}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(_e, d) => {
+                    setShowStartPicker(Platform.OS === 'ios');
+                    if (d) {
+                      setStartTime(d);
+                      if (d >= endTime) { const e = new Date(d); e.setHours(d.getHours() + 1); setEndTime(e); }
+                    }
+                  }}
+                />
+              )}
+              {showEndPicker && (
+                <DateTimePicker
+                  value={endTime}
+                  mode="time"
+                  is24Hour={false}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(_e, d) => {
+                    setShowEndPicker(Platform.OS === 'ios');
+                    if (d) setEndTime(d);
+                  }}
+                />
+              )}
+
+              {/* Smart recurrence suggestion */}
+              {recSuggestion && (
+                <View style={{ backgroundColor: 'rgba(234,179,8,0.10)', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: 'rgba(234,179,8,0.3)', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Sparkles size={16} color="#a16207" />
+                  <Text style={{ flex: 1, fontSize: 12, fontFamily: 'Poppins_500Medium', color: '#854d0e' }}>{recSuggestion.message}</Text>
+                  <TouchableOpacity
+                    onPress={() => { setRecurrence(recSuggestion.recurrence); setRecSuggestion(null); }}
+                    style={{ backgroundColor: '#eab308', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Yes</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Repeat selector */}
+              <View>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1.5">Repeat</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {(['none', 'daily', 'weekly', 'monthly'] as const).map(r => {
+                    const active = recurrence === r;
+                    return (
+                      <TouchableOpacity
+                        key={r}
+                        onPress={() => setRecurrence(r)}
+                        style={{ flex: 1, backgroundColor: active ? '#eab308' : 'rgba(234,179,8,0.10)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                      >
+                        <Text style={{ color: active ? '#fff' : '#a16207', fontSize: 11, fontFamily: 'Poppins_600SemiBold', textTransform: 'capitalize' }}>{r === 'none' ? "Doesn't" : r}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
 
               {/* Type Select Tabs */}
               <View>
-                <Text className="text-xs font-bold text-ink uppercase mb-1.5">Event Type</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1.5">Event Type</Text>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {['meeting', 'task', 'event'].map(t => {
                     const active = type === t;
@@ -752,7 +1067,7 @@ export default function UpdatesScreen() {
 
               {/* Priority Select Tabs */}
               <View>
-                <Text className="text-xs font-bold text-ink uppercase mb-1.5">Priority</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1.5">Priority</Text>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {['low', 'medium', 'high', 'urgent'].map(p => {
                     const active = priority === p;
@@ -776,6 +1091,65 @@ export default function UpdatesScreen() {
                   })}
                 </View>
               </View>
+
+              {/* Notify team (opt-in, recipient-scoped) */}
+              {(groups.length > 0 || orgMembers.length > 0) && (
+                <View>
+                  <View className="flex-row items-center gap-1.5 mb-1.5">
+                    <Users size={13} color={colors.purple} />
+                    <Text className="text-xs font-bold uppercase" style={{ color: colors.text }}>Notify a group or teammates</Text>
+                  </View>
+                  <Text className="text-[10.5px] mb-2 font-sans" style={{ color: colors.textSoft }}>
+                    Everyone you pick gets an email + a push, and the event lands on their Updates. No mass blast.
+                  </Text>
+
+                  {/* Groups */}
+                  {groups.length > 0 && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: orgMembers.length ? 10 : 0 }}>
+                      {groups.map((g) => {
+                        const gid = String(g.id || g._id);
+                        const active = selectedGroupIds.includes(gid);
+                        const count = (g.users || []).length;
+                        return (
+                          <TouchableOpacity
+                            key={gid}
+                            onPress={() => toggleGroup(gid)}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: active ? colors.purple : colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
+                          >
+                            <Users size={11} color={active ? '#fff' : colors.purple} />
+                            <Text style={{ color: active ? '#fff' : colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>
+                              {g.name}{count ? ` · ${count}` : ''}
+                            </Text>
+                            {active && <Check size={11} color="#fff" />}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+
+                  {/* Individual teammates */}
+                  {orgMembers.length > 0 && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {orgMembers.map((m) => {
+                        const mid = String(m.id || m._id);
+                        const active = recipients.includes(mid);
+                        return (
+                          <TouchableOpacity
+                            key={mid}
+                            onPress={() => toggleRecipient(mid)}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: active ? colors.purple : colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
+                          >
+                            {active && <Check size={11} color="#fff" />}
+                            <Text style={{ color: active ? '#fff' : colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>
+                              {m.full_name || m.username}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              )}
             </ScrollView>
 
             <TouchableOpacity

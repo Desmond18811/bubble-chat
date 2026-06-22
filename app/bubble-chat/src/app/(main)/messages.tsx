@@ -33,9 +33,11 @@ import {
 } from "../../lib/api";
 import { authStorage } from "../../lib/authStorage";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
+import { useTheme } from "../../lib/theme";
 
 export default function Messages() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [chatsList, setChatsList] = useState<Chat[]>([]);
@@ -393,7 +395,7 @@ export default function Messages() {
   const headerHeight = 170 + insets.top;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8f7ff" }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       {/* ── Chat / Contact List ── */}
       <ScrollView
         style={{ flex: 1 }}
@@ -496,9 +498,9 @@ export default function Messages() {
           left: 0,
           right: 0,
           height: headerHeight,
-          backgroundColor: "#f8f7ff", // Solid background to prevent overlap issues
+          backgroundColor: colors.bg, // Solid background to prevent overlap issues
           borderBottomWidth: 1,
-          borderBottomColor: "rgba(108,92,231,0.06)",
+          borderBottomColor: colors.border,
           zIndex: 10,
         }}
       >
@@ -544,8 +546,8 @@ export default function Messages() {
                 placeholder="Search conversations..."
                 value={search}
                 onChangeText={setSearch}
-                placeholderTextColor="rgba(31,32,48,0.35)"
-                style={{ flex: 1, fontSize: 14.5, color: "#1f2030", fontFamily: "Poppins_400Regular" }}
+                placeholderTextColor={colors.textSoft}
+                style={{ flex: 1, fontSize: 14.5, color: colors.text, fontFamily: "Poppins_400Regular" }}
               />
             </View>
           </View>
@@ -1136,6 +1138,7 @@ function ChatRow({
   onPress: () => void;
   onLongPress: () => void;
 }) {
+  const { colors } = useTheme();
 
   return (
     <TouchableOpacity
@@ -1181,11 +1184,11 @@ function ChatRow({
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0 }}>
             {chat.isPinned && <Pin size={11} color="#6c5ce7" style={{ marginRight: 4 }} />}
-            <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: chat.unreadCount > 0 ? "Poppins_700Bold" : "Poppins_600SemiBold", color: "#1f2030", flex: 1 }}>
+            <Text numberOfLines={1} style={{ fontSize: 15, fontFamily: chat.unreadCount > 0 ? "Poppins_700Bold" : "Poppins_600SemiBold", color: colors.text, flex: 1 }}>
               {chat.name}
             </Text>
           </View>
-          <Text style={{ fontSize: 11.5, fontFamily: "Poppins_400Regular", color: "#9a9aab", marginLeft: 8, flexShrink: 0 }}>
+          <Text style={{ fontSize: 11.5, fontFamily: "Poppins_400Regular", color: colors.textSoft, marginLeft: 8, flexShrink: 0 }}>
             {chat.time}
           </Text>
         </View>
@@ -1205,7 +1208,7 @@ function ChatRow({
                 style={{
                   fontSize: 13,
                   fontFamily: chat.unreadCount > 0 ? "Poppins_600SemiBold" : "Poppins_400Regular",
-                  color: chat.unreadCount > 0 ? "#1f2030" : "rgba(31,32,48,0.45)",
+                  color: chat.unreadCount > 0 ? colors.text : colors.textSoft,
                   flex: 1,
                 }}
               >

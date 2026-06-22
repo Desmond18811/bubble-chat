@@ -2108,6 +2108,9 @@ export const updateGroupSettings = async (
         groupIcon?: string;
         groupDescription?: string;
         allowMembersToShareInvite?: boolean;
+        maxMembers?: number;
+        transcriptPolicy?: 'email' | 'save' | 'off';
+        resources?: { label: string; url?: string; type?: 'link' | 'file'; addedAt?: string }[];
     }
 ) => {
     const res = await fetch(`${BASE_URL}/chat/group/update`, {
@@ -2349,5 +2352,21 @@ export const getEventSuggestions = async (query?: string, startTime?: string) =>
     if (query) q.set('query', query);
     if (startTime) q.set('startTime', startTime);
     const res = await fetch(`${BASE_URL}/events/suggest?${q.toString()}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+/**
+ * Ask the AI (DeepSeek) whether a new event looks like a recurring pattern based on the
+ * user's recent events. Returns { suggest, recurrence?, message? }. Safe to call even if the
+ * endpoint/DeepSeek key is unavailable — callers should treat a thrown error as "no suggestion".
+ */
+export const suggestRecurrence = async (
+    payload: { title: string; startTime: string; recentEvents: { title: string; start_time: string }[] }
+): Promise<{ suggest: boolean; recurrence?: 'daily' | 'weekly' | 'monthly'; message?: string }> => {
+    const res = await fetch(`${BASE_URL}/tasks/suggest-recurrence`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+    });
     return handleResponse(res);
 };

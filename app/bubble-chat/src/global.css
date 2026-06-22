@@ -28,6 +28,29 @@
   --font-poppins: 'Poppins', ui-sans-serif, system-ui, sans-serif;
 }
 
+.dark {
+  --background: #0f1018;
+  --foreground: #f4f5fb;
+  --card: #1a1b28;
+  --card-foreground: #f4f5fb;
+  --popover: #1a1b28;
+  --popover-foreground: #f4f5fb;
+  --primary: #8b7cf0;
+  --primary-foreground: #0f1018;
+  --primary-glow: #b893ff;
+  --secondary: #23243a;
+  --secondary-foreground: #f4f5fb;
+  --muted: #23243a;
+  --muted-foreground: #9a9bb6;
+  --accent: #2c2a52;
+  --accent-foreground: #f4f5fb;
+  --destructive: #f87171;
+  --destructive-foreground: #0f1018;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #8b7cf0;
+}
+
 @layer base {
   body {
     background-color: var(--background);

@@ -20,8 +20,10 @@ export const getTasks = async (req: Request, res: Response): Promise<any> => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const { type, status, source, from, to, assignedTo } = req.query;
+    // Surface tasks/events the user created, is assigned, OR was notified about as a
+    // recipient — so a teammate-notified event shows up on THEIR Updates too.
     const filter: any = {
-      $or: [{ user_id: userId }, { assignedTo: userId }],
+      $or: [{ user_id: userId }, { assignedTo: userId }, { recipients: userId }],
     };
 
     if (type) filter.type = type;
@@ -322,6 +324,75 @@ export const aiDescribeEvent = async (req: Request, res: Response): Promise<any>
   } catch (err: any) {
     console.error('[Calendar AI Describe] Error:', err);
     res.status(500).json({ error: 'Failed to generate AI description.' });
+  }
+};
+
+// ─── POST /api/v1/tasks/suggest-recurrence ───────────────────────────────────
+// Given a new event + the user's recent events, decide whether it looks recurring.
+// Uses a local pattern heuristic (same title + start hour seen before) and, when a
+// DeepSeek key is present, lets the model phrase a friendly suggestion. Always returns
+// 200 with { suggest, recurrence?, message? } so the client can treat it as best-effort.
+export const suggestRecurrence = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { title, startTime, recentEvents } = req.body as {
+      title?: string;
+      startTime?: string;
+      recentEvents?: { title: string; start_time: string }[];
+    };
+    if (!title || !startTime) {
+      return res.status(200).json({ suggest: false });
+    }
+
+    const hour = new Date(startTime).getHours();
+    const norm = (s: string) => (s || '').trim().toLowerCase();
+    const matches = (recentEvents || []).filter(
+      (e) => norm(e.title) === norm(title) && new Date(e.start_time).getHours() === hour
+    );
+
+    // Need at least one prior occurrence of the same thing to call it a pattern.
+    if (matches.length < 1) {
+      return res.status(200).json({ suggest: false });
+    }
+
+    const hourLabel = new Date(startTime).toLocaleTimeString('en-US', { hour: 'numeric' });
+    let recurrence: 'daily' | 'weekly' | 'monthly' = 'weekly';
+    let message = `You've scheduled "${title}" around ${hourLabel} before — make it a weekly recurring event?`;
+
+    const key = process.env.DEEPSEEK_API_KEY;
+    const hasDeepSeekKey = !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
+    if (hasDeepSeekKey) {
+      try {
+        const response = await deepseekClient.chat.completions.create({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You detect recurring meeting patterns. Given a new event and the user\'s recent events, decide whether it repeats daily, weekly, or monthly. Reply with STRICT JSON only: {"recurrence":"daily|weekly|monthly","message":"a short friendly one-sentence suggestion ending in a question"}. No prose, no code fences.',
+            },
+            {
+              role: 'user',
+              content: JSON.stringify({ newEvent: { title, startTime }, recentEvents: (recentEvents || []).slice(0, 25) }),
+            },
+          ],
+          max_tokens: 120,
+          temperature: 0.3,
+        });
+        const raw = (response.choices?.[0]?.message?.content || '').replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(raw);
+        if (parsed?.recurrence && ['daily', 'weekly', 'monthly'].includes(parsed.recurrence)) {
+          recurrence = parsed.recurrence;
+        }
+        if (parsed?.message) message = String(parsed.message);
+      } catch (aiErr) {
+        console.warn('[suggestRecurrence] DeepSeek call/parse failed, using local heuristic:', aiErr);
+      }
+    }
+
+    return res.status(200).json({ suggest: true, recurrence, message });
+  } catch (err: any) {
+    console.error('[suggestRecurrence] Error:', err);
+    return res.status(200).json({ suggest: false });
   }
 };
 

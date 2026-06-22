@@ -4,8 +4,10 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import { triggerPlusButton } from "../../lib/mockData";
+import { useTheme } from "../../lib/theme";
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
+  const { colors, isDark } = useTheme();
   const currentRouteName = state.routes[state.index].name;
   if (currentRouteName === "chat/[id]") {
     return null;
@@ -14,13 +16,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   return (
     <View style={styles.tabBarWrapper}>
       {/* Full-width native blur panel behind the tabs */}
-      <BlurView intensity={75} tint="light" style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(248, 247, 255, 0.78)" }]} />
+      <BlurView intensity={75} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? "rgba(15, 16, 24, 0.82)" : "rgba(248, 247, 255, 0.78)" }]} />
 
       {/* Row containing capsule tabs and FAB */}
       <View style={styles.container}>
         {/* Pill Container for the Main Tabs */}
-        <View style={styles.pillContainer}>
+        <View style={[styles.pillContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {state.routes.map((route: any, index: number) => {
             if (route.name === "calls" || route.name === "chat/[id]" || route.name === "brain" || route.name === "calendar") return null;
 
@@ -50,8 +52,8 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             let displayName = label;
             let iconComponent = null;
             const iconSize = 20;
-            const activeColor = "#6c5ce7";
-            const inactiveColor = "#9a9aab";
+            const activeColor = colors.purple;
+            const inactiveColor = colors.textSoft;
             const color = isFocused ? activeColor : inactiveColor;
 
             if (route.name === "messages") {
@@ -94,13 +96,13 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         {/* Floating Action Button (FAB) on the Right */}
         <TouchableOpacity
-          style={styles.fab}
+          style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
           activeOpacity={0.8}
           onPress={() => {
             triggerPlusButton(); // Triggers the popup modal in messages.tsx
           }}
         >
-          <Plus color="#1f2030" size={24} />
+          <Plus color={colors.text} size={24} />
         </TouchableOpacity>
       </View>
     </View>

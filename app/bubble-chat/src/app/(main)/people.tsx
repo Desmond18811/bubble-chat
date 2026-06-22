@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../../lib/theme';
 import {
   Search,
   UserPlus,
@@ -221,7 +222,7 @@ function ContactsTab({
             value={search}
             onChangeText={setSearch}
             placeholderTextColor="rgba(108,92,231,0.4)"
-            className="flex-1 text-[14px] text-ink font-medium font-sans ml-2"
+            className="flex-1 text-[14px] text-ink dark:text-[#f4f5fb] font-medium font-sans ml-2"
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
@@ -247,10 +248,10 @@ function ContactsTab({
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* Section header */}
         <View className="flex-row items-center mb-3 mt-1">
-          <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-widest font-sans">
+          <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
             My Contacts
           </Text>
-          <View className="flex-1 h-[1px] bg-black/5 ml-3" />
+          <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
           <View className="ml-3 bg-purple/10 px-2 py-0.5 rounded-full">
             <Text className="text-[9px] font-bold text-purple uppercase font-sans">
               {contacts.length} Total
@@ -259,12 +260,12 @@ function ContactsTab({
         </View>
 
         {filtered.length === 0 ? (
-          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 rounded-3xl mt-2 bg-white/50">
+          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50">
             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
               <Users color="#6c5ce7" size={28} />
             </View>
-            <Text className="text-base font-bold text-ink font-sans">No contacts found</Text>
-            <Text className="text-xs text-ink-soft mt-1 text-center max-w-[220px] leading-relaxed font-sans">
+            <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No contacts found</Text>
+            <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-1 text-center max-w-[220px] leading-relaxed font-sans">
               {search
                 ? 'Try a different name or username'
                 : 'Add contacts to start connecting with people'}
@@ -293,7 +294,7 @@ function ContactsTab({
             return (
               <View
                 key={contact.id}
-                className="flex-row items-center bg-white border border-black/5 rounded-2xl px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
+                className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
               >
                 <Link href={`/chat/${chatTarget}`} asChild>
                   <TouchableOpacity
@@ -305,7 +306,7 @@ function ContactsTab({
                     {/* Info */}
                     <View className="flex-1 min-w-0 ml-3">
                       <View className="flex-row items-center justify-between">
-                        <Text className="text-[15px] font-bold text-ink leading-tight font-sans flex-1" numberOfLines={1}>
+                        <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans flex-1" numberOfLines={1}>
                           {contact.name}
                         </Text>
                         {/* FIX: only show badge when there are real unread messages */}
@@ -322,11 +323,11 @@ function ContactsTab({
                           {typingInfo.fromUsername ? `@${typingInfo.fromUsername} is typing...` : typingInfo.fromName ? `${typingInfo.fromName} is typing...` : 'typing...'}
                         </Text>
                       ) : matchingChat?.latestMessage ? (
-                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans" numberOfLines={1}>
+                        <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans" numberOfLines={1}>
                           {matchingChat.latestMessage}
                         </Text>
                       ) : (
-                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans" numberOfLines={1}>
+                        <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans" numberOfLines={1}>
                           @{contact.username}
                           {contact.org_role ? ` · ${contact.org_role}` : ''}
                         </Text>
@@ -372,12 +373,12 @@ function ContactsTab({
           className="flex-1 bg-black/60 justify-end"
         >
           <TouchableOpacity activeOpacity={1}>
-            <SafeAreaView className="bg-white rounded-t-3xl shadow-2xl" edges={['bottom']}>
+            <SafeAreaView className="bg-white dark:bg-[#1a1b28] rounded-t-3xl shadow-2xl" edges={['bottom']}>
               <View className="px-6 pt-6 pb-2">
                 <View className="flex-row items-start justify-between mb-2">
                   <View>
-                    <Text className="text-lg font-bold text-ink font-display">Add a Contact</Text>
-                    <Text className="text-xs text-ink-soft mt-0.5 font-sans">
+                    <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] font-display">Add a Contact</Text>
+                    <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
                       Enter their unique ID or @username
                     </Text>
                   </View>
@@ -386,7 +387,7 @@ function ContactsTab({
                       setShowAddModal(false);
                       setAddIdentifier('');
                     }}
-                    className="w-8 h-8 rounded-xl bg-black/5 items-center justify-center"
+                    className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/[0.06] items-center justify-center"
                   >
                     <X color="#6c5ce7" size={16} />
                   </TouchableOpacity>
@@ -398,7 +399,7 @@ function ContactsTab({
                     onChangeText={setAddIdentifier}
                     placeholder="e.g. bubble-A3F9X7K2 or @username"
                     placeholderTextColor="#9a9aab"
-                    className="text-[15px] text-ink font-sans"
+                    className="text-[15px] text-ink dark:text-[#f4f5fb] font-sans"
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
@@ -410,9 +411,9 @@ function ContactsTab({
                       setShowAddModal(false);
                       setAddIdentifier('');
                     }}
-                    className="flex-1 border border-black/10 rounded-xl py-3 items-center"
+                    className="flex-1 border border-black/10 dark:border-white/20 rounded-xl py-3 items-center"
                   >
-                    <Text className="text-sm font-semibold text-ink-soft font-sans">Cancel</Text>
+                    <Text className="text-sm font-semibold text-ink-soft dark:text-[#9a9bb6] font-sans">Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={handleAdd}
@@ -529,7 +530,7 @@ function WorkroomTab({
             value={search}
             onChangeText={setSearch}
             placeholderTextColor="rgba(108,92,231,0.4)"
-            className="flex-1 text-[14px] text-ink font-medium font-sans ml-2"
+            className="flex-1 text-[14px] text-ink dark:text-[#f4f5fb] font-medium font-sans ml-2"
           />
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
@@ -550,24 +551,24 @@ function WorkroomTab({
         {filteredGroups.length > 0 && (
           <View className="mb-4">
             <View className="flex-row items-center mb-3">
-              <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-widest font-sans">
+              <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
                 Group Workspaces
               </Text>
-              <View className="flex-1 h-[1px] bg-black/5 ml-3" />
+              <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
             </View>
 
             {filteredGroups.map((group) => (
               <Link href={`/chat/${group.id}`} key={group.id} asChild>
                 <TouchableOpacity
                   activeOpacity={0.75}
-                  className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-4 mb-2.5 shadow-sm shadow-purple/5"
+                  className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-[22px] px-4 py-4 mb-2.5 shadow-sm shadow-purple/5"
                 >
                   <Avatar name={group.name} avatar={group.avatar} size={50} isOnline={false} isGroup={true} />
                   <View className="flex-1 min-w-0 ml-3">
-                    <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+                    <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
                       {group.name}
                     </Text>
-                    <Text className="text-[11px] text-ink-soft mt-0.5 font-sans">
+                    <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
                       Group Chat · {group.messages?.length || 0} messages
                     </Text>
                   </View>
@@ -585,16 +586,16 @@ function WorkroomTab({
         {filteredMembers.length > 0 && (
           <View className="mb-8">
             <View className="flex-row items-center mb-3">
-              <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-widest font-sans">
+              <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
                 Org Members
               </Text>
-              <View className="flex-1 h-[1px] bg-black/5 ml-3" />
+              <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
             </View>
 
             {filteredMembers.map((member) => (
               <View
                 key={member.id}
-                className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
+                className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-[22px] px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
               >
                 {/* FIX: TouchableOpacity calls handleOpenDm which ensures 1-on-1 DM */}
                 <TouchableOpacity
@@ -606,7 +607,7 @@ function WorkroomTab({
                   <Avatar name={member.name} avatar={member.avatar} size={50} isOnline={member.isOnline} organization={member.organization} />
                   <View className="flex-1 min-w-0 ml-3">
                     <View className="flex-row items-center gap-1.5 flex-wrap">
-                      <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+                      <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
                         {member.name}
                       </Text>
                       {member.org_role && (
@@ -617,7 +618,7 @@ function WorkroomTab({
                         </View>
                       )}
                     </View>
-                    <Text className="text-[11px] text-ink-soft mt-0.5 font-sans">
+                    <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
                       {loadingDm === member.id ? 'Opening chat...' : `@${member.username}`}
                     </Text>
                   </View>
@@ -652,12 +653,12 @@ function WorkroomTab({
         )}
 
         {filteredGroups.length === 0 && filteredMembers.length === 0 && (
-          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 rounded-3xl mt-2 bg-white/50">
+          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50">
             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
               <Briefcase color="#6c5ce7" size={28} />
             </View>
-            <Text className="text-base font-bold text-ink font-sans">No workroom members</Text>
-            <Text className="text-xs text-ink-soft mt-1 text-center max-w-[220px] leading-relaxed font-sans">
+            <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No workroom members</Text>
+            <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-1 text-center max-w-[220px] leading-relaxed font-sans">
               {search ? 'Try a different search' : 'Join an organization to see your team here'}
             </Text>
           </View>
@@ -674,6 +675,7 @@ const TABS = ['Contacts', 'Workroom'] as const;
 type TabType = (typeof TABS)[number];
 
 export default function PeopleScreen() {
+  const { colors } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('Contacts');
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -754,7 +756,7 @@ export default function PeopleScreen() {
   }, [isFocused]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: colors.bg }}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 pt-5 pb-2">
         <View>
@@ -776,12 +778,12 @@ export default function PeopleScreen() {
               People
             </SvgText>
           </Svg>
-          <Text className="text-xs text-ink-soft mt-0.5 font-sans">Contacts &amp; your organization</Text>
+          <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">Contacts &amp; your organization</Text>
         </View>
       </View>
 
       {/* Tab Switcher */}
-      <View className="flex-row px-6 pb-1 border-b border-black/5">
+      <View className="flex-row px-6 pb-1 border-b border-black/5 dark:border-white/10">
         {TABS.map((tab) => {
           const isActive = activeTab === tab;
           return (
@@ -794,7 +796,7 @@ export default function PeopleScreen() {
             >
               <Text
                 className={`text-sm font-bold font-sans ${
-                  isActive ? 'text-purple' : 'text-ink-soft'
+                  isActive ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'
                 }`}
               >
                 {tab}
@@ -1218,7 +1220,7 @@ export default function PeopleScreen() {
 //             value={search}
 //             onChangeText={setSearch}
 //             placeholderTextColor="rgba(108,92,231,0.4)"
-//             className="flex-1 text-[14px] text-ink font-medium font-sans ml-2"
+//             className="flex-1 text-[14px] text-ink dark:text-[#f4f5fb] font-medium font-sans ml-2"
 //           />
 //           {search.length > 0 && (
 //             <TouchableOpacity onPress={() => setSearch('')}>
@@ -1246,10 +1248,10 @@ export default function PeopleScreen() {
 //       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
 //         {/* Section header */}
 //         <View className="flex-row items-center mb-3 mt-1">
-//           <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-widest font-sans">
+//           <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
 //             My Contacts
 //           </Text>
-//           <View className="flex-1 h-[1px] bg-black/5 ml-3" />
+//           <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
 //           <View className="ml-3 bg-purple/10 px-2 py-0.5 rounded-full">
 //             <Text className="text-[9px] font-bold text-purple uppercase font-sans">
 //               {contacts.length} Total
@@ -1258,12 +1260,12 @@ export default function PeopleScreen() {
 //         </View>
 
 //         {filtered.length === 0 ? (
-//           <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 rounded-3xl mt-2 bg-white/50">
+//           <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50">
 //             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
 //               <Users color="#6c5ce7" size={28} />
 //             </View>
-//             <Text className="text-base font-bold text-ink font-sans">No contacts found</Text>
-//             <Text className="text-xs text-ink-soft mt-1 text-center max-w-[220px] leading-relaxed font-sans">
+//             <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No contacts found</Text>
+//             <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-1 text-center max-w-[220px] leading-relaxed font-sans">
 //               {search
 //                 ? 'Try a different name or username'
 //                 : 'Add contacts to start connecting with people'}
@@ -1287,7 +1289,7 @@ export default function PeopleScreen() {
 //             return (
 //               <View
 //                 key={contact.id}
-//                 className="flex-row items-center bg-white border border-black/5 rounded-2xl px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
+//                 className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-2xl px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
 //               >
 //                 <Link href={`/chat/${contact.id}`} asChild>
 //                   <TouchableOpacity
@@ -1298,7 +1300,7 @@ export default function PeopleScreen() {
 
 //                     {/* Info */}
 //                     <View className="flex-1 min-w-0 ml-3">
-//                       <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+//                       <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
 //                         {contact.name}
 //                       </Text>
 //                       {typingInfo ? (
@@ -1306,7 +1308,7 @@ export default function PeopleScreen() {
 //                           {typingInfo.fromUsername ? `@${typingInfo.fromUsername} is typing...` : typingInfo.fromName ? `${typingInfo.fromName} is typing...` : 'typing...'}
 //                         </Text>
 //                       ) : (
-//                         <Text className="text-[11px] text-ink-soft mt-0.5 font-sans" numberOfLines={1}>
+//                         <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans" numberOfLines={1}>
 //                           @{contact.username}
 //                           {contact.org_role ? ` · ${contact.org_role}` : ''}
 //                         </Text>
@@ -1352,12 +1354,12 @@ export default function PeopleScreen() {
 //           className="flex-1 bg-black/60 justify-end"
 //         >
 //           <TouchableOpacity activeOpacity={1}>
-//             <SafeAreaView className="bg-white rounded-t-3xl shadow-2xl" edges={['bottom']}>
+//             <SafeAreaView className="bg-white dark:bg-[#1a1b28] rounded-t-3xl shadow-2xl" edges={['bottom']}>
 //               <View className="px-6 pt-6 pb-2">
 //                 <View className="flex-row items-start justify-between mb-2">
 //                   <View>
-//                     <Text className="text-lg font-bold text-ink font-display">Add a Contact</Text>
-//                     <Text className="text-xs text-ink-soft mt-0.5 font-sans">
+//                     <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] font-display">Add a Contact</Text>
+//                     <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
 //                       Enter their unique ID or @username
 //                     </Text>
 //                   </View>
@@ -1366,7 +1368,7 @@ export default function PeopleScreen() {
 //                       setShowAddModal(false);
 //                       setAddIdentifier('');
 //                     }}
-//                     className="w-8 h-8 rounded-xl bg-black/5 items-center justify-center"
+//                     className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/[0.06] items-center justify-center"
 //                   >
 //                     <X color="#6c5ce7" size={16} />
 //                   </TouchableOpacity>
@@ -1378,7 +1380,7 @@ export default function PeopleScreen() {
 //                     onChangeText={setAddIdentifier}
 //                     placeholder="e.g. bubble-A3F9X7K2 or @username"
 //                     placeholderTextColor="#9a9aab"
-//                     className="text-[15px] text-ink font-sans"
+//                     className="text-[15px] text-ink dark:text-[#f4f5fb] font-sans"
 //                     autoCapitalize="none"
 //                     autoCorrect={false}
 //                   />
@@ -1390,9 +1392,9 @@ export default function PeopleScreen() {
 //                       setShowAddModal(false);
 //                       setAddIdentifier('');
 //                     }}
-//                     className="flex-1 border border-black/10 rounded-xl py-3 items-center"
+//                     className="flex-1 border border-black/10 dark:border-white/20 rounded-xl py-3 items-center"
 //                   >
-//                     <Text className="text-sm font-semibold text-ink-soft font-sans">Cancel</Text>
+//                     <Text className="text-sm font-semibold text-ink-soft dark:text-[#9a9bb6] font-sans">Cancel</Text>
 //                   </TouchableOpacity>
 //                   <TouchableOpacity
 //                     onPress={handleAdd}
@@ -1474,7 +1476,7 @@ export default function PeopleScreen() {
 //             value={search}
 //             onChangeText={setSearch}
 //             placeholderTextColor="rgba(108,92,231,0.4)"
-//             className="flex-1 text-[14px] text-ink font-medium font-sans ml-2"
+//             className="flex-1 text-[14px] text-ink dark:text-[#f4f5fb] font-medium font-sans ml-2"
 //           />
 //           {search.length > 0 && (
 //             <TouchableOpacity onPress={() => setSearch('')}>
@@ -1495,24 +1497,24 @@ export default function PeopleScreen() {
 //         {filteredGroups.length > 0 && (
 //           <View className="mb-4">
 //             <View className="flex-row items-center mb-3">
-//               <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-widest font-sans">
+//               <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
 //                 Group Workspaces
 //               </Text>
-//               <View className="flex-1 h-[1px] bg-black/5 ml-3" />
+//               <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
 //             </View>
 
 //             {filteredGroups.map((group) => (
 //               <Link href={`/chat/${group.id}`} key={group.id} asChild>
 //                 <TouchableOpacity
 //                   activeOpacity={0.75}
-//                   className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-4 mb-2.5 shadow-sm shadow-purple/5"
+//                   className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-[22px] px-4 py-4 mb-2.5 shadow-sm shadow-purple/5"
 //                 >
 //                   <Avatar name={group.name} avatar={group.avatar} size={50} isOnline={false} isGroup={true} />
 //                   <View className="flex-1 min-w-0 ml-3">
-//                     <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+//                     <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
 //                       {group.name}
 //                     </Text>
-//                     <Text className="text-[11px] text-ink-soft mt-0.5 font-sans">
+//                     <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
 //                       Group Chat · {group.messages.length} messages
 //                     </Text>
 //                   </View>
@@ -1530,16 +1532,16 @@ export default function PeopleScreen() {
 //         {filteredMembers.length > 0 && (
 //           <View className="mb-8">
 //             <View className="flex-row items-center mb-3">
-//               <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-widest font-sans">
+//               <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
 //                 Org Members
 //               </Text>
-//               <View className="flex-1 h-[1px] bg-black/5 ml-3" />
+//               <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
 //             </View>
 
 //             {filteredMembers.map((member) => (
 //               <View
 //                 key={member.id}
-//                 className="flex-row items-center bg-white border border-black/5 rounded-[22px] px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
+//                 className="flex-row items-center bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 rounded-[22px] px-4 py-3.5 mb-2.5 shadow-sm shadow-purple/5"
 //               >
 //                 <Link href={`/chat/${member.id}`} asChild>
 //                   <TouchableOpacity
@@ -1549,7 +1551,7 @@ export default function PeopleScreen() {
 //                     <Avatar name={member.name} avatar={member.avatar} size={50} isOnline={member.isOnline} organization={member.organization} />
 //                     <View className="flex-1 min-w-0 ml-3">
 //                       <View className="flex-row items-center gap-1.5 flex-wrap">
-//                         <Text className="text-[15px] font-bold text-ink leading-tight font-sans" numberOfLines={1}>
+//                         <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
 //                           {member.name}
 //                         </Text>
 //                         {member.org_role && (
@@ -1560,7 +1562,7 @@ export default function PeopleScreen() {
 //                           </View>
 //                         )}
 //                       </View>
-//                       <Text className="text-[11px] text-ink-soft mt-0.5 font-sans">
+//                       <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">
 //                         @{member.username}
 //                       </Text>
 //                     </View>
@@ -1675,7 +1677,7 @@ export default function PeopleScreen() {
 //   }, [isFocused]);
 
 //   return (
-//     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+//     <SafeAreaView className="flex-1 bg-white dark:bg-[#1a1b28]" edges={['top']}>
 //       {/* Header */}
 //       <View className="flex-row items-center justify-between px-6 pt-5 pb-2">
 //         <View>
@@ -1697,12 +1699,12 @@ export default function PeopleScreen() {
 //               People
 //             </SvgText>
 //           </Svg>
-//           <Text className="text-xs text-ink-soft mt-0.5 font-sans">Contacts &amp; your organization</Text>
+//           <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">Contacts &amp; your organization</Text>
 //         </View>
 //       </View>
 
 //       {/* Tab Switcher */}
-//       <View className="flex-row px-6 pb-1 border-b border-black/5">
+//       <View className="flex-row px-6 pb-1 border-b border-black/5 dark:border-white/10">
 //         {TABS.map((tab) => {
 //           const isActive = activeTab === tab;
 //           return (
@@ -1715,7 +1717,7 @@ export default function PeopleScreen() {
 //             >
 //               <Text
 //                 className={`text-sm font-bold font-sans ${
-//                   isActive ? 'text-purple' : 'text-ink-soft'
+//                   isActive ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'
 //                 }`}
 //               >
 //                 {tab}

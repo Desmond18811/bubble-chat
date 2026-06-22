@@ -12,6 +12,7 @@ import { upsertVectors, queryVectors, hasPinecone } from '../utils/pinecone';
 import { updateExpertiseRadar } from './continuityController';
 import { brainEventBus } from '../utils/brainEventListener';
 import { transcribeWithTimestamps } from '../utils/whisperService';
+import { getNigerianHolidays } from '../utils/nigeriaHolidays';
 import * as fs from 'fs';
 
 const getDeepSeekClient = () => {
@@ -95,6 +96,61 @@ const getOrgFromUser = async (userId: string) => {
   return { user, org };
 };
 
+/**
+ * Idempotently seed Nigerian public holidays for an org (current + next year).
+ * Safe to call on every holiday fetch — only missing entries are inserted.
+ */
+export const ensureNigerianHolidays = async (org: any, createdById: any): Promise<void> => {
+  try {
+    if (!org?._id) return;
+    const now = new Date();
+    const years = [now.getFullYear(), now.getFullYear() + 1];
+    const seeds = years.flatMap((y) => getNigerianHolidays(y));
+
+    const rangeStart = new Date(`${years[0]}-01-01T00:00:00.000`);
+    const rangeEnd = new Date(`${years[years.length - 1]}-12-31T23:59:59.999`);
+    const existing = await CalendarEvent.find({
+      organizationId: org._id,
+      eventType: 'holiday',
+      startTime: { $gte: rangeStart, $lte: rangeEnd },
+    }).select('title startTime').lean();
+
+    const keyOf = (title: string, d: any) => `${String(title).toLowerCase()}|${new Date(d).toISOString().slice(0, 10)}`;
+    const have = new Set(existing.map((e: any) => keyOf(e.title, e.startTime)));
+
+    const toCreate = seeds.filter((s) => !have.has(`${s.name.toLowerCase()}|${s.date}`));
+    if (toCreate.length === 0) return;
+
+    await CalendarEvent.insertMany(
+      toCreate.map((s) => {
+        const startDate = new Date(`${s.date}T00:00:00.000`);
+        const endDate = new Date(`${s.date}T23:59:59.999`);
+        return {
+          organizationId: org._id,
+          title: s.name,
+          eventType: 'holiday',
+          description: `${s.name} — public holiday in Nigeria.`,
+          startTime: startDate,
+          endTime: endDate,
+          isAllDay: true,
+          createdBy: createdById,
+          attendees: [],
+          attendeeNames: [],
+          tags: ['holiday', 'NG'],
+          decisions: [],
+          actionItems: [],
+          relatedDocIds: [],
+          pineconeIds: [],
+          topicTags: ['holiday'],
+          brainEnriched: true,
+        };
+      })
+    );
+  } catch (err) {
+    console.error('[ensureNigerianHolidays] seeding failed:', err);
+  }
+};
+
 // ─── POST /api/v1/events/create ──────────────────────────────────────────────
 
 export const createEvent = async (req: Request, res: Response): Promise<any> => {
@@ -170,6 +226,11 @@ export const getEvents = async (req: Request, res: Response): Promise<any> => {
 
     const { org } = await getOrgFromUser(userId.toString());
     if (!org) return res.status(400).json({ error: 'Organization not found.' });
+
+    // Lazily seed Nigerian public holidays the first time they're requested for this org.
+    if (type === 'holiday') {
+      await ensureNigerianHolidays(org, userId);
+    }
 
     const filter: any = { organizationId: org._id, status: { $ne: 'cancelled' } };
 

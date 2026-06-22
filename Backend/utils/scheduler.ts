@@ -423,3 +423,74 @@ export const initWeeklyDigestScheduler = () => {
   console.log('🗓️ [WeeklyDigest] Scheduler initialized (runs Mondays at 08:00 UTC).');
 };
 
+// ─── Holiday reminders ────────────────────────────────────────────────────────
+// Notify each org's members (push + email) about public holidays happening tomorrow.
+// These are individual reminders surfaced per user — not a mass announcement feed.
+export const processHolidayReminders = async () => {
+  try {
+    const { CalendarEvent } = await import('../models/calendarEvent');
+    const { User } = await import('../models/users');
+    const { Organization } = await import('../models/organizations');
+    const { sendPushNotification } = await import('./push');
+    const { sendCalendarEventEmail } = await import('./mailer');
+
+    // Tomorrow's local day window.
+    const now = new Date();
+    const tomorrowStart = new Date(now);
+    tomorrowStart.setDate(now.getDate() + 1);
+    tomorrowStart.setHours(0, 0, 0, 0);
+    const tomorrowEnd = new Date(tomorrowStart);
+    tomorrowEnd.setHours(23, 59, 59, 999);
+
+    const holidays = await CalendarEvent.find({
+      eventType: 'holiday',
+      startTime: { $gte: tomorrowStart, $lte: tomorrowEnd },
+    }).lean();
+
+    if (!holidays.length) return;
+
+    for (const h of holidays as any[]) {
+      const org = await Organization.findById(h.organizationId).lean();
+      if (!org) continue;
+      const members = await User.find({ organization: (org as any).name }).select('_id full_name email').lean();
+      if (!members.length) continue;
+
+      const ids = members.map((m: any) => String(m._id));
+      await sendPushNotification(ids, `🎉 ${h.title}`, `Tomorrow is ${h.title} — a public holiday.`, {
+        type: 'holiday',
+        eventId: String(h._id),
+      });
+
+      for (const m of members as any[]) {
+        if (!m.email) continue;
+        try {
+          await sendCalendarEventEmail(
+            m.email,
+            m.full_name || 'there',
+            h.title,
+            'event',
+            new Date(h.startTime),
+            new Date(h.endTime),
+            h.description || `${h.title} is a public holiday.`,
+            'Bubblespace'
+          );
+        } catch (emailErr) {
+          console.error(`[HolidayReminder] email to ${m.email} failed:`, emailErr);
+        }
+      }
+    }
+    console.log(`🎉 [HolidayReminder] Notified members of ${holidays.length} holiday(s) for tomorrow.`);
+  } catch (err) {
+    console.error('[HolidayReminder] job failed:', err);
+  }
+};
+
+export const initHolidayReminderScheduler = () => {
+  // Run daily at 08:30 UTC — remind members of holidays happening the next day.
+  cron.schedule('30 8 * * *', async () => {
+    await processHolidayReminders();
+  });
+
+  console.log('🗓️ [HolidayReminder] Scheduler initialized (runs daily at 08:30 UTC).');
+};
+

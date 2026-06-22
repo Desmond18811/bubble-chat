@@ -123,7 +123,7 @@ export default function Login() {
 
       if (data?.accessToken && data?.refreshToken) {
         await authStorage.setSession(data.accessToken, data.refreshToken, data.user);
-        
+
         // Silent restore E2E cloud backup if exists
         try {
           const { chatCache } = await import("../lib/chatCache");
@@ -131,7 +131,7 @@ export default function Login() {
         } catch (restoreErr) {
           console.warn("Failed silent restore on login:", restoreErr);
         }
-        
+
         // Dynamic redirection — resume at the exact step the user is on.
         const target = routeForStep(data.user?.onboardingStep, data.user?.onboardingComplete);
         if (target === "/(main)/messages") {
@@ -154,7 +154,7 @@ export default function Login() {
       const session = await startGoogleAuth();
       if (session) {
         await authStorage.setSession(session.accessToken, session.refreshToken, session.user);
-        
+
         // Silent restore E2E cloud backup if exists
         try {
           const { chatCache } = await import("../lib/chatCache");
@@ -162,7 +162,7 @@ export default function Login() {
         } catch (restoreErr) {
           console.warn("Failed silent restore on Google login:", restoreErr);
         }
-        
+
         // Dynamic redirection based on completeness of onboarding
         if (session.user?.onboardingComplete) {
           router.replace("/(main)/messages" as any);
@@ -199,7 +199,7 @@ export default function Login() {
               <ArrowLeft size={18} color={INK_DARK} />
               <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
-            
+
             <BubbleLogo size={40} />
           </View>
 
@@ -273,7 +273,7 @@ export default function Login() {
               )}
             </TouchableOpacity>
 
-             {/* Styled Divider */}
+            {/* Styled Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR CONTINUE WITH</Text>
@@ -292,7 +292,7 @@ export default function Login() {
               ) : (
                 <View style={styles.googleBtnContent}>
                   <GoogleLogo size={18} />
-                  <Text style={styles.googleBtnText}>Google</Text>
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
                 </View>
               )}
             </TouchableOpacity>

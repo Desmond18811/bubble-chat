@@ -197,6 +197,9 @@ export const chatCache = {
         groupAdmin: isGroup ? c.groupAdmin : undefined,
         inviteCode: isGroup ? c.inviteCode : undefined,
         allowMembersToShareInvite: isGroup ? c.allowMembersToShareInvite : undefined,
+        maxMembers: isGroup ? (c.maxMembers ?? 0) : undefined,
+        transcriptPolicy: isGroup ? (c.transcriptPolicy || 'save') : undefined,
+        resources: isGroup ? (c.resources || []) : undefined,
       };
     }));
 

@@ -37,6 +37,7 @@ import {
   accessOrCreateChat,
 } from '../../../lib/api';
 import { startOutgoingCall } from '../../../lib/callManager';
+import { useTheme } from '../../../lib/theme';
 import { useIsOnline } from '../../../lib/presence';
 import { authStorage } from '../../../lib/authStorage';
 import { Avatar } from '../../../components/Avatar';
@@ -65,6 +66,7 @@ const EMOJI_CATEGORIES = [
 ];
 
 export default function ChatScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [messageText, setMessageText] = useState('');
@@ -107,14 +109,27 @@ export default function ChatScreen() {
     chatName: '',
     groupDescription: '',
     groupIcon: '',
+    maxMembers: 0,
+    transcriptPolicy: 'save' as 'email' | 'save' | 'off',
+    resources: [] as { label: string; url?: string; type?: 'link' | 'file' }[],
   });
+  // Draft inputs for adding a new group resource (label + url)
+  const [newResLabel, setNewResLabel] = useState('');
+  const [newResUrl, setNewResUrl] = useState('');
+  // Tapped group member → profile sheet
+  const [selectedMember, setSelectedMember] = useState<any | null>(null);
 
   const handleStartEditGroup = () => {
     setGroupFormData({
       chatName: chat?.name || '',
       groupDescription: chat?.bio || '',
       groupIcon: chat?.avatar || '',
+      maxMembers: chat?.maxMembers || 0,
+      transcriptPolicy: chat?.transcriptPolicy || 'save',
+      resources: Array.isArray(chat?.resources) ? chat.resources : [],
     });
+    setNewResLabel('');
+    setNewResUrl('');
     setIsEditingGroup(true);
   };
 
@@ -834,7 +849,7 @@ export default function ChatScreen() {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
 
       {/* ── Tap Outside Popups Dismiss Overlays ── */}
       {isMenuOpen && (
@@ -876,8 +891,8 @@ export default function ChatScreen() {
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 14, paddingVertical: 10,
-        borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)',
-        backgroundColor: '#ffffff',
+        borderBottomWidth: 1, borderBottomColor: colors.border,
+        backgroundColor: colors.card,
         zIndex: 200,
       }}>
         {isSearching ? (
@@ -937,8 +952,8 @@ export default function ChatScreen() {
 
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text numberOfLines={2} style={{ fontSize: 14, fontFamily: 'Poppins_700Bold', color: INK, lineHeight: 17, marginRight: 4 }}>
-                      {chat.name.toUpperCase().replace(/\s+/g, '\n')}
+                    <Text numberOfLines={2} style={{ fontSize: 14, fontFamily: 'Poppins_700Bold', color: colors.text, lineHeight: 17, marginRight: 4 }}>
+                      {(chat.name || chat.organization || '').toUpperCase().replace(/\s+/g, '\n')}
                     </Text>
                     {isMuted && <BellOff size={11} color={INK_SOFT} style={{ marginLeft: 2 }} />}
                   </View>
@@ -1085,7 +1100,7 @@ export default function ChatScreen() {
         {/* Subtle lavender bg for chat area */}
         <ScrollView
           ref={scrollViewRef}
-          style={{ flex: 1, backgroundColor: BG }}
+          style={{ flex: 1, backgroundColor: colors.bg }}
           contentContainerStyle={[
             { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 24 },
             renderedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
@@ -1215,7 +1230,7 @@ export default function ChatScreen() {
                         paddingHorizontal: 14,
                         paddingTop: 10,
                         paddingBottom: msg.reactions && msg.reactions.length > 0 ? 14 : 10,
-                        backgroundColor: isMe ? PURPLE : '#f1f2f6',
+                        backgroundColor: isMe ? PURPLE : colors.surface,
                         shadowColor: isMe ? PURPLE : '#000',
                         shadowOpacity: isMe ? 0.15 : 0.02,
                         shadowRadius: 4,
@@ -1238,7 +1253,7 @@ export default function ChatScreen() {
                             contentFit="cover"
                           />
                           {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
-                            <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK, marginTop: 6 }}>
+                            <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : colors.text, marginTop: 6 }}>
                               {msg.text}
                             </Text>
                           )}
@@ -1256,7 +1271,7 @@ export default function ChatScreen() {
                             </View>
                           </View>
                           {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
-                            <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK, marginTop: 6 }}>
+                            <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : colors.text, marginTop: 6 }}>
                               {msg.text}
                             </Text>
                           )}
@@ -1266,7 +1281,7 @@ export default function ChatScreen() {
                           <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: isMe ? 'rgba(255,255,255,0.2)' : 'rgba(108,92,231,0.1)', alignItems: 'center', justifyContent: 'center' }}>
                             <FileText size={16} color={isMe ? '#ffffff' : PURPLE} />
                           </View>
-                          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: isMe ? '#ffffff' : INK, flex: 1 }}>
+                          <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: isMe ? '#ffffff' : colors.text, flex: 1 }}>
                             {msg.text || 'Document File'}
                           </Text>
                         </View>
@@ -1353,12 +1368,12 @@ export default function ChatScreen() {
                   isGroup={chat.isGroupChat ? false : !!chat.organization}
                 />
               </View>
-              <View style={{ borderRadius: 18, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: '#f1f2f6' }}>
+              <View style={{ borderRadius: 18, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.surface }}>
                 <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
                   {[0, 1, 2].map(i => (
-                    <View key={i} style={{ width: 6, height: 6, borderRadius: 99, backgroundColor: INK_SOFT }} />
+                    <View key={i} style={{ width: 6, height: 6, borderRadius: 99, backgroundColor: colors.textSoft }} />
                   ))}
-                  <Text style={{ fontSize: 12, color: INK_SOFT, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>
+                  <Text style={{ fontSize: 12, color: colors.textSoft, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>
                     {typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…'}
                   </Text>
                 </View>
@@ -1474,9 +1489,9 @@ export default function ChatScreen() {
               position: 'relative',
               paddingHorizontal: 16,
               paddingVertical: 12,
-              backgroundColor: '#ffffff',
+              backgroundColor: colors.card,
               borderTopWidth: 1,
-              borderTopColor: 'rgba(0,0,0,0.05)',
+              borderTopColor: colors.border,
             }}>
               {/* ── Attachment popover menu ── */}
               {isAttachmentOpen && (
@@ -1707,7 +1722,7 @@ export default function ChatScreen() {
                 <View style={{
                   flexDirection: 'row',
                   alignItems: 'flex-end',
-                  backgroundColor: '#f1f2f6',
+                  backgroundColor: colors.surface,
                   borderRadius: 24,
                   paddingHorizontal: 8,
                   paddingVertical: 5,
@@ -1736,14 +1751,14 @@ export default function ChatScreen() {
                       flex: 1,
                       fontSize: 15,
                       fontFamily: 'Poppins_400Regular',
-                      color: INK,
+                      color: colors.text,
                       maxHeight: 100,
                       paddingVertical: Platform.OS === 'ios' ? 8 : 4,
                       paddingHorizontal: 4,
                       textAlignVertical: 'center',
                     }}
                     placeholder={selectedFile ? "Add a caption..." : "Type a message..."}
-                    placeholderTextColor="rgba(31,32,48,0.35)"
+                    placeholderTextColor={colors.textSoft}
                     multiline
                     value={messageText}
                     onChangeText={handleTextChange}
@@ -2149,6 +2164,22 @@ export default function ChatScreen() {
                       />
                     ) : null}
                   </View>
+
+                  {/* Current settings (reflect what Edit Info saves) */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Member limit</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{chat.maxMembers ? chat.maxMembers : 'Unlimited'}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Transcripts</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT, textTransform: 'capitalize' }}>
+                      {chat.transcriptPolicy === 'email' ? 'Email members' : chat.transcriptPolicy === 'off' ? 'Off' : 'Save only'}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Resources</Text>
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{(chat.resources || []).length}</Text>
+                  </View>
                 </View>
               );
             })()}
@@ -2189,7 +2220,12 @@ export default function ChatScreen() {
                   {chat.users.map((member: any) => {
                     const isAdmin = chat.groupAdmin && String(member.id || member._id || member) === String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin);
                     return (
-                      <View key={member.id || member._id || member} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.04)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}>
+                      <TouchableOpacity
+                        key={member.id || member._id || member}
+                        activeOpacity={0.7}
+                        onPress={() => setSelectedMember({ ...member, isAdmin })}
+                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.04)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}
+                      >
                         <Avatar
                           url={member.avatar}
                           name={member.full_name || member.username}
@@ -2208,11 +2244,12 @@ export default function ChatScreen() {
                           )}
                         </View>
                         {isAdmin && (
-                          <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                          <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginRight: 6 }}>
                             <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase' }}>Admin</Text>
                           </View>
                         )}
-                      </View>
+                        <ChevronLeft size={16} color={INK_SOFT} style={{ transform: [{ rotate: '180deg' }] }} />
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
@@ -2300,6 +2337,101 @@ export default function ChatScreen() {
               <Text style={{ color: '#ffffff', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Close</Text>
             </TouchableOpacity>
           </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* ── Group Member Profile Modal ── */}
+      <Modal visible={selectedMember !== null} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.05)' }}>
+            <View>
+              <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Profile</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Group member</Text>
+            </View>
+            <TouchableOpacity onPress={() => setSelectedMember(null)} style={{ padding: 6 }}>
+              <X size={20} color={PURPLE} />
+            </TouchableOpacity>
+          </View>
+
+          {selectedMember && (
+            <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+              {/* Hero */}
+              <View style={{ alignItems: 'center', backgroundColor: 'rgba(108,92,231,0.06)', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 20 }}>
+                <View style={{ marginBottom: 14 }}>
+                  <Avatar
+                    url={selectedMember.avatar}
+                    name={selectedMember.full_name || selectedMember.username}
+                    size={76}
+                    style={{ borderRadius: 22 }}
+                    imageStyle={{ borderRadius: 22 }}
+                  />
+                </View>
+                <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
+                  {selectedMember.full_name || selectedMember.username || 'Member'}
+                </Text>
+                {!!selectedMember.username && (
+                  <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>@{selectedMember.username}</Text>
+                )}
+                {selectedMember.isAdmin && (
+                  <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 }}>
+                    <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase', letterSpacing: 1 }}>Group Admin</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Detail cards (show what the member object carries) */}
+              {!!selectedMember.email && (
+                <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={selectedMember.email} />
+              )}
+              {!!selectedMember.phone_number && (
+                <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={selectedMember.phone_number} />
+              )}
+              {(!!selectedMember.organization || !!selectedMember.org_role) && (
+                <InfoCard
+                  icon={<Briefcase size={19} color={PURPLE} />}
+                  label="Organization & Role"
+                  value={[selectedMember.organization, selectedMember.org_role].filter(Boolean).join(' · ')}
+                />
+              )}
+
+              {/* Quick actions */}
+              {String(selectedMember.id || selectedMember._id) !== String(currentUserIdRef.current) && (
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const memberId = String(selectedMember.id || selectedMember._id);
+                      setSelectedMember(null);
+                      setIsInfoOpen(false);
+                      try {
+                        const res = await accessOrCreateChat(memberId);
+                        const newChatId = res?.data?._id || res?.data?.id || res?._id || res?.id;
+                        await chatCache.syncChatsWithBackend();
+                        router.push(`/chat/${newChatId || memberId}`);
+                      } catch {
+                        router.push(`/chat/${memberId}`);
+                      }
+                    }}
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PURPLE, borderRadius: 16, paddingVertical: 14 }}
+                  >
+                    <MessageSquare size={16} color="#fff" />
+                    <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Message</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const m = selectedMember;
+                      const memberId = String(m.id || m._id);
+                      setSelectedMember(null);
+                      startOutgoingCall({ id: memberId, otherUserId: memberId, name: m.full_name || m.username, avatar: m.avatar }, 'voice');
+                    }}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 18 }}
+                  >
+                    <Phone size={16} color={PURPLE} />
+                    <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Call</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          )}
         </SafeAreaView>
       </Modal>
 
@@ -2418,14 +2550,126 @@ export default function ChatScreen() {
                 />
               </View>
 
+              {/* Member limit */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Member Limit</Text>
+                <TextInput
+                  value={groupFormData.maxMembers ? String(groupFormData.maxMembers) : ''}
+                  onChangeText={(t) => setGroupFormData({ ...groupFormData, maxMembers: parseInt(t.replace(/[^0-9]/g, ''), 10) || 0 })}
+                  keyboardType="number-pad"
+                  placeholder="0 = unlimited"
+                  placeholderTextColor={INK_SOFT}
+                  style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                />
+                <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
+                  Cap how many people can join. Currently {chat?.users?.length || 0} member(s).
+                </Text>
+              </View>
+
+              {/* Meeting transcript policy */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Meeting Transcripts</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {([
+                    { key: 'email', label: 'Email members' },
+                    { key: 'save', label: 'Save only' },
+                    { key: 'off', label: 'Off' },
+                  ] as const).map((opt) => {
+                    const active = groupFormData.transcriptPolicy === opt.key;
+                    return (
+                      <TouchableOpacity
+                        key={opt.key}
+                        onPress={() => setGroupFormData({ ...groupFormData, transcriptPolicy: opt.key })}
+                        style={{ flex: 1, backgroundColor: active ? PURPLE : 'rgba(108,92,231,0.08)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                      >
+                        <Text style={{ color: active ? '#fff' : INK_SOFT, fontSize: 11, fontFamily: 'Poppins_600SemiBold' }}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
+                  How this group's meeting transcripts are handled when a call ends.
+                </Text>
+              </View>
+
+              {/* Group resources */}
+              <View style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Resources</Text>
+                {groupFormData.resources.length > 0 && (
+                  <View style={{ gap: 8, marginBottom: 10 }}>
+                    {groupFormData.resources.map((r, idx) => (
+                      <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', paddingHorizontal: 12, paddingVertical: 10 }}>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                          <Text style={{ fontSize: 12.5, fontFamily: 'Poppins_600SemiBold', color: INK }} numberOfLines={1}>{r.label}</Text>
+                          {!!r.url && <Text style={{ fontSize: 10.5, color: PURPLE }} numberOfLines={1}>{r.url}</Text>}
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => setGroupFormData({ ...groupFormData, resources: groupFormData.resources.filter((_, i) => i !== idx) })}
+                          style={{ padding: 4 }}
+                        >
+                          <X size={15} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                <View style={{ gap: 8 }}>
+                  <TextInput
+                    value={newResLabel}
+                    onChangeText={setNewResLabel}
+                    placeholder="Label (e.g. Brand kit)"
+                    placeholderTextColor={INK_SOFT}
+                    style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                  />
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TextInput
+                      value={newResUrl}
+                      onChangeText={setNewResUrl}
+                      placeholder="https://…"
+                      placeholderTextColor={INK_SOFT}
+                      autoCapitalize="none"
+                      style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}
+                    />
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (!newResLabel.trim() || !newResUrl.trim()) {
+                          Alert.alert('Add resource', 'Enter both a label and a URL.');
+                          return;
+                        }
+                        setGroupFormData({
+                          ...groupFormData,
+                          resources: [...groupFormData.resources, { label: newResLabel.trim(), url: newResUrl.trim(), type: 'link' }],
+                        });
+                        setNewResLabel('');
+                        setNewResUrl('');
+                      }}
+                      style={{ backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Text style={{ color: PURPLE, fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
+                  Links/docs that give this group's AI helpful context.
+                </Text>
+              </View>
+
               <TouchableOpacity
                 onPress={async () => {
+                  const memberCount = chat?.users?.length || 0;
+                  if (groupFormData.maxMembers > 0 && groupFormData.maxMembers < memberCount) {
+                    Alert.alert('Member limit too low', `The cap can't be below the current ${memberCount} member(s).`);
+                    return;
+                  }
                   try {
                     const { updateGroupSettings } = await import('../../../lib/api');
                     const res = await updateGroupSettings(chat.id, {
                       chatName: groupFormData.chatName.trim(),
                       groupDescription: groupFormData.groupDescription.trim(),
                       groupIcon: groupFormData.groupIcon,
+                      maxMembers: groupFormData.maxMembers,
+                      transcriptPolicy: groupFormData.transcriptPolicy,
+                      resources: groupFormData.resources,
                     });
                     if (res?.conversation) {
                       setChat(res.conversation);

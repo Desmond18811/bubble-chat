@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Clipboard, Switch, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database, ChevronLeft, Plus } from 'lucide-react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, Database, ChevronLeft, Plus, Moon, Sun, Smartphone } from 'lucide-react-native';
+import { useTheme, Scheme } from '../../lib/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '../../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -41,6 +42,7 @@ function getGroupInitials(name: string) {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { colors, scheme, setScheme, isDark } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -430,8 +432,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b border-black/5">
+    <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: colors.bg }}>
+      <View className="flex-row items-center justify-between px-6 pt-5 pb-3 border-b" style={{ borderColor: colors.border }}>
         <View>
           <Svg height="36" width="140">
             <Defs>
@@ -451,14 +453,14 @@ export default function ProfileScreen() {
               Profile
             </SvgText>
           </Svg>
-          <Text className="text-xs text-ink-soft font-sans mt-0.5">Manage your account</Text>
+          <Text className="text-xs font-sans mt-0.5" style={{ color: colors.textSoft }}>Manage your account</Text>
         </View>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 180 }} showsVerticalScrollIndicator={false}>
-        <View className="w-full bg-purple-soft/5">
+        <View className="w-full" style={{ backgroundColor: colors.bg }}>
           {/* Hero Card */}
-          <View className="bg-purple-soft/20 items-center w-full p-6 border-b border-black/5">
+          <View className="items-center w-full p-6 border-b" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
             <TouchableOpacity
               onPress={handlePressAvatar}
               activeOpacity={0.8}
@@ -490,20 +492,20 @@ export default function ProfileScreen() {
                 imageStyle={{ borderRadius: 28 }}
               />
             </TouchableOpacity>
-            <Text className="text-[22px] font-bold text-ink leading-tight font-sans">{user.full_name}</Text>
-            <Text className="text-[14px] font-bold text-purple mt-1.5 font-sans">@{user.username}</Text>
-            <Text className="text-[14px] font-semibold text-ink-soft mt-1.5 font-sans">{user.org_role}</Text>
-            <Text className="text-[14px] text-ink-soft text-center mt-4 leading-relaxed max-w-sm font-sans">{user.bio}</Text>
+            <Text className="text-[22px] font-bold leading-tight font-sans" style={{ color: colors.text }}>{user.full_name}</Text>
+            <Text className="text-[14px] font-bold mt-1.5 font-sans" style={{ color: colors.purple }}>@{user.username}</Text>
+            <Text className="text-[14px] font-semibold mt-1.5 font-sans" style={{ color: colors.textSoft }}>{user.org_role}</Text>
+            <Text className="text-[14px] text-center mt-4 leading-relaxed max-w-sm font-sans" style={{ color: colors.textSoft }}>{user.bio}</Text>
 
             {/* Stats row */}
-            <View className="flex-row w-full items-center justify-around rounded-2xl bg-white shadow-sm py-4 mt-6 max-w-sm border border-black/5">
+            <View className="flex-row w-full items-center justify-around rounded-2xl shadow-sm py-4 mt-6 max-w-sm border" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
               <View className="items-center px-6">
-                <Text className="text-[20px] font-bold text-purple font-sans">{user.chatsCount}</Text>
-                <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5 font-sans">Chats</Text>
+                <Text className="text-[20px] font-bold font-sans" style={{ color: colors.purple }}>{user.chatsCount}</Text>
+                <Text className="text-[10px] font-semibold uppercase tracking-wider mt-0.5 font-sans" style={{ color: colors.textSoft }}>Chats</Text>
               </View>
-              <View className="items-center px-6 border-l border-black/5">
-                <Text className="text-[20px] font-bold text-purple font-sans">{user.filesCount}</Text>
-                <Text className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mt-0.5 font-sans">Files</Text>
+              <View className="items-center px-6 border-l" style={{ borderColor: colors.border }}>
+                <Text className="text-[20px] font-bold font-sans" style={{ color: colors.purple }}>{user.filesCount}</Text>
+                <Text className="text-[10px] font-semibold uppercase tracking-wider mt-0.5 font-sans" style={{ color: colors.textSoft }}>Files</Text>
               </View>
             </View>
 
@@ -527,34 +529,34 @@ export default function ProfileScreen() {
           </View>
 
           {/* Contact Details Card */}
-          <View className="bg-white w-full p-6 border-b border-black/5">
-            <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5 font-sans">
+          <View className="w-full p-6 border-b" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <Text className="text-[15px] font-bold border-b pb-3 mb-5 font-sans" style={{ color: colors.text, borderColor: colors.borderStrong }}>
               Contact details
             </Text>
-            
+
             <View className="space-y-4">
-              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
-                <Mail color="#6c5ce7" size={20} />
+              <View className="flex-row items-center p-4 rounded-2xl border mb-3" style={{ backgroundColor: colors.purpleSoft, borderColor: colors.border }}>
+                <Mail color={colors.purple} size={20} />
                 <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider font-sans">Email</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5 font-sans">{user.email}</Text>
+                  <Text className="text-[10px] font-bold uppercase tracking-wider font-sans" style={{ color: colors.textSoft }}>Email</Text>
+                  <Text className="text-sm font-semibold mt-0.5 font-sans" style={{ color: colors.text }}>{user.email}</Text>
                 </View>
               </View>
-              
-              <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3">
-                <Phone color="#6c5ce7" size={20} />
+
+              <View className="flex-row items-center p-4 rounded-2xl border mb-3" style={{ backgroundColor: colors.purpleSoft, borderColor: colors.border }}>
+                <Phone color={colors.purple} size={20} />
                 <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider font-sans">Phone</Text>
-                  <Text className="text-sm font-semibold text-ink mt-0.5 font-sans">{user.phone_number}</Text>
+                  <Text className="text-[10px] font-bold uppercase tracking-wider font-sans" style={{ color: colors.textSoft }}>Phone</Text>
+                  <Text className="text-sm font-semibold mt-0.5 font-sans" style={{ color: colors.text }}>{user.phone_number}</Text>
                 </View>
               </View>
-              
+
               {user.organization && (
-                <View className="flex-row items-center bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
-                  <Briefcase color="#6c5ce7" size={20} />
+                <View className="flex-row items-center p-4 rounded-2xl border" style={{ backgroundColor: colors.purpleSoft, borderColor: colors.border }}>
+                  <Briefcase color={colors.purple} size={20} />
                   <View className="ml-3 flex-1">
-                    <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider font-sans">Organization</Text>
-                    <Text className="text-sm font-semibold text-ink mt-0.5 font-sans">{user.organization} ({user.org_role})</Text>
+                    <Text className="text-[10px] font-bold uppercase tracking-wider font-sans" style={{ color: colors.textSoft }}>Organization</Text>
+                    <Text className="text-sm font-semibold mt-0.5 font-sans" style={{ color: colors.text }}>{user.organization} ({user.org_role})</Text>
                   </View>
                 </View>
               )}
@@ -563,9 +565,9 @@ export default function ProfileScreen() {
 
           {/* Organization Settings Card */}
           {user.organization && orgData && (
-            <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
-              <View className="flex-row justify-between items-center border-b border-black/10 pb-3 mb-4">
-                <Text className="text-[15px] font-bold text-ink font-sans">
+            <View className="bg-white dark:bg-[#1a1b28] w-full p-6 border-b border-black/5 dark:border-white/10 mt-3">
+              <View className="flex-row justify-between items-center border-b border-black/10 dark:border-white/20 pb-3 mb-4">
+                <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] font-sans">
                   Organization Settings
                 </Text>
                 {orgData.isAdmin && (
@@ -576,7 +578,7 @@ export default function ProfileScreen() {
               </View>
 
               {/* Organization Info Hero */}
-              <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 mb-3 flex-row items-center">
+              <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10 mb-3 flex-row items-center">
                 <Avatar
                   url={orgData.logo}
                   name={orgData.name}
@@ -586,32 +588,32 @@ export default function ProfileScreen() {
                   imageStyle={{ borderRadius: 16 }}
                 />
                 <View className="ml-3 flex-1">
-                  <Text className="text-sm font-bold text-ink font-sans">{orgData.name}</Text>
-                  <Text className="text-xs text-ink-soft mt-0.5 font-sans" numberOfLines={2}>
+                  <Text className="text-sm font-bold text-ink dark:text-[#f4f5fb] font-sans">{orgData.name}</Text>
+                  <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans" numberOfLines={2}>
                     {orgData.description || 'No description set'}
                   </Text>
                 </View>
               </View>
 
               {/* Tab Switcher */}
-              <View className="flex-row border-b border-black/5 mb-4 mt-2">
+              <View className="flex-row border-b border-black/5 dark:border-white/10 mb-4 mt-2">
                 <TouchableOpacity
                   onPress={() => setActiveOrgTab('info')}
                   className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'info' ? 'border-purple' : 'border-transparent'}`}
                 >
-                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'info' ? 'text-purple' : 'text-ink-soft'}`}>General</Text>
+                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'info' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>General</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setActiveOrgTab('people')}
                   className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'people' ? 'border-purple' : 'border-transparent'}`}
                 >
-                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'people' ? 'text-purple' : 'text-ink-soft'}`}>People</Text>
+                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'people' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>People</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setActiveOrgTab('transcripts')}
                   className={`pb-2 border-b-2 ${activeOrgTab === 'transcripts' ? 'border-purple' : 'border-transparent'}`}
                 >
-                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'transcripts' ? 'text-purple' : 'text-ink-soft'}`}>Transcripts</Text>
+                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'transcripts' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>Transcripts</Text>
                 </TouchableOpacity>
               </View>
 
@@ -619,17 +621,17 @@ export default function ProfileScreen() {
               {activeOrgTab === 'info' && (
                 <View style={{ gap: 10 }}>
                   {orgData.inviteCode ? (
-                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
                       <View className="flex-1 pr-3">
-                        <Text className="text-[13px] font-bold text-ink font-sans">Invite Code</Text>
-                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Share with employees to let them join</Text>
+                        <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Invite Code</Text>
+                        <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Share with employees to let them join</Text>
                       </View>
                       <TouchableOpacity
                         onPress={() => {
                           Clipboard.setString(orgData.inviteCode);
                           Alert.alert("Copied", "Organization invite code copied to clipboard!");
                         }}
-                        className="bg-white px-3 py-1.5 rounded-xl border border-black/5 flex-row items-center"
+                        className="bg-white dark:bg-[#1a1b28] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10 flex-row items-center"
                       >
                         <Copy color="#6c5ce7" size={12} style={{ marginRight: 4 }} />
                         <Text className="text-purple font-mono font-bold text-[11px]">
@@ -640,15 +642,15 @@ export default function ProfileScreen() {
                   ) : (
                     <View className="bg-red-50/50 p-4 rounded-2xl border border-red-100/30">
                       <Text className="text-[12px] font-bold text-red-500 font-sans">Invite Code Hidden</Text>
-                      <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Your administrator has disabled invite code sharing for members.</Text>
+                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Your administrator has disabled invite code sharing for members.</Text>
                     </View>
                   )}
 
                   {orgData.isAdmin && (
-                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
                       <View className="flex-1 pr-2">
-                        <Text className="text-[13px] font-bold text-ink font-sans">Allow members to share code</Text>
-                        <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
+                        <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Allow members to share code</Text>
+                        <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
                       </View>
                       <Switch
                         value={orgData.allowMembersToShareInvite}
@@ -675,12 +677,12 @@ export default function ProfileScreen() {
               {/* People Tab */}
               {activeOrgTab === 'people' && (
                 <View style={{ gap: 10 }}>
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider mb-1">Employee Directory ({orgMembers.length})</Text>
+                  <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-wider mb-1">Employee Directory ({orgMembers.length})</Text>
                   {orgMembers.length === 0 ? (
-                    <Text className="text-xs text-ink-soft italic font-sans">No members found</Text>
+                    <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] italic font-sans">No members found</Text>
                   ) : (
                     orgMembers.map(member => (
-                      <View key={member.username} className="flex-row items-center bg-purple-soft/5 p-3 rounded-2xl border border-black/5">
+                      <View key={member.username} className="flex-row items-center bg-purple-soft/5 p-3 rounded-2xl border border-black/5 dark:border-white/10">
                         <Avatar
                           url={member.avatar}
                           userId={member.id || member._id}
@@ -690,8 +692,8 @@ export default function ProfileScreen() {
                           imageStyle={{ borderRadius: 10 }}
                         />
                         <View className="ml-3 flex-1">
-                          <Text className="text-xs font-bold text-ink font-sans">{member.full_name || member.username}</Text>
-                          <Text className="text-[10px] text-ink-soft font-sans">@{member.username}</Text>
+                          <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] font-sans">{member.full_name || member.username}</Text>
+                          <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-sans">@{member.username}</Text>
                         </View>
                         <View className="bg-purple/10 px-2 py-0.5 rounded-lg">
                           <Text className="text-purple font-bold text-[9px] uppercase font-sans">
@@ -707,21 +709,21 @@ export default function ProfileScreen() {
               {/* Transcripts Tab */}
               {activeOrgTab === 'transcripts' && (
                 <View style={{ gap: 10 }}>
-                  <Text className="text-[10px] font-bold text-ink-soft uppercase tracking-wider mb-1">Meeting History ({orgTranscripts.length})</Text>
+                  <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-wider mb-1">Meeting History ({orgTranscripts.length})</Text>
                   {orgTranscripts.length === 0 ? (
-                    <Text className="text-xs text-ink-soft italic font-sans">No meeting history found</Text>
+                    <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] italic font-sans">No meeting history found</Text>
                   ) : (
                     orgTranscripts.map(meeting => {
                       const isExpanded = expandedTranscriptId === meeting.roomId;
                       return (
-                        <View key={meeting.roomId} className="bg-purple-soft/5 rounded-2xl border border-black/5 overflow-hidden">
+                        <View key={meeting.roomId} className="bg-purple-soft/5 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
                           <TouchableOpacity
                             onPress={() => setExpandedTranscriptId(isExpanded ? null : meeting.roomId)}
                             className="p-4 flex-row items-center justify-between"
                           >
                             <View className="flex-1 pr-2">
-                              <Text className="text-xs font-bold text-ink font-sans">{meeting.title || 'Untitled Meeting'}</Text>
-                              <Text className="text-[10.5px] text-ink-soft font-sans mt-0.5">
+                              <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] font-sans">{meeting.title || 'Untitled Meeting'}</Text>
+                              <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans mt-0.5">
                                 Hosted by {meeting.host?.name || 'Unknown'} · {new Date(meeting.timing || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                               </Text>
                             </View>
@@ -729,16 +731,16 @@ export default function ProfileScreen() {
                           </TouchableOpacity>
 
                           {isExpanded && (
-                            <View className="px-4 pb-4 border-t border-black/5 pt-3" style={{ gap: 12 }}>
+                            <View className="px-4 pb-4 border-t border-black/5 dark:border-white/10 pt-3" style={{ gap: 12 }}>
                               <View className="flex-row items-center justify-between">
-                                <Text className="text-[10.5px] text-ink-soft font-sans">Duration: {Math.ceil((meeting.duration || 0) / 60)} mins</Text>
-                                <Text className="text-[10.5px] text-ink-soft font-sans">Type: {meeting.type || 'Voice'}</Text>
+                                <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans">Duration: {Math.ceil((meeting.duration || 0) / 60)} mins</Text>
+                                <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans">Type: {meeting.type || 'Voice'}</Text>
                               </View>
 
                               {meeting.summary ? (
                                 <View className="bg-purple-soft/10 p-3 rounded-xl border border-purple/5">
                                   <Text className="text-[11px] font-bold text-purple uppercase mb-1">Detailed Intelligence</Text>
-                                  <Text className="text-[11.5px] text-ink font-sans leading-relaxed">{meeting.summary}</Text>
+                                  <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb] font-sans leading-relaxed">{meeting.summary}</Text>
                                 </View>
                               ) : null}
 
@@ -748,8 +750,8 @@ export default function ProfileScreen() {
                                   <View style={{ gap: 4 }} className="mt-1">
                                     {meeting.actionItems.map((item: string, idx: number) => (
                                       <View key={idx} className="flex-row items-start gap-1">
-                                        <Text className="text-[11.5px] text-ink">•</Text>
-                                        <Text className="text-[11.5px] text-ink font-sans flex-1">{item}</Text>
+                                        <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb]">•</Text>
+                                        <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb] font-sans flex-1">{item}</Text>
                                       </View>
                                     ))}
                                   </View>
@@ -758,9 +760,9 @@ export default function ProfileScreen() {
 
                               {meeting.rawTranscript ? (
                                 <View>
-                                  <Text className="text-[11px] font-bold text-ink-soft uppercase mb-1">Raw Transcript</Text>
-                                  <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled className="bg-black/5 p-2.5 rounded-xl border border-black/5">
-                                    <Text className="text-[10px] text-ink-soft font-mono leading-relaxed">{meeting.rawTranscript}</Text>
+                                  <Text className="text-[11px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase mb-1">Raw Transcript</Text>
+                                  <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled className="bg-black/5 dark:bg-white/[0.06] p-2.5 rounded-xl border border-black/5 dark:border-white/10">
+                                    <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-mono leading-relaxed">{meeting.rawTranscript}</Text>
                                   </ScrollView>
                                 </View>
                               ) : null}
@@ -777,14 +779,14 @@ export default function ProfileScreen() {
 
           {/* Join Organization Card */}
           {!user.organization && (
-            <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
-              <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5 font-sans">
+            <View className="bg-white dark:bg-[#1a1b28] w-full p-6 border-b border-black/5 dark:border-white/10 mt-3">
+              <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] border-b border-black/10 dark:border-white/20 pb-3 mb-5 font-sans">
                 Join Organization
               </Text>
               
-              <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
-                <Text className="text-[13px] font-bold text-ink font-sans mb-0.5">Have an Organization Code?</Text>
-                <Text className="text-[11px] text-ink-soft mb-2.5 font-sans leading-tight">
+              <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
+                <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans mb-0.5">Have an Organization Code?</Text>
+                <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mb-2.5 font-sans leading-tight">
                   Enter code to access workspace resources and chats
                 </Text>
                 
@@ -794,7 +796,7 @@ export default function ProfileScreen() {
                     value={inviteCodeInput}
                     onChangeText={setInviteCodeInput}
                     placeholderTextColor="#9a9aab"
-                    className="flex-1 bg-white border border-black/5 h-11 px-3.5 rounded-xl text-ink font-sans text-sm"
+                    className="flex-1 bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 h-11 px-3.5 rounded-xl text-ink dark:text-[#f4f5fb] font-sans text-sm"
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
@@ -812,19 +814,48 @@ export default function ProfileScreen() {
             </View>
           )}
 
+          {/* Appearance / Dark Mode */}
+          <View className="w-full p-6 border-b mt-3" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <Text className="text-[15px] font-bold border-b pb-3 mb-5 font-sans" style={{ color: colors.text, borderColor: colors.borderStrong }}>
+              Appearance
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {([
+                { key: 'light', label: 'Light', Icon: Sun },
+                { key: 'dark', label: 'Dark', Icon: Moon },
+                { key: 'system', label: 'System', Icon: Smartphone },
+              ] as const).map((opt) => {
+                const active = scheme === opt.key;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    onPress={() => setScheme(opt.key as Scheme)}
+                    style={{ flex: 1, alignItems: 'center', gap: 6, paddingVertical: 14, borderRadius: 16, borderWidth: 1, backgroundColor: active ? colors.purple : colors.purpleSoft, borderColor: active ? colors.purple : colors.border }}
+                  >
+                    <opt.Icon size={18} color={active ? '#fff' : colors.purple} />
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: active ? '#fff' : colors.textSoft }}>{opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={{ fontSize: 11, color: colors.textSoft, marginTop: 10 }}>
+              Dark mode applies across the mobile app. "System" follows your phone settings.
+            </Text>
+          </View>
+
           {/* Backup & Restore Card */}
-          <View className="bg-white w-full p-6 border-b border-black/5 mt-3">
-            <Text className="text-[15px] font-bold text-ink border-b border-black/10 pb-3 mb-5 font-sans">
+          <View className="bg-white dark:bg-[#1a1b28] w-full p-6 border-b border-black/5 dark:border-white/10 mt-3" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] border-b border-black/10 dark:border-white/20 pb-3 mb-5 font-sans" style={{ color: colors.text, borderColor: colors.borderStrong }}>
               Backup & Encrypted Storage
             </Text>
             
-            <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5">
+            <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
               <View className="flex-row items-center justify-between mb-3">
                 <View className="flex-row items-center flex-1 pr-2">
                   <Database color="#6c5ce7" size={20} style={{ marginRight: 10 }} />
                   <View className="flex-1">
-                    <Text className="text-[14px] font-bold text-ink font-sans">Automatic Backup</Text>
-                    <Text className="text-[11px] text-ink-soft mt-0.5 font-sans leading-tight">Cloud backup of E2E keys and chats at 2:00 AM</Text>
+                    <Text className="text-[14px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Automatic Backup</Text>
+                    <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Cloud backup of E2E keys and chats at 2:00 AM</Text>
                   </View>
                 </View>
                 <Switch
@@ -835,8 +866,8 @@ export default function ProfileScreen() {
                 />
               </View>
               
-              <View className="border-t border-black/5 pt-3 flex-row items-center justify-between">
-                <Text className="text-[11.5px] font-semibold text-ink-soft font-sans">
+              <View className="border-t border-black/5 dark:border-white/10 pt-3 flex-row items-center justify-between">
+                <Text className="text-[11.5px] font-semibold text-ink-soft dark:text-[#9a9bb6] font-sans">
                   Last Backup: {lastBackupTime || 'Never'}
                 </Text>
                 <TouchableOpacity 
@@ -853,7 +884,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Logout */}
-          <View className="bg-white w-full p-6">
+          <View className="bg-white dark:bg-[#1a1b28] w-full p-6">
             <TouchableOpacity
               onPress={handleLogout}
               className="flex-row items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-6 py-4"
@@ -867,11 +898,11 @@ export default function ProfileScreen() {
 
       {/* Edit Profile Modal */}
       <Modal visible={isEditing} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+        <SafeAreaView className="flex-1 bg-white dark:bg-[#1a1b28]" edges={['top']}>
+          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
             <View>
-              <Text className="text-xl font-bold text-ink">Edit profile</Text>
-              <Text className="text-xs text-ink-soft">Update your information</Text>
+              <Text className="text-xl font-bold text-ink dark:text-[#f4f5fb]">Edit profile</Text>
+              <Text className="text-xs text-ink-soft dark:text-[#9a9bb6]">Update your information</Text>
             </View>
             <TouchableOpacity onPress={() => { setFormData(user); setIsEditing(false); }}>
               <X color="#6c5ce7" size={20} />
@@ -879,54 +910,54 @@ export default function ProfileScreen() {
           </View>
           
           <ScrollView className="flex-1 px-6 pt-6">
-            <View className="bg-purple-soft/30 rounded-3xl border border-black/5 p-6 mb-8">
+            <View className="bg-purple-soft/30 rounded-3xl border border-black/5 dark:border-white/10 p-6 mb-8">
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Full Name</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Full Name</Text>
                 <TextInput
                   value={formData.full_name}
                   onChangeText={(t) => setFormData({...formData, full_name: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                 />
               </View>
               
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Username</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Username</Text>
                 <TextInput
                   value={formData.username}
                   onChangeText={(t) => setFormData({...formData, username: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                   autoCapitalize="none"
                 />
               </View>
               
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Bio</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Bio</Text>
                 <TextInput
                   value={formData.bio}
                   onChangeText={(t) => setFormData({...formData, bio: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5 min-h-[80px]"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10 min-h-[80px]"
                   multiline
                   textAlignVertical="top"
                 />
               </View>
               
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Email</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Email</Text>
                 <TextInput
                   value={formData.email}
                   onChangeText={(t) => setFormData({...formData, email: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
               </View>
               
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Phone Number</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Phone Number</Text>
                 <TextInput
                   value={formData.phone_number}
                   onChangeText={(t) => setFormData({...formData, phone_number: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                   keyboardType="phone-pad"
                 />
               </View>
@@ -945,11 +976,11 @@ export default function ProfileScreen() {
 
       {/* Edit Organization Modal */}
       <Modal visible={isEditingOrg} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5">
+        <SafeAreaView className="flex-1 bg-white dark:bg-[#1a1b28]" edges={['top']}>
+          <View className="flex-row items-center justify-between px-6 py-4 border-b border-black/5 dark:border-white/10">
             <View>
-              <Text className="text-xl font-bold text-ink">Edit Organization</Text>
-              <Text className="text-xs text-ink-soft">Update your organization's settings</Text>
+              <Text className="text-xl font-bold text-ink dark:text-[#f4f5fb]">Edit Organization</Text>
+              <Text className="text-xs text-ink-soft dark:text-[#9a9bb6]">Update your organization's settings</Text>
             </View>
             <TouchableOpacity onPress={() => setIsEditingOrg(false)}>
               <X color="#6c5ce7" size={20} />
@@ -957,9 +988,9 @@ export default function ProfileScreen() {
           </View>
           
           <ScrollView className="flex-1 px-6 pt-6">
-            <View className="bg-purple-soft/30 rounded-3xl border border-black/5 p-6 mb-8">
+            <View className="bg-purple-soft/30 rounded-3xl border border-black/5 dark:border-white/10 p-6 mb-8">
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-2">Organization Logo</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-2">Organization Logo</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
                   {AVATARS.map((url) => (
                     <TouchableOpacity
@@ -981,20 +1012,20 @@ export default function ProfileScreen() {
               </View>
 
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Organization Name</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Organization Name</Text>
                 <TextInput
                   value={orgFormData.name}
                   onChangeText={(t) => setOrgFormData({...orgFormData, name: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
                 />
               </View>
               
               <View className="mb-4">
-                <Text className="text-xs font-bold text-ink uppercase mb-1">Description</Text>
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Description</Text>
                 <TextInput
                   value={orgFormData.description}
                   onChangeText={(t) => setOrgFormData({...orgFormData, description: t})}
-                  className="bg-white rounded-2xl p-4 text-ink border border-black/5 min-h-[80px]"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10 min-h-[80px]"
                   multiline
                   textAlignVertical="top"
                 />
