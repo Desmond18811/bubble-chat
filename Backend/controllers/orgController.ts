@@ -536,6 +536,49 @@ export const joinOrganizationByInvite = async (req: AuthRequest, res: Response):
             if (!defaultChat.users.map((id: any) => id.toString()).includes(userId.toString())) {
                 defaultChat.users.push(userId);
                 await defaultChat.save();
+
+                // Create a system message to indicate the user joined
+                try {
+                    const joinedUser = await User.findById(userId);
+                    const username = joinedUser?.username || joinedUser?.full_name || 'Someone';
+                    const tag = `@${username}`;
+                    const joinedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const content = `${tag} joined at ${joinedTime}`;
+
+                    const systemMsg = new Message({
+                        sender: userId,
+                        chat: defaultChat._id,
+                        content: content,
+                        message_type: 'system',
+                    });
+                    await systemMsg.save();
+
+                    // Broadcast the system message to conversation members
+                    const { getIO } = await import('../utils/socket');
+                    const io = getIO();
+                    const formattedMsg = {
+                        _id: systemMsg._id,
+                        id: systemMsg._id.toString(),
+                        sender: {
+                            _id: userId,
+                            id: userId.toString(),
+                            username: joinedUser?.username || '',
+                            full_name: joinedUser?.full_name || '',
+                        },
+                        content: systemMsg.content,
+                        message_type: 'system',
+                        isSystem: true,
+                        createdAt: systemMsg.createdAt.toISOString(),
+                    };
+                    // Broadcast to the room
+                    io.to(defaultChat._id.toString()).emit('new_message', formattedMsg);
+                    // Also broadcast to each user specifically
+                    defaultChat.users.forEach((u: any) => {
+                        io.to(String(u)).emit('new_message', formattedMsg);
+                    });
+                } catch (msgErr) {
+                    console.error('Failed to create/broadcast system message for org default chat join:', msgErr);
+                }
             }
         } else {
             // Org has no default chat — new joiners land in an org with nothing to talk in.

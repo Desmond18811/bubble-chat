@@ -389,6 +389,8 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    let systemMessageSaved = null;
+
     const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { $addToSet: { users: userId } },
@@ -402,7 +404,58 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    if (!alreadyMember) {
+      try {
+        const addedUser = await User.findById(userId).select('username full_name');
+        const username = addedUser?.username || addedUser?.full_name || 'Someone';
+        const tag = `@${username}`;
+        const joinedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const content = `${tag} joined at ${joinedTime}`;
+
+        const systemMsg = new Message({
+          sender: userId,
+          chat: chatId,
+          content: content,
+          message_type: 'system',
+        });
+        await systemMsg.save();
+        systemMessageSaved = systemMsg;
+      } catch (msgErr) {
+        console.error('Failed to create system message for manually added user:', msgErr);
+      }
+    }
+
     const addedUser = await User.findById(userId).select('full_name email avatar uniqueTag');
+
+    // Broadcast system message to group members
+    if (systemMessageSaved) {
+      try {
+        const io = req.io || getIO();
+        const joinedUser = updated?.users.find((u: any) => String(u._id) === String(userId));
+        const formattedMsg = {
+          _id: systemMessageSaved._id,
+          id: systemMessageSaved._id.toString(),
+          sender: {
+            _id: userId,
+            id: userId.toString(),
+            username: joinedUser?.username || '',
+            full_name: joinedUser?.full_name || '',
+          },
+          content: systemMessageSaved.content,
+          message_type: 'system',
+          isSystem: true,
+          createdAt: systemMessageSaved.createdAt.toISOString(),
+        };
+        // Emit to the conversation room
+        io.to(chatId.toString()).emit('new_message', formattedMsg);
+        // Also emit to all members directly
+        updated.users.forEach((u: any) => {
+          io.to(String(u._id || u)).emit('new_message', formattedMsg);
+        });
+      } catch (socketErr) {
+        console.error('Socket emit new member message failed:', socketErr);
+      }
+    }
 
     res.status(200).json({
       message: 'Member added to group successfully.',
@@ -691,6 +744,7 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
 
     // Check if user is already in the group
     const isMember = group.users.some((u: any) => String(u._id || u) === String(userId));
+    let systemMessageSaved = null;
     if (!isMember) {
       group.users.push(userId);
       await group.save();
@@ -699,6 +753,27 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
     const updated = await Conversation.findById(group._id)
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');
+
+    if (!isMember) {
+      try {
+        const joinedUser = updated?.users.find((u: any) => String(u._id) === String(userId));
+        const username = joinedUser?.username || joinedUser?.full_name || 'Someone';
+        const tag = `@${username}`;
+        const joinedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const content = `${tag} joined at ${joinedTime}`;
+
+        const systemMsg = new Message({
+          sender: userId,
+          chat: group._id,
+          content: content,
+          message_type: 'system',
+        });
+        await systemMsg.save();
+        systemMessageSaved = systemMsg;
+      } catch (msgErr) {
+        console.error('Failed to create system message for group join:', msgErr);
+      }
+    }
 
     const formatted = await formatConversation(updated, userId);
 
@@ -710,6 +785,27 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
       updated?.users.forEach((u: any) => {
         io.to(String(u._id || u)).emit('member_added', { chatId: group._id, member: formatted.users.find((x: any) => String(x.id) === String(userId)) });
       });
+
+      if (systemMessageSaved) {
+        const joinedUser = updated?.users.find((u: any) => String(u._id) === String(userId));
+        const formattedMsg = {
+          _id: systemMessageSaved._id,
+          id: systemMessageSaved._id.toString(),
+          sender: {
+            _id: userId,
+            id: userId.toString(),
+            username: joinedUser?.username || '',
+            full_name: joinedUser?.full_name || '',
+          },
+          content: systemMessageSaved.content,
+          message_type: 'system',
+          isSystem: true,
+          createdAt: systemMessageSaved.createdAt.toISOString(),
+        };
+        updated?.users.forEach((u: any) => {
+          io.to(String(u._id || u)).emit('new_message', formattedMsg);
+        });
+      }
     } catch (socketErr) {
       console.error('Socket emit group join failed:', socketErr);
     }

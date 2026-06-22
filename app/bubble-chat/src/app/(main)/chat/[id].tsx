@@ -713,9 +713,7 @@ export default function ChatScreen() {
         : 'Offline';
 
   const filteredMessages = messages.filter(msg => {
-    if (msg.isSystem || msg.message_type === 'system' || msg.is_announcement || msg.sender === 'system') {
-      return false;
-    }
+    const isSystem = msg.isSystem || msg.message_type === 'system' || msg.is_announcement || msg.sender === 'system';
 
     // ── NEW ──
     if (chat?.isGroupChat && msg.senderIsBot) {
@@ -723,6 +721,7 @@ export default function ChatScreen() {
     }
 
     if (!searchQuery.trim()) return true;
+    if (isSystem) return false;
     return msg.text.toLowerCase().includes(searchQuery.toLowerCase());
   });
 

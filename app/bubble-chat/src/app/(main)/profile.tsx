@@ -825,7 +825,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Organization Settings Card */}
-          {user.organization && orgData && (
+          {user.organization && orgData && (orgData.isAdmin || orgData.allowMembersToShareInvite) && (
             <View className="bg-white dark:bg-[#1a1b28] w-full p-6 border-b border-black/5 dark:border-white/10 mt-3">
               <View className="flex-row justify-between items-center border-b border-black/10 dark:border-white/20 pb-3 mb-4">
                 <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] font-sans">
@@ -856,221 +856,245 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              {/* Tab Switcher */}
-              <View className="flex-row border-b border-black/5 dark:border-white/10 mb-4 mt-2">
-                <TouchableOpacity
-                  onPress={() => setActiveOrgTab('info')}
-                  className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'info' ? 'border-purple' : 'border-transparent'}`}
-                >
-                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'info' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>General</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setActiveOrgTab('people')}
-                  className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'people' ? 'border-purple' : 'border-transparent'}`}
-                >
-                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'people' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>People</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setActiveOrgTab('transcripts')}
-                  className={`pb-2 border-b-2 ${activeOrgTab === 'transcripts' ? 'border-purple' : 'border-transparent'}`}
-                >
-                  <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'transcripts' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>Transcripts</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* General Tab */}
-              {activeOrgTab === 'info' && (
-                <View style={{ gap: 10 }}>
-                  {orgData.inviteCode ? (
-                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
-                      <View className="flex-1 pr-3">
-                        <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Invite Code</Text>
-                        <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Share with employees to let them join</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Clipboard.setString(orgData.inviteCode);
-                          Alert.alert("Copied", "Organization invite code copied to clipboard!");
-                        }}
-                        className="bg-white dark:bg-[#1a1b28] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10 flex-row items-center"
-                      >
-                        <Copy color="#6c5ce7" size={12} style={{ marginRight: 4 }} />
-                        <Text className="text-purple font-mono font-bold text-[11px]">
-                          {orgData.inviteCode.slice(0, 6)}...{orgData.inviteCode.slice(-4)}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View className="bg-red-50/50 p-4 rounded-2xl border border-red-100/30">
-                      <Text className="text-[12px] font-bold text-red-500 font-sans">Invite Code Hidden</Text>
-                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Your administrator has disabled invite code sharing for members.</Text>
-                    </View>
-                  )}
-
-                  {orgData.isAdmin && (
-                    <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
-                      <View className="flex-1 pr-2">
-                        <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Allow members to share code</Text>
-                        <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
-                      </View>
-                      <Switch
-                        value={orgData.allowMembersToShareInvite}
-                        onValueChange={async (val) => {
-                          try {
-                            const { updateOrgProfile } = await import('../../lib/api');
-                            const res = await updateOrgProfile({ allowMembersToShareInvite: val });
-                            if (res) {
-                              setOrgData(prev => prev ? { ...prev, allowMembersToShareInvite: val } : null);
-                              setOrgFormData(prev => ({ ...prev, allowMembersToShareInvite: val }));
-                            }
-                          } catch (e: any) {
-                            Alert.alert("Error", e.message || "Failed to update sharing settings.");
-                          }
-                        }}
-                        trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
-                        thumbColor={Platform.OS === 'ios' ? undefined : orgData.allowMembersToShareInvite ? "#6c5ce7" : "#f4f3f4"}
-                      />
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* People Tab */}
-              {activeOrgTab === 'people' && (
-                <View style={{ gap: 10 }}>
-                  <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.textSoft }}>Employee Directory ({orgMembers.length})</Text>
-                    {orgMembers.length > 3 && (
-                      <TouchableOpacity onPress={() => setShowAllMembers(true)} className="px-2 py-0.5 rounded-lg" style={{ backgroundColor: colors.purpleSoft }}>
-                        <Text className="text-[10px] font-bold uppercase" style={{ color: colors.purple }}>View all</Text>
-                      </TouchableOpacity>
-                    )}
+              {orgData.isAdmin ? (
+                <>
+                  {/* Tab Switcher */}
+                  <View className="flex-row border-b border-black/5 dark:border-white/10 mb-4 mt-2">
+                    <TouchableOpacity
+                      onPress={() => setActiveOrgTab('info')}
+                      className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'info' ? 'border-purple' : 'border-transparent'}`}
+                    >
+                      <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'info' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>General</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setActiveOrgTab('people')}
+                      className={`mr-4 pb-2 border-b-2 ${activeOrgTab === 'people' ? 'border-purple' : 'border-transparent'}`}
+                    >
+                      <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'people' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>People</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setActiveOrgTab('transcripts')}
+                      className={`pb-2 border-b-2 ${activeOrgTab === 'transcripts' ? 'border-purple' : 'border-transparent'}`}
+                    >
+                      <Text className={`text-[12.5px] font-bold ${activeOrgTab === 'transcripts' ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>Transcripts</Text>
+                    </TouchableOpacity>
                   </View>
-                  {orgMembers.length === 0 ? (
-                    <Text className="text-xs italic font-sans" style={{ color: colors.textSoft }}>No members found</Text>
-                  ) : (
-                    orgMembers.slice(0, 3).map((member) => (
-                      <OrgMemberRow key={String(member.id || member._id || member.username)} member={member} />
-                    ))
-                  )}
-                </View>
-              )}
 
-              {/* Transcripts Tab */}
-              {activeOrgTab === 'transcripts' && (
-                <View style={{ gap: 10 }}>
-                  {orgDefaultChat && (
-                    <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 6 }}>
-                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.text }}>Send transcripts to members?</Text>
-                      <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSoft, marginTop: 2, marginBottom: 10 }}>
-                        {(orgDefaultChat.isAdmin || orgData?.isAdmin)
-                          ? 'Controls whether company-wide meeting transcripts are emailed to participants.'
-                          : 'Only the org admin can change this. Current setting:'}
-                      </Text>
-                      <View style={{ flexDirection: 'row', gap: 6 }}>
-                        {([
-                          { key: 'email', label: 'Email members' },
-                          { key: 'save', label: 'Save only' },
-                          { key: 'off', label: 'Off' },
-                        ] as const).map((opt) => {
-                          const active = orgDefaultChat.transcriptPolicy === opt.key;
-                          const canEdit = !!(orgDefaultChat.isAdmin || orgData?.isAdmin);
-                          return (
-                            <TouchableOpacity
-                              key={opt.key}
-                              disabled={!canEdit}
-                              onPress={async () => {
-                                if (!canEdit) return;
-                                try {
-                                  const { updateGroupSettings } = await import('../../lib/api');
-                                  const res = await updateGroupSettings(orgDefaultChat.id, { transcriptPolicy: opt.key });
-                                  if (res?.conversation) {
-                                    setOrgDefaultChat(prev => prev ? { ...prev, transcriptPolicy: opt.key } : prev);
-                                  }
-                                } catch (e: any) {
-                                  Alert.alert("Error", e.message || "Failed to update transcript setting.");
-                                }
-                              }}
-                              style={{
-                                flex: 1,
-                                alignItems: 'center',
-                                paddingVertical: 9,
-                                borderRadius: 12,
-                                backgroundColor: active ? colors.purple : colors.purpleSoft,
-                                opacity: !canEdit && !active ? 0.5 : 1,
-                              }}
-                            >
-                              <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_700Bold', color: active ? '#fff' : colors.purple }}>{opt.label}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
+                  {/* General Tab */}
+                  {activeOrgTab === 'info' && (
+                    <View style={{ gap: 10 }}>
+                      {orgData.inviteCode ? (
+                        <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
+                          <View className="flex-1 pr-3">
+                            <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Invite Code</Text>
+                            <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Share with employees to let them join</Text>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => {
+                              Clipboard.setString(orgData.inviteCode);
+                              Alert.alert("Copied", "Organization invite code copied to clipboard!");
+                            }}
+                            className="bg-white dark:bg-[#1a1b28] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10 flex-row items-center"
+                          >
+                            <Copy color="#6c5ce7" size={12} style={{ marginRight: 4 }} />
+                            <Text className="text-purple font-mono font-bold text-[11px]">
+                              {orgData.inviteCode.slice(0, 6)}...{orgData.inviteCode.slice(-4)}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <View className="bg-red-50/50 p-4 rounded-2xl border border-red-100/30">
+                          <Text className="text-[12px] font-bold text-red-500 font-sans">Invite Code Hidden</Text>
+                          <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Your administrator has disabled invite code sharing for members.</Text>
+                        </View>
+                      )}
+
+                      <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
+                        <View className="flex-1 pr-2">
+                          <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Allow members to share code</Text>
+                          <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">If disabled, only admins can view/share the organization code</Text>
+                        </View>
+                        <Switch
+                          value={orgData.allowMembersToShareInvite}
+                          onValueChange={async (val) => {
+                            try {
+                              const { updateOrgProfile } = await import('../../lib/api');
+                              const res = await updateOrgProfile({ allowMembersToShareInvite: val });
+                              if (res) {
+                                setOrgData(prev => prev ? { ...prev, allowMembersToShareInvite: val } : null);
+                                setOrgFormData(prev => ({ ...prev, allowMembersToShareInvite: val }));
+                              }
+                            } catch (e: any) {
+                              Alert.alert("Error", e.message || "Failed to update sharing settings.");
+                            }
+                          }}
+                          trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
+                          thumbColor={Platform.OS === 'ios' ? undefined : orgData.allowMembersToShareInvite ? "#6c5ce7" : "#f4f3f4"}
+                        />
                       </View>
                     </View>
                   )}
-                  <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-wider mb-1">Meeting History ({orgTranscripts.length})</Text>
-                  {orgTranscripts.length === 0 ? (
-                    <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] italic font-sans">No meeting history found</Text>
-                  ) : (
-                    orgTranscripts.map(meeting => {
-                      const isExpanded = expandedTranscriptId === meeting.roomId;
-                      return (
-                        <View key={meeting.roomId} className="bg-purple-soft/5 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
-                          <TouchableOpacity
-                            onPress={() => setExpandedTranscriptId(isExpanded ? null : meeting.roomId)}
-                            className="p-4 flex-row items-center justify-between"
-                          >
-                            <View className="flex-1 pr-2">
-                              <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] font-sans">{meeting.title || 'Untitled Meeting'}</Text>
-                              <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans mt-0.5">
-                                Hosted by {meeting.host?.name || 'Unknown'} · {new Date(meeting.timing || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                              </Text>
-                            </View>
-                            <ChevronLeft size={16} color="#6c5ce7" style={{ transform: [{ rotate: isExpanded ? '-90deg' : '0deg' }] }} />
+
+                  {/* People Tab */}
+                  {activeOrgTab === 'people' && (
+                    <View style={{ gap: 10 }}>
+                      <View className="flex-row items-center justify-between mb-1">
+                        <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.textSoft }}>Employee Directory ({orgMembers.length})</Text>
+                        {orgMembers.length > 3 && (
+                          <TouchableOpacity onPress={() => setShowAllMembers(true)} className="px-2 py-0.5 rounded-lg" style={{ backgroundColor: colors.purpleSoft }}>
+                            <Text className="text-[10px] font-bold uppercase" style={{ color: colors.purple }}>View all</Text>
                           </TouchableOpacity>
-
-                          {isExpanded && (
-                            <View className="px-4 pb-4 border-t border-black/5 dark:border-white/10 pt-3" style={{ gap: 12 }}>
-                              <View className="flex-row items-center justify-between">
-                                <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans">Duration: {Math.ceil((meeting.duration || 0) / 60)} mins</Text>
-                                <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans">Type: {meeting.type || 'Voice'}</Text>
-                              </View>
-
-                              {meeting.summary ? (
-                                <View className="bg-purple-soft/10 p-3 rounded-xl border border-purple/5">
-                                  <Text className="text-[11px] font-bold text-purple uppercase mb-1">Detailed Intelligence</Text>
-                                  <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb] font-sans leading-relaxed">{meeting.summary}</Text>
-                                </View>
-                              ) : null}
-
-                              {meeting.actionItems && meeting.actionItems.length > 0 ? (
-                                <View>
-                                  <Text className="text-[11px] font-bold text-purple uppercase mb-1">Action Items</Text>
-                                  <View style={{ gap: 4 }} className="mt-1">
-                                    {meeting.actionItems.map((item: string, idx: number) => (
-                                      <View key={idx} className="flex-row items-start gap-1">
-                                        <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb]">•</Text>
-                                        <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb] font-sans flex-1">{item}</Text>
-                                      </View>
-                                    ))}
-                                  </View>
-                                </View>
-                              ) : null}
-
-                              {meeting.rawTranscript ? (
-                                <View>
-                                  <Text className="text-[11px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase mb-1">Raw Transcript</Text>
-                                  <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled className="bg-black/5 dark:bg-white/[0.06] p-2.5 rounded-xl border border-black/5 dark:border-white/10">
-                                    <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-mono leading-relaxed">{meeting.rawTranscript}</Text>
-                                  </ScrollView>
-                                </View>
-                              ) : null}
-                            </View>
-                          )}
-                        </View>
-                      );
-                    })
+                        )}
+                      </View>
+                      {orgMembers.length === 0 ? (
+                        <Text className="text-xs italic font-sans" style={{ color: colors.textSoft }}>No members found</Text>
+                      ) : (
+                        orgMembers.slice(0, 3).map((member) => (
+                          <OrgMemberRow key={String(member.id || member._id || member.username)} member={member} />
+                        ))
+                      )}
+                    </View>
                   )}
-                </View>
+
+                  {/* Transcripts Tab */}
+                  {activeOrgTab === 'transcripts' && (
+                    <View style={{ gap: 10 }}>
+                      {orgDefaultChat && (
+                        <View style={{ backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 6 }}>
+                          <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.text }}>Send transcripts to members?</Text>
+                          <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_400Regular', color: colors.textSoft, marginTop: 2, marginBottom: 10 }}>
+                            {orgDefaultChat.isAdmin
+                              ? 'Controls whether company-wide meeting transcripts are emailed to participants.'
+                              : 'Only the org admin can change this. Current setting:'}
+                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 6 }}>
+                            {([
+                              { key: 'email', label: 'Email members' },
+                              { key: 'save', label: 'Save only' },
+                              { key: 'off', label: 'Off' },
+                            ] as const).map((opt) => {
+                              const active = orgDefaultChat.transcriptPolicy === opt.key;
+                              const canEdit = !!(orgDefaultChat.isAdmin || orgData?.isAdmin);
+                              return (
+                                <TouchableOpacity
+                                  key={opt.key}
+                                  disabled={!canEdit}
+                                  onPress={async () => {
+                                    if (!canEdit) return;
+                                    try {
+                                      const { updateGroupSettings } = await import('../../lib/api');
+                                      const res = await updateGroupSettings(orgDefaultChat.id, { transcriptPolicy: opt.key });
+                                      if (res?.conversation) {
+                                        setOrgDefaultChat(prev => prev ? { ...prev, transcriptPolicy: opt.key } : prev);
+                                      }
+                                    } catch (e: any) {
+                                      Alert.alert("Error", e.message || "Failed to update transcript setting.");
+                                    }
+                                  }}
+                                  style={{
+                                    flex: 1,
+                                    alignItems: 'center',
+                                    paddingVertical: 9,
+                                    borderRadius: 12,
+                                    backgroundColor: active ? colors.purple : colors.purpleSoft,
+                                    opacity: !canEdit && !active ? 0.5 : 1,
+                                  }}
+                                >
+                                  <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_700Bold', color: active ? '#fff' : colors.purple }}>{opt.label}</Text>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      )}
+                      <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-wider mb-1">Meeting History ({orgTranscripts.length})</Text>
+                      {orgTranscripts.length === 0 ? (
+                        <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] italic font-sans">No meeting history found</Text>
+                      ) : (
+                        orgTranscripts.map(meeting => {
+                          const isExpanded = expandedTranscriptId === meeting.roomId;
+                          return (
+                            <View key={meeting.roomId} className="bg-purple-soft/5 rounded-2xl border border-black/5 dark:border-white/10 overflow-hidden">
+                              <TouchableOpacity
+                                onPress={() => setExpandedTranscriptId(isExpanded ? null : meeting.roomId)}
+                                className="p-4 flex-row items-center justify-between"
+                              >
+                                <View className="flex-1 pr-2">
+                                  <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] font-sans">{meeting.title || 'Untitled Meeting'}</Text>
+                                  <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans mt-0.5">
+                                    Hosted by {meeting.host?.name || 'Unknown'} · {new Date(meeting.timing || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                  </Text>
+                                </View>
+                                <ChevronLeft size={16} color="#6c5ce7" style={{ transform: [{ rotate: isExpanded ? '-90deg' : '0deg' }] }} />
+                              </TouchableOpacity>
+
+                              {isExpanded && (
+                                <View className="px-4 pb-4 border-t border-black/5 dark:border-white/10 pt-3" style={{ gap: 12 }}>
+                                  <View className="flex-row items-center justify-between">
+                                    <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans">Duration: {Math.ceil((meeting.duration || 0) / 60)} mins</Text>
+                                    <Text className="text-[10.5px] text-ink-soft dark:text-[#9a9bb6] font-sans">Type: {meeting.type || 'Voice'}</Text>
+                                  </View>
+
+                                  {meeting.summary ? (
+                                    <View className="bg-purple-soft/10 p-3 rounded-xl border border-purple/5">
+                                      <Text className="text-[11px] font-bold text-purple uppercase mb-1">Detailed Intelligence</Text>
+                                      <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb] font-sans leading-relaxed">{meeting.summary}</Text>
+                                    </View>
+                                  ) : null}
+
+                                  {meeting.actionItems && meeting.actionItems.length > 0 ? (
+                                    <View>
+                                      <Text className="text-[11px] font-bold text-purple uppercase mb-1">Action Items</Text>
+                                      <View style={{ gap: 4 }} className="mt-1">
+                                        {meeting.actionItems.map((item: string, idx: number) => (
+                                          <View key={idx} className="flex-row items-start gap-1">
+                                            <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb]">•</Text>
+                                            <Text className="text-[11.5px] text-ink dark:text-[#f4f5fb] font-sans flex-1">{item}</Text>
+                                          </View>
+                                        ))}
+                                      </View>
+                                    </View>
+                                  ) : null}
+
+                                  {meeting.rawTranscript ? (
+                                    <View>
+                                      <Text className="text-[11px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase mb-1">Raw Transcript</Text>
+                                      <ScrollView style={{ maxHeight: 100 }} nestedScrollEnabled className="bg-black/5 dark:bg-white/[0.06] p-2.5 rounded-xl border border-black/5 dark:border-white/10">
+                                        <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-mono leading-relaxed">{meeting.rawTranscript}</Text>
+                                      </ScrollView>
+                                    </View>
+                                  ) : null}
+                                </View>
+                              )}
+                            </View>
+                          );
+                        })
+                      )}
+                    </View>
+                  )}
+                </>
+              ) : (
+                /* Non-admin view: ONLY show invite code card if allowMembersToShareInvite is true */
+                orgData.allowMembersToShareInvite && orgData.inviteCode && (
+                  <View className="flex-row items-center justify-between bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10 mt-2">
+                    <View className="flex-1 pr-3">
+                      <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans">Invite Code</Text>
+                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Share with employees to let them join</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Clipboard.setString(orgData.inviteCode);
+                        Alert.alert("Copied", "Organization invite code copied to clipboard!");
+                      }}
+                      className="bg-white dark:bg-[#1a1b28] px-3 py-1.5 rounded-xl border border-black/5 dark:border-white/10 flex-row items-center"
+                    >
+                      <Copy color="#6c5ce7" size={12} style={{ marginRight: 4 }} />
+                      <Text className="text-purple font-mono font-bold text-[11px]">
+                        {orgData.inviteCode}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )
               )}
             </View>
           )}
