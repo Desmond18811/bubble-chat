@@ -1705,13 +1705,13 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1782129455.2686043,
-    "ast_hash": "644e4fca547d2ba381e8079657305457",
+    "mtime": 1782130408.5518703,
+    "ast_hash": "dd815bd04fa33af1f2f3895d4eb747fa",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
-    "mtime": 1782129090.667241,
-    "ast_hash": "e16b6206a83894d8e5cebc3df900c98d",
+    "mtime": 1782130852.4590125,
+    "ast_hash": "1bf74b329ebaf656acd0ea8a013673a4",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/api.ts": {
@@ -1720,8 +1720,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/people.tsx": {
-    "mtime": 1782128855.9371216,
-    "ast_hash": "c58eec568a94c76eab0323495dca2170",
+    "mtime": 1782130424.5216343,
+    "ast_hash": "5954bfd82d1e0bbf6ad754cbf42cbd43",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/mockData.ts": {
@@ -1850,8 +1850,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/calendarController.ts": {
-    "mtime": 1782055829.980625,
-    "ast_hash": "928544ebf258d3f260c9e818875801b1",
+    "mtime": 1782130704.1254241,
+    "ast_hash": "0f0e7fd5b4cb8797329a7b5e53a0d93e",
     "semantic_hash": ""
   },
   "Backend/controllers/continuityController.ts": {
@@ -2255,8 +2255,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/nigeriaHolidays.ts": {
-    "mtime": 1782055801.3825219,
-    "ast_hash": "f6aaabe90711e87600e4ee63e6494c04",
+    "mtime": 1782130673.709334,
+    "ast_hash": "c10fa5c5197ff7d5bf15cac31bf737f2",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/theme.tsx": {
