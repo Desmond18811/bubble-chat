@@ -695,8 +695,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/orgController.ts": {
-    "mtime": 1782022092.5548315,
-    "ast_hash": "43e42268b5afdde939abdb5ad87c8056",
+    "mtime": 1782150448.9869106,
+    "ast_hash": "0a177e377d0ee5324a1d9fd4a4d5617d",
     "semantic_hash": ""
   },
   "Backend/controllers/paymentController.ts": {
@@ -720,8 +720,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/taskController.ts": {
-    "mtime": 1782128979.4473834,
-    "ast_hash": "3a80a40c2ee17121e434ba9d4c3bacf0",
+    "mtime": 1782150690.4573166,
+    "ast_hash": "91998ac5ec6ad4680b93e04db1c3ec1a",
     "semantic_hash": ""
   },
   "Backend/controllers/templateController.ts": {
@@ -1660,8 +1660,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/profile.tsx": {
-    "mtime": 1782146216.9323952,
-    "ast_hash": "3f55f737ac687fa9584051007e70e076",
+    "mtime": 1782151067.5867326,
+    "ast_hash": "77ac7af959496e30ac26c0e843f743a0",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/login.tsx": {
@@ -1710,13 +1710,13 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
-    "mtime": 1782130852.4590125,
-    "ast_hash": "1bf74b329ebaf656acd0ea8a013673a4",
+    "mtime": 1782150623.164992,
+    "ast_hash": "0501eacd22a1208521d486e925213aaa",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/api.ts": {
-    "mtime": 1782055235.5163305,
-    "ast_hash": "28390b193ac29efa14fb778718659600",
+    "mtime": 1782151025.6497586,
+    "ast_hash": "50870e4815d2eb82266d279cb5955fad",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/people.tsx": {
@@ -2265,8 +2265,8 @@
     "semantic_hash": ""
   },
   "Backend/scripts/seed-org-team.ts": {
-    "mtime": 1782145543.709987,
-    "ast_hash": "74baa9a48828a210b6df36693f5c6387",
+    "mtime": 1782150474.9038625,
+    "ast_hash": "41cc819adae8dccd50d6c2490e5fe3e4",
     "semantic_hash": ""
   }
 }
