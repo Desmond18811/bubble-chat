@@ -630,7 +630,7 @@ export default function UpdatesScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         {/* Banner if priority meeting is live */}
         {activeNowMeeting && (
           <TouchableOpacity

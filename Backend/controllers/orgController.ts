@@ -789,6 +789,7 @@ export const getOrgInviteCode = async (req: AuthRequest, res: Response): Promise
       logo: org.logo || '',
       description: org.description || '',
       allowMembersToShareInvite: org.allowMembersToShareInvite ?? true,
+      emailTranscriptsToMembers: org.emailTranscriptsToMembers ?? true,
       isAdmin,
     });
   } catch (error: any) {
@@ -803,7 +804,7 @@ export const getOrgInviteCode = async (req: AuthRequest, res: Response): Promise
  */
 export const updateOrgProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   const userId = req.user?._id;
-  const { name, industry, size, description, logo, allowMembersToShareInvite } = req.body;
+  const { name, industry, size, description, logo, allowMembersToShareInvite, emailTranscriptsToMembers } = req.body;
 
   try {
     // 1. Find the organization owned by this user
@@ -822,6 +823,7 @@ export const updateOrgProfile = async (req: AuthRequest, res: Response): Promise
     if (description !== undefined) org.description = description;
     if (logo !== undefined) org.logo = logo;
     if (allowMembersToShareInvite !== undefined) org.allowMembersToShareInvite = allowMembersToShareInvite;
+    if (emailTranscriptsToMembers !== undefined) org.emailTranscriptsToMembers = emailTranscriptsToMembers;
 
     await org.save();
 

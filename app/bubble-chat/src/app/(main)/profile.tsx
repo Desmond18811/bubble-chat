@@ -340,6 +340,7 @@ export default function ProfileScreen() {
     logo: string;
     description: string;
     allowMembersToShareInvite: boolean;
+    emailTranscriptsToMembers: boolean;
     isAdmin?: boolean;
   } | null>(null);
   const [isEditingOrg, setIsEditingOrg] = useState(false);
@@ -348,6 +349,7 @@ export default function ProfileScreen() {
     description: '',
     logo: '',
     allowMembersToShareInvite: true,
+    emailTranscriptsToMembers: true,
   });
   const [activeOrgTab, setActiveOrgTab] = useState<'info' | 'people' | 'transcripts'>('info');
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
@@ -407,6 +409,7 @@ export default function ProfileScreen() {
             description: orgRes.description || '',
             logo: orgRes.logo || '',
             allowMembersToShareInvite: orgRes.allowMembersToShareInvite ?? true,
+            emailTranscriptsToMembers: orgRes.emailTranscriptsToMembers ?? true,
           });
         }
         
@@ -504,6 +507,7 @@ export default function ProfileScreen() {
               description: orgRes.description || '',
               logo: orgRes.logo || '',
               allowMembersToShareInvite: orgRes.allowMembersToShareInvite ?? true,
+              emailTranscriptsToMembers: orgRes.emailTranscriptsToMembers ?? true,
             });
           }
           try {
@@ -1144,16 +1148,20 @@ export default function ProfileScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: 18,
+                borderRadius: 20,
                 paddingHorizontal: 24,
-                paddingVertical: 16,
-                backgroundColor: colors.isDark ? 'rgba(239,68,68,0.12)' : '#fef2f2',
-                borderWidth: 1,
-                borderColor: colors.isDark ? 'rgba(239,68,68,0.28)' : '#fee2e2',
+                paddingVertical: 15,
+                backgroundColor: 'rgba(239, 68, 68, 0.06)',
+                borderWidth: 1.5,
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                shadowColor: '#ef4444',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 6,
               }}
             >
-              <LogOut color="#ef4444" size={18} />
-              <Text className="text-red-500 text-[15px] font-bold ml-2 font-sans">Log Out</Text>
+              <LogOut color="#ef4444" size={18} strokeWidth={2.5} />
+              <Text style={{ color: '#ef4444', fontSize: 14, fontFamily: 'Poppins_700Bold', marginLeft: 8 }}>Log Out</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1293,6 +1301,20 @@ export default function ProfileScreen() {
                   textAlignVertical="top"
                 />
               </View>
+
+              <View className="mb-6 flex-row items-center justify-between">
+                <View className="flex-1 pr-2">
+                  <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Transcripts Policy</Text>
+                  <Text className="text-sm font-semibold text-ink dark:text-[#f4f5fb] font-sans">Should their transcripts be sent to them? Do they not?</Text>
+                  <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans leading-tight">Controls whether company-wide meeting transcripts are automatically emailed to participants.</Text>
+                </View>
+                <Switch
+                  value={orgFormData.emailTranscriptsToMembers}
+                  onValueChange={(val) => setOrgFormData({...orgFormData, emailTranscriptsToMembers: val})}
+                  trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
+                  thumbColor={Platform.OS === 'ios' ? undefined : orgFormData.emailTranscriptsToMembers ? "#6c5ce7" : "#f4f3f4"}
+                />
+              </View>
               
               <TouchableOpacity
                 onPress={async () => {
@@ -1303,6 +1325,7 @@ export default function ProfileScreen() {
                       description: orgFormData.description.trim(),
                       logo: orgFormData.logo,
                       allowMembersToShareInvite: orgFormData.allowMembersToShareInvite,
+                      emailTranscriptsToMembers: orgFormData.emailTranscriptsToMembers,
                     });
                     if (res?.organization) {
                       setOrgData(res.organization);

@@ -291,7 +291,7 @@ export default function CallsScreen() {
       </View>
 
       {callsTab === 'meet' ? (
-        <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
           {/* Live Collaborative Spaces (Active Rooms) */}
           <View className="mb-8">
             <View className="flex-row items-center justify-between mb-4 px-1">
@@ -393,7 +393,7 @@ export default function CallsScreen() {
           </View>
         </ScrollView>
       ) : (
-        <ScrollView className="flex-1 bg-purple-soft/5" showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
           {/* Calendar Widget */}
           <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
             <View className="flex-row justify-between items-center mb-4">

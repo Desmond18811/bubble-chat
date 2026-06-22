@@ -124,6 +124,7 @@ export default function ChatScreen() {
   const [newResUrl, setNewResUrl] = useState('');
   // Tapped group member → profile sheet
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
+  const [showAllMembers, setShowAllMembers] = useState(false);
 
   const handleStartEditGroup = () => {
     setGroupFormData({
@@ -853,6 +854,629 @@ export default function ChatScreen() {
       data: msg,
     });
   });
+
+  if (isInfoOpen) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+        {/* Page Header */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+          <TouchableOpacity onPress={() => setIsInfoOpen(false)} style={{ padding: 6, marginRight: 10 }}>
+            <ChevronLeft size={24} color={PURPLE} />
+          </TouchableOpacity>
+          <View>
+            <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Information</Text>
+            <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>
+              {chat.isGroupChat ? 'Group Details' : 'Contact Details'}
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+          {/* Profile Card */}
+          <View style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+            <View style={{ marginBottom: 14 }}>
+              <Avatar
+                url={chat.avatar}
+                name={chat.name || chat.organization}
+                size={76}
+                isGroup={!!(chat.isGroupChat || chat.organization)}
+                style={{ borderRadius: 22 }}
+                imageStyle={{ borderRadius: 22 }}
+              />
+            </View>
+            <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>{chat.name}</Text>
+            <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>
+              @{chat.isGroupChat ? 'group_' + chat.name.toLowerCase().replace(/\s/g, '_') : chat.name.toLowerCase().replace(/\s/g, '_')}
+            </Text>
+            <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: INK_SOFT, textAlign: 'center', marginTop: 10, lineHeight: 20, paddingHorizontal: 10 }}>
+              {chat.bio}
+            </Text>
+          </View>
+
+          {/* Info Cards - Only displayed for 1-on-1 chats */}
+          {!chat.isGroupChat && (
+            <>
+              <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={chat.email} />
+              <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={chat.phone} />
+              <InfoCard icon={<Briefcase size={19} color={PURPLE} />} label="Organization & Role" value={`${chat.organization} · ${chat.org_role}`} />
+            </>
+          )}
+
+          {/* Group Administration settings */}
+          {chat.isGroupChat && (() => {
+            const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
+            if (!isGroupAdmin) return null;
+            return (
+              <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10, marginBottom: 10 }}>
+                  <Text style={{ fontSize: 14, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Group Administration</Text>
+                  <TouchableOpacity onPress={handleStartEditGroup} style={{ backgroundColor: PURPLE, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 }}>
+                    <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Edit Info</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>Admin Permission</Text>
+                    <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 2 }}>Allow members to share invite</Text>
+                  </View>
+                  <Switch
+                    value={chat.allowMembersToShareInvite ?? true}
+                    onValueChange={async (val) => {
+                      try {
+                        const { updateGroupSettings } = await import('../../../lib/api');
+                        const res = await updateGroupSettings(chat.id, { allowMembersToShareInvite: val });
+                        if (res?.conversation) {
+                          setChat(res.conversation);
+                        }
+                      } catch (e: any) {
+                        Alert.alert("Error", e.message || "Failed to update group settings.");
+                      }
+                    }}
+                    trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
+                    thumbColor={Platform.OS === 'ios' ? undefined : (chat.allowMembersToShareInvite ?? true) ? "#6c5ce7" : "#f4f3f4"}
+                  />
+                </View>
+
+                {/* Current settings (reflect what Edit Info saves) */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Member limit</Text>
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{chat.maxMembers ? chat.maxMembers : 'Unlimited'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Transcripts</Text>
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT, textTransform: 'capitalize' }}>
+                    {chat.transcriptPolicy === 'email' ? 'Email members' : chat.transcriptPolicy === 'off' ? 'Off' : 'Save only'}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Resources</Text>
+                  <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{(chat.resources || []).length}</Text>
+                </View>
+              </View>
+            );
+          })()}
+
+          {/* Group Invite Code Card */}
+          {chat.isGroupChat && chat.inviteCode && (() => {
+            const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
+            if (isGroupAdmin || (chat.allowMembersToShareInvite ?? true)) {
+              return (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, padding: 16, borderRadius: 18, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}>
+                  <View style={{ flex: 1, marginRight: 10 }}>
+                    <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', letterSpacing: 1 }}>Group Invite Code</Text>
+                    <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT, marginTop: 2 }}>Anyone with this code can join the group</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Clipboard.setString(chat.inviteCode);
+                      Alert.alert("Copied", "Group invite code copied to clipboard!");
+                    }}
+                    style={{ backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Copy size={12} color={PURPLE} style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: PURPLE }}>{chat.inviteCode}</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            }
+            return null;
+          })()}
+
+          {/* List group members */}
+          {chat.isGroupChat && chat.users && chat.users.length > 0 && (() => {
+            const displayedMembers = showAllMembers ? chat.users : chat.users.slice(0, 3);
+            return (
+              <View style={{ marginBottom: 20 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 10 }}>
+                  <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Group Members ({chat.users.length})
+                  </Text>
+                  {chat.users.length > 3 && (
+                    <TouchableOpacity
+                      onPress={() => setShowAllMembers(!showAllMembers)}
+                      style={{ backgroundColor: colors.purpleSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}
+                    >
+                      <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_700Bold', color: PURPLE }}>
+                        {showAllMembers ? 'Show Less' : `View All (+${chat.users.length - 3})`}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={{ gap: 10 }}>
+                  {displayedMembers.map((member: any) => {
+                    const isAdmin = chat.groupAdmin && String(member.id || member._id || member) === String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin);
+                    return (
+                      <TouchableOpacity
+                        key={member.id || member._id || member}
+                        activeOpacity={0.7}
+                        onPress={() => setSelectedMember({ ...member, isAdmin })}
+                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}
+                      >
+                        <Avatar
+                          url={member.avatar}
+                          name={member.full_name || member.username}
+                          size={36}
+                          style={{ borderRadius: 10 }}
+                          imageStyle={{ borderRadius: 10 }}
+                        />
+                        <View style={{ marginLeft: 12, flex: 1 }}>
+                          <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: INK }}>
+                            {member.full_name || member.username}
+                          </Text>
+                          {member.username && (
+                            <Text style={{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>
+                              @{member.username}
+                            </Text>
+                          )}
+                        </View>
+                        {isAdmin && (
+                          <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginRight: 6 }}>
+                            <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase' }}>Admin</Text>
+                          </View>
+                        )}
+                        <ChevronLeft size={16} color={INK_SOFT} style={{ transform: [{ rotate: '180deg' }] }} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })()}
+
+          {/* Dynamic Shared Resources / Storage center */}
+          <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
+            {chat.isGroupChat ? 'Shared Resources' : 'Storage Center'}
+          </Text>
+
+          {(() => {
+            const mediaSummary = countMedia(messages);
+            const accordionSections = [
+              {
+                key: 'photos', label: `Photos & Videos (${mediaSummary.images + mediaSummary.videos})`, icon: <ImageIcon size={16} color={PURPLE} />, items: [
+                  ...mediaSummary.imageUrls.map((url, idx) => ({ label: `Photo ${idx + 1}`, url })),
+                  ...mediaSummary.videoItems.map(item => ({ label: item.label, url: item.url }))
+                ]
+              },
+              {
+                key: 'voice', label: `Voice Notes & Audio (${mediaSummary.voice + mediaSummary.audio})`, icon: <Mic size={16} color={PURPLE} />, items: [
+                  ...mediaSummary.voiceItems.map(item => ({ label: item.label, url: item.url })),
+                  ...mediaSummary.audioItems.map(item => ({ label: item.label, url: item.url }))
+                ]
+              },
+              { key: 'links', label: `Links (${mediaSummary.linkItems.length})`, icon: <Sparkles size={16} color={PURPLE} />, items: mediaSummary.linkItems },
+              { key: 'files', label: `Documents & Files (${mediaSummary.files})`, icon: <FileText size={16} color={PURPLE} />, items: mediaSummary.fileItems },
+            ];
+
+            return accordionSections.map((section) => {
+              const isOpen = openSection === section.key;
+              return (
+                <View key={section.key} style={{ backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', marginBottom: 8, overflow: 'hidden' }}>
+                  <TouchableOpacity
+                    onPress={() => setOpenSection(isOpen ? null : section.key)}
+                    activeOpacity={0.7}
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      {section.icon}
+                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>
+                        {section.label}
+                      </Text>
+                    </View>
+                    <ChevronLeft size={16} color={INK_SOFT} style={{ transform: [{ rotate: isOpen ? '-90deg' : '0deg' }] }} />
+                  </TouchableOpacity>
+
+                  {isOpen && (
+                    <View style={{ paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.04)', paddingTop: 10 }}>
+                      {section.items.length === 0 ? (
+                        <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, fontStyle: 'italic' }}>
+                          No shared items yet.
+                        </Text>
+                      ) : (
+                        section.items.map((item, idx) => (
+                          <TouchableOpacity
+                            key={idx}
+                            onPress={() => {
+                              import('react-native').then(({ Linking }) => {
+                                const secureUrl = getSecureMediaUrl(item.url);
+                                if (secureUrl) Linking.openURL(secureUrl).catch(() => { });
+                              });
+                            }}
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}
+                          >
+                            <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: PURPLE }} />
+                            <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: 'Poppins_500Medium', color: PURPLE, textDecorationLine: 'underline', flex: 1 }}>
+                              {item.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            });
+          })()}
+
+          <TouchableOpacity
+            onPress={() => setIsInfoOpen(false)}
+            style={{ marginTop: 28, backgroundColor: PURPLE, paddingVertical: 16, borderRadius: 18, alignItems: 'center', shadowColor: PURPLE, shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5, marginBottom: 32 }}
+          >
+            <Text style={{ color: '#ffffff', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Back to Chat</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* ── Group Member Profile Modal ── */}
+        <Modal visible={selectedMember !== null} animationType="slide" presentationStyle="pageSheet">
+          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <View>
+                <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Profile</Text>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Group member</Text>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedMember(null)} style={{ padding: 6 }}>
+                <X size={20} color={PURPLE} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedMember && (
+              <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+                {/* Hero */}
+                <View style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+                  <View style={{ marginBottom: 14 }}>
+                    <Avatar
+                      url={selectedMember.avatar}
+                      name={selectedMember.full_name || selectedMember.username}
+                      size={76}
+                      style={{ borderRadius: 22 }}
+                      imageStyle={{ borderRadius: 22 }}
+                    />
+                  </View>
+                  <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
+                    {selectedMember.full_name || selectedMember.username || 'Member'}
+                  </Text>
+                  {!!selectedMember.username && (
+                    <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>@{selectedMember.username}</Text>
+                  )}
+                  {selectedMember.isAdmin && (
+                    <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase', letterSpacing: 1 }}>Group Admin</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Detail cards */}
+                {!!selectedMember.email && (
+                  <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={selectedMember.email} />
+                )}
+                {!!selectedMember.phone_number && (
+                  <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={selectedMember.phone_number} />
+                )}
+                {(!!selectedMember.organization || !!selectedMember.org_role) && (
+                  <InfoCard
+                    icon={<Briefcase size={19} color={PURPLE} />}
+                    label="Organization & Role"
+                    value={[selectedMember.organization, selectedMember.org_role].filter(Boolean).join(' · ')}
+                  />
+                )}
+
+                {/* Quick actions */}
+                {String(selectedMember.id || selectedMember._id) !== String(currentUserIdRef.current) && (
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        const memberId = String(selectedMember.id || selectedMember._id);
+                        setSelectedMember(null);
+                        setIsInfoOpen(false);
+                        try {
+                          const res = await accessOrCreateChat(memberId);
+                          const newChatId = res?.data?._id || res?.data?.id || res?._id || res?.id;
+                          await chatCache.syncChatsWithBackend();
+                          router.push(`/chat/${newChatId || memberId}`);
+                        } catch {
+                          router.push(`/chat/${memberId}`);
+                        }
+                      }}
+                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PURPLE, borderRadius: 16, paddingVertical: 14 }}
+                    >
+                      <MessageSquare size={16} color="#fff" />
+                      <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Message</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const m = selectedMember;
+                        const memberId = String(m.id || m._id);
+                        setSelectedMember(null);
+                        startOutgoingCall({ id: memberId, otherUserId: memberId, name: m.full_name || m.username, avatar: m.avatar }, 'voice');
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 18 }}
+                    >
+                      <Phone size={16} color={PURPLE} />
+                      <Text style={{ color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 13 }}>Call</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+          </SafeAreaView>
+        </Modal>
+
+        {/* Edit Group Info Modal */}
+        <Modal visible={isEditingGroup} animationType="slide" presentationStyle="pageSheet">
+          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <View>
+                <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Edit Group Info</Text>
+                <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>Update group details</Text>
+              </View>
+              <TouchableOpacity onPress={() => setIsEditingGroup(false)}>
+                <X color={PURPLE} size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
+              <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Avatar</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
+                    {AVATARS.map((url) => (
+                      <TouchableOpacity
+                        key={url}
+                        onPress={() => setGroupFormData({ ...groupFormData, groupIcon: url })}
+                        style={{
+                          width: 54,
+                          height: 54,
+                          borderRadius: 16,
+                          borderWidth: groupFormData.groupIcon === url ? 3 : 0,
+                          borderColor: PURPLE,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                        if (!permissionResult.granted) {
+                          Alert.alert("Permission Denied", "Camera roll permissions are required to choose a group icon.");
+                          return;
+                        }
+
+                        const pickerResult = await ImagePicker.launchImageLibraryAsync({
+                          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                          allowsEditing: true,
+                          quality: 0.8,
+                        });
+
+                        if (pickerResult.canceled) return;
+                        const uri = pickerResult.assets[0].uri;
+                        try {
+                          const uploadedUrl = await uploadGroupOrOrgImage(uri);
+                          setGroupFormData({ ...groupFormData, groupIcon: uploadedUrl });
+                          Alert.alert("Success", "Custom avatar uploaded!");
+                        } catch (err: any) {
+                          Alert.alert("Error", err.message || "Failed to upload image.");
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        backgroundColor: PURPLE_SOFT,
+                        borderWidth: 1,
+                        borderColor: 'rgba(108,92,231,0.2)',
+                        borderRadius: 12,
+                        paddingVertical: 10,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ color: PURPLE, fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Upload Custom</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        setGroupFormData({ ...groupFormData, groupIcon: '' });
+                      }}
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(239,68,68,0.05)',
+                        borderWidth: 1,
+                        borderColor: 'rgba(239,68,68,0.1)',
+                        borderRadius: 12,
+                        paddingVertical: 10,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#ef4444', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Remove Avatar</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Group Name</Text>
+                  <TextInput
+                    value={groupFormData.chatName}
+                    onChangeText={(t) => setGroupFormData({ ...groupFormData, chatName: t })}
+                    style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
+                  />
+                </View>
+
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Description / Bio</Text>
+                  <TextInput
+                    value={groupFormData.groupDescription}
+                    onChangeText={(t) => setGroupFormData({ ...groupFormData, groupDescription: t })}
+                    style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border, minHeight: 80 }}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                {/* Member limit */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Member Limit</Text>
+                  <TextInput
+                    value={groupFormData.maxMembers ? String(groupFormData.maxMembers) : ''}
+                    onChangeText={(t) => setGroupFormData({ ...groupFormData, maxMembers: parseInt(t.replace(/[^0-9]/g, ''), 10) || 0 })}
+                    keyboardType="number-pad"
+                    placeholder="0 = unlimited"
+                    placeholderTextColor={INK_SOFT}
+                    style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
+                  />
+                  <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
+                    Cap how many people can join. Currently {chat?.users?.length || 0} member(s).
+                  </Text>
+                </View>
+
+                {/* Meeting transcript policy */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Meeting Transcripts</Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {([
+                      { key: 'email', label: 'Email members' },
+                      { key: 'save', label: 'Save only' },
+                      { key: 'off', label: 'Off' },
+                    ] as const).map((opt) => {
+                      const active = groupFormData.transcriptPolicy === opt.key;
+                      return (
+                        <TouchableOpacity
+                          key={opt.key}
+                          onPress={() => setGroupFormData({ ...groupFormData, transcriptPolicy: opt.key })}
+                          style={{ flex: 1, backgroundColor: active ? PURPLE : 'rgba(108,92,231,0.08)', borderRadius: 12, paddingVertical: 10, alignItems: 'center' }}
+                        >
+                          <Text style={{ color: active ? '#fff' : INK_SOFT, fontSize: 11, fontFamily: 'Poppins_600SemiBold' }}>{opt.label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
+                    How this group's meeting transcripts are handled when a call ends.
+                  </Text>
+                </View>
+
+                {/* Group resources */}
+                <View style={{ marginBottom: 16 }}>
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: INK, textTransform: 'uppercase', marginBottom: 6 }}>Resources</Text>
+                  {groupFormData.resources.length > 0 && (
+                    <View style={{ gap: 8, marginBottom: 10 }}>
+                      {groupFormData.resources.map((r, idx) => (
+                        <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10 }}>
+                          <View style={{ flex: 1, marginRight: 8 }}>
+                            <Text style={{ fontSize: 12.5, fontFamily: 'Poppins_600SemiBold', color: INK }} numberOfLines={1}>{r.label}</Text>
+                            {!!r.url && <Text style={{ fontSize: 10.5, color: PURPLE }} numberOfLines={1}>{r.url}</Text>}
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => setGroupFormData({ ...groupFormData, resources: groupFormData.resources.filter((_, i) => i !== idx) })}
+                            style={{ padding: 4 }}
+                          >
+                            <X size={15} color="#ef4444" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  <View style={{ gap: 8 }}>
+                    <TextInput
+                      value={newResLabel}
+                      onChangeText={setNewResLabel}
+                      placeholder="Label (e.g. Brand kit)"
+                      placeholderTextColor={INK_SOFT}
+                      style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: colors.border }}
+                    />
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TextInput
+                        value={newResUrl}
+                        onChangeText={setNewResUrl}
+                        placeholder="https://…"
+                        placeholderTextColor={INK_SOFT}
+                        autoCapitalize="none"
+                        style={{ flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 12, color: INK, borderWidth: 1, borderColor: colors.border }}
+                      />
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (!newResLabel.trim() || !newResUrl.trim()) {
+                            Alert.alert('Add resource', 'Enter both a label and a URL.');
+                            return;
+                          }
+                          setGroupFormData({
+                            ...groupFormData,
+                            resources: [...groupFormData.resources, { label: newResLabel.trim(), url: newResUrl.trim(), type: 'link' }],
+                          });
+                          setNewResLabel('');
+                          setNewResUrl('');
+                        }}
+                        style={{ backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ color: PURPLE, fontSize: 12, fontFamily: 'Poppins_700Bold' }}>Add</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
+                    Links/docs that give this group's AI helpful context.
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    const memberCount = chat?.users?.length || 0;
+                    if (groupFormData.maxMembers > 0 && groupFormData.maxMembers < memberCount) {
+                      Alert.alert('Member limit too low', `The cap can't be below the current ${memberCount} member(s).`);
+                      return;
+                    }
+                    try {
+                      const { updateGroupSettings } = await import('../../../lib/api');
+                      const res = await updateGroupSettings(chat.id, {
+                        chatName: groupFormData.chatName.trim(),
+                        groupDescription: groupFormData.groupDescription.trim(),
+                        groupIcon: groupFormData.groupIcon,
+                        maxMembers: groupFormData.maxMembers,
+                        transcriptPolicy: groupFormData.transcriptPolicy,
+                        resources: groupFormData.resources,
+                      });
+                      if (res?.conversation) {
+                        setChat(res.conversation);
+                        Alert.alert("Success", "Group settings updated successfully.");
+                        setIsEditingGroup(false);
+                      }
+                    } catch (err: any) {
+                      Alert.alert("Error", err.message || "Failed to update group settings.");
+                    }
+                  }}
+                  style={{ backgroundColor: PURPLE, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingVertical: 14 }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save Changes</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['bottom']}>
@@ -2083,272 +2707,7 @@ export default function ChatScreen() {
         </View>
       </Modal>
 
-      {/* ── Info Modal ── */}
-      <Modal visible={isInfoOpen} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
-          {/* Modal Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <View>
-              <Text style={{ fontSize: 19, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Information</Text>
-              <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, marginTop: 1 }}>
-                {chat.isGroupChat ? 'Group Details' : 'Contact Details'}
-              </Text>
-            </View>
-            <TouchableOpacity onPress={() => setIsInfoOpen(false)} style={{ padding: 6 }}>
-              <X size={20} color={PURPLE} />
-            </TouchableOpacity>
-          </View>
 
-          <ScrollView style={{ flex: 1, paddingHorizontal: 20, paddingTop: 20 }} showsVerticalScrollIndicator={false}>
-            {/* Profile Card */}
-            <View style={{ alignItems: 'center', backgroundColor: colors.card, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
-              <View style={{ marginBottom: 14 }}>
-                <Avatar
-                  url={chat.avatar}
-                  name={chat.name || chat.organization}
-                  size={76}
-                  isGroup={!!(chat.isGroupChat || chat.organization)}
-                  style={{ borderRadius: 22 }}
-                  imageStyle={{ borderRadius: 22 }}
-                />
-              </View>
-              <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>{chat.name}</Text>
-              <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>
-                @{chat.isGroupChat ? 'group_' + chat.name.toLowerCase().replace(/\s/g, '_') : chat.name.toLowerCase().replace(/\s/g, '_')}
-              </Text>
-              <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: INK_SOFT, textAlign: 'center', marginTop: 10, lineHeight: 20, paddingHorizontal: 10 }}>
-                {chat.bio}
-              </Text>
-            </View>
-
-            {/* Info Cards - Only displayed for 1-on-1 chats */}
-            {!chat.isGroupChat && (
-              <>
-                <InfoCard icon={<Mail size={19} color={PURPLE} />} label="Email Address" value={chat.email} />
-                <InfoCard icon={<Phone size={19} color={PURPLE} />} label="Phone Number" value={chat.phone} />
-                <InfoCard icon={<Briefcase size={19} color={PURPLE} />} label="Organization & Role" value={`${chat.organization} · ${chat.org_role}`} />
-              </>
-            )}
-
-            {/* Group Administration settings */}
-            {chat.isGroupChat && (() => {
-              const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
-              return (
-                <View style={{ backgroundColor: colors.card, borderRadius: 24, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 10, marginBottom: 10 }}>
-                    <Text style={{ fontSize: 14, fontFamily: 'SpaceGrotesk_700Bold', color: INK }}>Group Administration</Text>
-                    {isGroupAdmin ? (
-                      <TouchableOpacity onPress={handleStartEditGroup} style={{ backgroundColor: PURPLE, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 }}>
-                        <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'Poppins_700Bold' }}>Edit Info</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT, fontStyle: 'italic' }}>
-                        Only the group admin can edit info
-                      </Text>
-                    )}
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-                    <View style={{ flex: 1, paddingRight: 10 }}>
-                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>Admin Permission</Text>
-                      <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 2 }}>
-                        {isGroupAdmin ? 'Allow members to share invite' : 'Members can share code: ' + (chat.allowMembersToShareInvite ? 'Yes' : 'No')}
-                      </Text>
-                    </View>
-                    {isGroupAdmin ? (
-                      <Switch
-                        value={chat.allowMembersToShareInvite ?? true}
-                        onValueChange={async (val) => {
-                          try {
-                            const { updateGroupSettings } = await import('../../../lib/api');
-                            const res = await updateGroupSettings(chat.id, { allowMembersToShareInvite: val });
-                            if (res?.conversation) {
-                              setChat(res.conversation);
-                            }
-                          } catch (e: any) {
-                            Alert.alert("Error", e.message || "Failed to update group settings.");
-                          }
-                        }}
-                        trackColor={{ false: "#e2e8f0", true: "#6c5ce7" }}
-                        thumbColor={Platform.OS === 'ios' ? undefined : (chat.allowMembersToShareInvite ?? true) ? "#6c5ce7" : "#f4f3f4"}
-                      />
-                    ) : null}
-                  </View>
-
-                  {/* Current settings (reflect what Edit Info saves) */}
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
-                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Member limit</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{chat.maxMembers ? chat.maxMembers : 'Unlimited'}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Transcripts</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT, textTransform: 'capitalize' }}>
-                      {chat.transcriptPolicy === 'email' ? 'Email members' : chat.transcriptPolicy === 'off' ? 'Off' : 'Save only'}
-                    </Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK }}>Resources</Text>
-                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: INK_SOFT }}>{(chat.resources || []).length}</Text>
-                  </View>
-                </View>
-              );
-            })()}
-
-            {/* Group Invite Code Card */}
-            {chat.isGroupChat && chat.inviteCode && (() => {
-              const isGroupAdmin = chat.groupAdmin && String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin) === String(currentUserIdRef.current);
-              if (isGroupAdmin || (chat.allowMembersToShareInvite ?? true)) {
-                return (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.card, padding: 16, borderRadius: 18, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}>
-                    <View style={{ flex: 1, marginRight: 10 }}>
-                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: INK_SOFT, textTransform: 'uppercase', letterSpacing: 1 }}>Group Invite Code</Text>
-                      <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT, marginTop: 2 }}>Anyone with this code can join the group</Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Clipboard.setString(chat.inviteCode);
-                        Alert.alert("Copied", "Group invite code copied to clipboard!");
-                      }}
-                      style={{ backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <Copy size={12} color={PURPLE} style={{ marginRight: 4 }} />
-                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: PURPLE }}>{chat.inviteCode}</Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              }
-              return null;
-            })()}
-
-            {/* List group members */}
-            {chat.isGroupChat && chat.users && chat.users.length > 0 && (
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-                  Group Members ({chat.users.length})
-                </Text>
-                <View style={{ gap: 10 }}>
-                  {chat.users.map((member: any) => {
-                    const isAdmin = chat.groupAdmin && String(member.id || member._id || member) === String(chat.groupAdmin.id || chat.groupAdmin._id || chat.groupAdmin);
-                    return (
-                      <TouchableOpacity
-                        key={member.id || member._id || member}
-                        activeOpacity={0.7}
-                        onPress={() => setSelectedMember({ ...member, isAdmin })}
-                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }}
-                      >
-                        <Avatar
-                          url={member.avatar}
-                          name={member.full_name || member.username}
-                          size={36}
-                          style={{ borderRadius: 10 }}
-                          imageStyle={{ borderRadius: 10 }}
-                        />
-                        <View style={{ marginLeft: 12, flex: 1 }}>
-                          <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: INK }}>
-                            {member.full_name || member.username}
-                          </Text>
-                          {member.username && (
-                            <Text style={{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>
-                              @{member.username}
-                            </Text>
-                          )}
-                        </View>
-                        {isAdmin && (
-                          <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginRight: 6 }}>
-                            <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase' }}>Admin</Text>
-                          </View>
-                        )}
-                        <ChevronLeft size={16} color={INK_SOFT} style={{ transform: [{ rotate: '180deg' }] }} />
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-
-            {/* Dynamic Shared Resources / Storage center */}
-            <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-              {chat.isGroupChat ? 'Shared Resources' : 'Storage Center'}
-            </Text>
-
-            {(() => {
-              const mediaSummary = countMedia(messages);
-              const accordionSections = [
-                {
-                  key: 'photos', label: `Photos & Videos (${mediaSummary.images + mediaSummary.videos})`, icon: <ImageIcon size={16} color={PURPLE} />, items: [
-                    ...mediaSummary.imageUrls.map((url, idx) => ({ label: `Photo ${idx + 1}`, url })),
-                    ...mediaSummary.videoItems.map(item => ({ label: item.label, url: item.url }))
-                  ]
-                },
-                {
-                  key: 'voice', label: `Voice Notes & Audio (${mediaSummary.voice + mediaSummary.audio})`, icon: <Mic size={16} color={PURPLE} />, items: [
-                    ...mediaSummary.voiceItems.map(item => ({ label: item.label, url: item.url })),
-                    ...mediaSummary.audioItems.map(item => ({ label: item.label, url: item.url }))
-                  ]
-                },
-                { key: 'links', label: `Links (${mediaSummary.linkItems.length})`, icon: <Sparkles size={16} color={PURPLE} />, items: mediaSummary.linkItems },
-                { key: 'files', label: `Documents & Files (${mediaSummary.files})`, icon: <FileText size={16} color={PURPLE} />, items: mediaSummary.fileItems },
-              ];
-
-              return accordionSections.map((section) => {
-                const isOpen = openSection === section.key;
-                return (
-                  <View key={section.key} style={{ backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', marginBottom: 8, overflow: 'hidden' }}>
-                    <TouchableOpacity
-                      onPress={() => setOpenSection(isOpen ? null : section.key)}
-                      activeOpacity={0.7}
-                      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        {section.icon}
-                        <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>
-                          {section.label}
-                        </Text>
-                      </View>
-                      <ChevronLeft size={16} color={INK_SOFT} style={{ transform: [{ rotate: isOpen ? '-90deg' : '0deg' }] }} />
-                    </TouchableOpacity>
-
-                    {isOpen && (
-                      <View style={{ paddingHorizontal: 14, paddingBottom: 14, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.04)', paddingTop: 10 }}>
-                        {section.items.length === 0 ? (
-                          <Text style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT, fontStyle: 'italic' }}>
-                            No shared items yet.
-                          </Text>
-                        ) : (
-                          section.items.map((item, idx) => (
-                            <TouchableOpacity
-                              key={idx}
-                              onPress={() => {
-                                import('react-native').then(({ Linking }) => {
-                                  const secureUrl = getSecureMediaUrl(item.url);
-                                  if (secureUrl) Linking.openURL(secureUrl).catch(() => { });
-                                });
-                              }}
-                              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}
-                            >
-                              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: PURPLE }} />
-                              <Text numberOfLines={1} style={{ fontSize: 12.5, fontFamily: 'Poppins_500Medium', color: PURPLE, textDecorationLine: 'underline', flex: 1 }}>
-                                {item.label}
-                              </Text>
-                            </TouchableOpacity>
-                          ))
-                        )}
-                      </View>
-                    )}
-                  </View>
-                );
-              });
-            })()}
-
-            <TouchableOpacity
-              onPress={() => setIsInfoOpen(false)}
-              style={{ marginTop: 28, backgroundColor: PURPLE, paddingVertical: 16, borderRadius: 18, alignItems: 'center', shadowColor: PURPLE, shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5, marginBottom: 32 }}
-            >
-              <Text style={{ color: '#ffffff', fontFamily: 'Poppins_700Bold', fontSize: 14 }}>Close</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
 
       {/* ── Group Member Profile Modal ── */}
       <Modal visible={selectedMember !== null} animationType="slide" presentationStyle="pageSheet">

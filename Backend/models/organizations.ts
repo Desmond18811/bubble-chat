@@ -11,6 +11,7 @@ export interface IOrganization extends Document {
     website?: string;
     logo?: string;
     allowMembersToShareInvite?: boolean;
+    emailTranscriptsToMembers?: boolean;
     isVerified: boolean;
     timezone: string;                 // e.g. 'Africa/Lagos', 'America/New_York'
     brainSeeded: boolean;             // true after admin completes "Seed the Brain"
@@ -31,6 +32,7 @@ const OrganizationSchema: Schema<IOrganization> = new Schema(
         website: { type: String, trim: true },
         logo: { type: String, default: '' },
         allowMembersToShareInvite: { type: Boolean, default: true },
+        emailTranscriptsToMembers: { type: Boolean, default: true },
         isVerified: { type: Boolean, default: false },
         timezone: { type: String, default: 'UTC' },
         brainSeeded: { type: Boolean, default: false },
