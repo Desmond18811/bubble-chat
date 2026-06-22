@@ -109,6 +109,7 @@ export default function UpdatesScreen() {
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [recipients, setRecipients] = useState<string[]>([]);
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [holidayEvents, setHolidayEvents] = useState<any[]>([]);
@@ -264,10 +265,23 @@ export default function UpdatesScreen() {
       const { chatCache } = await import('../../lib/chatCache');
       const cached = await chatCache.getCachedChats();
       setGroups((cached || []).filter((c: any) => c.isGroupChat));
+      const cachedContacts = await chatCache.getCachedContacts();
+      setContacts(cachedContacts || []);
     } catch (err) {
-      console.warn("Failed to load groups in updates.tsx:", err);
+      console.warn("Failed to load groups/contacts in updates.tsx:", err);
     }
   };
+
+  // Combined people you can notify directly: org teammates + saved contacts (deduped by id).
+  const peopleToNotify = (() => {
+    const map = new Map<string, any>();
+    for (const m of orgMembers) map.set(String(m.id || m._id), m);
+    for (const c of contacts) {
+      const id = String(c.id || c._id);
+      if (!map.has(id)) map.set(id, c);
+    }
+    return Array.from(map.values());
+  })();
 
   // Expand selected groups → their member user-ids, unioned with individually picked recipients.
   const memberIdsOf = (group: any): string[] =>
@@ -695,7 +709,7 @@ export default function UpdatesScreen() {
           ))}
 
           {selectedDayTasks.length === 0 && selectedDayHolidays.length === 0 ? (
-            <View className="py-10 border-2 border-dashed border-black/5 dark:border-white/10 rounded-[24px] bg-white/50 items-center justify-center">
+            <View className="py-10 border-2 border-dashed border-black/5 dark:border-white/10 rounded-[24px] bg-white/50 dark:bg-white/[0.04] items-center justify-center">
               <Calendar color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
               <Text className="text-sm text-ink-soft dark:text-[#9a9bb6] font-medium font-sans">No events scheduled.</Text>
             </View>
@@ -1093,11 +1107,11 @@ export default function UpdatesScreen() {
               </View>
 
               {/* Notify team (opt-in, recipient-scoped) */}
-              {(groups.length > 0 || orgMembers.length > 0) && (
+              {(groups.length > 0 || peopleToNotify.length > 0) && (
                 <View>
                   <View className="flex-row items-center gap-1.5 mb-1.5">
                     <Users size={13} color={colors.purple} />
-                    <Text className="text-xs font-bold uppercase" style={{ color: colors.text }}>Notify a group or teammates</Text>
+                    <Text className="text-xs font-bold uppercase" style={{ color: colors.text }}>Notify groups, teammates or contacts</Text>
                   </View>
                   <Text className="text-[10.5px] mb-2 font-sans" style={{ color: colors.textSoft }}>
                     Everyone you pick gets an email + a push, and the event lands on their Updates. No mass blast.
@@ -1105,48 +1119,54 @@ export default function UpdatesScreen() {
 
                   {/* Groups */}
                   {groups.length > 0 && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: orgMembers.length ? 10 : 0 }}>
-                      {groups.map((g) => {
-                        const gid = String(g.id || g._id);
-                        const active = selectedGroupIds.includes(gid);
-                        const count = (g.users || []).length;
-                        return (
-                          <TouchableOpacity
-                            key={gid}
-                            onPress={() => toggleGroup(gid)}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: active ? colors.purple : colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
-                          >
-                            <Users size={11} color={active ? '#fff' : colors.purple} />
-                            <Text style={{ color: active ? '#fff' : colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>
-                              {g.name}{count ? ` · ${count}` : ''}
-                            </Text>
-                            {active && <Check size={11} color="#fff" />}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                    <>
+                      <Text className="text-[10px] font-bold uppercase mb-1.5" style={{ color: colors.textSoft }}>Your groups</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: peopleToNotify.length ? 12 : 0 }}>
+                        {groups.map((g) => {
+                          const gid = String(g.id || g._id);
+                          const active = selectedGroupIds.includes(gid);
+                          const count = (g.users || []).length;
+                          return (
+                            <TouchableOpacity
+                              key={gid}
+                              onPress={() => toggleGroup(gid)}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: active ? colors.purple : colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
+                            >
+                              <Users size={11} color={active ? '#fff' : colors.purple} />
+                              <Text style={{ color: active ? '#fff' : colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>
+                                {g.name}{count ? ` · ${count}` : ''}
+                              </Text>
+                              {active && <Check size={11} color="#fff" />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
                   )}
 
-                  {/* Individual teammates */}
-                  {orgMembers.length > 0 && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                      {orgMembers.map((m) => {
-                        const mid = String(m.id || m._id);
-                        const active = recipients.includes(mid);
-                        return (
-                          <TouchableOpacity
-                            key={mid}
-                            onPress={() => toggleRecipient(mid)}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: active ? colors.purple : colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
-                          >
-                            {active && <Check size={11} color="#fff" />}
-                            <Text style={{ color: active ? '#fff' : colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>
-                              {m.full_name || m.username}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                  {/* Individual teammates + contacts */}
+                  {peopleToNotify.length > 0 && (
+                    <>
+                      <Text className="text-[10px] font-bold uppercase mb-1.5" style={{ color: colors.textSoft }}>People</Text>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                        {peopleToNotify.map((m) => {
+                          const mid = String(m.id || m._id);
+                          const active = recipients.includes(mid);
+                          return (
+                            <TouchableOpacity
+                              key={mid}
+                              onPress={() => toggleRecipient(mid)}
+                              style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: active ? colors.purple : colors.purpleSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }}
+                            >
+                              {active && <Check size={11} color="#fff" />}
+                              <Text style={{ color: active ? '#fff' : colors.purple, fontSize: 11.5, fontFamily: 'Poppins_600SemiBold' }}>
+                                {m.full_name || m.name || m.username}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
                   )}
                 </View>
               )}

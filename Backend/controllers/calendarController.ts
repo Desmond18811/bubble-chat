@@ -12,7 +12,7 @@ import { upsertVectors, queryVectors, hasPinecone } from '../utils/pinecone';
 import { updateExpertiseRadar } from './continuityController';
 import { brainEventBus } from '../utils/brainEventListener';
 import { transcribeWithTimestamps } from '../utils/whisperService';
-import { getNigerianHolidays } from '../utils/nigeriaHolidays';
+import { getNigerianHolidays, fetchGoogleNigerianHolidays } from '../utils/nigeriaHolidays';
 import * as fs from 'fs';
 
 const getDeepSeekClient = () => {
@@ -105,7 +105,6 @@ export const ensureNigerianHolidays = async (org: any, createdById: any): Promis
     if (!org?._id) return;
     const now = new Date();
     const years = [now.getFullYear(), now.getFullYear() + 1];
-    const seeds = years.flatMap((y) => getNigerianHolidays(y));
 
     const rangeStart = new Date(`${years[0]}-01-01T00:00:00.000`);
     const rangeEnd = new Date(`${years[years.length - 1]}-12-31T23:59:59.999`);
@@ -114,6 +113,17 @@ export const ensureNigerianHolidays = async (org: any, createdById: any): Promis
       eventType: 'holiday',
       startTime: { $gte: rangeStart, $lte: rangeEnd },
     }).select('title startTime').lean();
+
+    // Already seeded for this 2-year window — skip the network fetch entirely.
+    if (existing.length >= 18) return;
+
+    // Source of truth: Google Calendar's public NG holiday feed. Fall back to the static
+    // list only if Google is unreachable, so the calendar still populates offline.
+    const fromGoogle = await fetchGoogleNigerianHolidays();
+    let seeds = fromGoogle.filter((s) => years.includes(new Date(s.date).getFullYear()));
+    if (seeds.length === 0) {
+      seeds = years.flatMap((y) => getNigerianHolidays(y));
+    }
 
     const keyOf = (title: string, d: any) => `${String(title).toLowerCase()}|${new Date(d).toISOString().slice(0, 10)}`;
     const have = new Set(existing.map((e: any) => keyOf(e.title, e.startTime)));

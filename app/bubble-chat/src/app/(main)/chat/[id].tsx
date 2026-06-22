@@ -4,7 +4,7 @@ import {
   TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch, Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ChevronLeft, ChevronRight, Forward, Phone, Video, Search, MoreVertical,
   Smile, Paperclip, Mic, Send, X, Mail, Briefcase,
@@ -67,6 +67,7 @@ const EMOJI_CATEGORIES = [
 
 export default function ChatScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [messageText, setMessageText] = useState('');
@@ -849,7 +850,7 @@ export default function ChatScreen() {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['bottom']}>
 
       {/* ── Tap Outside Popups Dismiss Overlays ── */}
       {isMenuOpen && (
@@ -887,10 +888,10 @@ export default function ChatScreen() {
         />
       )}
 
-      {/* ── Header ── */}
+      {/* ── Header (fills from the very top of the screen) ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 14, paddingVertical: 10,
+        paddingHorizontal: 14, paddingTop: insets.top + 8, paddingBottom: 10,
         borderBottomWidth: 1, borderBottomColor: colors.border,
         backgroundColor: colors.card,
         zIndex: 200,
@@ -1112,10 +1113,10 @@ export default function ChatScreen() {
               <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(108, 92, 231, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <MessageSquare size={36} color="#6c5ce7" />
               </View>
-              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: INK, marginBottom: 8 }}>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 20, color: colors.text, marginBottom: 8 }}>
                 Say hello! 👋
               </Text>
-              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: INK_SOFT, textAlign: 'center', maxWidth: 250 }}>
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: colors.textSoft, textAlign: 'center', maxWidth: 250 }}>
                 {chat?.isGroupChat
                   ? 'Start the conversation with your group members.'
                   : 'Start a conversation by sending a message below.'}

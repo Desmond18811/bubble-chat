@@ -260,7 +260,7 @@ function ContactsTab({
         </View>
 
         {filtered.length === 0 ? (
-          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50">
+          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50 dark:bg-white/[0.04]">
             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
               <Users color="#6c5ce7" size={28} />
             </View>
@@ -653,7 +653,7 @@ function WorkroomTab({
         )}
 
         {filteredGroups.length === 0 && filteredMembers.length === 0 && (
-          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50">
+          <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50 dark:bg-white/[0.04]">
             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
               <Briefcase color="#6c5ce7" size={28} />
             </View>
@@ -1260,7 +1260,7 @@ export default function PeopleScreen() {
 //         </View>
 
 //         {filtered.length === 0 ? (
-//           <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50">
+//           <View className="py-16 items-center justify-center border-2 border-dashed border-black/5 dark:border-white/10 rounded-3xl mt-2 bg-white/50 dark:bg-white/[0.04]">
 //             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
 //               <Users color="#6c5ce7" size={28} />
 //             </View>
