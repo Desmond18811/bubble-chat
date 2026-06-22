@@ -104,6 +104,10 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
       recipientsToNotify.add(String(userId));
     }
 
+    // The creator is implicitly a participant (the client auto-includes them), but we
+    // don't email/notify someone about an event they just created themselves.
+    recipientsToNotify.delete(String(userId));
+
     for (const recId of recipientsToNotify) {
       await createNotification({
         recipient: recId,
@@ -126,8 +130,9 @@ export const createTask = async (req: Request, res: Response): Promise<any> => {
       const emailList: { email: string; name: string }[] = [];
 
       if (hasRecipients) {
-        // Send email to specific selected recipients
+        // Send email to specific selected recipients (never email the creator about their own event)
         for (const recId of recipients) {
+          if (String(recId) === String(userId)) continue;
           const recUser = await User.findById(recId).select('email full_name username');
           if (recUser && recUser.email) {
             emailList.push({ email: recUser.email, name: recUser.full_name || recUser.username || 'Attendee' });

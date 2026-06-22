@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { fetchTasks, createTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
+import { authStorage } from '../../lib/authStorage';
 import * as DocumentPicker from 'expo-document-picker';
 
 // Helper to get calendar cells
@@ -108,6 +109,7 @@ export default function UpdatesScreen() {
   const [type, setType] = useState<'meeting' | 'task' | 'event'>('meeting');
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [recipients, setRecipients] = useState<string[]>([]);
+  const currentUserIdRef = useRef<string | null>(null);
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
@@ -293,12 +295,20 @@ export default function UpdatesScreen() {
       const g = groups.find((x) => String(x.id || x._id) === String(gid));
       if (g) memberIdsOf(g).forEach((id) => ids.add(id));
     }
+    // Always include the creator — you're a participant in your own agenda by default.
+    if (currentUserIdRef.current) ids.add(String(currentUserIdRef.current));
     return Array.from(ids);
   };
 
   const toggleGroup = (id: string) => {
     setSelectedGroupIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
+
+  useEffect(() => {
+    authStorage.getUser().then((u) => {
+      if (u) currentUserIdRef.current = String(u.id || u._id);
+    });
+  }, []);
 
   useEffect(() => {
     loadCache();

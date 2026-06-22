@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Clipboard, Switch, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, ChevronLeft, Plus, Moon, Sun, Smartphone } from 'lucide-react-native';
+import { User, Pencil, Mail, Phone, Briefcase, X, Check, LogOut, Copy, Share, ChevronLeft, Plus, Moon, Sun, Smartphone, FileText, Upload, Trash2, BrainCircuit } from 'lucide-react-native';
 import { useTheme, Scheme } from '../../lib/theme';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { listOrgDocs, createOrgDoc, updateOrgDoc, deleteOrgDoc, ingestOrgFile } from '../../lib/api';
 import { Avatar } from '../../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRouter } from 'expo-router';
@@ -39,6 +41,46 @@ function getGroupInitials(name: string) {
   return clean.slice(0, 2).toUpperCase();
 }
 
+// A single org-member row — themed, shows name + handle/profile info + role badge.
+// Reused in the inline (top-3) directory and the "View all" modal.
+function OrgMemberRow({ member }: { member: any }) {
+  const { colors } = useTheme();
+  const handle = member.username
+    ? `@${member.username}`
+    : member.uniqueTag
+      ? member.uniqueTag
+      : member.email || '';
+  const role = member.org_role || member.department || (member.role === 'admin' ? 'Admin' : 'Member');
+  return (
+    <View
+      className="flex-row items-center p-3 rounded-2xl"
+      style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong }}
+    >
+      <Avatar
+        url={member.avatar}
+        userId={member.id || member._id}
+        name={member.full_name || member.username || 'Member'}
+        size={38}
+        style={{ borderRadius: 11 }}
+        imageStyle={{ borderRadius: 11 }}
+      />
+      <View className="ml-3 flex-1 min-w-0">
+        <Text className="text-[13px] font-bold font-sans" numberOfLines={1} style={{ color: colors.text }}>
+          {member.full_name || member.username || 'Member'}
+        </Text>
+        {!!handle && (
+          <Text className="text-[10.5px] font-sans" numberOfLines={1} style={{ color: colors.textSoft }}>
+            {handle}{member.email && handle !== member.email ? ` · ${member.email}` : ''}
+          </Text>
+        )}
+      </View>
+      <View className="px-2 py-0.5 rounded-lg ml-2" style={{ backgroundColor: colors.purpleSoft }}>
+        <Text className="font-bold text-[9px] uppercase font-sans" style={{ color: colors.purple }}>{role}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors, scheme, setScheme, isDark } = useTheme();
@@ -67,6 +109,7 @@ export default function ProfileScreen() {
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
   const [orgTranscripts, setOrgTranscripts] = useState<any[]>([]);
   const [expandedTranscriptId, setExpandedTranscriptId] = useState<string | null>(null);
+  const [showAllMembers, setShowAllMembers] = useState(false);
 
   const [user, setUser] = useState({
     full_name: 'John Doe',
@@ -621,30 +664,19 @@ export default function ProfileScreen() {
               {/* People Tab */}
               {activeOrgTab === 'people' && (
                 <View style={{ gap: 10 }}>
-                  <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-wider mb-1">Employee Directory ({orgMembers.length})</Text>
+                  <View className="flex-row items-center justify-between mb-1">
+                    <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.textSoft }}>Employee Directory ({orgMembers.length})</Text>
+                    {orgMembers.length > 3 && (
+                      <TouchableOpacity onPress={() => setShowAllMembers(true)} className="px-2 py-0.5 rounded-lg" style={{ backgroundColor: colors.purpleSoft }}>
+                        <Text className="text-[10px] font-bold uppercase" style={{ color: colors.purple }}>View all</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   {orgMembers.length === 0 ? (
-                    <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] italic font-sans">No members found</Text>
+                    <Text className="text-xs italic font-sans" style={{ color: colors.textSoft }}>No members found</Text>
                   ) : (
-                    orgMembers.map(member => (
-                      <View key={member.username} className="flex-row items-center bg-purple-soft/5 p-3 rounded-2xl border border-black/5 dark:border-white/10">
-                        <Avatar
-                          url={member.avatar}
-                          userId={member.id || member._id}
-                          name={member.full_name || member.username}
-                          size={36}
-                          style={{ borderRadius: 10 }}
-                          imageStyle={{ borderRadius: 10 }}
-                        />
-                        <View className="ml-3 flex-1">
-                          <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] font-sans">{member.full_name || member.username}</Text>
-                          <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-sans">@{member.username}</Text>
-                        </View>
-                        <View className="bg-purple/10 px-2 py-0.5 rounded-lg">
-                          <Text className="text-purple font-bold text-[9px] uppercase font-sans">
-                            {member.org_role || (member.role === 'admin' ? 'Admin' : 'Member')}
-                          </Text>
-                        </View>
-                      </View>
+                    orgMembers.slice(0, 3).map((member) => (
+                      <OrgMemberRow key={String(member.id || member._id || member.username)} member={member} />
                     ))
                   )}
                 </View>
@@ -1118,6 +1150,26 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* ── View All Org Members Modal ── */}
+      <Modal visible={showAllMembers} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top']}>
+          <View className="flex-row items-center justify-between px-6 py-4" style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View>
+              <Text className="text-xl font-bold" style={{ color: colors.text }}>Employee Directory</Text>
+              <Text className="text-xs" style={{ color: colors.textSoft }}>{orgMembers.length} member{orgMembers.length === 1 ? '' : 's'} in {orgData?.name || 'your organization'}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setShowAllMembers(false)} style={{ padding: 6 }}>
+              <X color={colors.purple} size={20} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView className="flex-1 px-6 pt-4" contentContainerStyle={{ gap: 10, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+            {orgMembers.map((member) => (
+              <OrgMemberRow key={String(member.id || member._id || member.username)} member={member} />
+            ))}
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );

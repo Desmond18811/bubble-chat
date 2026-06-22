@@ -2135,6 +2135,84 @@ export const getOrgTranscripts = async () => {
     return handleResponse(res);
 };
 
+// ─── Org Knowledge Base (the documents/files that build the company brain) ──────
+
+/** List knowledge-base documents (content omitted in the list payload). */
+export const listOrgDocs = async (q?: string) => {
+    const params = new URLSearchParams();
+    if (q) params.append('q', q);
+    params.append('limit', '100');
+    const res = await fetch(`${BASE_URL}/aida/org-docs?${params}`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Fetch a single knowledge-base document with its full content. */
+export const getOrgDoc = async (id: string) => {
+    const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Create a knowledge-base document (also embedded into the brain). */
+export const createOrgDoc = async (data: {
+    title: string;
+    content: string;
+    department?: string;
+    accessLevel?: 'public' | 'restricted' | 'admin';
+    tags?: string[];
+}) => {
+    const res = await fetch(`${BASE_URL}/aida/org-docs`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+/** Update an existing knowledge-base document. */
+export const updateOrgDoc = async (
+    id: string,
+    data: { title?: string; content?: string; department?: string; accessLevel?: 'public' | 'restricted' | 'admin'; tags?: string[] }
+) => {
+    const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
+/** Delete a knowledge-base document. */
+export const deleteOrgDoc = async (id: string) => {
+    const res = await fetch(`${BASE_URL}/aida/org-docs/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Upload a file (PDF/DOCX/TXT/…) into the brain; becomes a knowledge-base document. */
+export const ingestOrgFile = async (file: { uri: string; name: string; type: string }, title?: string) => {
+    const token = tokenCache.accessToken;
+    const formData = new FormData();
+    formData.append('sourceType', 'file');
+    if (title) formData.append('title', title);
+    formData.append('file', {
+        uri: Platform.OS === 'ios' ? file.uri.replace('file://', '') : file.uri,
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+    } as any);
+    const res = await fetch(`${BASE_URL}/brain/ingest`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+    return handleResponse(res);
+};
+
 // ─── Company Brain ────────────────────────────────────────────────────────────
 
 /** Ingest a file (PDF, DOCX, TXT, MP3, MP4, …) into the brain */

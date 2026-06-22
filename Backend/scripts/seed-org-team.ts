@@ -82,6 +82,17 @@ async function uniqueTagFor(name: string, index: number): Promise<string> {
   return `${base}-${Date.now()}`;
 }
 
+async function uniqueUsernameFor(name: string): Promise<string> {
+  const base = name.normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase().substring(0, 18) || 'user';
+  if (!(await User.findOne({ username: base }))) return base;
+  for (let i = 2; i < 100; i++) {
+    const candidate = `${base}${i}`;
+    if (!(await User.findOne({ username: candidate }))) return candidate;
+  }
+  return `${base}_${Date.now()}`;
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────────
 async function run() {
   try {
@@ -116,17 +127,29 @@ async function run() {
 
       const existing = await User.findOne({ email });
       if (existing) {
-        console.log(`  ⚠  Skipping (exists): ${email}`);
+        // Backfill a username/uniqueTag if the earlier seed run created them without one.
+        const patch: any = {};
+        if (!existing.username) patch.username = await uniqueUsernameFor(m.full_name);
+        if (!existing.uniqueTag) patch.uniqueTag = await uniqueTagFor(m.full_name, i + 1);
+        if (!existing.org_role) patch.org_role = m.org_role;
+        if (Object.keys(patch).length) {
+          await User.updateOne({ _id: existing._id }, { $set: patch });
+          console.log(`  🔧 Backfilled ${email}: ${Object.keys(patch).join(', ')}`);
+        } else {
+          console.log(`  ⚠  Skipping (exists): ${email}`);
+        }
         createdIds.push(existing._id as mongoose.Types.ObjectId);
         skipped++;
         continue;
       }
 
       const uniqueTag = await uniqueTagFor(m.full_name, i + 1);
+      const username = await uniqueUsernameFor(m.full_name);
 
       const user = await User.create({
         full_name: m.full_name,
         email,
+        username,
         password: hashedPassword,
         organization: org.name,
         organizationId: org._id,

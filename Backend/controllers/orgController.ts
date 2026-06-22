@@ -863,7 +863,7 @@ export const getOrgMembers = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     const members = await User.find({ organization: user.organization })
-      .select('full_name username email avatar role isOnline lastSeen')
+      .select('full_name username email avatar role org_role department uniqueTag isOnline lastSeen')
       .sort({ full_name: 1, username: 1 })
       .lean();
 

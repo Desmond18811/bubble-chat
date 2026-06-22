@@ -4,224 +4,84 @@
   "graph": {},
   "nodes": [
     {
-      "label": "calendarController.ts",
+      "label": "seed-org-team.ts",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
+      "source_file": "Backend/scripts/seed-org-team.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller",
-      "community": 120,
-      "norm_label": "calendarcontroller.ts"
+      "id": "scripts_seed_org_team",
+      "community": 100,
+      "norm_label": "seed-org-team.ts"
     },
     {
-      "label": "getDeepSeekClient()",
+      "label": "ORG_CODE",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L18",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L34",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_getdeepseekclient",
-      "community": 120,
-      "norm_label": "getdeepseekclient()"
+      "id": "scripts_seed_org_team_org_code",
+      "community": 100,
+      "norm_label": "org_code"
     },
     {
-      "label": "ingestEventIntoBrain()",
+      "label": "WORKROOM_COUNT",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L26",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L36",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_ingesteventintobrain",
-      "community": 211,
-      "norm_label": "ingesteventintobrain()"
+      "id": "scripts_seed_org_team_workroom_count",
+      "community": 100,
+      "norm_label": "workroom_count"
     },
     {
-      "label": "getOrgFromUser()",
+      "label": "Member",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L92",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L39",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_getorgfromuser",
-      "community": 120,
-      "norm_label": "getorgfromuser()"
+      "id": "scripts_seed_org_team_member",
+      "community": 100,
+      "norm_label": "member"
     },
     {
-      "label": "ensureNigerianHolidays()",
+      "label": "TEAM",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L103",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L47",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_ensurenigerianholidays",
-      "community": 120,
-      "norm_label": "ensurenigerianholidays()"
+      "id": "scripts_seed_org_team_team",
+      "community": 100,
+      "norm_label": "team"
     },
     {
-      "label": "createEvent()",
+      "label": "slugifyName()",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L166",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L71",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_createevent",
-      "community": 120,
-      "norm_label": "createevent()"
+      "id": "scripts_seed_org_team_slugifyname",
+      "community": 100,
+      "norm_label": "slugifyname()"
     },
     {
-      "label": "getEvents()",
+      "label": "uniqueTagFor()",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L232",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L76",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_getevents",
-      "community": 120,
-      "norm_label": "getevents()"
+      "id": "scripts_seed_org_team_uniquetagfor",
+      "community": 100,
+      "norm_label": "uniquetagfor()"
     },
     {
-      "label": "getEvent()",
+      "label": "run()",
       "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L274",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L86",
       "_origin": "ast",
-      "id": "controllers_calendarcontroller_getevent",
-      "community": 120,
-      "norm_label": "getevent()"
-    },
-    {
-      "label": "updateEvent()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L297",
-      "_origin": "ast",
-      "id": "controllers_calendarcontroller_updateevent",
-      "community": 120,
-      "norm_label": "updateevent()"
-    },
-    {
-      "label": "deleteEvent()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L333",
-      "_origin": "ast",
-      "id": "controllers_calendarcontroller_deleteevent",
-      "community": 120,
-      "norm_label": "deleteevent()"
-    },
-    {
-      "label": "startMeeting()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L355",
-      "_origin": "ast",
-      "id": "controllers_calendarcontroller_startmeeting",
-      "community": 120,
-      "norm_label": "startmeeting()"
-    },
-    {
-      "label": "endMeeting()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L385",
-      "_origin": "ast",
-      "id": "controllers_calendarcontroller_endmeeting",
-      "community": 120,
-      "norm_label": "endmeeting()"
-    },
-    {
-      "label": "bulkImportHolidays()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L477",
-      "_origin": "ast",
-      "id": "controllers_calendarcontroller_bulkimportholidays",
-      "community": 120,
-      "norm_label": "bulkimportholidays()"
-    },
-    {
-      "label": "getEventSuggestions()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L527",
-      "_origin": "ast",
-      "id": "controllers_calendarcontroller_geteventsuggestions",
-      "community": 120,
-      "norm_label": "geteventsuggestions()"
-    },
-    {
-      "label": "nigeriaHolidays.ts",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays",
-      "community": 120,
-      "norm_label": "nigeriaholidays.ts"
-    },
-    {
-      "label": "HolidaySeed",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L8",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_holidayseed",
-      "community": 120,
-      "norm_label": "holidayseed"
-    },
-    {
-      "label": "pad()",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L17",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_pad",
-      "community": 120,
-      "norm_label": "pad()"
-    },
-    {
-      "label": "FIXED",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L20",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_fixed",
-      "community": 120,
-      "norm_label": "fixed"
-    },
-    {
-      "label": "MOVABLE",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L29",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_movable",
-      "community": 120,
-      "norm_label": "movable"
-    },
-    {
-      "label": "getNigerianHolidays()",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L54",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_getnigerianholidays",
-      "community": 120,
-      "norm_label": "getnigerianholidays()"
-    },
-    {
-      "label": "parseIcs()",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L63",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_parseics",
-      "community": 120,
-      "norm_label": "parseics()"
-    },
-    {
-      "label": "fetchGoogleNigerianHolidays()",
-      "file_type": "code",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L93",
-      "_origin": "ast",
-      "id": "utils_nigeriaholidays_fetchgooglenigerianholidays",
-      "community": 120,
-      "norm_label": "fetchgooglenigerianholidays()"
+      "id": "scripts_seed_org_team_run",
+      "community": 100,
+      "norm_label": "run()"
     },
     {
       "label": "[id].tsx",
@@ -267,7 +127,7 @@
       "label": "IconBtn()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2898",
+      "source_location": "L2903",
       "_origin": "ast",
       "id": "chat_id_iconbtn",
       "community": 21,
@@ -277,7 +137,7 @@
       "label": "InfoCard()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2906",
+      "source_location": "L2911",
       "_origin": "ast",
       "id": "chat_id_infocard",
       "community": 21,
@@ -287,7 +147,7 @@
       "label": "DropdownItem()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2918",
+      "source_location": "L2924",
       "_origin": "ast",
       "id": "chat_id_dropdownitem",
       "community": 21,
@@ -297,7 +157,7 @@
       "label": "ContextMenuItem()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2947",
+      "source_location": "L2953",
       "_origin": "ast",
       "id": "chat_id_contextmenuitem",
       "community": 21,
@@ -307,7 +167,7 @@
       "label": "countMedia()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2976",
+      "source_location": "L2982",
       "_origin": "ast",
       "id": "chat_id_countmedia",
       "community": 21,
@@ -317,7 +177,7 @@
       "label": "VoiceMessagePlayer()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3050",
+      "source_location": "L3056",
       "_origin": "ast",
       "id": "chat_id_voicemessageplayer",
       "community": 21,
@@ -337,7 +197,7 @@
       "label": "getInitials()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L49",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "main_people_getinitials",
       "community": 110,
@@ -347,7 +207,7 @@
       "label": "getGroupInitials()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L58",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "main_people_getgroupinitials",
       "community": 110,
@@ -357,7 +217,7 @@
       "label": "Avatar()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L70",
+      "source_location": "L71",
       "_origin": "ast",
       "id": "main_people_avatar",
       "community": 110,
@@ -367,7 +227,7 @@
       "label": "ContactsTab()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L112",
+      "source_location": "L113",
       "_origin": "ast",
       "id": "main_people_contactstab",
       "community": 23,
@@ -377,7 +237,7 @@
       "label": "WorkroomTab()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L438",
+      "source_location": "L454",
       "_origin": "ast",
       "id": "main_people_workroomtab",
       "community": 23,
@@ -387,7 +247,7 @@
       "label": "TABS",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L674",
+      "source_location": "L690",
       "_origin": "ast",
       "id": "main_people_tabs",
       "community": 23,
@@ -397,7 +257,7 @@
       "label": "TabType",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L675",
+      "source_location": "L691",
       "_origin": "ast",
       "id": "main_people_tabtype",
       "community": 23,
@@ -407,11 +267,281 @@
       "label": "PeopleScreen()",
       "file_type": "code",
       "source_file": "app/bubble-chat/src/app/(main)/people.tsx",
-      "source_location": "L677",
+      "source_location": "L693",
       "_origin": "ast",
       "id": "main_people_peoplescreen",
       "community": 110,
       "norm_label": "peoplescreen()"
+    },
+    {
+      "label": "profile.tsx",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "main_profile",
+      "community": 57,
+      "norm_label": "profile.tsx"
+    },
+    {
+      "label": "AVATARS",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "main_profile_avatars",
+      "community": 57,
+      "norm_label": "avatars"
+    },
+    {
+      "label": "getInitials()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "main_profile_getinitials",
+      "community": 57,
+      "norm_label": "getinitials()"
+    },
+    {
+      "label": "getGroupInitials()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "main_profile_getgroupinitials",
+      "community": 57,
+      "norm_label": "getgroupinitials()"
+    },
+    {
+      "label": "ProfileScreen()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L42",
+      "_origin": "ast",
+      "id": "main_profile_profilescreen",
+      "community": 57,
+      "norm_label": "profilescreen()"
+    },
+    {
+      "label": "calendarController.ts",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "calendarcontroller.ts",
+      "id": "controllers_calendarcontroller"
+    },
+    {
+      "label": "getDeepSeekClient()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L18",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "getdeepseekclient()",
+      "id": "controllers_calendarcontroller_getdeepseekclient"
+    },
+    {
+      "label": "ingestEventIntoBrain()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L26",
+      "_origin": "ast",
+      "community": 211,
+      "norm_label": "ingesteventintobrain()",
+      "id": "controllers_calendarcontroller_ingesteventintobrain"
+    },
+    {
+      "label": "getOrgFromUser()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L92",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "getorgfromuser()",
+      "id": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "label": "ensureNigerianHolidays()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L103",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "ensurenigerianholidays()",
+      "id": "controllers_calendarcontroller_ensurenigerianholidays"
+    },
+    {
+      "label": "createEvent()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L166",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "createevent()",
+      "id": "controllers_calendarcontroller_createevent"
+    },
+    {
+      "label": "getEvents()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L232",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "getevents()",
+      "id": "controllers_calendarcontroller_getevents"
+    },
+    {
+      "label": "getEvent()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L274",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "getevent()",
+      "id": "controllers_calendarcontroller_getevent"
+    },
+    {
+      "label": "updateEvent()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L297",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "updateevent()",
+      "id": "controllers_calendarcontroller_updateevent"
+    },
+    {
+      "label": "deleteEvent()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L333",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "deleteevent()",
+      "id": "controllers_calendarcontroller_deleteevent"
+    },
+    {
+      "label": "startMeeting()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L355",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "startmeeting()",
+      "id": "controllers_calendarcontroller_startmeeting"
+    },
+    {
+      "label": "endMeeting()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L385",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "endmeeting()",
+      "id": "controllers_calendarcontroller_endmeeting"
+    },
+    {
+      "label": "bulkImportHolidays()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L477",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "bulkimportholidays()",
+      "id": "controllers_calendarcontroller_bulkimportholidays"
+    },
+    {
+      "label": "getEventSuggestions()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L527",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "geteventsuggestions()",
+      "id": "controllers_calendarcontroller_geteventsuggestions"
+    },
+    {
+      "label": "nigeriaHolidays.ts",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "nigeriaholidays.ts",
+      "id": "utils_nigeriaholidays"
+    },
+    {
+      "label": "HolidaySeed",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L8",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "holidayseed",
+      "id": "utils_nigeriaholidays_holidayseed"
+    },
+    {
+      "label": "pad()",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L17",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "pad()",
+      "id": "utils_nigeriaholidays_pad"
+    },
+    {
+      "label": "FIXED",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L20",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "fixed",
+      "id": "utils_nigeriaholidays_fixed"
+    },
+    {
+      "label": "MOVABLE",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L29",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "movable",
+      "id": "utils_nigeriaholidays_movable"
+    },
+    {
+      "label": "getNigerianHolidays()",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L54",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "getnigerianholidays()",
+      "id": "utils_nigeriaholidays_getnigerianholidays"
+    },
+    {
+      "label": "parseIcs()",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L63",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "parseics()",
+      "id": "utils_nigeriaholidays_parseics"
+    },
+    {
+      "label": "fetchGoogleNigerianHolidays()",
+      "file_type": "code",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L93",
+      "_origin": "ast",
+      "community": 120,
+      "norm_label": "fetchgooglenigerianholidays()",
+      "id": "utils_nigeriaholidays_fetchgooglenigerianholidays"
     },
     {
       "label": "updates.tsx",
@@ -419,9 +549,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "main_updates",
       "community": 61,
-      "norm_label": "updates.tsx"
+      "norm_label": "updates.tsx",
+      "id": "main_updates"
     },
     {
       "label": "getCalendarCells()",
@@ -429,9 +559,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L16",
       "_origin": "ast",
-      "id": "main_updates_getcalendarcells",
       "community": 61,
-      "norm_label": "getcalendarcells()"
+      "norm_label": "getcalendarcells()",
+      "id": "main_updates_getcalendarcells"
     },
     {
       "label": "getInitials()",
@@ -439,9 +569,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L49",
       "_origin": "ast",
-      "id": "main_updates_getinitials",
       "community": 61,
-      "norm_label": "getinitials()"
+      "norm_label": "getinitials()",
+      "id": "main_updates_getinitials"
     },
     {
       "label": "getDotColor()",
@@ -449,9 +579,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L68",
       "_origin": "ast",
-      "id": "main_updates_getdotcolor",
       "community": 61,
-      "norm_label": "getdotcolor()"
+      "norm_label": "getdotcolor()",
+      "id": "main_updates_getdotcolor"
     },
     {
       "label": "itemDate()",
@@ -459,9 +589,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L77",
       "_origin": "ast",
-      "id": "main_updates_itemdate",
       "community": 61,
-      "norm_label": "itemdate()"
+      "norm_label": "itemdate()",
+      "id": "main_updates_itemdate"
     },
     {
       "label": "formatHour()",
@@ -469,9 +599,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L80",
       "_origin": "ast",
-      "id": "main_updates_formathour",
       "community": 61,
-      "norm_label": "formathour()"
+      "norm_label": "formathour()",
+      "id": "main_updates_formathour"
     },
     {
       "label": "TEMPLATES",
@@ -479,9 +609,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L87",
       "_origin": "ast",
-      "id": "main_updates_templates",
       "community": 61,
-      "norm_label": "templates"
+      "norm_label": "templates",
+      "id": "main_updates_templates"
     },
     {
       "label": "UpdatesScreen()",
@@ -489,9 +619,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/updates.tsx",
       "source_location": "L94",
       "_origin": "ast",
-      "id": "main_updates_updatesscreen",
       "community": 61,
-      "norm_label": "updatesscreen()"
+      "norm_label": "updatesscreen()",
+      "id": "main_updates_updatesscreen"
     },
     {
       "label": "taskController.ts",
@@ -529,7 +659,7 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L52",
       "_origin": "ast",
-      "community": 35,
+      "community": 74,
       "norm_label": "createtask()",
       "id": "controllers_taskcontroller_createtask"
     },
@@ -759,7 +889,7 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L189",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "processtaskreminders()",
       "id": "utils_scheduler_processtaskreminders"
     },
@@ -779,7 +909,7 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L278",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "rundailydigestjob()",
       "id": "utils_scheduler_rundailydigestjob"
     },
@@ -799,7 +929,7 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L359",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "runweeklydigestjob()",
       "id": "utils_scheduler_runweeklydigestjob"
     },
@@ -1912,56 +2042,6 @@
       "community": 23,
       "norm_label": "contextmenuitem()",
       "id": "main_messages_contextmenuitem"
-    },
-    {
-      "label": "profile.tsx",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 57,
-      "norm_label": "profile.tsx",
-      "id": "main_profile"
-    },
-    {
-      "label": "AVATARS",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L17",
-      "_origin": "ast",
-      "community": 57,
-      "norm_label": "avatars",
-      "id": "main_profile_avatars"
-    },
-    {
-      "label": "getInitials()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L28",
-      "_origin": "ast",
-      "community": 57,
-      "norm_label": "getinitials()",
-      "id": "main_profile_getinitials"
-    },
-    {
-      "label": "getGroupInitials()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L33",
-      "_origin": "ast",
-      "community": 57,
-      "norm_label": "getgroupinitials()",
-      "id": "main_profile_getgroupinitials"
-    },
-    {
-      "label": "ProfileScreen()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L43",
-      "_origin": "ast",
-      "community": 57,
-      "norm_label": "profilescreen()",
-      "id": "main_profile_profilescreen"
     },
     {
       "label": "_layout.tsx",
@@ -5499,7 +5579,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "livekitmeetingmodal.tsx",
       "id": "chat_livekitmeetingmodal"
     },
@@ -5509,7 +5589,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx",
       "source_location": "L48",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "transcriptentry",
       "id": "chat_livekitmeetingmodal_transcriptentry"
     },
@@ -5519,7 +5599,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx",
       "source_location": "L55",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "chatmessageentry",
       "id": "chat_livekitmeetingmodal_chatmessageentry"
     },
@@ -5529,7 +5609,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx",
       "source_location": "L62",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "livekitmeetingmodal()",
       "id": "chat_livekitmeetingmodal_livekitmeetingmodal"
     },
@@ -5539,7 +5619,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx",
       "source_location": "L401",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "meetingroomlayout()",
       "id": "chat_livekitmeetingmodal_meetingroomlayout"
     },
@@ -5799,7 +5879,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/chat-window.tsx",
       "source_location": "L132",
       "_origin": "ast",
-      "community": 101,
+      "community": 73,
       "norm_label": "chatwindow()",
       "id": "chat_chat_window_chatwindow"
     },
@@ -5999,7 +6079,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 101,
+      "community": 111,
       "norm_label": "message-overlay.tsx",
       "id": "chat_message_overlay"
     },
@@ -6009,7 +6089,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 101,
+      "community": 111,
       "norm_label": "emojis",
       "id": "chat_message_overlay_emojis"
     },
@@ -6019,7 +6099,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 101,
+      "community": 111,
       "norm_label": "messageoverlayprops",
       "id": "chat_message_overlay_messageoverlayprops"
     },
@@ -6029,7 +6109,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 101,
+      "community": 111,
       "norm_label": "msg",
       "id": "chat_message_overlay_msg"
     },
@@ -6039,7 +6119,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 101,
+      "community": 111,
       "norm_label": "liquidglasscontactcard()",
       "id": "chat_message_overlay_liquidglasscontactcard"
     },
@@ -6049,7 +6129,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx",
       "source_location": "L157",
       "_origin": "ast",
-      "community": 101,
+      "community": 111,
       "norm_label": "messageoverlay()",
       "id": "chat_message_overlay_messageoverlay"
     },
@@ -6249,7 +6329,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx",
       "source_location": "L694",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "callsview()",
       "id": "chat_tab_views_callsview"
     },
@@ -6669,7 +6749,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/landing/UseCases.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 122,
+      "community": 88,
       "norm_label": "usecases.tsx",
       "id": "landing_usecases"
     },
@@ -6679,7 +6759,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/landing/UseCases.tsx",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 122,
+      "community": 88,
       "norm_label": "cases",
       "id": "landing_usecases_cases"
     },
@@ -6689,7 +6769,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/landing/UseCases.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 122,
+      "community": 88,
       "norm_label": "container",
       "id": "landing_usecases_container"
     },
@@ -6699,7 +6779,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/landing/UseCases.tsx",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 122,
+      "community": 88,
       "norm_label": "item",
       "id": "landing_usecases_item"
     },
@@ -6709,7 +6789,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/landing/UseCases.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 122,
+      "community": 88,
       "norm_label": "usecases()",
       "id": "landing_usecases_usecases"
     },
@@ -6999,7 +7079,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/avatar.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 121,
+      "community": 5,
       "norm_label": "avatar.tsx",
       "id": "ui_avatar"
     },
@@ -7009,7 +7089,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/avatar.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 121,
+      "community": 5,
       "norm_label": "avatar()",
       "id": "ui_avatar_avatar"
     },
@@ -7019,7 +7099,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/avatar.tsx",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 121,
+      "community": 5,
       "norm_label": "avatarimage()",
       "id": "ui_avatar_avatarimage"
     },
@@ -7029,7 +7109,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/avatar.tsx",
       "source_location": "L37",
       "_origin": "ast",
-      "community": 121,
+      "community": 5,
       "norm_label": "avatarfallback()",
       "id": "ui_avatar_avatarfallback"
     },
@@ -7039,7 +7119,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/badge.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 88,
+      "community": 165,
       "norm_label": "badge.tsx",
       "id": "ui_badge"
     },
@@ -7049,7 +7129,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/badge.tsx",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 88,
+      "community": 165,
       "norm_label": "badgevariants",
       "id": "ui_badge_badgevariants"
     },
@@ -7059,7 +7139,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/badge.tsx",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 88,
+      "community": 165,
       "norm_label": "badge()",
       "id": "ui_badge_badge"
     },
@@ -8609,7 +8689,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/hover-card.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 88,
+      "community": 125,
       "norm_label": "hover-card.tsx",
       "id": "ui_hover_card"
     },
@@ -8619,7 +8699,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/hover-card.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 88,
+      "community": 125,
       "norm_label": "hovercard()",
       "id": "ui_hover_card_hovercard"
     },
@@ -8629,7 +8709,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/hover-card.tsx",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 88,
+      "community": 125,
       "norm_label": "hovercardtrigger()",
       "id": "ui_hover_card_hovercardtrigger"
     },
@@ -8639,7 +8719,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/hover-card.tsx",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 88,
+      "community": 125,
       "norm_label": "hovercardcontent()",
       "id": "ui_hover_card_hovercardcontent"
     },
@@ -9259,7 +9339,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "pagination.tsx",
       "id": "ui_pagination"
     },
@@ -9269,7 +9349,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "pagination()",
       "id": "ui_pagination_pagination"
     },
@@ -9279,7 +9359,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "paginationcontent()",
       "id": "ui_pagination_paginationcontent"
     },
@@ -9289,7 +9369,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "paginationitem()",
       "id": "ui_pagination_paginationitem"
     },
@@ -9299,7 +9379,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L40",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "paginationlinkprops",
       "id": "ui_pagination_paginationlinkprops"
     },
@@ -9319,7 +9399,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L68",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "paginationprevious()",
       "id": "ui_pagination_paginationprevious"
     },
@@ -9329,7 +9409,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L85",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "paginationnext()",
       "id": "ui_pagination_paginationnext"
     },
@@ -9339,7 +9419,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/pagination.tsx",
       "source_location": "L102",
       "_origin": "ast",
-      "community": 100,
+      "community": 9,
       "norm_label": "paginationellipsis()",
       "id": "ui_pagination_paginationellipsis"
     },
@@ -9419,7 +9499,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/radio-group.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 168,
+      "community": 88,
       "norm_label": "radio-group.tsx",
       "id": "ui_radio_group"
     },
@@ -9429,7 +9509,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/radio-group.tsx",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 168,
+      "community": 88,
       "norm_label": "radiogroup()",
       "id": "ui_radio_group_radiogroup"
     },
@@ -9439,7 +9519,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/radio-group.tsx",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 168,
+      "community": 88,
       "norm_label": "radiogroupitem()",
       "id": "ui_radio_group_radiogroupitem"
     },
@@ -9449,7 +9529,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/resizable.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 124,
+      "community": 88,
       "norm_label": "resizable.tsx",
       "id": "ui_resizable"
     },
@@ -9459,7 +9539,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/resizable.tsx",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 124,
+      "community": 88,
       "norm_label": "resizablepanelgroup()",
       "id": "ui_resizable_resizablepanelgroup"
     },
@@ -9469,7 +9549,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/resizable.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 124,
+      "community": 88,
       "norm_label": "resizablepanel()",
       "id": "ui_resizable_resizablepanel"
     },
@@ -9479,7 +9559,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/resizable.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 124,
+      "community": 88,
       "norm_label": "resizablehandle()",
       "id": "ui_resizable_resizablehandle"
     },
@@ -9489,7 +9569,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/scroll-area.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 131,
+      "community": 88,
       "norm_label": "scroll-area.tsx",
       "id": "ui_scroll_area"
     },
@@ -9499,7 +9579,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/scroll-area.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 131,
+      "community": 88,
       "norm_label": "scrollarea()",
       "id": "ui_scroll_area_scrollarea"
     },
@@ -9509,7 +9589,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/scroll-area.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 131,
+      "community": 88,
       "norm_label": "scrollbar()",
       "id": "ui_scroll_area_scrollbar"
     },
@@ -10139,7 +10219,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "table.tsx",
       "id": "ui_table"
     },
@@ -10149,7 +10229,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "table()",
       "id": "ui_table_table"
     },
@@ -10159,7 +10239,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tableheader()",
       "id": "ui_table_tableheader"
     },
@@ -10169,7 +10249,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tablebody()",
       "id": "ui_table_tablebody"
     },
@@ -10179,7 +10259,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tablefooter()",
       "id": "ui_table_tablefooter"
     },
@@ -10189,7 +10269,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L55",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tablerow()",
       "id": "ui_table_tablerow"
     },
@@ -10199,7 +10279,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L68",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tablehead()",
       "id": "ui_table_tablehead"
     },
@@ -10209,7 +10289,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L81",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tablecell()",
       "id": "ui_table_tablecell"
     },
@@ -10219,7 +10299,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/table.tsx",
       "source_location": "L94",
       "_origin": "ast",
-      "community": 99,
+      "community": 5,
       "norm_label": "tablecaption()",
       "id": "ui_table_tablecaption"
     },
@@ -10229,7 +10309,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tabs.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 104,
+      "community": 5,
       "norm_label": "tabs.tsx",
       "id": "ui_tabs"
     },
@@ -10239,7 +10319,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tabs.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 104,
+      "community": 5,
       "norm_label": "tabs()",
       "id": "ui_tabs_tabs"
     },
@@ -10249,7 +10329,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tabs.tsx",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 104,
+      "community": 5,
       "norm_label": "tabslist()",
       "id": "ui_tabs_tabslist"
     },
@@ -10259,7 +10339,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tabs.tsx",
       "source_location": "L37",
       "_origin": "ast",
-      "community": 104,
+      "community": 5,
       "norm_label": "tabstrigger()",
       "id": "ui_tabs_tabstrigger"
     },
@@ -10269,7 +10349,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tabs.tsx",
       "source_location": "L53",
       "_origin": "ast",
-      "community": 104,
+      "community": 5,
       "norm_label": "tabscontent()",
       "id": "ui_tabs_tabscontent"
     },
@@ -10489,7 +10569,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tooltip.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 111,
+      "community": 88,
       "norm_label": "tooltip.tsx",
       "id": "ui_tooltip"
     },
@@ -10499,7 +10579,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tooltip.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 111,
+      "community": 88,
       "norm_label": "tooltipprovider()",
       "id": "ui_tooltip_tooltipprovider"
     },
@@ -10509,7 +10589,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tooltip.tsx",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 111,
+      "community": 88,
       "norm_label": "tooltip()",
       "id": "ui_tooltip_tooltip"
     },
@@ -10519,7 +10599,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tooltip.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 111,
+      "community": 88,
       "norm_label": "tooltiptrigger()",
       "id": "ui_tooltip_tooltiptrigger"
     },
@@ -10529,7 +10609,7 @@
       "source_file": "BUBBLESPACE/frontend/src/components/ui/tooltip.tsx",
       "source_location": "L37",
       "_origin": "ast",
-      "community": 111,
+      "community": 88,
       "norm_label": "tooltipcontent()",
       "id": "ui_tooltip_tooltipcontent"
     },
@@ -10709,7 +10789,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "appcontext.tsx",
       "id": "contexts_appcontext"
     },
@@ -10719,7 +10799,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "callstate",
       "id": "contexts_appcontext_callstate"
     },
@@ -10729,7 +10809,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "socketcontextvalue",
       "id": "contexts_appcontext_socketcontextvalue"
     },
@@ -10739,7 +10819,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "socketcontext",
       "id": "contexts_appcontext_socketcontext"
     },
@@ -10749,7 +10829,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 101,
+      "community": 104,
       "norm_label": "usesocket()",
       "id": "contexts_appcontext_usesocket"
     },
@@ -10759,7 +10839,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L37",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "chatcontextvalue",
       "id": "contexts_appcontext_chatcontextvalue"
     },
@@ -10769,7 +10849,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L45",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "chatcontext",
       "id": "contexts_appcontext_chatcontext"
     },
@@ -10789,7 +10869,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L57",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "appproviderprops",
       "id": "contexts_appcontext_appproviderprops"
     },
@@ -10799,7 +10879,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/AppContext.tsx",
       "source_location": "L62",
       "_origin": "ast",
-      "community": 101,
+      "community": 99,
       "norm_label": "appprovider()",
       "id": "contexts_appcontext_appprovider"
     },
@@ -10809,7 +10889,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/DashboardContext.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 101,
+      "community": 121,
       "norm_label": "dashboardcontext.tsx",
       "id": "contexts_dashboardcontext"
     },
@@ -10819,7 +10899,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/DashboardContext.tsx",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 101,
+      "community": 121,
       "norm_label": "dashboardcontexttype",
       "id": "contexts_dashboardcontext_dashboardcontexttype"
     },
@@ -10829,7 +10909,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/DashboardContext.tsx",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 101,
+      "community": 121,
       "norm_label": "dashboardcontext",
       "id": "contexts_dashboardcontext_dashboardcontext"
     },
@@ -10839,7 +10919,7 @@
       "source_file": "BUBBLESPACE/frontend/src/contexts/DashboardContext.tsx",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 101,
+      "community": 121,
       "norm_label": "dashboardprovider()",
       "id": "contexts_dashboardcontext_dashboardprovider"
     },
@@ -13319,7 +13399,7 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/utils.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 65,
+      "community": 47,
       "norm_label": "utils.ts",
       "id": "lib_utils"
     },
@@ -13339,7 +13419,7 @@
       "source_file": "BUBBLESPACE/frontend/src/lib/utils.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 65,
+      "community": 47,
       "norm_label": "getsecuremediaurl()",
       "id": "lib_utils_getsecuremediaurl"
     },
@@ -13379,7 +13459,7 @@
       "source_file": "BUBBLESPACE/frontend/src/root.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 112,
       "norm_label": "root.tsx",
       "id": "src_root"
     },
@@ -13389,7 +13469,7 @@
       "source_file": "BUBBLESPACE/frontend/src/root.tsx",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 18,
+      "community": 112,
       "norm_label": "route",
       "id": "src_root_route"
     },
@@ -13399,7 +13479,7 @@
       "source_file": "BUBBLESPACE/frontend/src/root.tsx",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 18,
+      "community": 112,
       "norm_label": "notfoundcomponent()",
       "id": "src_root_notfoundcomponent"
     },
@@ -13409,7 +13489,7 @@
       "source_file": "BUBBLESPACE/frontend/src/root.tsx",
       "source_location": "L40",
       "_origin": "ast",
-      "community": 18,
+      "community": 112,
       "norm_label": "errorcomponent()",
       "id": "src_root_errorcomponent"
     },
@@ -13419,7 +13499,7 @@
       "source_file": "BUBBLESPACE/frontend/src/root.tsx",
       "source_location": "L78",
       "_origin": "ast",
-      "community": 18,
+      "community": 112,
       "norm_label": "rootcomponent()",
       "id": "src_root_rootcomponent"
     },
@@ -13699,7 +13779,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 145,
       "norm_label": "dashboard.tsx",
       "id": "routes_dashboard"
     },
@@ -13709,7 +13789,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard.tsx",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 18,
+      "community": 145,
       "norm_label": "route",
       "id": "routes_dashboard_route"
     },
@@ -13719,7 +13799,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 18,
+      "community": 145,
       "norm_label": "dashboardpage()",
       "id": "routes_dashboard_dashboardpage"
     },
@@ -13729,7 +13809,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/all.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 126,
       "norm_label": "all.tsx",
       "id": "dashboard_all"
     },
@@ -13739,7 +13819,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/all.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 18,
+      "community": 126,
       "norm_label": "route",
       "id": "dashboard_all_route"
     },
@@ -13749,7 +13829,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/all.tsx",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 18,
+      "community": 126,
       "norm_label": "dashboardall()",
       "id": "dashboard_all_dashboardall"
     },
@@ -13759,7 +13839,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/archive.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 127,
       "norm_label": "archive.tsx",
       "id": "dashboard_archive"
     },
@@ -13769,7 +13849,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/archive.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 18,
+      "community": 127,
       "norm_label": "route",
       "id": "dashboard_archive_route"
     },
@@ -13779,7 +13859,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/archive.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 18,
+      "community": 127,
       "norm_label": "dashboardarchive()",
       "id": "dashboard_archive_dashboardarchive"
     },
@@ -13829,7 +13909,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/calls.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 130,
       "norm_label": "calls.tsx",
       "id": "dashboard_calls"
     },
@@ -13839,7 +13919,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/calls.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 18,
+      "community": 130,
       "norm_label": "route",
       "id": "dashboard_calls_route"
     },
@@ -13849,7 +13929,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/calls.tsx",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 18,
+      "community": 130,
       "norm_label": "dashboardcalls()",
       "id": "dashboard_calls_dashboardcalls"
     },
@@ -13859,7 +13939,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/chat.$chatId.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 131,
       "norm_label": "chat.$chatid.tsx",
       "id": "dashboard_chat_chatid"
     },
@@ -13869,7 +13949,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/chat.$chatId.tsx",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 18,
+      "community": 131,
       "norm_label": "route",
       "id": "dashboard_chat_chatid_route"
     },
@@ -13879,7 +13959,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/chat.$chatId.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 18,
+      "community": 131,
       "norm_label": "dashboardchat()",
       "id": "dashboard_chat_chatid_dashboardchat"
     },
@@ -13969,7 +14049,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/profile.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 141,
       "norm_label": "profile.tsx",
       "id": "dashboard_profile"
     },
@@ -13979,7 +14059,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/profile.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 18,
+      "community": 141,
       "norm_label": "route",
       "id": "dashboard_profile_route"
     },
@@ -13989,7 +14069,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/profile.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 18,
+      "community": 141,
       "norm_label": "dashboardprofile()",
       "id": "dashboard_profile_dashboardprofile"
     },
@@ -13999,7 +14079,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/work.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 143,
       "norm_label": "work.tsx",
       "id": "dashboard_work"
     },
@@ -14009,7 +14089,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/work.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 18,
+      "community": 143,
       "norm_label": "route",
       "id": "dashboard_work_route"
     },
@@ -14019,7 +14099,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/dashboard/work.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 18,
+      "community": 143,
       "norm_label": "dashboardwork()",
       "id": "dashboard_work_dashboardwork"
     },
@@ -14029,7 +14109,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/google-callback.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 146,
       "norm_label": "google-callback.tsx",
       "id": "routes_google_callback"
     },
@@ -14039,7 +14119,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/google-callback.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 18,
+      "community": 146,
       "norm_label": "route",
       "id": "routes_google_callback_route"
     },
@@ -14049,7 +14129,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/google-callback.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 18,
+      "community": 146,
       "norm_label": "googlecallbackpage()",
       "id": "routes_google_callback_googlecallbackpage"
     },
@@ -14059,7 +14139,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/index.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 150,
       "norm_label": "index.tsx",
       "id": "routes_index"
     },
@@ -14069,7 +14149,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/index.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 18,
+      "community": 150,
       "norm_label": "route",
       "id": "routes_index_route"
     },
@@ -14079,7 +14159,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/index.tsx",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 18,
+      "community": 150,
       "norm_label": "index()",
       "id": "routes_index_index"
     },
@@ -14089,7 +14169,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/login.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 122,
       "norm_label": "login.tsx",
       "id": "routes_login"
     },
@@ -14099,7 +14179,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/login.tsx",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 18,
+      "community": 122,
       "norm_label": "route",
       "id": "routes_login_route"
     },
@@ -14109,7 +14189,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/login.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 18,
+      "community": 122,
       "norm_label": "routeforstep()",
       "id": "routes_login_routeforstep"
     },
@@ -14119,7 +14199,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/login.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 18,
+      "community": 122,
       "norm_label": "login()",
       "id": "routes_login_login"
     },
@@ -14129,7 +14209,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/setup-profile.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 159,
       "norm_label": "setup-profile.tsx",
       "id": "routes_setup_profile"
     },
@@ -14139,7 +14219,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/setup-profile.tsx",
       "source_location": "L7",
       "_origin": "ast",
-      "community": 18,
+      "community": 159,
       "norm_label": "route",
       "id": "routes_setup_profile_route"
     },
@@ -14149,7 +14229,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/setup-profile.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 18,
+      "community": 159,
       "norm_label": "setupprofileroutepage()",
       "id": "routes_setup_profile_setupprofileroutepage"
     },
@@ -14159,7 +14239,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/signup.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 124,
       "norm_label": "signup.tsx",
       "id": "routes_signup"
     },
@@ -14169,7 +14249,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/signup.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 18,
+      "community": 124,
       "norm_label": "industries",
       "id": "routes_signup_industries"
     },
@@ -14179,7 +14259,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/signup.tsx",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 18,
+      "community": 124,
       "norm_label": "route",
       "id": "routes_signup_route"
     },
@@ -14189,7 +14269,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/signup.tsx",
       "source_location": "L37",
       "_origin": "ast",
-      "community": 18,
+      "community": 124,
       "norm_label": "signup()",
       "id": "routes_signup_signup"
     },
@@ -14199,7 +14279,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/verify-otp.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 18,
+      "community": 161,
       "norm_label": "verify-otp.tsx",
       "id": "routes_verify_otp"
     },
@@ -14209,7 +14289,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/verify-otp.tsx",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 18,
+      "community": 161,
       "norm_label": "route",
       "id": "routes_verify_otp_route"
     },
@@ -14219,7 +14299,7 @@
       "source_file": "BUBBLESPACE/frontend/src/routes/verify-otp.tsx",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 18,
+      "community": 161,
       "norm_label": "verifyotppage()",
       "id": "routes_verify_otp_verifyotppage"
     },
@@ -14719,7 +14799,7 @@
       "source_file": "Backend/controllers/activityLogController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "activitylogcontroller.ts",
       "id": "controllers_activitylogcontroller"
     },
@@ -14739,7 +14819,7 @@
       "source_file": "Backend/controllers/activityLogController.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "activitymiddleware()",
       "id": "controllers_activitylogcontroller_activitymiddleware"
     },
@@ -14749,7 +14829,7 @@
       "source_file": "Backend/controllers/activityLogController.ts",
       "source_location": "L43",
       "_origin": "ast",
-      "community": 76,
+      "community": 132,
       "norm_label": "getactivitylog()",
       "id": "controllers_activitylogcontroller_getactivitylog"
     },
@@ -14759,7 +14839,7 @@
       "source_file": "Backend/controllers/activityLogController.ts",
       "source_location": "L90",
       "_origin": "ast",
-      "community": 76,
+      "community": 15,
       "norm_label": "clearactivitylog()",
       "id": "controllers_activitylogcontroller_clearactivitylog"
     },
@@ -14999,7 +15079,7 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1148",
       "_origin": "ast",
-      "community": 1,
+      "community": 132,
       "norm_label": "createorgdoc()",
       "id": "controllers_aidacontroller_createorgdoc"
     },
@@ -15299,7 +15379,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "braincontroller.ts",
       "id": "controllers_braincontroller"
     },
@@ -15309,7 +15389,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "getdeepseekclient()",
       "id": "controllers_braincontroller_getdeepseekclient"
     },
@@ -15319,7 +15399,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "fetchurltext()",
       "id": "controllers_braincontroller_fetchurltext"
     },
@@ -15329,7 +15409,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L49",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "fetchyoutubetranscript()",
       "id": "controllers_braincontroller_fetchyoutubetranscript"
     },
@@ -15339,7 +15419,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L88",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "parseslackexport()",
       "id": "controllers_braincontroller_parseslackexport"
     },
@@ -15349,7 +15429,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L109",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "parseaiconversation()",
       "id": "controllers_braincontroller_parseaiconversation"
     },
@@ -15359,7 +15439,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L128",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "extractfiletext()",
       "id": "controllers_braincontroller_extractfiletext"
     },
@@ -15369,7 +15449,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L161",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "ingest()",
       "id": "controllers_braincontroller_ingest"
     },
@@ -15379,7 +15459,7 @@
       "source_file": "Backend/controllers/brainController.ts",
       "source_location": "L393",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "getjobstatus()",
       "id": "controllers_braincontroller_getjobstatus"
     },
@@ -15569,7 +15649,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "communitycontroller.ts",
       "id": "controllers_communitycontroller"
     },
@@ -15579,7 +15659,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "getnetworks()",
       "id": "controllers_communitycontroller_getnetworks"
     },
@@ -15589,7 +15669,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "getnetworkbyid()",
       "id": "controllers_communitycontroller_getnetworkbyid"
     },
@@ -15599,7 +15679,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L44",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "createnetwork()",
       "id": "controllers_communitycontroller_createnetwork"
     },
@@ -15609,7 +15689,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L67",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "joinnetwork()",
       "id": "controllers_communitycontroller_joinnetwork"
     },
@@ -15619,7 +15699,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L91",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "leavenetwork()",
       "id": "controllers_communitycontroller_leavenetwork"
     },
@@ -15629,7 +15709,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L109",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "gettrendingnetworks()",
       "id": "controllers_communitycontroller_gettrendingnetworks"
     },
@@ -15639,7 +15719,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L133",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "getnetworkofthemonth()",
       "id": "controllers_communitycontroller_getnetworkofthemonth"
     },
@@ -15649,7 +15729,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L153",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "getcategories()",
       "id": "controllers_communitycontroller_getcategories"
     },
@@ -15659,7 +15739,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L165",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "getnetworkposts()",
       "id": "controllers_communitycontroller_getnetworkposts"
     },
@@ -15669,7 +15749,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L179",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "createnetworkpost()",
       "id": "controllers_communitycontroller_createnetworkpost"
     },
@@ -15679,7 +15759,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L212",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "reacttonetworkpost()",
       "id": "controllers_communitycontroller_reacttonetworkpost"
     },
@@ -15689,7 +15769,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L240",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "forwardnetworkpost()",
       "id": "controllers_communitycontroller_forwardnetworkpost"
     },
@@ -15699,7 +15779,7 @@
       "source_file": "Backend/controllers/communityController.ts",
       "source_location": "L274",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "deletenetworkpost()",
       "id": "controllers_communitycontroller_deletenetworkpost"
     },
@@ -15709,7 +15789,7 @@
       "source_file": "Backend/controllers/continuityController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 211,
+      "community": 12,
       "norm_label": "continuitycontroller.ts",
       "id": "controllers_continuitycontroller"
     },
@@ -15719,7 +15799,7 @@
       "source_file": "Backend/controllers/continuityController.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 211,
+      "community": 48,
       "norm_label": "getdeepseekclient()",
       "id": "controllers_continuitycontroller_getdeepseekclient"
     },
@@ -15749,7 +15829,7 @@
       "source_file": "Backend/controllers/continuityController.ts",
       "source_location": "L124",
       "_origin": "ast",
-      "community": 211,
+      "community": 48,
       "norm_label": "searchbrain()",
       "id": "controllers_continuitycontroller_searchbrain"
     },
@@ -15869,7 +15949,7 @@
       "source_file": "Backend/controllers/digestController.ts",
       "source_location": "L386",
       "_origin": "ast",
-      "community": 210,
+      "community": 12,
       "norm_label": "getexpertiseradar()",
       "id": "controllers_digestcontroller_getexpertiseradar"
     },
@@ -16219,7 +16299,7 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L93",
       "_origin": "ast",
-      "community": 20,
+      "community": 44,
       "norm_label": "createmeeting()",
       "id": "controllers_meetingcontroller_createmeeting"
     },
@@ -16329,7 +16409,7 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L915",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "transcribeupload()",
       "id": "controllers_meetingcontroller_transcribeupload"
     },
@@ -16419,7 +16499,7 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L346",
       "_origin": "ast",
-      "community": 74,
+      "community": 44,
       "norm_label": "uploadmedia()",
       "id": "controllers_messagecontroller_uploadmedia"
     },
@@ -16489,7 +16569,7 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L585",
       "_origin": "ast",
-      "community": 74,
+      "community": 11,
       "norm_label": "proxymedia()",
       "id": "controllers_messagecontroller_proxymedia"
     },
@@ -16519,7 +16599,7 @@
       "source_file": "Backend/controllers/messageRequestController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "messagerequestcontroller.ts",
       "id": "controllers_messagerequestcontroller"
     },
@@ -16529,7 +16609,7 @@
       "source_file": "Backend/controllers/messageRequestController.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "authrequest",
       "id": "controllers_messagerequestcontroller_authrequest"
     },
@@ -16539,7 +16619,7 @@
       "source_file": "Backend/controllers/messageRequestController.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "sendmessagerequest()",
       "id": "controllers_messagerequestcontroller_sendmessagerequest"
     },
@@ -16549,7 +16629,7 @@
       "source_file": "Backend/controllers/messageRequestController.ts",
       "source_location": "L96",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "respondtomessagerequest()",
       "id": "controllers_messagerequestcontroller_respondtomessagerequest"
     },
@@ -16559,7 +16639,7 @@
       "source_file": "Backend/controllers/messageRequestController.ts",
       "source_location": "L130",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "getmessagerequests()",
       "id": "controllers_messagerequestcontroller_getmessagerequests"
     },
@@ -16569,7 +16649,7 @@
       "source_file": "Backend/controllers/messageRequestController.ts",
       "source_location": "L149",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "canmessageuser()",
       "id": "controllers_messagerequestcontroller_canmessageuser"
     },
@@ -16689,7 +16769,7 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 49,
+      "community": 29,
       "norm_label": "ensureorganizationforfounder()",
       "id": "controllers_orgcontroller_ensureorganizationforfounder"
     },
@@ -16779,7 +16859,7 @@
       "source_file": "Backend/controllers/orgController.ts",
       "source_location": "L504",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "joinorganizationbyinvite()",
       "id": "controllers_orgcontroller_joinorganizationbyinvite"
     },
@@ -17689,7 +17769,7 @@
       "source_file": "Backend/models/activityLog.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "activitylog.ts",
       "id": "models_activitylog"
     },
@@ -17699,7 +17779,7 @@
       "source_file": "Backend/models/activityLog.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "activityaction",
       "id": "models_activitylog_activityaction"
     },
@@ -17709,7 +17789,7 @@
       "source_file": "Backend/models/activityLog.ts",
       "source_location": "L47",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "iactivitylog",
       "id": "models_activitylog_iactivitylog"
     },
@@ -17719,7 +17799,7 @@
       "source_file": "Backend/models/activityLog.ts",
       "source_location": "L59",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "activitylogschema",
       "id": "models_activitylog_activitylogschema"
     },
@@ -17729,7 +17809,7 @@
       "source_file": "Backend/models/activityLog.ts",
       "source_location": "L78",
       "_origin": "ast",
-      "community": 76,
+      "community": 35,
       "norm_label": "activitylog",
       "id": "models_activitylog_activitylog"
     },
@@ -17979,7 +18059,7 @@
       "source_file": "Backend/models/expertiseRadar.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 120,
+      "community": 12,
       "norm_label": "expertiseradar.ts",
       "id": "models_expertiseradar"
     },
@@ -17989,7 +18069,7 @@
       "source_file": "Backend/models/expertiseRadar.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 120,
+      "community": 12,
       "norm_label": "iexpertiseradar",
       "id": "models_expertiseradar_iexpertiseradar"
     },
@@ -17999,7 +18079,7 @@
       "source_file": "Backend/models/expertiseRadar.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 120,
+      "community": 12,
       "norm_label": "expertiseradarschema",
       "id": "models_expertiseradar_expertiseradarschema"
     },
@@ -18009,7 +18089,7 @@
       "source_file": "Backend/models/expertiseRadar.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 120,
+      "community": 12,
       "norm_label": "expertiseradar",
       "id": "models_expertiseradar_expertiseradar"
     },
@@ -18029,7 +18109,7 @@
       "source_file": "Backend/models/goal.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "goal.ts",
       "id": "models_goal"
     },
@@ -18039,7 +18119,7 @@
       "source_file": "Backend/models/goal.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "igoal",
       "id": "models_goal_igoal"
     },
@@ -18049,7 +18129,7 @@
       "source_file": "Backend/models/goal.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "goalschema",
       "id": "models_goal_goalschema"
     },
@@ -18059,7 +18139,7 @@
       "source_file": "Backend/models/goal.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "goal",
       "id": "models_goal_goal"
     },
@@ -18069,7 +18149,7 @@
       "source_file": "Backend/models/ingestionJob.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "ingestionjob.ts",
       "id": "models_ingestionjob"
     },
@@ -18079,7 +18159,7 @@
       "source_file": "Backend/models/ingestionJob.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "iingestionjob",
       "id": "models_ingestionjob_iingestionjob"
     },
@@ -18089,7 +18169,7 @@
       "source_file": "Backend/models/ingestionJob.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "ingestionjobschema",
       "id": "models_ingestionjob_ingestionjobschema"
     },
@@ -18099,7 +18179,7 @@
       "source_file": "Backend/models/ingestionJob.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "ingestionjob",
       "id": "models_ingestionjob_ingestionjob"
     },
@@ -18109,7 +18189,7 @@
       "source_file": "Backend/models/invoice.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 66,
+      "community": 59,
       "norm_label": "invoice.ts",
       "id": "models_invoice"
     },
@@ -18119,7 +18199,7 @@
       "source_file": "Backend/models/invoice.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 66,
+      "community": 59,
       "norm_label": "iinvoiceitem",
       "id": "models_invoice_iinvoiceitem"
     },
@@ -18129,7 +18209,7 @@
       "source_file": "Backend/models/invoice.ts",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 66,
+      "community": 59,
       "norm_label": "iinvoice",
       "id": "models_invoice_iinvoice"
     },
@@ -18139,7 +18219,7 @@
       "source_file": "Backend/models/invoice.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "community": 66,
+      "community": 59,
       "norm_label": "invoiceitemschema",
       "id": "models_invoice_invoiceitemschema"
     },
@@ -18149,7 +18229,7 @@
       "source_file": "Backend/models/invoice.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 66,
+      "community": 59,
       "norm_label": "invoiceschema",
       "id": "models_invoice_invoiceschema"
     },
@@ -18159,7 +18239,7 @@
       "source_file": "Backend/models/invoice.ts",
       "source_location": "L72",
       "_origin": "ast",
-      "community": 66,
+      "community": 59,
       "norm_label": "invoice",
       "id": "models_invoice_invoice"
     },
@@ -18269,7 +18349,7 @@
       "source_file": "Backend/models/messageRequest.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "messagerequest.ts",
       "id": "models_messagerequest"
     },
@@ -18279,7 +18359,7 @@
       "source_file": "Backend/models/messageRequest.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "imessagerequest",
       "id": "models_messagerequest_imessagerequest"
     },
@@ -18289,7 +18369,7 @@
       "source_file": "Backend/models/messageRequest.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "messagerequestschema",
       "id": "models_messagerequest_messagerequestschema"
     },
@@ -18299,7 +18379,7 @@
       "source_file": "Backend/models/messageRequest.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "messagerequest",
       "id": "models_messagerequest_messagerequest"
     },
@@ -18349,7 +18429,7 @@
       "source_file": "Backend/models/network.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "network.ts",
       "id": "models_network"
     },
@@ -18359,7 +18439,7 @@
       "source_file": "Backend/models/network.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "inetworkpost",
       "id": "models_network_inetworkpost"
     },
@@ -18369,7 +18449,7 @@
       "source_file": "Backend/models/network.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "networkpostschema",
       "id": "models_network_networkpostschema"
     },
@@ -18379,7 +18459,7 @@
       "source_file": "Backend/models/network.ts",
       "source_location": "L34",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "inetwork",
       "id": "models_network_inetwork"
     },
@@ -18389,7 +18469,7 @@
       "source_file": "Backend/models/network.ts",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "networkschema",
       "id": "models_network_networkschema"
     },
@@ -18399,7 +18479,7 @@
       "source_file": "Backend/models/network.ts",
       "source_location": "L70",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "networkpost",
       "id": "models_network_networkpost"
     },
@@ -18499,7 +18579,7 @@
       "source_file": "Backend/models/organizations.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 132,
+      "community": 12,
       "norm_label": "organizations.ts",
       "id": "models_organizations"
     },
@@ -18519,7 +18599,7 @@
       "source_file": "Backend/models/organizations.ts",
       "source_location": "L22",
       "_origin": "ast",
-      "community": 132,
+      "community": 12,
       "norm_label": "organizationschema",
       "id": "models_organizations_organizationschema"
     },
@@ -18529,7 +18609,7 @@
       "source_file": "Backend/models/organizations.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 132,
+      "community": 12,
       "norm_label": "organization",
       "id": "models_organizations_organization"
     },
@@ -18539,7 +18619,7 @@
       "source_file": "Backend/models/otp.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 19,
+      "community": 144,
       "norm_label": "otp.ts",
       "id": "models_otp"
     },
@@ -18549,7 +18629,7 @@
       "source_file": "Backend/models/otp.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 19,
+      "community": 144,
       "norm_label": "iotp",
       "id": "models_otp_iotp"
     },
@@ -18559,7 +18639,7 @@
       "source_file": "Backend/models/otp.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 19,
+      "community": 144,
       "norm_label": "otpschema",
       "id": "models_otp_otpschema"
     },
@@ -18569,7 +18649,7 @@
       "source_file": "Backend/models/post.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "post.ts",
       "id": "models_post"
     },
@@ -18579,7 +18659,7 @@
       "source_file": "Backend/models/post.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "ipost",
       "id": "models_post_ipost"
     },
@@ -18589,7 +18669,7 @@
       "source_file": "Backend/models/post.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "postschema",
       "id": "models_post_postschema"
     },
@@ -18599,7 +18679,7 @@
       "source_file": "Backend/models/pushToken.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "pushtoken.ts",
       "id": "models_pushtoken"
     },
@@ -18609,7 +18689,7 @@
       "source_file": "Backend/models/pushToken.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "ipushtoken",
       "id": "models_pushtoken_ipushtoken"
     },
@@ -18619,7 +18699,7 @@
       "source_file": "Backend/models/pushToken.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "pushtokenschema",
       "id": "models_pushtoken_pushtokenschema"
     },
@@ -18629,7 +18709,7 @@
       "source_file": "Backend/models/pushToken.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "pushtoken",
       "id": "models_pushtoken_pushtoken"
     },
@@ -18789,7 +18869,7 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L75",
       "_origin": "ast",
-      "community": 16,
+      "community": 210,
       "norm_label": "task",
       "id": "models_task_task"
     },
@@ -18849,7 +18929,7 @@
       "source_file": "Backend/models/transaction.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "transaction.ts",
       "id": "models_transaction"
     },
@@ -18859,7 +18939,7 @@
       "source_file": "Backend/models/transaction.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "itransaction",
       "id": "models_transaction_itransaction"
     },
@@ -18869,7 +18949,7 @@
       "source_file": "Backend/models/transaction.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "transactionschema",
       "id": "models_transaction_transactionschema"
     },
@@ -18879,7 +18959,7 @@
       "source_file": "Backend/models/transaction.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "transaction",
       "id": "models_transaction_transaction"
     },
@@ -19789,7 +19869,7 @@
       "source_file": "Backend/routes/activityRoutes.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 76,
+      "community": 15,
       "norm_label": "activityroutes.ts",
       "id": "routes_activityroutes"
     },
@@ -19799,7 +19879,7 @@
       "source_file": "Backend/routes/activityRoutes.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 76,
+      "community": 15,
       "norm_label": "router",
       "id": "routes_activityroutes_router"
     },
@@ -19809,7 +19889,7 @@
       "source_file": "Backend/routes/activityRoutes.ts",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 76,
+      "community": 15,
       "norm_label": "requireauth",
       "id": "routes_activityroutes_requireauth"
     },
@@ -19829,7 +19909,7 @@
       "source_file": "Backend/routes/aidaRoutes.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 15,
+      "community": 1,
       "norm_label": "router",
       "id": "routes_aidaroutes_router"
     },
@@ -19879,7 +19959,7 @@
       "source_file": "Backend/routes/brainRoutes.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 210,
+      "community": 48,
       "norm_label": "brainroutes.ts",
       "id": "routes_brainroutes"
     },
@@ -19899,7 +19979,7 @@
       "source_file": "Backend/routes/brainRoutes.ts",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 210,
+      "community": 48,
       "norm_label": "requireauth",
       "id": "routes_brainroutes_requireauth"
     },
@@ -19949,7 +20029,7 @@
       "source_file": "Backend/routes/chatRoutes.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "community": 15,
+      "community": 31,
       "norm_label": "router",
       "id": "routes_chatroutes_router"
     },
@@ -19959,7 +20039,7 @@
       "source_file": "Backend/routes/communityRoutes.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "communityroutes.ts",
       "id": "routes_communityroutes"
     },
@@ -19969,7 +20049,7 @@
       "source_file": "Backend/routes/communityRoutes.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 48,
+      "community": 59,
       "norm_label": "router",
       "id": "routes_communityroutes_router"
     },
@@ -20059,7 +20139,7 @@
       "source_file": "Backend/routes/meetingRoutes.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 20,
+      "community": 15,
       "norm_label": "router",
       "id": "routes_meetingroutes_router"
     },
@@ -20329,7 +20409,7 @@
       "source_file": "Backend/routes/userRoutes.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 15,
+      "community": 123,
       "norm_label": "router",
       "id": "routes_userroutes_router"
     },
@@ -20469,7 +20549,7 @@
       "source_file": "Backend/scripts/seed-50-employees.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 112,
+      "community": 132,
       "norm_label": "seed-50-employees.ts",
       "id": "scripts_seed_50_employees"
     },
@@ -20479,7 +20559,7 @@
       "source_file": "Backend/scripts/seed-50-employees.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 112,
+      "community": 132,
       "norm_label": "orgs",
       "id": "scripts_seed_50_employees_orgs"
     },
@@ -20489,7 +20569,7 @@
       "source_file": "Backend/scripts/seed-50-employees.ts",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 112,
+      "community": 132,
       "norm_label": "employee",
       "id": "scripts_seed_50_employees_employee"
     },
@@ -20499,7 +20579,7 @@
       "source_file": "Backend/scripts/seed-50-employees.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 112,
+      "community": 132,
       "norm_label": "employees",
       "id": "scripts_seed_50_employees_employees"
     },
@@ -20509,7 +20589,7 @@
       "source_file": "Backend/scripts/seed-50-employees.ts",
       "source_location": "L105",
       "_origin": "ast",
-      "community": 112,
+      "community": 132,
       "norm_label": "generateuniquetagsync()",
       "id": "scripts_seed_50_employees_generateuniquetagsync"
     },
@@ -20519,7 +20599,7 @@
       "source_file": "Backend/scripts/seed-50-employees.ts",
       "source_location": "L112",
       "_origin": "ast",
-      "community": 112,
+      "community": 132,
       "norm_label": "run()",
       "id": "scripts_seed_50_employees_run"
     },
@@ -20619,7 +20699,7 @@
       "source_file": "Backend/scripts/seed-user.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 125,
+      "community": 132,
       "norm_label": "seed-user.ts",
       "id": "scripts_seed_user"
     },
@@ -20629,7 +20709,7 @@
       "source_file": "Backend/scripts/seed-user.ts",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 125,
+      "community": 132,
       "norm_label": "email",
       "id": "scripts_seed_user_email"
     },
@@ -20639,7 +20719,7 @@
       "source_file": "Backend/scripts/seed-user.ts",
       "source_location": "L38",
       "_origin": "ast",
-      "community": 125,
+      "community": 132,
       "norm_label": "kind_input",
       "id": "scripts_seed_user_kind_input"
     },
@@ -20649,7 +20729,7 @@
       "source_file": "Backend/scripts/seed-user.ts",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 125,
+      "community": 132,
       "norm_label": "uniquetagfor()",
       "id": "scripts_seed_user_uniquetagfor"
     },
@@ -20659,7 +20739,7 @@
       "source_file": "Backend/scripts/seed-user.ts",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 125,
+      "community": 132,
       "norm_label": "run()",
       "id": "scripts_seed_user_run"
     },
@@ -20699,7 +20779,7 @@
       "source_file": "Backend/scripts/seed.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "seed.ts",
       "id": "scripts_seed"
     },
@@ -20709,7 +20789,7 @@
       "source_file": "Backend/scripts/seed.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 80,
+      "community": 59,
       "norm_label": "seed()",
       "id": "scripts_seed_seed"
     },
@@ -20889,7 +20969,7 @@
       "source_file": "Backend/scripts/test-isolation.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "test-isolation.ts",
       "id": "scripts_test_isolation"
     },
@@ -20899,7 +20979,7 @@
       "source_file": "Backend/scripts/test-isolation.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "mockresponse()",
       "id": "scripts_test_isolation_mockresponse"
     },
@@ -20909,7 +20989,7 @@
       "source_file": "Backend/scripts/test-isolation.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 132,
+      "community": 48,
       "norm_label": "testisolation()",
       "id": "scripts_test_isolation_testisolation"
     },
@@ -20969,7 +21049,7 @@
       "source_file": "Backend/scripts/test-transcoder.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "test-transcoder.ts",
       "id": "scripts_test_transcoder"
     },
@@ -20979,7 +21059,7 @@
       "source_file": "Backend/scripts/test-transcoder.ts",
       "source_location": "L9",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "runtest()",
       "id": "scripts_test_transcoder_runtest"
     },
@@ -21219,7 +21299,7 @@
       "source_file": "Backend/utils/brainEventListener.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 211,
+      "community": 12,
       "norm_label": "braineventlistener.ts",
       "id": "utils_braineventlistener"
     },
@@ -21249,7 +21329,7 @@
       "source_file": "Backend/utils/brainEventListener.ts",
       "source_location": "L245",
       "_origin": "ast",
-      "community": 211,
+      "community": 12,
       "norm_label": "audio_video_ext",
       "id": "utils_braineventlistener_audio_video_ext"
     },
@@ -21279,7 +21359,7 @@
       "source_file": "Backend/utils/brainIngest.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 211,
+      "community": 29,
       "norm_label": "brainsourcekind",
       "id": "utils_brainingest_brainsourcekind"
     },
@@ -21529,7 +21609,7 @@
       "source_file": "Backend/utils/filebase.ts",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 74,
+      "community": 44,
       "norm_label": "savefilelocally()",
       "id": "utils_filebase_savefilelocally"
     },
@@ -21539,7 +21619,7 @@
       "source_file": "Backend/utils/filebase.ts",
       "source_location": "L77",
       "_origin": "ast",
-      "community": 74,
+      "community": 44,
       "norm_label": "uploadtofilebase()",
       "id": "utils_filebase_uploadtofilebase"
     },
@@ -21669,7 +21749,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "mailer.ts",
       "id": "utils_mailer"
     },
@@ -21679,7 +21759,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "resend",
       "id": "utils_mailer_resend"
     },
@@ -21689,7 +21769,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendmail()",
       "id": "utils_mailer_sendmail"
     },
@@ -21709,7 +21789,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L88",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendpasswordresetemail()",
       "id": "utils_mailer_sendpasswordresetemail"
     },
@@ -21719,7 +21799,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L130",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendtaskreminderemail()",
       "id": "utils_mailer_sendtaskreminderemail"
     },
@@ -21729,7 +21809,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L171",
       "_origin": "ast",
-      "community": 74,
+      "community": 80,
       "norm_label": "sendmessagerequestemail()",
       "id": "utils_mailer_sendmessagerequestemail"
     },
@@ -21739,7 +21819,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L208",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendmeetingtranscriptemail()",
       "id": "utils_mailer_sendmeetingtranscriptemail"
     },
@@ -21749,7 +21829,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L306",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendwelcomenewmemberemail()",
       "id": "utils_mailer_sendwelcomenewmemberemail"
     },
@@ -21759,7 +21839,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L354",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendmeetingrecapemail()",
       "id": "utils_mailer_sendmeetingrecapemail"
     },
@@ -21769,7 +21849,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L385",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "senddigestemail()",
       "id": "utils_mailer_senddigestemail"
     },
@@ -21779,7 +21859,7 @@
       "source_file": "Backend/utils/mailer.ts",
       "source_location": "L414",
       "_origin": "ast",
-      "community": 19,
+      "community": 66,
       "norm_label": "sendcalendareventemail()",
       "id": "utils_mailer_sendcalendareventemail"
     },
@@ -21799,7 +21879,7 @@
       "source_file": "Backend/utils/orgResolver.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 210,
+      "community": 132,
       "norm_label": "resolveuserorg()",
       "id": "utils_orgresolver_resolveuserorg"
     },
@@ -21889,7 +21969,7 @@
       "source_file": "Backend/utils/push.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 35,
+      "community": 66,
       "norm_label": "push.ts",
       "id": "utils_push"
     },
@@ -21899,7 +21979,7 @@
       "source_file": "Backend/utils/push.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 35,
+      "community": 74,
       "norm_label": "sendpushnotification()",
       "id": "utils_push_sendpushnotification"
     },
@@ -21999,7 +22079,7 @@
       "source_file": "Backend/utils/socket.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 35,
+      "community": 74,
       "norm_label": "socket.ts",
       "id": "utils_socket"
     },
@@ -22019,7 +22099,7 @@
       "source_file": "Backend/utils/socket.ts",
       "source_location": "L310",
       "_origin": "ast",
-      "community": 31,
+      "community": 74,
       "norm_label": "getio()",
       "id": "utils_socket_getio"
     },
@@ -22029,7 +22109,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "whisperservice.ts",
       "id": "utils_whisperservice"
     },
@@ -22039,7 +22119,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "getopenaiclient()",
       "id": "utils_whisperservice_getopenaiclient"
     },
@@ -22049,7 +22129,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "supported_extensions",
       "id": "utils_whisperservice_supported_extensions"
     },
@@ -22059,7 +22139,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L24",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "needs_transcode",
       "id": "utils_whisperservice_needs_transcode"
     },
@@ -22069,7 +22149,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "transcodetomp3()",
       "id": "utils_whisperservice_transcodetomp3"
     },
@@ -22079,7 +22159,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L44",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "getaudioduration()",
       "id": "utils_whisperservice_getaudioduration"
     },
@@ -22089,7 +22169,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L54",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "extractsegment()",
       "id": "utils_whisperservice_extractsegment"
     },
@@ -22099,7 +22179,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L73",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "maketemppath()",
       "id": "utils_whisperservice_maketemppath"
     },
@@ -22109,7 +22189,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L76",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "cleanupfiles()",
       "id": "utils_whisperservice_cleanupfiles"
     },
@@ -22119,7 +22199,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L90",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "transcribeaudio()",
       "id": "utils_whisperservice_transcribeaudio"
     },
@@ -22129,7 +22209,7 @@
       "source_file": "Backend/utils/whisperService.ts",
       "source_location": "L158",
       "_origin": "ast",
-      "community": 20,
+      "community": 76,
       "norm_label": "transcribewithtimestamps()",
       "id": "utils_whisperservice_transcribewithtimestamps"
     },
@@ -25739,841 +25819,128 @@
   ],
   "links": [
     {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L406",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_bulkimportholidays"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L100",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_createevent"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L262",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_deleteevent"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L314",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_endmeeting"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L103",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_ensurenigerianholidays"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_getdeepseekclient"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L203",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_getevent"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L166",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_getevents"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L456",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_geteventsuggestions"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L91",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L25",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_ingesteventintobrain"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L284",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_startmeeting"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L226",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_calendarcontroller_updateevent"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L12",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_continuitycontroller"
-    },
-    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L12",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L31",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "controllers_continuitycontroller_updateexpertiseradar"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L4",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_calendarevent"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L4",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_calendarevent_calendarevent"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_expertiseradar"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_expertiseradar_expertiseradar"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L9",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_ingestionjob"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L9",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_ingestionjob_ingestionjob"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_organizations"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_organizations_organization"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_orgdocument"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_orgdocument_orgdocument"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L6",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_users"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L6",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "models_users_user"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L13",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_braineventlistener"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L13",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_braineventlistener_braineventbus"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_embeddings"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_embeddings_chunktext"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_embeddings_generateembedding"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_nigeriaholidays"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_nigeriaholidays_fetchgooglenigerianholidays",
+      "source": "scripts_seed_org_team",
+      "target": "models_conversations_conversation",
       "confidence_score": 1.0
     },
     {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L15",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L30",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_nigeriaholidays_getnigerianholidays"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L11",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_pinecone"
+      "source": "scripts_seed_org_team",
+      "target": "models_organizations_organization",
+      "confidence_score": 1.0
     },
     {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L11",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L29",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_pinecone_haspinecone"
+      "source": "scripts_seed_org_team",
+      "target": "models_users_user",
+      "confidence_score": 1.0
     },
     {
-      "relation": "imports",
-      "context": "import",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L11",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_pinecone_queryvectors"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L11",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_pinecone_upsertvectors"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L14",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L14",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_whisperservice_transcribewithtimestamps"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L81",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_ingesteventintobrain",
-      "target": "controllers_continuitycontroller_updateexpertiseradar"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L33",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_ingesteventintobrain",
-      "target": "utils_embeddings_chunktext"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
+      "source_file": "Backend/scripts/seed-org-team.ts",
       "source_location": "L39",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_ingesteventintobrain",
-      "target": "utils_embeddings_generateembedding"
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_member",
+      "confidence_score": 1.0
     },
     {
-      "relation": "calls",
-      "context": "call",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_org_code",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_slugifyname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_team",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_uniquetagfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/seed-org-team.ts",
       "source_location": "L36",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_ingesteventintobrain",
-      "target": "utils_pinecone_haspinecone"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L58",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_ingesteventintobrain",
-      "target": "utils_pinecone_upsertvectors"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L415",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_bulkimportholidays",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L105",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_createevent",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L267",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_deleteevent",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L320",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_endmeeting",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L208",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_getevent",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L171",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_getevents",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L461",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_geteventsuggestions",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L289",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_startmeeting",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L231",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_updateevent",
-      "target": "controllers_calendarcontroller_getorgfromuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L122",
-      "weight": 1.0,
-      "source": "controllers_calendarcontroller_ensurenigerianholidays",
-      "target": "utils_nigeriaholidays_fetchgooglenigerianholidays"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L232",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller_getevents",
-      "target": "controllers_calendarcontroller_ensurenigerianholidays"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_createevent"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_getevents"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_getevent"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_updateevent"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_deleteevent"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_startmeeting"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_endmeeting"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_bulkimportholidays"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L503",
-      "weight": 1.0,
-      "source": "controllers_calendarcontroller_geteventsuggestions",
-      "target": "utils_embeddings_generateembedding"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L502",
-      "weight": 1.0,
-      "source": "controllers_calendarcontroller_geteventsuggestions",
-      "target": "utils_pinecone_haspinecone"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L505",
-      "weight": 1.0,
-      "source": "controllers_calendarcontroller_geteventsuggestions",
-      "target": "utils_pinecone_queryvectors"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/calendarRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_calendarroutes",
-      "target": "controllers_calendarcontroller_geteventsuggestions"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L93",
-      "weight": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_fetchgooglenigerianholidays",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_fixed"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L49",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_getnigerianholidays"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_holidayseed"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L24",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_movable"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L13",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_pad"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L63",
-      "weight": 1.0,
-      "source": "utils_nigeriaholidays",
-      "target": "utils_nigeriaholidays_parseics",
+      "source": "scripts_seed_org_team",
+      "target": "scripts_seed_org_team_workroom_count",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/nigeriaHolidays.ts",
-      "source_location": "L101",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L107",
       "weight": 1.0,
-      "source": "utils_nigeriaholidays_fetchgooglenigerianholidays",
-      "target": "utils_nigeriaholidays_parseics",
+      "source": "scripts_seed_org_team_run",
+      "target": "scripts_seed_org_team_slugifyname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/seed-org-team.ts",
+      "source_location": "L125",
+      "weight": 1.0,
+      "source": "scripts_seed_org_team_run",
+      "target": "scripts_seed_org_team_uniquetagfor",
       "confidence_score": 1.0
     },
     {
@@ -27592,6 +26959,1082 @@
       "weight": 1.0,
       "source": "main_people_peoplescreen",
       "target": "lib_theme_usetheme"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "components_avatar"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "components_avatar_avatar"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_api"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_api_getmyprofile"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_api_getsecuremediaurl"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_api_updateprofile"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_authstorage"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_authstorage_authstorage"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_mockdata"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_mockdata_subscribetoplusbutton"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_theme"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_theme_scheme"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "lib_theme_usetheme"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L12",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "main_profile_avatars"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "main_profile_getgroupinitials"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L23",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "main_profile_getinitials"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "main_profile_profilescreen"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile",
+      "target": "react"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L271",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile_profilescreen",
+      "target": "main_profile_getinitials"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "app/bubble-chat/src/app/_layout.tsx",
+      "source_location": "L259",
+      "weight": 1.0,
+      "source": "app_layout_globalcalloverlay",
+      "target": "main_profile_getgroupinitials"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L282",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "main_profile_profilescreen",
+      "target": "main_profile_getgroupinitials"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "main_profile_profilescreen",
+      "target": "lib_theme_usetheme"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L406",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_bulkimportholidays"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_createevent"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L262",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_deleteevent"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L314",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_endmeeting"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_ensurenigerianholidays"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_getdeepseekclient"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L203",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_getevent"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L166",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_getevents"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L456",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_geteventsuggestions"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_ingesteventintobrain"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L284",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_startmeeting"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L226",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_calendarcontroller_updateevent"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_continuitycontroller"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "controllers_continuitycontroller_updateexpertiseradar"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_calendarevent"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_calendarevent_calendarevent"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_expertiseradar"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_expertiseradar_expertiseradar"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_ingestionjob"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_ingestionjob_ingestionjob"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_organizations"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_organizations_organization"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_orgdocument"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_orgdocument_orgdocument"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_users"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "models_users_user"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_braineventlistener"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_braineventlistener_braineventbus"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_embeddings"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_embeddings_chunktext"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_embeddings_generateembedding"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_nigeriaholidays"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_nigeriaholidays_fetchgooglenigerianholidays"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_nigeriaholidays_getnigerianholidays"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_pinecone"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_pinecone_haspinecone"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_pinecone_queryvectors"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_pinecone_upsertvectors"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_whisperservice_transcribewithtimestamps"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_ingesteventintobrain",
+      "target": "controllers_continuitycontroller_updateexpertiseradar"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_ingesteventintobrain",
+      "target": "utils_embeddings_chunktext"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_ingesteventintobrain",
+      "target": "utils_embeddings_generateembedding"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_ingesteventintobrain",
+      "target": "utils_pinecone_haspinecone"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_ingesteventintobrain",
+      "target": "utils_pinecone_upsertvectors"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L415",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_bulkimportholidays",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_createevent",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L267",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_deleteevent",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L320",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_endmeeting",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L208",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_getevent",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L171",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_getevents",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L461",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_geteventsuggestions",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L289",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_startmeeting",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L231",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_updateevent",
+      "target": "controllers_calendarcontroller_getorgfromuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "controllers_calendarcontroller_ensurenigerianholidays",
+      "target": "utils_nigeriaholidays_fetchgooglenigerianholidays"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L232",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller_getevents",
+      "target": "controllers_calendarcontroller_ensurenigerianholidays"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_createevent"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_getevents"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_getevent"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_updateevent"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_deleteevent"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_startmeeting"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_endmeeting"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_bulkimportholidays"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L503",
+      "weight": 1.0,
+      "source": "controllers_calendarcontroller_geteventsuggestions",
+      "target": "utils_embeddings_generateembedding"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L502",
+      "weight": 1.0,
+      "source": "controllers_calendarcontroller_geteventsuggestions",
+      "target": "utils_pinecone_haspinecone"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L505",
+      "weight": 1.0,
+      "source": "controllers_calendarcontroller_geteventsuggestions",
+      "target": "utils_pinecone_queryvectors"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/calendarRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_calendarroutes",
+      "target": "controllers_calendarcontroller_geteventsuggestions"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_fetchgooglenigerianholidays"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_fixed"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_getnigerianholidays"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_holidayseed"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_movable"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_pad"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays",
+      "target": "utils_nigeriaholidays_parseics"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/nigeriaHolidays.ts",
+      "source_location": "L101",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_nigeriaholidays_fetchgooglenigerianholidays",
+      "target": "utils_nigeriaholidays_parseics"
     },
     {
       "relation": "imports_from",
@@ -31091,244 +31534,6 @@
       "source_location": "L1141",
       "weight": 1.0,
       "source": "main_messages_chatrow",
-      "target": "lib_theme_usetheme"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "components_avatar"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "components_avatar_avatar"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_api"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_api_getmyprofile"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_api_getsecuremediaurl"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_api_updateprofile"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_authstorage"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L8",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_authstorage_authstorage"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L6",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_mockdata"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L6",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_mockdata_subscribetoplusbutton"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_theme"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_theme_scheme"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "lib_theme_usetheme"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L12",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "main_profile_avatars"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L29",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "main_profile_getgroupinitials"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L23",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "main_profile_getinitials"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L6",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "main_profile_profilescreen"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile",
-      "target": "react"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L271",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile_profilescreen",
-      "target": "main_profile_getinitials"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "app/bubble-chat/src/app/_layout.tsx",
-      "source_location": "L259",
-      "weight": 1.0,
-      "source": "app_layout_globalcalloverlay",
-      "target": "main_profile_getgroupinitials"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L282",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "main_profile_profilescreen",
-      "target": "main_profile_getgroupinitials"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/profile.tsx",
-      "source_location": "L45",
-      "weight": 1.0,
-      "source": "main_profile_profilescreen",
       "target": "lib_theme_usetheme"
     },
     {
@@ -77839,5 +78044,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "cdec880012cbaa021f820a27c9745552af9c2dcb"
+  "built_at_commit": "1233ef5a30f00f1205eb4ed6ee3f0d290bc613e3"
 }
