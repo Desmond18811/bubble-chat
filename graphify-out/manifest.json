@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/Chrome.tsx": {
-    "mtime": 1780303953.243916,
-    "ast_hash": "c6bd5c3a083477225c9880ae3bffdb83",
+    "mtime": 1782207740.57061,
+    "ast_hash": "40d3780e8ee677378729cf9fe7d5d878",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/FAQ.tsx": {
@@ -510,8 +510,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routeTree.gen.ts": {
-    "mtime": 1781076126.57431,
-    "ast_hash": "29daff5a86987614f80db53988a85f34",
+    "mtime": 1782207908.705003,
+    "ast_hash": "459068043fba3cf3762e3614657a3e0c",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/router.tsx": {
@@ -580,8 +580,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/index.tsx": {
-    "mtime": 1780257160.4587648,
-    "ast_hash": "d44b16955ff2af1f3c2c6a3c1e51eed2",
+    "mtime": 1782208002.810398,
+    "ast_hash": "cb2d563a6a34bda06fc820c3ad85ac32",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/login.tsx": {
@@ -740,13 +740,13 @@
     "semantic_hash": ""
   },
   "Backend/index.ts": {
-    "mtime": 1782206052.0323277,
+    "mtime": 1782208040.426629,
     "ast_hash": "833ff5614fdd2aba0526c25df586b5c1",
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {
-    "mtime": 1780668018.458427,
-    "ast_hash": "62919de6a0119330000296193be1e350",
+    "mtime": 1782207509.9993153,
+    "ast_hash": "9a0d7d9942b6232480a50c73a1d41a18",
     "semantic_hash": ""
   },
   "Backend/middleware/upload.ts": {
@@ -2287,6 +2287,26 @@
   "Backend/scripts/inspect-transcripts.ts": {
     "mtime": 1782202274.975889,
     "ast_hash": "1956501e4d89de9632eee2a4333167bc",
+    "semantic_hash": ""
+  },
+  "BUBBLESPACE/frontend/src/routes/privacy.tsx": {
+    "mtime": 1782208004.8390982,
+    "ast_hash": "9c3dcdf8c86e678d88e59f0b390692fd",
+    "semantic_hash": ""
+  },
+  "BUBBLESPACE/frontend/src/routes/security.tsx": {
+    "mtime": 1782208008.912194,
+    "ast_hash": "db968f9c7f9bf52a17adaea56f825351",
+    "semantic_hash": ""
+  },
+  "BUBBLESPACE/frontend/src/routes/status.tsx": {
+    "mtime": 1782208011.1287668,
+    "ast_hash": "7f5642d83ac14af4f822740916086ca6",
+    "semantic_hash": ""
+  },
+  "BUBBLESPACE/frontend/src/routes/terms.tsx": {
+    "mtime": 1782208006.861947,
+    "ast_hash": "1b3bafbd296438359d202523c153608d",
     "semantic_hash": ""
   }
 }
