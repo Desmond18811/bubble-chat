@@ -319,6 +319,26 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+/**
+ * @swagger
+ * /status:
+ *   get:
+ *     summary: System status endpoint for frontend status page
+ */
+app.get('/status', (req: Request, res: Response) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  const overallStatus = dbStatus === 'connected' ? 'operational' : 'degraded';
+
+  res.status(200).json({
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    services: {
+      database: dbStatus
+    }
+  });
+});
+
 // Static upload folder bypass
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
