@@ -344,8 +344,25 @@ export default function Messages() {
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
+  // Safety-net dedupe: collapse any duplicate conversations that slipped through
+  // (parallel DM docs for the same user-pair, repeated rows) so each renders once.
+  const dedupedChats = Array.from(
+    new Map(
+      chatsList.map((c) => [
+        !c.isGroupChat && c.otherUserId ? `dm:${c.otherUserId}` : `id:${c.id}`,
+        c,
+      ])
+    ).values()
+  );
+
+  // Set of user ids that already have a 1:1 conversation — used to keep a contact
+  // from showing in CONTACTS when it's already under RECENT MESSAGES.
+  const chattedUserIds = new Set(
+    dedupedChats.filter((c) => !c.isGroupChat && c.otherUserId).map((c) => String(c.otherUserId))
+  );
+
   // Filter conversations by active tab
-  const filteredChats = chatsList.filter((c) => {
+  const filteredChats = dedupedChats.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
 
@@ -375,6 +392,10 @@ export default function Messages() {
   const filteredContacts = contactsList.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
+
+    // A contact that already has a conversation belongs in RECENT MESSAGES only —
+    // don't duplicate it down in CONTACTS.
+    if (chattedUserIds.has(String(c.id))) return false;
 
     // Check custom folder tab mappings for contacts
     const mappings = folderMappings[c.id] || [];

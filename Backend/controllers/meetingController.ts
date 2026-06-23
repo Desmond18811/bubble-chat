@@ -987,18 +987,19 @@ export const transcribeUpload = async (
       ];
     }
 
-    // Call whisperService to transcribe
+    // Call whisperService to transcribe. It attributes a speaker only when the
+    // recording has a single known participant; a mixed/composite recording stays
+    // unattributed rather than guessed.
     const { transcribeWithTimestamps } = await import('../utils/whisperService');
     const chunks = await transcribeWithTimestamps(req.file.path, speakerNames);
 
-    // Annotate chunks
-    const annotatedChunks = chunks.map((chunk, index) => {
-      return {
-        speaker: chunk.speaker || speakerNames[index % speakerNames.length] || 'Attendee',
-        text: chunk.text,
-        timestamp: chunk.timestamp || Date.now(),
-      };
-    });
+    // Keep the truthful speaker (may be undefined for mixed audio) — do NOT rotate
+    // names per chunk, which fabricated confidently-wrong attribution.
+    const annotatedChunks = chunks.map((chunk) => ({
+      speaker: chunk.speaker,
+      text: chunk.text,
+      timestamp: chunk.timestamp || Date.now(),
+    }));
 
     const rawTranscript = annotatedChunks
       .map(c => `${c.speaker ? c.speaker + ': ' : ''}${c.text}`)

@@ -129,13 +129,36 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
   }
 
   try {
-    let existing = await Conversation.find({
+    // A 1:1 chat is exactly two users. Matching on $size: 2 (rather than just
+    // "contains both") avoids ever mistaking a group for the pair's DM, and the
+    // atomic upsert below makes "Tap to chat" idempotent — two rapid taps can no
+    // longer race into parallel DM documents for the same pair.
+    const dmFilter = {
       isGroupChat: false,
+      users: { $size: 2 },
       $and: [
         { users: { $elemMatch: { $eq: req.user._id } } },
         { users: { $elemMatch: { $eq: userId } } },
       ],
-    })
+    };
+
+    const result: any = await Conversation.findOneAndUpdate(
+      dmFilter,
+      {
+        // Only set the shape on insert; on a match we leave users/chatName alone.
+        // (isGroupChat is omitted here — the query's equality on it already seeds
+        // the inserted doc, and repeating it would be an upsert path conflict.)
+        $setOnInsert: { chatName: '', users: [req.user._id, userId] },
+        // Restore the conversation for either side if it had been soft-deleted.
+        $pull: { deletedBy: { $in: [req.user._id, userId] } },
+      },
+      { upsert: true, new: true, includeResultMetadata: true }
+    );
+
+    const wasCreated = !result?.lastErrorObject?.updatedExisting;
+    const convoId = result?.value?._id;
+
+    const full = await Conversation.findById(convoId)
       .populate('users', '-password -refreshToken -privateKey -zegoToken')
       .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
       .populate({
@@ -143,63 +166,21 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
         populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline is_bot' },
       });
 
-    if (existing.length > 0) {
-      const chat = existing[0];
-      // Restore conversation if deleted
-      await Conversation.findByIdAndUpdate(chat._id, {
-        $pull: { deletedBy: { $in: [req.user._id, userId] } }
+    const formatted = await formatConversation(full, req.user._id);
+
+    try {
+      const io = req.io || getIO();
+      [req.user._id, userId].forEach((uId: any) => {
+        io.to(String(uId)).emit('new_chat', formatted);
       });
-
-      const updated = await Conversation.findById(chat._id)
-        .populate('users', '-password -refreshToken -privateKey -zegoToken')
-        .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
-        .populate({
-          path: 'latestMessage',
-          populate: { path: 'sender', select: 'full_name username avatar email uniqueTag status_message isOnline is_bot' },
-        });
-
-      const formatted = await formatConversation(updated, req.user._id);
-
-      try {
-        const io = req.io || getIO();
-        [req.user._id, userId].forEach((uId: any) => {
-          io.to(String(uId)).emit('new_chat', formatted);
-        });
-      } catch (socketErr) {
-        console.error('Socket emit new_chat failed:', socketErr);
-      }
-
-      res.status(200).json({
-        message: 'Existing chat retrieved.',
-        conversation: formatted,
-      });
-    } else {
-      const created = await Conversation.create({
-        chatName: '',
-        isGroupChat: false,
-        users: [req.user._id, userId],
-      });
-
-      const full = await Conversation.findById(created._id)
-        .populate('users', '-password -refreshToken -privateKey')
-        .populate('groupAdmin', '-password -refreshToken -privateKey');
-
-      const formatted = await formatConversation(full, req.user._id);
-
-      try {
-        const io = req.io || getIO();
-        [req.user._id, userId].forEach((uId: any) => {
-          io.to(String(uId)).emit('new_chat', formatted);
-        });
-      } catch (socketErr) {
-        console.error('Socket emit new_chat failed:', socketErr);
-      }
-
-      res.status(201).json({
-        message: 'New direct conversation started.',
-        conversation: formatted,
-      });
+    } catch (socketErr) {
+      console.error('Socket emit new_chat failed:', socketErr);
     }
+
+    res.status(wasCreated ? 201 : 200).json({
+      message: wasCreated ? 'New direct conversation started.' : 'Existing chat retrieved.',
+      conversation: formatted,
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

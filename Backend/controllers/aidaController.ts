@@ -1299,6 +1299,17 @@ export const getConversationContext = async (req: Request, res: Response): Promi
       })
       .join('\n');
 
+    // If a colleague routed a question here (brain "route to an expert" flow) and
+    // it's awaiting THIS user's answer, switch from short replies to drafting one
+    // complete answer they can confirm/edit — even if unsure — and widen recall so
+    // the facts they need are more likely to surface.
+    const routedQuestion = messages.find(
+      (m: any) => m.brainQuestionRef && String(m.sender?._id || m.sender) !== String(userId)
+    );
+    const isRoutedQuestion = !!routedQuestion;
+    const recallK = isRoutedQuestion ? 8 : 6;
+    const recallThreshold = isRoutedQuestion ? 0.5 : 0.55;
+
     const callerName = (caller as any)?.full_name || 'User';
     const callerRole = (caller as any)?.org_role || '';
     const callerOrg = (caller as any)?.organization || '';
@@ -1326,11 +1337,11 @@ export const getConversationContext = async (req: Request, res: Response): Promi
         const embedding = await generateEmbedding(seed);
         if (embedding.length > 0) {
           const namespace = org.pineconeNamespace || `org-${org._id}`;
-          // Pull richer recall (top 6) so cross-chat/meeting facts the user may
-          // have missed surface in the summary + reply suggestions.
-          const matches = await queryVectors(embedding, 6, org._id.toString(), namespace);
+          // Pull richer recall so cross-chat/meeting facts the user may have missed
+          // surface in the summary + reply suggestions (wider for routed questions).
+          const matches = await queryVectors(embedding, recallK, org._id.toString(), namespace);
           brainKnowledge = matches
-            .filter((m: any) => m.score >= 0.55)
+            .filter((m: any) => m.score >= recallThreshold)
             .map((m: any) => `• ${m.metadata?.chunk || ''}`)
             .join('\n');
         }
@@ -1340,10 +1351,15 @@ export const getConversationContext = async (req: Request, res: Response): Promi
     }
 
     if (hasKey()) {
+      const suggestSystemPrompt = isRoutedQuestion
+        ? `You are Aida helping ${callerName}${callerRole ? ` (${callerRole})` : ''} answer a question a colleague routed to them because they're the most likely to know it. ${contextNote} Lean on the brain-knowledge facts where relevant. Return ONLY a JSON array of exactly 3 strings: the FIRST is a complete, confident, ready-to-send answer (2-4 sentences) they can lightly edit even if unsure; the SECOND and THIRD are short alternative replies under 15 words. No markdown, no explanation.`
+        : `You are Aida, a professional workspace AI. Generate 3 short, contextually-appropriate reply suggestions for ${callerName}${callerRole ? ` (${callerRole})` : ''} to send next. ${contextNote} If the brain-knowledge block contains a fact relevant to the conversation, use it — these are facts the user may not know off the top of their head. Keep each suggestion under 15 words. Return ONLY a JSON array of 3 strings, no markdown, no explanation.`;
+
       const suggestUserPrompt = [
+        isRoutedQuestion && routedQuestion?.content ? `Question to answer:\n${routedQuestion.content}` : '',
         `Conversation:\n${transcript.substring(0, 2000)}`,
         brainKnowledge ? `Brain knowledge from this organization (use any relevant fact):\n${brainKnowledge}` : '',
-        'Generate 3 reply suggestions as a JSON array:',
+        isRoutedQuestion ? 'Draft the answer + 2 short alternates as a JSON array:' : 'Generate 3 reply suggestions as a JSON array:',
       ].filter(Boolean).join('\n\n');
 
       const [summaryRes, suggestRes] = await Promise.all([
@@ -1354,9 +1370,9 @@ export const getConversationContext = async (req: Request, res: Response): Promi
           0.4
         ),
         callAIDA(
-          `You are Aida, a professional workspace AI. Generate 3 short, contextually-appropriate reply suggestions for ${callerName}${callerRole ? ` (${callerRole})` : ''} to send next. ${contextNote} If the brain-knowledge block contains a fact relevant to the conversation, use it — these are facts the user may not know off the top of their head. Keep each suggestion under 15 words. Return ONLY a JSON array of 3 strings, no markdown, no explanation.`,
+          suggestSystemPrompt,
           suggestUserPrompt,
-          200,
+          isRoutedQuestion ? 400 : 200,
           0.7
         ),
       ]);
@@ -1398,6 +1414,9 @@ export const getConversationContext = async (req: Request, res: Response): Promi
     res.status(200).json({
       summary: summary || null,
       suggestions,
+      // 'answer_draft' → suggestions[0] is a full drafted answer to a routed question;
+      // 'reply' → the usual short reply suggestions.
+      mode: isRoutedQuestion ? 'answer_draft' : 'reply',
       messageCount: messages.length,
       recipientContext: {
         name: recipientName,

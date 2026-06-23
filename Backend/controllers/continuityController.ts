@@ -218,14 +218,29 @@ export const searchBrain = async (req: Request, res: Response): Promise<any> => 
       .limit(3)
       .lean();
 
+    const partialMatches = matches.map(m => ({
+      title: m.metadata?.title,
+      score: m.score,
+      snippet: m.metadata?.chunk,
+    }));
+
+    // The best facts we DO have (just below the confidence bar). These are carried
+    // into routing so the expert opens the DM already seeing what the brain knows,
+    // instead of a generic "context fallback" placeholder.
+    const topFacts = partialMatches
+      .filter(p => p.snippet)
+      .slice(0, 3)
+      .map(p => ({ title: p.title || 'Related note', snippet: String(p.snippet).slice(0, 400) }));
+
+    const prefilledContext = topFacts.length
+      ? topFacts.map(f => `• ${f.title}: ${f.snippet}`).join('\n')
+      : '';
+
     return res.status(200).json({
       confidence: 'low',
       message: 'No direct high-confidence match found.',
-      partialMatches: matches.map(m => ({
-        title: m.metadata?.title,
-        score: m.score,
-        snippet: m.metadata?.chunk,
-      })),
+      partialMatches,
+      topFacts,
       suggestedExperts: experts.map((e: any) => ({
         userId: e.userId?._id,
         name: e.userId?.full_name || e.userId?.username || 'Expert',
@@ -235,7 +250,7 @@ export const searchBrain = async (req: Request, res: Response): Promise<any> => 
         score: e.score,
       })),
       suggestedRouting: {
-        prefilledContext: `Brain query context fallback: "${query}"`,
+        prefilledContext,
         routingOptions: ['dm', 'group'],
       },
     });
@@ -262,22 +277,30 @@ export const routeQuestion = async (req: Request, res: Response): Promise<any> =
     const expert = await User.findById(targetUserId);
     if (!expert) return res.status(404).json({ error: 'Target expert user not found.' });
 
-    // Check if DM conversation already exists or create it
-    let chat = await Conversation.findOne({
-      isGroupChat: false,
-      users: { $all: [userId, targetUserId] },
-    });
-
-    if (!chat) {
-      chat = await Conversation.create({
-        chatName: expert.full_name || expert.username || 'Chat',
+    // Get-or-create the pair's DM atomically. $size: 2 ensures we match only the
+    // real 1:1 (never a group containing both), and the upsert prevents routing
+    // from spawning a duplicate DM alongside one created via "Tap to chat".
+    const chat = await Conversation.findOneAndUpdate(
+      {
         isGroupChat: false,
-        users: [userId, targetUserId],
-      });
-    }
+        users: { $size: 2, $all: [userId, targetUserId] },
+      },
+      {
+        $setOnInsert: {
+          chatName: expert.full_name || expert.username || 'Chat',
+          // isGroupChat omitted — the query's equality on it seeds the inserted doc.
+          users: [userId, targetUserId],
+        },
+      },
+      { upsert: true, new: true }
+    );
 
-    // Prefill direct routing message context
-    const routingPayload = `❓ **Question routed from ${sender?.full_name || sender?.username || 'colleague'}:**\n"${question}"\n\n*Pre-attached Brain Context:*\n> "${contextText || 'No initial matching context found.'}"`;
+    // Prefill the routed message with the question + the brain facts we already
+    // have, rendered as a blockquote so multi-line facts read cleanly.
+    const contextBlock = contextText
+      ? String(contextText).split('\n').map((l: string) => `> ${l}`).join('\n')
+      : '> No initial matching context found.';
+    const routingPayload = `❓ **Question routed from ${sender?.full_name || sender?.username || 'colleague'}:**\n"${question}"\n\n*What the Brain already knows:*\n${contextBlock}`;
 
     const message = await Message.create({
       chat: chat._id,

@@ -178,14 +178,16 @@ export const transcribeWithTimestamps = async (
     const fileSize = fs.statSync(workingPath).size;
     const chunks: { speaker?: string; text: string; timestamp: number }[] = [];
 
-    const processSegments = (segments: any[], timeOffset = 0, speakerIdx = { v: 0 }) => {
+    // A room-composite (mixed) recording can't be attributed to a specific
+    // speaker, so we no longer fabricate one by rotating names on sentence breaks
+    // — that produced confidently-wrong "who said what". Attribution is only
+    // truthful when there's exactly one known participant; otherwise leave it
+    // undefined. (True per-speaker attribution comes from the live-caption path,
+    // which carries the authenticated speakerId.)
+    const soleSpeaker = speakerNames.length === 1 ? speakerNames[0] : undefined;
+    const processSegments = (segments: any[], timeOffset = 0) => {
       for (const seg of segments) {
-        const speaker = speakerNames.length > 0
-          ? speakerNames[speakerIdx.v % speakerNames.length]
-          : undefined;
-        chunks.push({ speaker, text: seg.text?.trim() || '', timestamp: Math.round(timeOffset + (seg.start || 0)) });
-        // Heuristic speaker rotation on sentence breaks
-        if (seg.text?.match(/[.!?]\s*$/)) speakerIdx.v++;
+        chunks.push({ speaker: soleSpeaker, text: seg.text?.trim() || '', timestamp: Math.round(timeOffset + (seg.start || 0)) });
       }
     };
 
@@ -201,7 +203,6 @@ export const transcribeWithTimestamps = async (
       const duration = await getAudioDuration(workingPath);
       let offset = 0;
       let idx = 0;
-      const speakerIdx = { v: 0 };
 
       while (offset < duration) {
         const segPath = makeTempPath(dir, `seg-ts${idx}`);
@@ -214,7 +215,7 @@ export const transcribeWithTimestamps = async (
           response_format: 'verbose_json',
           timestamp_granularities: ['segment'],
         }) as any;
-        processSegments(response?.segments || [], offset, speakerIdx);
+        processSegments(response?.segments || [], offset);
         offset += CHUNK_DURATION_SECONDS;
         idx++;
       }

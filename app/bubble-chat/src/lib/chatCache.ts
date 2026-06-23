@@ -43,6 +43,30 @@ const formatMessagePreciseTime = (dateInput: any): string => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+// Collapse duplicate conversations so each renders once. Group chats dedupe by
+// id; 1:1 chats dedupe by the other participant — this guards against parallel
+// DM documents existing for the same user-pair (e.g. seeded twice). On collision
+// the most recently updated row wins.
+const dedupeChats = (rows: any[]): any[] => {
+  const byKey = new Map<string, any>();
+  for (const row of rows) {
+    const key = !row.isGroupChat && row.otherUserId ? `dm:${row.otherUserId}` : `id:${row.id}`;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, row);
+      continue;
+    }
+    const existingTs = new Date(existing.updatedAt || 0).getTime();
+    const rowTs = new Date(row.updatedAt || 0).getTime();
+    byKey.set(key, rowTs >= existingTs ? row : existing);
+  }
+  return Array.from(byKey.values());
+};
+
+// Keep one row per id, preserving the last occurrence.
+const dedupeById = <T extends { id: string }>(rows: T[]): T[] =>
+  Array.from(new Map(rows.map((r) => [r.id, r])).values());
+
 let avatarMemoryCache: { [urlOrUserId: string]: string } = {};
 
 export const chatCache = {
@@ -203,9 +227,13 @@ export const chatCache = {
       };
     }));
 
+    // Collapse any duplicate conversations (parallel DM docs / repeated rows)
+    // before caching so each chat renders exactly once.
+    const deduped = dedupeChats(mapped);
+
     // Cache mapped list
-    await AsyncStorage.setItem(KEYS.CACHED_CHATS, JSON.stringify(mapped));
-    return mapped;
+    await AsyncStorage.setItem(KEYS.CACHED_CHATS, JSON.stringify(deduped));
+    return deduped;
   },
 
   // ─── Messages & Syncing ─────────────────────────────────────────────────────
@@ -285,8 +313,11 @@ export const chatCache = {
       category: u.category || "work",
     }));
 
-    await AsyncStorage.setItem(KEYS.CACHED_CONTACTS, JSON.stringify(mapped));
-    return mapped;
+    // Drop duplicate contacts (same user returned more than once).
+    const deduped = dedupeById(mapped);
+
+    await AsyncStorage.setItem(KEYS.CACHED_CONTACTS, JSON.stringify(deduped));
+    return deduped;
   },
 
   // ─── Offline Queue ─────────────────────────────────────────────────────────
