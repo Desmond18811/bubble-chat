@@ -1379,19 +1379,39 @@ export const getConversationContext = async (req: Request, res: Response): Promi
 
       summary = summaryRes;
 
-      // Parse suggestions JSON
+      // Parse suggestions JSON. Strip code fences, then isolate the actual array
+      // (the model sometimes wraps it in prose) before parsing.
+      const cleaned = suggestRes.replace(/```json|```/g, '').trim();
+      let parsedOk = false;
       try {
-        const cleaned = suggestRes.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(cleaned);
+        const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+        const parsed = JSON.parse(arrayMatch ? arrayMatch[0] : cleaned);
         if (Array.isArray(parsed) && parsed.length >= 1) {
-          suggestions = parsed.slice(0, 3).map((s: any) => String(s));
+          suggestions = parsed
+            .map((s: any) => String(s).trim())
+            .filter(Boolean)
+            .slice(0, 3);
+          parsedOk = suggestions.length > 0;
         }
       } catch {
-        // Fallback: split by newline or numbered list
-        suggestions = suggestRes
+        /* fall through to line-based salvage below */
+      }
+
+      if (!parsedOk) {
+        // Salvage path: a truncated array (missing closing ]) or pretty-printed
+        // JSON would otherwise leak structural lines. Drop lines that are only
+        // brackets/commas, strip leading [/] + numbering + wrapping quotes so a
+        // bare "[" never becomes a suggestion chip.
+        suggestions = cleaned
           .split(/\n/)
-          .map(l => l.replace(/^\d+\.\s*["']?|["']?$/, '').trim())
-          .filter(Boolean)
+          .map(l =>
+            l
+              .replace(/^[\[\]\s,]+|[\[\]\s,]+$/g, '')
+              .replace(/^\d+\.\s*/, '')
+              .replace(/^["']|["']$/g, '')
+              .trim()
+          )
+          .filter(l => l && l !== '[' && l !== ']')
           .slice(0, 3);
       }
     }
@@ -1511,11 +1531,30 @@ export const getAidaWritingSuggestions = async (req: Request, res: Response): Pr
 
     const raw = await callAIDA(systemPrompt, userPrompt, 200, 0.6);
     let suggestions: string[] = [];
+    const cleaned = raw.replace(/```json|```/g, '').trim();
     try {
-      const cleaned = raw.replace(/```json|```/g, '').trim();
-      suggestions = JSON.parse(cleaned);
+      const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+      const parsed = JSON.parse(arrayMatch ? arrayMatch[0] : cleaned);
+      if (Array.isArray(parsed)) {
+        suggestions = parsed.map(s => String(s).trim()).filter(Boolean).slice(0, 3);
+      }
     } catch {
-      suggestions = raw.split('\n').map(s => s.replace(/^\d+\.\s*/, '').trim()).filter(s => s.length > 0).slice(0, 3);
+      /* fall through */
+    }
+    if (suggestions.length === 0) {
+      // Same structural-line guard as conversation-context so a bare "[" from a
+      // truncated/pretty-printed array never surfaces as a suggestion chip.
+      suggestions = cleaned
+        .split('\n')
+        .map(s =>
+          s
+            .replace(/^[\[\]\s,]+|[\[\]\s,]+$/g, '')
+            .replace(/^\d+\.\s*/, '')
+            .replace(/^["']|["']$/g, '')
+            .trim()
+        )
+        .filter(s => s && s !== '[' && s !== ']')
+        .slice(0, 3);
     }
 
     res.status(200).json({ suggestions, contextRecall: contextRecall || null });
