@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/Chrome.tsx": {
-    "mtime": 1782207740.57061,
-    "ast_hash": "40d3780e8ee677378729cf9fe7d5d878",
+    "mtime": 1782208091.5031292,
+    "ast_hash": "f936050be6190a3d0761ac0f84b4f8b1",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/FAQ.tsx": {
@@ -740,8 +740,8 @@
     "semantic_hash": ""
   },
   "Backend/index.ts": {
-    "mtime": 1782208040.426629,
-    "ast_hash": "833ff5614fdd2aba0526c25df586b5c1",
+    "mtime": 1782208223.9347007,
+    "ast_hash": "2791901cdabdae47e2c9a6f9a22ab6b1",
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {

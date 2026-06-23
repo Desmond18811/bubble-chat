@@ -1,7 +1,7 @@
 # Graph Report - bubble-chat  (2026-06-23)
 
 ## Corpus Check
-- 351 files · ~1,971,833 words
+- 355 files · ~1,972,907 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a0d31979`
+- Built from commit: `9053672d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -744,7 +744,7 @@ Cohesion: 0.18
 Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREEN_W }
 
 ## Knowledge Gaps
-- **776 isolated node(s):** `AuthRequest`, `app`, `PRODUCTION_ORIGINS`, `limiter`, `strictLimiter` (+771 more)
+- **776 isolated node(s):** `app`, `PRODUCTION_ORIGINS`, `limiter`, `strictLimiter`, `swaggerOptions` (+771 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **38 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -759,7 +759,7 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **Are the 246 inferred relationships involving `cn()` (e.g. with `ChatAvatar()` and `ChatList()`) actually correct?**
   _`cn()` has 246 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `AuthRequest`, `app`, `PRODUCTION_ORIGINS` to the rest of the system?**
+- **What connects `app`, `PRODUCTION_ORIGINS`, `limiter` to the rest of the system?**
   _776 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.03508771929824561 - nodes in this community are weakly interconnected._
