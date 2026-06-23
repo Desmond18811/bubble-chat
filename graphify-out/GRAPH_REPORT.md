@@ -1,7 +1,7 @@
 # Graph Report - bubble-chat  (2026-06-23)
 
 ## Corpus Check
-- 351 files · ~1,971,788 words
+- 351 files · ~1,971,833 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0963d30f`
+- Built from commit: `a0d31979`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -744,7 +744,7 @@ Cohesion: 0.18
 Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREEN_W }
 
 ## Knowledge Gaps
-- **776 isolated node(s):** `deepseekClient`, `AuthRequest`, `deepseekClient`, `SUPPORTED_EXTENSIONS`, `NEEDS_TRANSCODE` (+771 more)
+- **776 isolated node(s):** `AuthRequest`, `app`, `PRODUCTION_ORIGINS`, `limiter`, `strictLimiter` (+771 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **38 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -752,14 +752,14 @@ Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREE
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `React` connect `Community 88` to `Community 130`, `Community 3`, `Community 131`, `Community 2`, `Community 6`, `Community 5`, `Community 9`, `Community 138`, `Community 139`, `Community 140`, `Community 141`, `Community 142`, `Community 143`, `Community 16`, `Community 145`, `Community 146`, `Community 147`, `Community 144`, `Community 150`, `Community 23`, `Community 159`, `Community 32`, `Community 161`, `Community 33`, `Community 34`, `Community 38`, `Community 166`, `Community 167`, `Community 39`, `Community 42`, `Community 45`, `Community 47`, `Community 48`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 62`, `Community 191`, `Community 64`, `Community 65`, `Community 66`, `Community 63`, `Community 70`, `Community 73`, `Community 81`, `Community 213`, `Community 87`, `Community 90`, `Community 91`, `Community 94`, `Community 95`, `Community 96`, `Community 100`, `Community 101`, `Community 110`, `Community 111`, `Community 114`, `Community 117`, `Community 121`, `Community 124`, `Community 127`?**
-  _High betweenness centrality (0.174) - this node is a cross-community bridge._
+  _High betweenness centrality (0.165) - this node is a cross-community bridge._
 - **Why does `cn()` connect `Community 5` to `Community 3`, `Community 9`, `Community 140`, `Community 32`, `Community 161`, `Community 33`, `Community 34`, `Community 167`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 62`, `Community 64`, `Community 65`, `Community 68`, `Community 70`, `Community 73`, `Community 77`, `Community 81`, `Community 82`, `Community 87`, `Community 88`, `Community 91`, `Community 95`, `Community 96`, `Community 97`, `Community 99`, `Community 110`, `Community 124`, `Community 127`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `Community 2` to `Community 84`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **Are the 246 inferred relationships involving `cn()` (e.g. with `ChatAvatar()` and `ChatList()`) actually correct?**
   _`cn()` has 246 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `deepseekClient`, `AuthRequest`, `deepseekClient` to the rest of the system?**
+- **What connects `AuthRequest`, `app`, `PRODUCTION_ORIGINS` to the rest of the system?**
   _776 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.03508771929824561 - nodes in this community are weakly interconnected._

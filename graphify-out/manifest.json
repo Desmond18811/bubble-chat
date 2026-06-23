@@ -645,8 +645,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/chatController.ts": {
-    "mtime": 1782197869.7187612,
-    "ast_hash": "cfc37a0b3bd299958390b71afb37959c",
+    "mtime": 1782206894.5375874,
+    "ast_hash": "6c652efd588fb45fe54c231b278da42d",
     "semantic_hash": ""
   },
   "Backend/controllers/communityController.ts": {
@@ -740,8 +740,8 @@
     "semantic_hash": ""
   },
   "Backend/index.ts": {
-    "mtime": 1782055937.846387,
-    "ast_hash": "000e4d2ee594a834e77c456a9c8fe25c",
+    "mtime": 1782206052.0323277,
+    "ast_hash": "833ff5614fdd2aba0526c25df586b5c1",
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {

@@ -4,334 +4,14 @@
   "graph": {},
   "nodes": [
     {
-      "label": "aidaController.ts",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller",
-      "community": 1,
-      "norm_label": "aidacontroller.ts"
-    },
-    {
-      "label": "deepseekClient",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L18",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_deepseekclient",
-      "community": 1,
-      "norm_label": "deepseekclient"
-    },
-    {
-      "label": "hasKey()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L23",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_haskey",
-      "community": 1,
-      "norm_label": "haskey()"
-    },
-    {
-      "label": "requireAidaKey()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L30",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_requireaidakey",
-      "community": 1,
-      "norm_label": "requireaidakey()"
-    },
-    {
-      "label": "callAIDA()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L39",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_callaida",
-      "community": 1,
-      "norm_label": "callaida()"
-    },
-    {
-      "label": "buildSmartFallback()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L64",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_buildsmartfallback",
-      "community": 1,
-      "norm_label": "buildsmartfallback()"
-    },
-    {
-      "label": "getAidaBotUser()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L96",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getaidabotuser",
-      "community": 1,
-      "norm_label": "getaidabotuser()"
-    },
-    {
-      "label": "retrieveOrgContext()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L121",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_retrieveorgcontext",
-      "community": 1,
-      "norm_label": "retrieveorgcontext()"
-    },
-    {
-      "label": "buildAidaSystemPrompt()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L219",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_buildaidasystemprompt",
-      "community": 1,
-      "norm_label": "buildaidasystemprompt()"
-    },
-    {
-      "label": "getAidaConversation()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L290",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getaidaconversation",
-      "community": 1,
-      "norm_label": "getaidaconversation()"
-    },
-    {
-      "label": "chatWithAidaInConversation()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L326",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_chatwithaidainconversation",
-      "community": 1,
-      "norm_label": "chatwithaidainconversation()"
-    },
-    {
-      "label": "summarizeConversation()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L544",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_summarizeconversation",
-      "community": 1,
-      "norm_label": "summarizeconversation()"
-    },
-    {
-      "label": "aidaScheduleTask()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L590",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_aidascheduletask",
-      "community": 1,
-      "norm_label": "aidascheduletask()"
-    },
-    {
-      "label": "chatWithAida()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L625",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_chatwithaida",
-      "community": 1,
-      "norm_label": "chatwithaida()"
-    },
-    {
-      "label": "getDailyBriefing()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L785",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getdailybriefing",
-      "community": 1,
-      "norm_label": "getdailybriefing()"
-    },
-    {
-      "label": "getFinancialAdvice()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L836",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getfinancialadvice",
-      "community": 1,
-      "norm_label": "getfinancialadvice()"
-    },
-    {
-      "label": "extractActionItems()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L872",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_extractactionitems",
-      "community": 1,
-      "norm_label": "extractactionitems()"
-    },
-    {
-      "label": "searchWorkspace()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L917",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_searchworkspace",
-      "community": 1,
-      "norm_label": "searchworkspace()"
-    },
-    {
-      "label": "scheduleSuggestion()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L952",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_schedulesuggestion",
-      "community": 1,
-      "norm_label": "schedulesuggestion()"
-    },
-    {
-      "label": "summarizeFeed()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1000",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_summarizefeed",
-      "community": 1,
-      "norm_label": "summarizefeed()"
-    },
-    {
-      "label": "flagPayments()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1032",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_flagpayments",
-      "community": 1,
-      "norm_label": "flagpayments()"
-    },
-    {
-      "label": "listOrgDocs()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1068",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_listorgdocs",
-      "community": 1,
-      "norm_label": "listorgdocs()"
-    },
-    {
-      "label": "getOrgDoc()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1125",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getorgdoc",
-      "community": 1,
-      "norm_label": "getorgdoc()"
-    },
-    {
-      "label": "createOrgDoc()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1148",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_createorgdoc",
-      "community": 1,
-      "norm_label": "createorgdoc()"
-    },
-    {
-      "label": "updateOrgDoc()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1202",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_updateorgdoc",
-      "community": 1,
-      "norm_label": "updateorgdoc()"
-    },
-    {
-      "label": "deleteOrgDoc()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1230",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_deleteorgdoc",
-      "community": 1,
-      "norm_label": "deleteorgdoc()"
-    },
-    {
-      "label": "getConversationContext()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1255",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getconversationcontext",
-      "community": 1,
-      "norm_label": "getconversationcontext()"
-    },
-    {
-      "label": "getAidaWritingSuggestions()",
-      "file_type": "code",
-      "source_file": "Backend/controllers/aidaController.ts",
-      "source_location": "L1457",
-      "_origin": "ast",
-      "id": "controllers_aidacontroller_getaidawritingsuggestions",
-      "community": 1,
-      "norm_label": "getaidawritingsuggestions()"
-    },
-    {
-      "label": "inspect-transcripts.ts",
-      "file_type": "code",
-      "source_file": "Backend/scripts/inspect-transcripts.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "scripts_inspect_transcripts",
-      "community": 61,
-      "norm_label": "inspect-transcripts.ts"
-    },
-    {
-      "label": "auditChunks()",
-      "file_type": "code",
-      "source_file": "Backend/scripts/inspect-transcripts.ts",
-      "source_location": "L28",
-      "_origin": "ast",
-      "id": "scripts_inspect_transcripts_auditchunks",
-      "community": 61,
-      "norm_label": "auditchunks()"
-    },
-    {
-      "label": "verdict()",
-      "file_type": "code",
-      "source_file": "Backend/scripts/inspect-transcripts.ts",
-      "source_location": "L38",
-      "_origin": "ast",
-      "id": "scripts_inspect_transcripts_verdict",
-      "community": 61,
-      "norm_label": "verdict()"
-    },
-    {
-      "label": "run()",
-      "file_type": "code",
-      "source_file": "Backend/scripts/inspect-transcripts.ts",
-      "source_location": "L50",
-      "_origin": "ast",
-      "id": "scripts_inspect_transcripts_run",
-      "community": 61,
-      "norm_label": "run()"
-    },
-    {
       "label": "chatController.ts",
       "file_type": "code",
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L1",
       "_origin": "ast",
+      "id": "controllers_chatcontroller",
       "community": 31,
-      "norm_label": "chatcontroller.ts",
-      "id": "controllers_chatcontroller"
+      "norm_label": "chatcontroller.ts"
     },
     {
       "label": "AuthRequest",
@@ -339,9 +19,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L9",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_authrequest",
       "community": 31,
-      "norm_label": "authrequest",
-      "id": "controllers_chatcontroller_authrequest"
+      "norm_label": "authrequest"
     },
     {
       "label": "formatUser()",
@@ -349,9 +29,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L16",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_formatuser",
       "community": 31,
-      "norm_label": "formatuser()",
-      "id": "controllers_chatcontroller_formatuser"
+      "norm_label": "formatuser()"
     },
     {
       "label": "formatConversation()",
@@ -359,9 +39,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L56",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_formatconversation",
       "community": 31,
-      "norm_label": "formatconversation()",
-      "id": "controllers_chatcontroller_formatconversation"
+      "norm_label": "formatconversation()"
     },
     {
       "label": "accessChat()",
@@ -369,9 +49,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L119",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_accesschat",
       "community": 31,
-      "norm_label": "accesschat()",
-      "id": "controllers_chatcontroller_accesschat"
+      "norm_label": "accesschat()"
     },
     {
       "label": "fetchChats()",
@@ -379,9 +59,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L193",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_fetchchats",
       "community": 31,
-      "norm_label": "fetchchats()",
-      "id": "controllers_chatcontroller_fetchchats"
+      "norm_label": "fetchchats()"
     },
     {
       "label": "createGroupChat()",
@@ -389,9 +69,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L266",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_creategroupchat",
       "community": 31,
-      "norm_label": "creategroupchat()",
-      "id": "controllers_chatcontroller_creategroupchat"
+      "norm_label": "creategroupchat()"
     },
     {
       "label": "renameGroup()",
@@ -399,9 +79,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L326",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_renamegroup",
       "community": 31,
-      "norm_label": "renamegroup()",
-      "id": "controllers_chatcontroller_renamegroup"
+      "norm_label": "renamegroup()"
     },
     {
       "label": "addToGroup()",
@@ -409,9 +89,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L356",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_addtogroup",
       "community": 31,
-      "norm_label": "addtogroup()",
-      "id": "controllers_chatcontroller_addtogroup"
+      "norm_label": "addtogroup()"
     },
     {
       "label": "removeFromGroup()",
@@ -419,9 +99,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L455",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_removefromgroup",
       "community": 31,
-      "norm_label": "removefromgroup()",
-      "id": "controllers_chatcontroller_removefromgroup"
+      "norm_label": "removefromgroup()"
     },
     {
       "label": "muteChat()",
@@ -429,9 +109,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L486",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_mutechat",
       "community": 31,
-      "norm_label": "mutechat()",
-      "id": "controllers_chatcontroller_mutechat"
+      "norm_label": "mutechat()"
     },
     {
       "label": "clearChat()",
@@ -439,9 +119,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L521",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_clearchat",
       "community": 31,
-      "norm_label": "clearchat()",
-      "id": "controllers_chatcontroller_clearchat"
+      "norm_label": "clearchat()"
     },
     {
       "label": "toggleChatPin()",
@@ -449,9 +129,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L551",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_togglechatpin",
       "community": 31,
-      "norm_label": "togglechatpin()",
-      "id": "controllers_chatcontroller_togglechatpin"
+      "norm_label": "togglechatpin()"
     },
     {
       "label": "deleteChat()",
@@ -459,9 +139,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L585",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_deletechat",
       "community": 31,
-      "norm_label": "deletechat()",
-      "id": "controllers_chatcontroller_deletechat"
+      "norm_label": "deletechat()"
     },
     {
       "label": "getUnreadChatCount()",
@@ -469,9 +149,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L629",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_getunreadchatcount",
       "community": 31,
-      "norm_label": "getunreadchatcount()",
-      "id": "controllers_chatcontroller_getunreadchatcount"
+      "norm_label": "getunreadchatcount()"
     },
     {
       "label": "toggleArchiveChat()",
@@ -479,9 +159,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L669",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_togglearchivechat",
       "community": 31,
-      "norm_label": "togglearchivechat()",
-      "id": "controllers_chatcontroller_togglearchivechat"
+      "norm_label": "togglearchivechat()"
     },
     {
       "label": "joinGroupChatByInvite()",
@@ -489,9 +169,9 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L703",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_joingroupchatbyinvite",
       "community": 31,
-      "norm_label": "joingroupchatbyinvite()",
-      "id": "controllers_chatcontroller_joingroupchatbyinvite"
+      "norm_label": "joingroupchatbyinvite()"
     },
     {
       "label": "updateGroupSettings()",
@@ -499,9 +179,409 @@
       "source_file": "Backend/controllers/chatController.ts",
       "source_location": "L807",
       "_origin": "ast",
+      "id": "controllers_chatcontroller_updategroupsettings",
       "community": 31,
-      "norm_label": "updategroupsettings()",
-      "id": "controllers_chatcontroller_updategroupsettings"
+      "norm_label": "updategroupsettings()"
+    },
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "backend_index",
+      "community": 15,
+      "norm_label": "index.ts"
+    },
+    {
+      "label": "app",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L52",
+      "_origin": "ast",
+      "id": "backend_index_app",
+      "community": 15,
+      "norm_label": "app"
+    },
+    {
+      "label": "PRODUCTION_ORIGINS",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L60",
+      "_origin": "ast",
+      "id": "backend_index_production_origins",
+      "community": 15,
+      "norm_label": "production_origins"
+    },
+    {
+      "label": "limiter",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L107",
+      "_origin": "ast",
+      "id": "backend_index_limiter",
+      "community": 15,
+      "norm_label": "limiter"
+    },
+    {
+      "label": "strictLimiter",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L117",
+      "_origin": "ast",
+      "id": "backend_index_strictlimiter",
+      "community": 15,
+      "norm_label": "strictlimiter"
+    },
+    {
+      "label": "swaggerOptions",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L160",
+      "_origin": "ast",
+      "id": "backend_index_swaggeroptions",
+      "community": 15,
+      "norm_label": "swaggeroptions"
+    },
+    {
+      "label": "swaggerSpec",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L299",
+      "_origin": "ast",
+      "id": "backend_index_swaggerspec",
+      "community": 15,
+      "norm_label": "swaggerspec"
+    },
+    {
+      "label": "server",
+      "file_type": "code",
+      "source_file": "Backend/index.ts",
+      "source_location": "L350",
+      "_origin": "ast",
+      "id": "backend_index_server",
+      "community": 15,
+      "norm_label": "server"
+    },
+    {
+      "label": "aidaController.ts",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "aidacontroller.ts",
+      "id": "controllers_aidacontroller"
+    },
+    {
+      "label": "deepseekClient",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L18",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "deepseekclient",
+      "id": "controllers_aidacontroller_deepseekclient"
+    },
+    {
+      "label": "hasKey()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L23",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "haskey()",
+      "id": "controllers_aidacontroller_haskey"
+    },
+    {
+      "label": "requireAidaKey()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L30",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "requireaidakey()",
+      "id": "controllers_aidacontroller_requireaidakey"
+    },
+    {
+      "label": "callAIDA()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L39",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "callaida()",
+      "id": "controllers_aidacontroller_callaida"
+    },
+    {
+      "label": "buildSmartFallback()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L64",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "buildsmartfallback()",
+      "id": "controllers_aidacontroller_buildsmartfallback"
+    },
+    {
+      "label": "getAidaBotUser()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L96",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getaidabotuser()",
+      "id": "controllers_aidacontroller_getaidabotuser"
+    },
+    {
+      "label": "retrieveOrgContext()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L121",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "retrieveorgcontext()",
+      "id": "controllers_aidacontroller_retrieveorgcontext"
+    },
+    {
+      "label": "buildAidaSystemPrompt()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L219",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "buildaidasystemprompt()",
+      "id": "controllers_aidacontroller_buildaidasystemprompt"
+    },
+    {
+      "label": "getAidaConversation()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L290",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getaidaconversation()",
+      "id": "controllers_aidacontroller_getaidaconversation"
+    },
+    {
+      "label": "chatWithAidaInConversation()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L326",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "chatwithaidainconversation()",
+      "id": "controllers_aidacontroller_chatwithaidainconversation"
+    },
+    {
+      "label": "summarizeConversation()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L544",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "summarizeconversation()",
+      "id": "controllers_aidacontroller_summarizeconversation"
+    },
+    {
+      "label": "aidaScheduleTask()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L590",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "aidascheduletask()",
+      "id": "controllers_aidacontroller_aidascheduletask"
+    },
+    {
+      "label": "chatWithAida()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L625",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "chatwithaida()",
+      "id": "controllers_aidacontroller_chatwithaida"
+    },
+    {
+      "label": "getDailyBriefing()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L785",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getdailybriefing()",
+      "id": "controllers_aidacontroller_getdailybriefing"
+    },
+    {
+      "label": "getFinancialAdvice()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L836",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getfinancialadvice()",
+      "id": "controllers_aidacontroller_getfinancialadvice"
+    },
+    {
+      "label": "extractActionItems()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L872",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "extractactionitems()",
+      "id": "controllers_aidacontroller_extractactionitems"
+    },
+    {
+      "label": "searchWorkspace()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L917",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "searchworkspace()",
+      "id": "controllers_aidacontroller_searchworkspace"
+    },
+    {
+      "label": "scheduleSuggestion()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L952",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "schedulesuggestion()",
+      "id": "controllers_aidacontroller_schedulesuggestion"
+    },
+    {
+      "label": "summarizeFeed()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1000",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "summarizefeed()",
+      "id": "controllers_aidacontroller_summarizefeed"
+    },
+    {
+      "label": "flagPayments()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1032",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "flagpayments()",
+      "id": "controllers_aidacontroller_flagpayments"
+    },
+    {
+      "label": "listOrgDocs()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1068",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "listorgdocs()",
+      "id": "controllers_aidacontroller_listorgdocs"
+    },
+    {
+      "label": "getOrgDoc()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1125",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getorgdoc()",
+      "id": "controllers_aidacontroller_getorgdoc"
+    },
+    {
+      "label": "createOrgDoc()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1148",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "createorgdoc()",
+      "id": "controllers_aidacontroller_createorgdoc"
+    },
+    {
+      "label": "updateOrgDoc()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1202",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "updateorgdoc()",
+      "id": "controllers_aidacontroller_updateorgdoc"
+    },
+    {
+      "label": "deleteOrgDoc()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1230",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "deleteorgdoc()",
+      "id": "controllers_aidacontroller_deleteorgdoc"
+    },
+    {
+      "label": "getConversationContext()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1255",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getconversationcontext()",
+      "id": "controllers_aidacontroller_getconversationcontext"
+    },
+    {
+      "label": "getAidaWritingSuggestions()",
+      "file_type": "code",
+      "source_file": "Backend/controllers/aidaController.ts",
+      "source_location": "L1457",
+      "_origin": "ast",
+      "community": 1,
+      "norm_label": "getaidawritingsuggestions()",
+      "id": "controllers_aidacontroller_getaidawritingsuggestions"
+    },
+    {
+      "label": "inspect-transcripts.ts",
+      "file_type": "code",
+      "source_file": "Backend/scripts/inspect-transcripts.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 61,
+      "norm_label": "inspect-transcripts.ts",
+      "id": "scripts_inspect_transcripts"
+    },
+    {
+      "label": "auditChunks()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/inspect-transcripts.ts",
+      "source_location": "L28",
+      "_origin": "ast",
+      "community": 61,
+      "norm_label": "auditchunks()",
+      "id": "scripts_inspect_transcripts_auditchunks"
+    },
+    {
+      "label": "verdict()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/inspect-transcripts.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "community": 61,
+      "norm_label": "verdict()",
+      "id": "scripts_inspect_transcripts_verdict"
+    },
+    {
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/inspect-transcripts.ts",
+      "source_location": "L50",
+      "_origin": "ast",
+      "community": 61,
+      "norm_label": "run()",
+      "id": "scripts_inspect_transcripts_run"
     },
     {
       "label": "continuityController.ts",
@@ -13824,86 +13904,6 @@
       "id": "backend_fix_system_messages_mongoose"
     },
     {
-      "label": "index.ts",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "index.ts",
-      "id": "backend_index"
-    },
-    {
-      "label": "app",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L52",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "app",
-      "id": "backend_index_app"
-    },
-    {
-      "label": "PRODUCTION_ORIGINS",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L59",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "production_origins",
-      "id": "backend_index_production_origins"
-    },
-    {
-      "label": "limiter",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L106",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "limiter",
-      "id": "backend_index_limiter"
-    },
-    {
-      "label": "strictLimiter",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L116",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "strictlimiter",
-      "id": "backend_index_strictlimiter"
-    },
-    {
-      "label": "swaggerOptions",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L152",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "swaggeroptions",
-      "id": "backend_index_swaggeroptions"
-    },
-    {
-      "label": "swaggerSpec",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L291",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "swaggerspec",
-      "id": "backend_index_swaggerspec"
-    },
-    {
-      "label": "server",
-      "file_type": "code",
-      "source_file": "Backend/index.ts",
-      "source_location": "L342",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "server",
-      "id": "backend_index_server"
-    },
-    {
       "label": "passport.ts",
       "file_type": "code",
       "source_file": "Backend/middleware/passport.ts",
@@ -26161,6 +26161,1434 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L110",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_accesschat"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L355",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_addtogroup"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_authrequest"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L454",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_clearchat"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L265",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_creategroupchat"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L518",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_deletechat"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L203",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_fetchchats"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_formatuser"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L562",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_getunreadchatcount"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L625",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_joingroupchatbyinvite"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L419",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_mutechat"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L388",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_removefromgroup"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L325",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_renamegroup"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L591",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_togglearchivechat"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L484",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_togglechatpin"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L688",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "controllers_chatcontroller_updategroupsettings"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "models_conversations"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "models_conversations_conversation"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "models_messages"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "models_messages_message"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "models_users"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "models_users_user"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "utils_filebase"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "utils_filebase_getsignedmediaurl"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "utils_socket"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L376",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_addtogroup",
+      "target": "controllers_chatcontroller_formatuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_formatconversation",
+      "target": "controllers_chatcontroller_formatuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_formatuser",
+      "target": "utils_filebase_getsignedmediaurl"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L152",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_accesschat",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L377",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_addtogroup",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L301",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_creategroupchat",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L659",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_joingroupchatbyinvite",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L408",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_removefromgroup",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L344",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_renamegroup",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L729",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_chatcontroller_updategroupsettings",
+      "target": "controllers_chatcontroller_formatconversation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "controllers_chatcontroller_accesschat",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_accesschat"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_fetchchats"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L304",
+      "weight": 1.0,
+      "source": "controllers_chatcontroller_creategroupchat",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_creategroupchat"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_renamegroup"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L433",
+      "weight": 1.0,
+      "source": "controllers_chatcontroller_addtogroup",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_addtogroup"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_removefromgroup"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_mutechat"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_clearchat"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_togglechatpin"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L543",
+      "weight": 1.0,
+      "source": "controllers_chatcontroller_deletechat",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_deletechat"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_getunreadchatcount"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_togglearchivechat"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L663",
+      "weight": 1.0,
+      "source": "controllers_chatcontroller_joingroupchatbyinvite",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_joingroupchatbyinvite"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/controllers/chatController.ts",
+      "source_location": "L733",
+      "weight": 1.0,
+      "source": "controllers_chatcontroller_updategroupsettings",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/routes/chatRoutes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "routes_chatroutes",
+      "target": "controllers_chatcontroller_updategroupsettings"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_app"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_limiter"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_production_origins"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L333",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_server"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_strictlimiter"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L145",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_swaggeroptions"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L284",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "backend_index_swaggerspec"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "controllers_templatecontroller"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "controllers_templatecontroller_seeddefaulttemplates"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "middleware_passport"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "models_conversations"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "models_conversations_conversation"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_activityroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_activityroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_aidaroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_aidaroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_authroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_authroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_brainroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_brainroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_calendarroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_calendarroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_chatroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_chatroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_communityroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_communityroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_feedroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_feedroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_healthroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_healthroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_meetingroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_meetingroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_meetroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_meetroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_messageroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_messageroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_notificationroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_notificationroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_orgroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_orgroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_paymentroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_paymentroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_profileroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_profileroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_securityroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_securityroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_storiesroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_storiesroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_taskroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_taskroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_templateroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_templateroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_userroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_userroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_workspaceroutes"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "routes_workspaceroutes_router"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_braineventlistener"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_braineventlistener_initbraineventlistener"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_embeddings"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_embeddings_warmembeddings"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_envcheck"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_envcheck_assertcriticalenv"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_queue"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_queue_processqueue"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler_initdailydigestscheduler"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler_initholidayreminderscheduler"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler_initsecurityscheduler"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler_inittaskreminderscheduler"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler_inittranscriptprocessor"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_scheduler_initweeklydigestscheduler"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_socket"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_socket_getio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/index.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "backend_index",
+      "target": "utils_socket_initsocket"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L580",
       "weight": 1.0,
@@ -27480,9 +28908,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L24",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts",
-      "target": "models_calendarevent_calendarevent",
-      "confidence_score": 1.0
+      "target": "models_calendarevent_calendarevent"
     },
     {
       "relation": "imports",
@@ -27491,9 +28919,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L23",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts",
-      "target": "models_meeting_meeting",
-      "confidence_score": 1.0
+      "target": "models_meeting_meeting"
     },
     {
       "relation": "contains",
@@ -27501,9 +28929,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L28",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts",
-      "target": "scripts_inspect_transcripts_auditchunks",
-      "confidence_score": 1.0
+      "target": "scripts_inspect_transcripts_auditchunks"
     },
     {
       "relation": "contains",
@@ -27511,9 +28939,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L50",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts",
-      "target": "scripts_inspect_transcripts_run",
-      "confidence_score": 1.0
+      "target": "scripts_inspect_transcripts_run"
     },
     {
       "relation": "contains",
@@ -27521,9 +28949,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L38",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts",
-      "target": "scripts_inspect_transcripts_verdict",
-      "confidence_score": 1.0
+      "target": "scripts_inspect_transcripts_verdict"
     },
     {
       "relation": "calls",
@@ -27532,9 +28960,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L72",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts_run",
-      "target": "scripts_inspect_transcripts_auditchunks",
-      "confidence_score": 1.0
+      "target": "scripts_inspect_transcripts_auditchunks"
     },
     {
       "relation": "calls",
@@ -27543,630 +28971,9 @@
       "source_file": "Backend/scripts/inspect-transcripts.ts",
       "source_location": "L83",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "scripts_inspect_transcripts_run",
-      "target": "scripts_inspect_transcripts_verdict",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L110",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_accesschat"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L355",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_addtogroup"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L9",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_authrequest"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L454",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_clearchat"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L265",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_creategroupchat"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L518",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_deletechat"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L203",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_fetchchats"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L56",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L16",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_formatuser"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L562",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_getunreadchatcount"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L625",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_joingroupchatbyinvite"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L419",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_mutechat"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L388",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_removefromgroup"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L325",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_renamegroup"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L591",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_togglearchivechat"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L484",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_togglechatpin"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L688",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "controllers_chatcontroller_updategroupsettings"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "models_conversations"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "models_conversations_conversation"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L4",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "models_messages"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L4",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "models_messages_message"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "models_users"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "models_users_user"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "utils_filebase"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "utils_filebase_getsignedmediaurl"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "utils_socket"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L376",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_addtogroup",
-      "target": "controllers_chatcontroller_formatuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L61",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_formatconversation",
-      "target": "controllers_chatcontroller_formatuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_formatuser",
-      "target": "utils_filebase_getsignedmediaurl"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L152",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_accesschat",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L377",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_addtogroup",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L301",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_creategroupchat",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L659",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_joingroupchatbyinvite",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L408",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_removefromgroup",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L344",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_renamegroup",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L729",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_chatcontroller_updategroupsettings",
-      "target": "controllers_chatcontroller_formatconversation"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L155",
-      "weight": 1.0,
-      "source": "controllers_chatcontroller_accesschat",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_accesschat"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_fetchchats"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L304",
-      "weight": 1.0,
-      "source": "controllers_chatcontroller_creategroupchat",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_creategroupchat"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_renamegroup"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L433",
-      "weight": 1.0,
-      "source": "controllers_chatcontroller_addtogroup",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_addtogroup"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_removefromgroup"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_mutechat"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_clearchat"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_togglechatpin"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L543",
-      "weight": 1.0,
-      "source": "controllers_chatcontroller_deletechat",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_deletechat"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_getunreadchatcount"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_togglearchivechat"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L663",
-      "weight": 1.0,
-      "source": "controllers_chatcontroller_joingroupchatbyinvite",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_joingroupchatbyinvite"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/controllers/chatController.ts",
-      "source_location": "L733",
-      "weight": 1.0,
-      "source": "controllers_chatcontroller_updategroupsettings",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/routes/chatRoutes.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "routes_chatroutes",
-      "target": "controllers_chatcontroller_updategroupsettings"
+      "target": "scripts_inspect_transcripts_verdict"
     },
     {
       "relation": "imports_from",
@@ -56416,17 +57223,6 @@
       "target": "controllers_taskcontroller_deletetask"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L43",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "controllers_templatecontroller"
-    },
-    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "Backend/controllers/templateController.ts",
@@ -56573,17 +57369,6 @@
       "confidence_score": 1.0,
       "source": "routes_templateroutes",
       "target": "controllers_templatecontroller_deletetemplate"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L43",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "controllers_templatecontroller_seeddefaulttemplates"
     },
     {
       "relation": "contains",
@@ -57462,791 +58247,6 @@
       "confidence_score": 1.0,
       "source": "backend_fix_system_messages",
       "target": "backend_fix_system_messages_mongoose"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L45",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_app"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L99",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_limiter"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L52",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_production_origins"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L333",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_server"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L109",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_strictlimiter"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L145",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_swaggeroptions"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L284",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "backend_index_swaggerspec"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L21",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "middleware_passport"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L20",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "models_conversations"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L20",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "models_conversations_conversation"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L41",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_activityroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L42",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_activityroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L38",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_aidaroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L39",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_aidaroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L31",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_authroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L32",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_authroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L44",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_brainroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L44",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_brainroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L45",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_calendarroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L45",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_calendarroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L23",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_chatroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L24",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_chatroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L29",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_communityroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L30",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_communityroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L30",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_feedroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L31",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_feedroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L34",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_healthroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L35",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_healthroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L28",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_meetingroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L29",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_meetingroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L27",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_meetroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L28",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_meetroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L24",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_messageroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L25",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_messageroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L39",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_notificationroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L40",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_notificationroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L42",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_orgroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L43",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_orgroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L32",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_paymentroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L33",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_paymentroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L35",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_profileroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L36",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_profileroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L33",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_securityroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L34",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_securityroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L26",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_storiesroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L27",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_storiesroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L37",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_taskroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L38",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_taskroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L40",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_templateroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L41",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_templateroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L25",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_userroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L26",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_userroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L36",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_workspaceroutes"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L37",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "routes_workspaceroutes_router"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_braineventlistener"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_braineventlistener_initbraineventlistener"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L23",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_embeddings"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L23",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_embeddings_warmembeddings"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_envcheck"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_envcheck_assertcriticalenv"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_queue"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_queue_processqueue"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler_initdailydigestscheduler"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L21",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler_initholidayreminderscheduler"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler_initsecurityscheduler"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler_inittaskreminderscheduler"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler_inittranscriptprocessor"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L21",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_scheduler_initweeklydigestscheduler"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_socket"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/index.ts",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "backend_index",
-      "target": "utils_socket_initsocket"
     },
     {
       "relation": "imports_from",
@@ -78552,5 +78552,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "0963d30f16eab80c01767db2d6823c41ab065387"
+  "built_at_commit": "a0d31979b1d2ab470cf015b5ec44cca4074c9b05"
 }
