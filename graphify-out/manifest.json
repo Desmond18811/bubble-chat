@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/setup-profile-view.tsx": {
-    "mtime": 1782019381.7180245,
-    "ast_hash": "76018a7d7f523d33f0274391a44ed13a",
+    "mtime": 1782217583.9839509,
+    "ast_hash": "07c190f8cd1e964f3403784b2ee4ee5b",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
@@ -455,8 +455,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/lib/api.ts": {
-    "mtime": 1782047239.87029,
-    "ast_hash": "91d62a3998df9c74182926c9e6a2bde3",
+    "mtime": 1782217520.3715563,
+    "ast_hash": "db61333b5c661b9a78ecf775e836c48c",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/lib/chat-data.ts": {
@@ -495,7 +495,7 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/lib/utils.ts": {
-    "mtime": 1780436596.5244203,
+    "mtime": 1782210366.605793,
     "ast_hash": "29a2cdde64f6f76575c5efc067dbdd3b",
     "semantic_hash": ""
   },
@@ -585,7 +585,7 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/login.tsx": {
-    "mtime": 1781984462.6643996,
+    "mtime": 1782210618.4652174,
     "ast_hash": "6474c6500dbf09d91975f70acf08fb66",
     "semantic_hash": ""
   },
@@ -595,7 +595,7 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/signup.tsx": {
-    "mtime": 1781984437.0291712,
+    "mtime": 1782210618.4667277,
     "ast_hash": "feb76e493000b65645b9504b8f098dee",
     "semantic_hash": ""
   },
@@ -640,8 +640,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/authController.ts": {
-    "mtime": 1781983746.6078672,
-    "ast_hash": "ae467bfb1160c44ce171694fe6de7f1b",
+    "mtime": 1782217484.1156163,
+    "ast_hash": "3c84ae91db638c4c6786acc413c1203b",
     "semantic_hash": ""
   },
   "Backend/controllers/chatController.ts": {
@@ -705,8 +705,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/profileController.ts": {
-    "mtime": 1781986337.7563815,
-    "ast_hash": "530dcf406c8658b82e5575aee402412a",
+    "mtime": 1782217465.7966666,
+    "ast_hash": "ed0a6e16ee2b1e2934c8767c4e131f13",
     "semantic_hash": ""
   },
   "Backend/controllers/securityController.ts": {
@@ -745,7 +745,7 @@
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {
-    "mtime": 1782209536.239518,
+    "mtime": 1782210366.602788,
     "ast_hash": "04ff7ddedfc1ae3cbb341b7a6934810f",
     "semantic_hash": ""
   },
@@ -885,8 +885,8 @@
     "semantic_hash": ""
   },
   "Backend/routes/authRoutes.ts": {
-    "mtime": 1781983763.4733608,
-    "ast_hash": "439f3f99b942c6fd3aa34150db24150d",
+    "mtime": 1782217499.5645266,
+    "ast_hash": "c28f6c1ad7e3015d9bbd98170c9a275a",
     "semantic_hash": ""
   },
   "Backend/routes/chatRoutes.ts": {
@@ -1020,7 +1020,7 @@
     "semantic_hash": ""
   },
   "Backend/scripts/test-endpoints.mjs": {
-    "mtime": 1778237041.5552633,
+    "mtime": 1782210366.5981388,
     "ast_hash": "e38df467f66c4965bc69783023096ce0",
     "semantic_hash": ""
   },
@@ -1715,7 +1715,7 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/api.ts": {
-    "mtime": 1782151622.2580338,
+    "mtime": 1782210366.6013188,
     "ast_hash": "032e9e425444ec9ad6d115f267d7ef1e",
     "semantic_hash": ""
   },
@@ -1770,7 +1770,7 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/socket.ts": {
-    "mtime": 1781852875.2838993,
+    "mtime": 1782210366.602162,
     "ast_hash": "ada197384e8abe489b21b3ace9d62f0d",
     "semantic_hash": ""
   },
@@ -1990,7 +1990,7 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/eas.json": {
-    "mtime": 1781866633.4896371,
+    "mtime": 1782210366.599326,
     "ast_hash": "b4f9ad0f894e4d35856bfb1aaf794bf7",
     "semantic_hash": ""
   },
@@ -2300,13 +2300,18 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/status.tsx": {
-    "mtime": 1782208011.1287668,
+    "mtime": 1782210366.6094642,
     "ast_hash": "7f5642d83ac14af4f822740916086ca6",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/terms.tsx": {
     "mtime": 1782208006.861947,
     "ast_hash": "1b3bafbd296438359d202523c153608d",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-06-23-google-org-accounts-web-design.md": {
+    "mtime": 1782217460.4420052,
+    "ast_hash": "996a6b1c73f8ce34ad78f65b4771db78",
     "semantic_hash": ""
   }
 }
