@@ -50,6 +50,7 @@ import calendarRoutes from './routes/calendarRoutes';
 import { seedDefaultTemplates } from './controllers/templateController';
 
 const app = express();
+app.disable('x-powered-by');
 
 // FIX 1: Railway injects PORT dynamically — never hardcode this
 const PORT = process.env.PORT || 3000;
@@ -120,7 +121,14 @@ const strictLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api/v1/auth', strictLimiter);
+
+// Protect brute-force targets rather than wildcarding all /auth endpoints.
+// This prevents background calls to `/auth/me` or OAuth redirects from locking users out.
+app.use('/api/v1/auth/login', strictLimiter);
+app.use('/api/v1/auth/register', strictLimiter);
+app.use('/api/v1/auth/verify-otp', strictLimiter);
+app.use('/api/v1/auth/forgot-password', strictLimiter);
+app.use('/api/v1/auth/reset-password', strictLimiter);
 app.use('/api/v1/user/search', strictLimiter); // Prevent bulk scraping of identities
 
 app.use(helmet({

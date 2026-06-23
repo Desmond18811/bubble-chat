@@ -412,7 +412,7 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
     if (systemMessageSaved) {
       try {
         const io = req.io || getIO();
-        const joinedUser = updated?.users.find((u: any) => String(u._id) === String(userId));
+        const joinedUser = updated?.users.find((u: any) => String(u._id || u) === String(userId)) as any;
         const formattedMsg = {
           _id: systemMessageSaved._id,
           id: systemMessageSaved._id.toString(),
@@ -737,7 +737,7 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
 
     if (!isMember) {
       try {
-        const joinedUser = updated?.users.find((u: any) => String(u._id) === String(userId));
+        const joinedUser = updated?.users.find((u: any) => String(u._id || u) === String(userId)) as any;
         const username = joinedUser?.username || joinedUser?.full_name || 'Someone';
         const tag = `@${username}`;
         const joinedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -768,7 +768,7 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
       });
 
       if (systemMessageSaved) {
-        const joinedUser = updated?.users.find((u: any) => String(u._id) === String(userId));
+        const joinedUser = updated?.users.find((u: any) => String(u._id || u) === String(userId)) as any;
         const formattedMsg = {
           _id: systemMessageSaved._id,
           id: systemMessageSaved._id.toString(),
