@@ -15,8 +15,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/railway.json": {
-    "mtime": 1780689156.2447286,
-    "ast_hash": "a6ab320dfdf732d4e7c9451ea5a96335",
+    "mtime": 1782208593.1201918,
+    "ast_hash": "2e237b728af2b9bf247589dd95cbea32",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/message-overlay.tsx": {
-    "mtime": 1781866720.8491838,
-    "ast_hash": "08dd7c6035a5c0f14786040c652fb120",
+    "mtime": 1782209204.5854406,
+    "ast_hash": "eafab27839daae56e2335d6bdb9eb480",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/nav-sidebar.tsx": {
@@ -745,8 +745,8 @@
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {
-    "mtime": 1782207509.9993153,
-    "ast_hash": "9a0d7d9942b6232480a50c73a1d41a18",
+    "mtime": 1782209536.239518,
+    "ast_hash": "04ff7ddedfc1ae3cbb341b7a6934810f",
     "semantic_hash": ""
   },
   "Backend/middleware/upload.ts": {
