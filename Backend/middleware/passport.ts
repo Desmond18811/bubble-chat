@@ -37,7 +37,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL || 
             (process.env.NODE_ENV === 'production' 
-                ? 'https://bubblespace.xyz/api/v1/auth/google/callback'
+                ? 'https://bubble-backend-production-96a0.up.railway.app/api/v1/auth/google/callback'
                 : `${process.env.SERVER_URL || 'http://localhost:3000'}/api/v1/auth/google/callback`)
     }, async (accessToken, refreshToken, profile, done) => {
         try {
