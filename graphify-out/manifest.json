@@ -635,8 +635,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/aidaController.ts": {
-    "mtime": 1782195326.3128378,
-    "ast_hash": "a1660d51b4c508d7127b13e789433847",
+    "mtime": 1782201509.2374313,
+    "ast_hash": "d3fc67353cac41ce868d666b6d8795eb",
     "semantic_hash": ""
   },
   "Backend/controllers/authController.ts": {
@@ -2282,6 +2282,11 @@
   "Backend/scripts/dedupe-direct-conversations.ts": {
     "mtime": 1782195121.4353714,
     "ast_hash": "1b6bf02f0f8c57effec745a58072ff15",
+    "semantic_hash": ""
+  },
+  "Backend/scripts/inspect-transcripts.ts": {
+    "mtime": 1782202274.975889,
+    "ast_hash": "1956501e4d89de9632eee2a4333167bc",
     "semantic_hash": ""
   }
 }
