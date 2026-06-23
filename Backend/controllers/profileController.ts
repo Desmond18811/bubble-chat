@@ -64,6 +64,8 @@ const formatUser = async (u: any, includePrivate = false) => {
     is_bot: u.is_bot ?? false,
     verified_badge: u.verified_badge ?? false,
     role: u.role || null,
+    signupKind: u.signupKind || 'individual',
+    isSocialAccount: !!u.googleId,
     publicKey: u.publicKey || null,
     notification_settings: includePrivate ? (u.notification_settings || null) : undefined,
     privacy_settings: includePrivate ? (u.privacy_settings || null) : undefined,

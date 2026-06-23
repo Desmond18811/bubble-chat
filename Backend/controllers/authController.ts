@@ -51,6 +51,7 @@ const formatUser = (u: any) => ({
   isOnline: u.isOnline ?? false,
   publicKey: u.publicKey || null,
   role: u.role || 'employee',
+  isSocialAccount: !!u.googleId,
   createdAt: u.createdAt,
   updatedAt: u.updatedAt,
 });
@@ -862,6 +863,61 @@ export const getMe = async (req: any, res: Response): Promise<void> => {
     });
   } catch (err: any) {
     res.status(500).json({ message: 'Failed to retrieve profile: ' + err.message });
+  }
+};
+
+// ─── SET ACCOUNT TYPE ─────────────────────────────────────────────────────────
+/**
+ * POST /api/v1/auth/account-type
+ * One-time, pre-onboarding promotion that lets social (Google) accounts choose
+ * between an individual or an organization account during onboarding — the same
+ * choice email signups make on the signup page.
+ *
+ * Picking 'organization' sets role=admin + signupKind=organization, which is what
+ * unlocks the org onboarding steps. The Organization document itself is still
+ * created later in setupProfile via ensureOrganizationForFounder, exactly like the
+ * email flow. No org doc is created here.
+ */
+export const setAccountType = async (req: any, res: Response): Promise<void> => {
+  try {
+    if (!req.user?._id) {
+      res.status(401).json({ message: 'Unauthorized.' });
+      return;
+    }
+
+    const { accountType } = req.body;
+    if (accountType !== 'individual' && accountType !== 'organization') {
+      res.status(400).json({ message: "accountType must be 'individual' or 'organization'." });
+      return;
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      res.status(404).json({ message: 'User not found.' });
+      return;
+    }
+
+    // One-time, pre-onboarding only. Reject once the user has committed.
+    if (user.onboardingComplete || user.organizationId || user.role === 'admin') {
+      res.status(409).json({ message: 'Account type can no longer be changed for this account.' });
+      return;
+    }
+
+    if (accountType === 'organization') {
+      user.signupKind = 'organization';
+      user.role = 'admin';
+    } else {
+      user.signupKind = 'individual';
+      user.role = 'employee';
+    }
+    await user.save();
+
+    res.status(200).json({
+      message: 'Account type updated.',
+      data: formatUser(user),
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to set account type: ' + err.message });
   }
 };
 

@@ -15,6 +15,7 @@ import {
   googleLogin,
   googleCallback,
   googleMobileLogin,
+  setAccountType,
   setup2FA,
   verify2FA,
   savePushToken,
@@ -367,6 +368,34 @@ router.post('/refresh-token', refreshToken);
  *         description: Unauthorized session.
  */
 router.get('/me', jwtAuth, getMe);
+
+/**
+ * @swagger
+ * /api/v1/auth/account-type:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Choose individual or organization account (one-time, pre-onboarding)
+ *     description: Lets social (Google) accounts pick their account type during onboarding. Selecting 'organization' promotes the user to an org founder (role=admin).
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [accountType]
+ *             properties:
+ *               accountType: { type: string, enum: [individual, organization] }
+ *     responses:
+ *       200:
+ *         description: Account type updated. Returns the refreshed user.
+ *       400:
+ *         description: Invalid accountType.
+ *       409:
+ *         description: Account type can no longer be changed.
+ */
+router.post('/account-type', jwtAuth, setAccountType);
 
 /**
  * @swagger
