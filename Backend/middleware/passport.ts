@@ -41,54 +41,16 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                 : `${process.env.SERVER_URL || 'http://localhost:3000'}/api/v1/auth/google/callback`)
     }, async (accessToken, refreshToken, profile, done) => {
         try {
-            // 1. Existing Google user
-            let user = await User.findOne({ googleId: profile.id });
-            if (user) return done(null, user);
-
-            // 2. Existing local user with same email → link accounts
-            const googleEmail = profile.emails?.[0]?.value;
-            if (googleEmail && typeof googleEmail === 'string') {
-                user = await User.findOne({ email: googleEmail.toLowerCase() });
-                if (user) {
-                    user.googleId = profile.id;
-                    if (!user.avatar && profile.photos?.[0]?.value) {
-                        user.avatar = profile.photos[0].value;
-                    }
-                    await user.save();
-                    return done(null, user);
-                }
-            }
-
-            // 3. Brand new Google user — auto-generate BubbleID
-            const { User: UserModel } = await import('../models/users');
-            const crypto = await import('crypto');
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let uniqueTag = 'bubble-' + Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-            while (await UserModel.findOne({ uniqueTag })) {
-                uniqueTag = 'bubble-' + Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-            }
-
-            user = await User.create({
+            const { findOrCreateGoogleUser } = await import('../utils/googleAuth');
+            const user = await findOrCreateGoogleUser({
                 googleId: profile.id,
-                full_name: profile.displayName || `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim(),
-                email: googleEmail,
+                email: profile.emails?.[0]?.value,
+                fullName: profile.displayName || `${profile.name?.givenName || ''} ${profile.name?.familyName || ''}`.trim(),
                 avatar: profile.photos?.[0]?.value || '',
-                isVerified: true, // Google-verified email
-                uniqueTag,
-                role: 'employee',
             });
-
-            // Background RSA keypair
-            crypto.generateKeyPair('rsa', {
-                modulusLength: 2048,
-                publicKeyEncoding: { type: 'spki', format: 'pem' },
-                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-            }, async (err: any, pub: string, priv: string) => {
-                if (!err) await User.findByIdAndUpdate(user!._id, { publicKey: pub, privateKey: priv });
-            });
-
             return done(null, user);
         } catch (err) {
+            console.error('[passport][google] Sign-in failed:', (err as any)?.message);
             return done(err);
         }
     }));

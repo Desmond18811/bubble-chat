@@ -9,6 +9,15 @@ import { logActivity } from '../controllers/activityLogController';
 
 let io: Server;
 
+// Authoritative presence registry: userId -> set of that user's live socket ids.
+// A user is "online" while they have at least one connected socket. This makes
+// presence robust to multiple tabs/devices — closing one tab no longer flips the
+// user offline while another is still connected, and offline only fires on the
+// genuine last disconnect.
+const onlineSockets = new Map<string, Set<string>>();
+
+export const getOnlineUserIds = (): string[] => Array.from(onlineSockets.keys());
+
 export const initSocket = (server: HttpServer) => {
   io = new Server(server, {
     pingTimeout: 60000,
@@ -48,12 +57,27 @@ export const initSocket = (server: HttpServer) => {
 
     // Automatically register user on connection and join their personal room
     socket.join(userId); // <-- personal room: guarantees delivery even when no chat is open
-    User.findByIdAndUpdate(userId, {
-      socketId: socket.id,
-      isOnline: true
-    }).then(() => {
-      socket.broadcast.emit('user_status_change', { userId, isOnline: true });
-    });
+
+    // Register this socket; only broadcast "online" on the FIRST socket for the user.
+    const existing = onlineSockets.get(userId) || new Set<string>();
+    const wasOffline = existing.size === 0;
+    existing.add(socket.id);
+    onlineSockets.set(userId, existing);
+
+    if (wasOffline) {
+      User.findByIdAndUpdate(userId, { socketId: socket.id, isOnline: true, lastSeen: new Date() })
+        .then(() => {
+          socket.broadcast.emit('user_status_change', { userId, isOnline: true });
+        })
+        .catch((err) => console.error('Presence online update failed:', err));
+    } else {
+      // Keep socketId pointing at a live socket for any legacy lookups.
+      User.findByIdAndUpdate(userId, { socketId: socket.id }).catch(() => undefined);
+    }
+
+    // Seed the connecting client with everyone currently online so its UI starts
+    // correct instead of waiting for the next delta event.
+    socket.emit('presence_snapshot', { online: getOnlineUserIds() });
 
     // ─── Chat Room Management ─────────────────────────────────────────────────
     // Clients must join a room to receive real-time events scoped to that chat.
@@ -289,15 +313,24 @@ export const initSocket = (server: HttpServer) => {
     socket.on('disconnect', async () => {
       console.log(`Socket disconnected: ${socket.id}`);
       try {
-        const user = await User.findOneAndUpdate(
-          { socketId: socket.id },
-          { socketId: '', isOnline: false, lastSeen: new Date() },
-          { returnDocument: 'after' }
-        );
-
-        if (user) {
-          socket.broadcast.emit('user_status_change', { userId: user._id, isOnline: false });
+        const set = onlineSockets.get(userId);
+        if (set) {
+          set.delete(socket.id);
+          if (set.size > 0) {
+            // Other tabs/devices for this user are still connected — stay online.
+            onlineSockets.set(userId, set);
+            return;
+          }
+          onlineSockets.delete(userId);
         }
+
+        // Genuine last disconnect → mark offline and broadcast once.
+        await User.findByIdAndUpdate(userId, {
+          socketId: '',
+          isOnline: false,
+          lastSeen: new Date(),
+        });
+        socket.broadcast.emit('user_status_change', { userId, isOnline: false });
       } catch (err) {
         console.error('Error on disconnect:', err);
       }

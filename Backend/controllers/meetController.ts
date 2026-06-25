@@ -169,18 +169,19 @@ export const saveTranscriptChunk = async (req: Request, res: Response) => {
 
     const { Meeting } = require('../models/meeting');
 
-    // Find or create a meeting record for this room
-    let meeting = await Meeting.findOne({ roomId });
+    const meeting = await Meeting.findOne({ roomId });
 
+    // Don't resurrect a transcript: if there's no live meeting for this room (either
+    // it never existed or it has already ended), drop the chunk instead of creating
+    // a fresh "live" meeting. This is what let a not-fully-stopped recognizer keep a
+    // transcript "running" server-side after a call ended.
     if (!meeting) {
-      meeting = await Meeting.create({
-        roomId,
-        title: 'Live Meeting',
-        host: userId,
-        attendees: [userId],
-        status: 'live',
-        startedAt: new Date(),
-      });
+      res.status(404).json({ message: 'No active meeting for this room.' });
+      return;
+    }
+    if (meeting.status === 'ended' || meeting.status === 'cancelled') {
+      res.status(409).json({ message: 'Meeting has ended; transcript is closed.' });
+      return;
     }
 
     // Push the chunk

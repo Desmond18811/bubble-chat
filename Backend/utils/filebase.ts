@@ -138,6 +138,33 @@ export const getSignedMediaUrl = async (keyOrUrl: string, downloadName?: string)
 };
 
 /**
+ * Cached variant of getSignedMediaUrl for hot read paths (e.g. avatars in
+ * formatUser, which runs on every profile/me and getMe). Presigning on every
+ * request added latency AND produced a new URL each time, defeating the browser's
+ * image cache. We cache the signed URL for slightly under its 1h expiry, so
+ * repeated reads reuse one stable, cacheable URL. Falls back to direct signing if
+ * Redis is unavailable. Only for cacheable, non-download (no filename) URLs.
+ */
+export const getSignedMediaUrlCached = async (keyOrUrl: string): Promise<string> => {
+  if (keyOrUrl.startsWith('http') && !keyOrUrl.includes('filebase.com')) {
+    return keyOrUrl;
+  }
+  const key = keyOrUrl.startsWith('http') ? extractKeyFromUrl(keyOrUrl) : keyOrUrl;
+  const cacheKey = `media:signed:${key}`;
+  try {
+    const { getCache, setCache } = await import('./redis');
+    const cached = await getCache(cacheKey);
+    if (cached && typeof cached === 'string') return cached;
+    const signed = await getSignedMediaUrl(keyOrUrl);
+    // 50 min TTL — comfortably under the 60 min presign expiry.
+    await setCache(cacheKey, signed, 3000);
+    return signed;
+  } catch {
+    return getSignedMediaUrl(keyOrUrl);
+  }
+};
+
+/**
  * Streams a Filebase object directly to the client response with proper cross-origin headers.
  * Helps prevent ERR_BLOCKED_BY_RESPONSE.NotSameOrigin from browser security policies.
  */

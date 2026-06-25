@@ -26,11 +26,13 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB cap enforced here too
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif', 'image/heic', 'image/heif'];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Allowed: jpeg, png, webp, gif.'));
+      const err: any = new Error('Invalid file type. Allowed: jpeg, png, webp, gif, avif, heic.');
+      err.status = 400;
+      cb(err);
     }
   },
 });

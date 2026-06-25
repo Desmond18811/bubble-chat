@@ -912,6 +912,12 @@ export const setAccountType = async (req: any, res: Response): Promise<void> => 
     }
     await user.save();
 
+    // Drop any cached profile so the next /profile/me reflects the new role/kind.
+    try {
+      const { invalidateUserCaches } = await import('./profileController');
+      await invalidateUserCaches(user._id);
+    } catch { /* cache best-effort */ }
+
     res.status(200).json({
       message: 'Account type updated.',
       data: formatUser(user),
@@ -1070,43 +1076,15 @@ export const googleMobileLogin = async (req: Request, res: Response): Promise<vo
 
     const normalizedEmail = email.toLowerCase();
 
-    // 2. Find or create user in MongoDB (same logic as passport.ts / googleCallback)
-    let user = await User.findOne({ googleId });
-    if (!user) {
-      // Look up by email to link account
-      user = await User.findOne({ email: normalizedEmail });
-      if (user) {
-        // Link account
-        user.googleId = googleId;
-        if (!user.avatar && picture) {
-          user.avatar = picture;
-        }
-        await user.save();
-      } else {
-        // Brand new Google user — generate uniqueTag & create
-        const uniqueTag = await generateUniqueTag(name || 'user');
-        user = await User.create({
-          googleId,
-          full_name: name,
-          email: normalizedEmail,
-          avatar: picture || '',
-          isVerified: true,
-          uniqueTag,
-          role: 'employee',
-        });
-
-        // Background RSA keypair generation
-        crypto.generateKeyPair('rsa', {
-          modulusLength: 2048,
-          publicKeyEncoding: { type: 'spki', format: 'pem' },
-          privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-        }, async (err: any, pub: string, priv: string) => {
-          if (!err) {
-            await User.findByIdAndUpdate(user!._id, { publicKey: pub, privateKey: priv });
-          }
-        });
-      }
-    }
+    // 2. Find or create user via the shared, hardened resolver (same logic as
+    // passport.ts) so web and mobile behave identically and recover from races.
+    const { findOrCreateGoogleUser } = await import('../utils/googleAuth');
+    let user = await findOrCreateGoogleUser({
+      googleId,
+      email: normalizedEmail,
+      fullName: name,
+      avatar: picture || '',
+    });
 
     // Link user to organization via inviteCode if user has no organization yet
     if (inviteCode && user && !user.organization) {

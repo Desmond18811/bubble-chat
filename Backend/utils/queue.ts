@@ -1,4 +1,4 @@
-import redis from './redis';
+import redis, { blockingRedis } from './redis';
 
 const MESSAGE_QUEUE = 'chat_message_queue';
 
@@ -31,7 +31,9 @@ export const getQueueLength = async (): Promise<number> => {
 export const processQueue = async (handler: (data: any) => Promise<void>) => {
     while (true) {
         try {
-            const data = await redis.brpop(MESSAGE_QUEUE, 0); // Blocking pop
+            // Blocking pop on a DEDICATED connection so it never stalls cache
+            // (GET/SET) traffic on the shared client. See utils/redis.ts.
+            const data = await blockingRedis.brpop(MESSAGE_QUEUE, 0);
             if (data) {
                 const payload = JSON.parse(data[1]);
                 await handler(payload);

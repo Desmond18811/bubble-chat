@@ -907,11 +907,22 @@ export const getOrgMembers = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    // Short-TTL cache keyed by org. Roster changes rarely; embedded presence is
+    // overridden live on the client from the central presence map.
+    const { getCache, setCache } = await import('../utils/redis');
+    const cacheKey = `org:members:${user.organization}`;
+    const cached = await getCache(cacheKey).catch(() => null);
+    if (cached) {
+      res.status(200).json({ members: cached });
+      return;
+    }
+
     const members = await User.find({ organization: user.organization })
       .select('full_name username email avatar role org_role department uniqueTag isOnline lastSeen')
       .sort({ full_name: 1, username: 1 })
       .lean();
 
+    await setCache(cacheKey, members, 30).catch(() => undefined);
     res.status(200).json({ members });
   } catch (error: any) {
     console.error('[getOrgMembers] error:', error);

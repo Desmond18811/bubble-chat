@@ -2,14 +2,25 @@ import { Request, Response } from 'express';
 import { User } from '../models/users';
 import { ensureOrganizationForFounder } from './orgController';
 import { UserImage } from '../models/userImage';
-import { uploadToFilebase, getSignedMediaUrl } from '../utils/filebase';
+import { uploadToFilebase, getSignedMediaUrl, getSignedMediaUrlCached } from '../utils/filebase';
 import { Conversation } from '../models/conversations';
 import { WorkspaceFile } from '../models/workspaceFile';
 import { Backup } from '../models/backup';
+import { getCache, setCache, deleteCache } from '../utils/redis';
 
 export interface AuthRequest extends Request {
   user?: any;
 }
+
+// Invalidate every cached read derived from a user's own profile. Call after any
+// mutation to that user (profile edit, avatar, account type, follow changes).
+export const invalidateUserCaches = async (userId: any) => {
+  const id = String(userId);
+  await Promise.all([
+    deleteCache(`user:profile:${id}`),
+    deleteCache(`user:counts:${id}`),
+  ]);
+};
 
 // ─── Format Helper ────────────────────────────────────────────────────────────
 
@@ -17,14 +28,27 @@ const formatUser = async (u: any, includePrivate = false) => {
   let avatar = u.avatar || null;
   if (avatar && avatar.startsWith('http')) {
     try {
-      avatar = await getSignedMediaUrl(avatar);
+      // Cached signing — avoids re-presigning the avatar on every profile read.
+      avatar = await getSignedMediaUrlCached(avatar);
     } catch (err) {
       console.error('Error signing avatar URL:', err);
     }
   }
 
-  const chatsCount = await Conversation.countDocuments({ users: u._id }).catch(() => 0);
-  const filesCount = await WorkspaceFile.countDocuments({ uploadedBy: u._id, isFolder: { $ne: true } }).catch(() => 0);
+  // Chat/file counts change slowly; cache them briefly so the hot profile path
+  // doesn't run two countDocuments queries on every request.
+  let chatsCount = 0;
+  let filesCount = 0;
+  const countsKey = `user:counts:${String(u._id)}`;
+  const cachedCounts = await getCache(countsKey).catch(() => null);
+  if (cachedCounts && typeof cachedCounts.chatsCount === 'number') {
+    chatsCount = cachedCounts.chatsCount;
+    filesCount = cachedCounts.filesCount;
+  } else {
+    chatsCount = await Conversation.countDocuments({ users: u._id }).catch(() => 0);
+    filesCount = await WorkspaceFile.countDocuments({ uploadedBy: u._id, isFolder: { $ne: true } }).catch(() => 0);
+    await setCache(countsKey, { chatsCount, filesCount }, 120).catch(() => undefined);
+  }
 
   return {
     id: u._id,
@@ -119,6 +143,13 @@ export const getMyProfile = async (req: AuthRequest, res: Response): Promise<voi
   }
 
   try {
+    const profileKey = `user:profile:${String(req.user._id)}`;
+    const cached = await getCache(profileKey).catch(() => null);
+    if (cached) {
+      res.status(200).json({ message: 'Profile retrieved successfully.', data: cached });
+      return;
+    }
+
     const user = await User.findById(req.user._id)
       .populate('contacts', '_id full_name username avatar isOnline uniqueTag')
       .populate('followers', '_id full_name username avatar isOnline uniqueTag')
@@ -130,13 +161,18 @@ export const getMyProfile = async (req: AuthRequest, res: Response): Promise<voi
     }
 
     const completeness = getProfileCompleteness(user);
+    const data = {
+      ...(await formatUser(user, true)),
+      profile_completeness: completeness,
+    };
+
+    // Short TTL: keeps /profile/me fast on repeated loads while staying fresh.
+    // Explicitly invalidated on any profile mutation via invalidateUserCaches.
+    await setCache(profileKey, data, 60).catch(() => undefined);
 
     res.status(200).json({
       message: 'Profile retrieved successfully.',
-      data: {
-        ...(await formatUser(user, true)),
-        profile_completeness: completeness,
-      },
+      data,
     });
   } catch (err: any) {
     res.status(500).json({ message: 'Failed to retrieve profile: ' + err.message });
@@ -274,6 +310,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     }
 
     const completeness = getProfileCompleteness(updated);
+    await invalidateUserCaches(req.user._id);
 
     res.status(200).json({
       message: 'Profile updated successfully.',
@@ -337,6 +374,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
       { avatar: url },
       { returnDocument: 'after' }
     );
+    await invalidateUserCaches(req.user._id);
 
     res.status(200).json({
       message: 'Avatar uploaded and updated successfully.',
@@ -381,6 +419,7 @@ export const uploadBackground = async (req: AuthRequest, res: Response): Promise
       { app_background: 'custom', custom_background: url },
       { returnDocument: 'after' }
     );
+    await invalidateUserCaches(req.user._id);
 
     res.status(200).json({
       message: 'Background uploaded successfully.',
@@ -426,11 +465,13 @@ export const followUser = async (req: AuthRequest, res: Response): Promise<void>
       // Unfollow
       await User.findByIdAndUpdate(targetId, { $pull: { followers: req.user._id } });
       await User.findByIdAndUpdate(req.user._id, { $pull: { following: targetId } });
+      await Promise.all([invalidateUserCaches(req.user._id), invalidateUserCaches(targetId)]);
       res.status(200).json({ message: 'Unfollowed successfully.', following: false });
     } else {
       // Follow
       await User.findByIdAndUpdate(targetId, { $push: { followers: req.user._id } });
       await User.findByIdAndUpdate(req.user._id, { $push: { following: targetId } });
+      await Promise.all([invalidateUserCaches(req.user._id), invalidateUserCaches(targetId)]);
       res.status(200).json({ message: 'Followed successfully.', following: true });
     }
   } catch (err: any) {
@@ -586,6 +627,8 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
         console.warn('[setupProfile] ensureOrganizationForFounder failed:', orgErr);
       }
     }
+
+    await invalidateUserCaches(req.user._id);
 
     res.status(200).json({
       message: isOrgFounder

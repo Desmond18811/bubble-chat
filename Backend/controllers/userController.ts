@@ -67,20 +67,36 @@ export const getContacts = async (req: AuthRequest, res: Response): Promise<void
     return;
   }
 
-  const keyword = req.query.search
-    ? {
-      $or: [
-        { full_name: { $regex: req.query.search as string, $options: 'i' } },
-        { email: { $regex: req.query.search as string, $options: 'i' } },
-        { phone_number: { $regex: req.query.search as string, $options: 'i' } },
-        { uniqueTag: { $regex: req.query.search as string, $options: 'i' } },
-        { username: { $regex: req.query.search as string, $options: 'i' } },
-      ],
-    }
-    : {};
-
   try {
-    const users = await User.find({ ...keyword, _id: { $ne: req.user._id }, is_bot: { $ne: true } })
+    const currentUser = await User.findById(req.user._id).select('contacts organization').lean();
+    const myContacts: any[] = (currentUser as any)?.contacts || [];
+    const myOrg: string | undefined = (currentUser as any)?.organization;
+
+    const keyword = req.query.search as string | undefined;
+
+    // Build the base scope: only coworkers (same org) + explicit contacts
+    const scopeFilter: any = myOrg
+      ? { $or: [{ organization: myOrg }, { _id: { $in: myContacts } }] }
+      : { _id: { $in: myContacts } }; // no org → only show explicit contacts
+
+    const searchFilter = keyword
+      ? {
+          $or: [
+            { full_name: { $regex: keyword, $options: 'i' } },
+            { email: { $regex: keyword, $options: 'i' } },
+            { phone_number: { $regex: keyword, $options: 'i' } },
+            { uniqueTag: { $regex: keyword, $options: 'i' } },
+            { username: { $regex: keyword, $options: 'i' } },
+          ],
+        }
+      : {};
+
+    const users = await User.find({
+      ...searchFilter,
+      ...scopeFilter,
+      _id: { $ne: req.user._id },
+      is_bot: { $ne: true },
+    })
       .select('-password -refreshToken -privateKey -zegoToken -otp -otpExpires -passwordResetToken')
       .limit(30);
 
@@ -93,6 +109,7 @@ export const getContacts = async (req: AuthRequest, res: Response): Promise<void
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // ─── Add Contact ──────────────────────────────────────────────────────────────
 /**
@@ -160,13 +177,27 @@ export const getMyContacts = async (req: AuthRequest, res: Response): Promise<vo
   }
 
   try {
+    // Short-TTL cache. The roster changes rarely; embedded presence (isOnline) is
+    // overridden live on the client from the central presence map, so brief
+    // staleness here is invisible. Self-heals on expiry — no explicit invalidation.
+    const { getCache, setCache } = await import('../utils/redis');
+    const cacheKey = `user:contacts:${String(req.user._id)}`;
+    const cached = await getCache(cacheKey).catch(() => null);
+    if (cached) {
+      res.status(200).json({ message: 'Contacts retrieved successfully.', total: cached.length, data: cached });
+      return;
+    }
+
     const userWithContacts = await User.findById(req.user._id)
       .populate('contacts', '-password -refreshToken -privateKey -zegoToken -otp -otpExpires');
 
+    const data = (userWithContacts?.contacts || []).map(formatUser);
+    await setCache(cacheKey, data, 30).catch(() => undefined);
+
     res.status(200).json({
       message: 'Contacts retrieved successfully.',
-      total: userWithContacts?.contacts?.length || 0,
-      data: (userWithContacts?.contacts || []).map(formatUser),
+      total: data.length,
+      data,
     });
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -325,6 +356,14 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
       } else {
         // 2. Regular search: prioritize Coworkers (same org)
         const allowedIds = [...(currentUser?.contacts || [])];
+        // An org-less user has organization === '' (the schema default). Matching on that
+        // bare value would treat every other org-less user as a "coworker" — effectively
+        // exposing the entire org-less user base to itself. Only add the org clause when
+        // the viewer actually belongs to a real organization.
+        const scopeClauses: any[] = [{ _id: { $in: allowedIds } }];
+        if (currentUser?.organization) {
+          scopeClauses.push({ organization: currentUser.organization });
+        }
 
         filter.$and = [
           {
@@ -334,20 +373,20 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
               { email: { $regex: query, $options: 'i' } },
             ]
           },
-          {
-            $or: [
-              { organization: currentUser?.organization }, // Priority: Coworkers
-              { _id: { $in: allowedIds } } // Existing contacts
-            ]
-          }
+          { $or: scopeClauses }
         ];
       }
     } else {
-      // No query: default to showing only Coworkers and Contacts
-      filter.$or = [
-        { organization: currentUser?.organization },
-        { _id: { $in: currentUser?.contacts || [] } }
-      ];
+      // No query: default to showing only Coworkers and Contacts. Same org-less guard as
+      // above — without it, `organization: ''` matches every other org-less account.
+      if (currentUser?.organization) {
+        filter.$or = [
+          { organization: currentUser.organization },
+          { _id: { $in: currentUser?.contacts || [] } }
+        ];
+      } else {
+        filter._id = { ...filter._id, $in: currentUser?.contacts || [] };
+      }
     }
 
     const users = await User.find(filter)
@@ -445,14 +484,22 @@ export const getSuggestions = async (req: AuthRequest, res: Response): Promise<v
   }
 
   try {
-    const currentUser = await User.findById(req.user._id).select('following').lean();
+    const currentUser = await User.findById(req.user._id).select('following organization').lean();
+
+    // If the user has not joined an organisation, return nothing.
+    // Showing all unaffiliated users would expose random people from across the platform.
+    if (!currentUser?.organization) {
+      res.status(200).json({ message: 'Join an organisation to see colleagues.', data: [] });
+      return;
+    }
+
     const alreadyFollowing = ((currentUser as any)?.following || []).map((id: any) => id.toString());
     alreadyFollowing.push(req.user._id.toString());
 
     const users = await User.find({
       _id: { $nin: alreadyFollowing },
       is_bot: { $ne: true },
-      organization: currentUser?.organization // Only suggest within the org
+      organization: currentUser.organization // Only suggest within the org
     })
       .select('-password -refreshToken -privateKey -zegoToken -otp -otpExpires -passwordResetToken')
       .limit(8);
@@ -465,6 +512,7 @@ export const getSuggestions = async (req: AuthRequest, res: Response): Promise<v
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // ─── Follow / Unfollow ────────────────────────────────────────────────────────
 export const toggleFollowUser = async (req: AuthRequest, res: Response): Promise<void> => {

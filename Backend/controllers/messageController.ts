@@ -85,8 +85,44 @@ export const formatMessage = async (m: any) => ({
  * Send a new Message
  * POST /api/v1/message
  */
+/**
+ * Deliver a socket event to every member of a conversation EXACTLY ONCE.
+ *
+ * Previously we emitted to the chat room AND to each member's personal room, so a
+ * member who had the chat open (joined the room) received the event twice — the
+ * "sender sees the message twice, receiver sees it once" bug. We now emit to the
+ * room once, then only to the personal rooms of members who are NOT currently in
+ * the room, guaranteeing single delivery while still reaching offline-to-chat
+ * recipients via their personal room.
+ */
+const emitToConversation = async (
+  io: any,
+  chatId: string,
+  users: any[],
+  event: string,
+  payload: any,
+): Promise<void> => {
+  const usersInRoom = new Set<string>();
+  try {
+    const roomSockets = await io.in(String(chatId)).fetchSockets();
+    for (const s of roomSockets) {
+      const uid = (s as any).userId;
+      if (uid) usersInRoom.add(String(uid));
+    }
+  } catch {
+    // fetchSockets can fail in some adapters; fall back to personal-room only.
+  }
+
+  io.to(String(chatId)).emit(event, payload);
+  for (const u of users) {
+    if (!usersInRoom.has(String(u))) {
+      io.to(String(u)).emit(event, payload);
+    }
+  }
+};
+
 export const sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
-  let { content, chatId, message_type, mediaUrl, mediaType, parent_message, fileSize, media_metadata, is_encrypted, location, mentions, media_duration } = req.body;
+  let { content, chatId, message_type, mediaUrl, mediaType, parent_message, fileSize, media_metadata, is_encrypted, location, mentions, media_duration, clientId } = req.body;
 
   if (req.file) {
     try {
@@ -176,13 +212,13 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       });
     }
 
-    const formatted = await formatMessage(fullMessage);
+    const formatted: any = await formatMessage(fullMessage);
+    // Echo the sender's optimistic clientId so the client can reconcile its
+    // optimistic bubble with the server message by id, eliminating duplicates.
+    if (clientId) formatted.clientId = clientId;
     try {
       const io = req.io || getIO();
-      io.to(chatId).emit('new_message', formatted);
-      convo.users.forEach((u: any) => {
-        io.to(u.toString()).emit('new_message', formatted);
-      });
+      await emitToConversation(io, chatId, convo.users as any[], 'new_message', formatted);
 
       // Live unread badge: recompute each recipient's unread count for this chat
       // and push it to their personal room. Skip system messages (they don't
@@ -400,13 +436,8 @@ export const editMessage = async (req: AuthRequest, res: Response): Promise<void
     const formatted = await formatMessage(updated);
     try {
       const io = req.io || getIO();
-      io.to(String((updated as any).chat)).emit('message_edited', formatted);
       const convo = await Conversation.findById((updated as any).chat);
-      if (convo) {
-        convo.users.forEach((u: any) => {
-          io.to(u.toString()).emit('message_edited', formatted);
-        });
-      }
+      await emitToConversation(io, String((updated as any).chat), (convo?.users as any[]) || [], 'message_edited', formatted);
     } catch (socketErr) {
       console.error('Socket emit message_edited failed:', socketErr);
     }
@@ -450,13 +481,8 @@ export const reactToMessage = async (req: AuthRequest, res: Response): Promise<v
         chatId: String(msg.chat),
         reactions: msg.reactions
       };
-      io.to(String(msg.chat)).emit('message_reaction', reactionPayload);
       const convo = await Conversation.findById(msg.chat);
-      if (convo) {
-        convo.users.forEach((u: any) => {
-          io.to(u.toString()).emit('message_reaction', reactionPayload);
-        });
-      }
+      await emitToConversation(io, String(msg.chat), (convo?.users as any[]) || [], 'message_reaction', reactionPayload);
     } catch (socketErr) {
       console.error('Socket emit message_reaction failed:', socketErr);
     }
@@ -492,13 +518,8 @@ export const deleteMessage = async (req: AuthRequest, res: Response): Promise<vo
           chatId: String(msg.chat),
           deletedForEveryone: true
         };
-        io.to(String(msg.chat)).emit('message_deleted', deletePayload);
         const convo = await Conversation.findById(msg.chat);
-        if (convo) {
-          convo.users.forEach((u: any) => {
-            io.to(u.toString()).emit('message_deleted', deletePayload);
-          });
-        }
+        await emitToConversation(io, String(msg.chat), (convo?.users as any[]) || [], 'message_deleted', deletePayload);
       } catch (socketErr) {
         console.error('Socket emit message_deleted failed:', socketErr);
       }
