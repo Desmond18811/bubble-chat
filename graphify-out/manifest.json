@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/dashboard.tsx": {
-    "mtime": 1782315901.4881344,
-    "ast_hash": "66995e656d8467a8dd5532b249a7ee3f",
+    "mtime": 1782382771.217136,
+    "ast_hash": "944151ad46d7515ce96f6727008a392d",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/group-info.tsx": {
@@ -585,23 +585,23 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/login.tsx": {
-    "mtime": 1782210618.4652174,
-    "ast_hash": "6474c6500dbf09d91975f70acf08fb66",
+    "mtime": 1782382650.8614728,
+    "ast_hash": "49a1f3b1b67d2df26898e07e68a09e9b",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/setup-profile.tsx": {
-    "mtime": 1780674700.6687903,
-    "ast_hash": "4337fd7944a837cb5321b7916678548d",
+    "mtime": 1782382742.4026895,
+    "ast_hash": "767ba359b245507c4a1b3aa046bbea5b",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/signup.tsx": {
-    "mtime": 1782210618.4667277,
-    "ast_hash": "feb76e493000b65645b9504b8f098dee",
+    "mtime": 1782382708.9439006,
+    "ast_hash": "f388c740d282052466963d91d329de9f",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/routes/verify-otp.tsx": {
-    "mtime": 1781984482.1166348,
-    "ast_hash": "1d3818fa526907b26093e324688b4709",
+    "mtime": 1782382681.1638074,
+    "ast_hash": "0f7fbe9dff0a2ef7d98bd8fec0a897fd",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/vite-env.d.ts": {
@@ -705,8 +705,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/profileController.ts": {
-    "mtime": 1782346129.7928116,
-    "ast_hash": "8924dc53f48bdd057e2a856f096f9c09",
+    "mtime": 1782382119.414699,
+    "ast_hash": "3790e3c2b7f8f41d00f5e88809514dc2",
     "semantic_hash": ""
   },
   "Backend/controllers/securityController.ts": {
@@ -1735,8 +1735,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/profile-setup.tsx": {
-    "mtime": 1782043819.074189,
-    "ast_hash": "7dea9e3895c29b44c075646c5e8eee6a",
+    "mtime": 1782383061.4536774,
+    "ast_hash": "53083f33941522213c3ac2ee0c361454",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/verify-otp.tsx": {
@@ -2322,6 +2322,11 @@
   "Backend/utils/googleAuth.ts": {
     "mtime": 1782315267.5273163,
     "ast_hash": "ef1155806a551389cd1b454fc8ae1d6b",
+    "semantic_hash": ""
+  },
+  "BUBBLESPACE/frontend/src/lib/onboarding.ts": {
+    "mtime": 1782382613.3911471,
+    "ast_hash": "d288b7e17f32f0260fd029ef9968000e",
     "semantic_hash": ""
   }
 }
