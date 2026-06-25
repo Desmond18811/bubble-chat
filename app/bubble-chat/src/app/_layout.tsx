@@ -247,6 +247,13 @@ function GlobalCallOverlay() {
                 speakerEnabled={isSpeaker}
                 fallback={renderAvatar(156)}
                 onError={(err) => console.warn('[LiveKit] room error:', err)}
+                onDisconnected={() => {
+                  // When the LiveKit room ends (peer left, network drop, or normal
+                  // hangup) reset the call state so the user can place/receive another
+                  // call. Without this the overlay stayed stuck in 'in_call' and every
+                  // subsequent call was blocked.
+                  hangUpCall();
+                }}
               />
             </View>
           ) : callState.status === 'in_call' && isCameraActive && hasPermission ? (

@@ -1225,7 +1225,7 @@ export const savePushToken = async (req: any, res: Response): Promise<void> => {
     await PushToken.findOneAndUpdate(
       { token },
       { userId, deviceType: deviceType || 'unknown' },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     res.status(200).json({ success: true, message: 'Push token registered successfully.' });

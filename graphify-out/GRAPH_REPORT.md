@@ -1,16 +1,16 @@
 # Graph Report - bubble-chat  (2026-06-25)
 
 ## Corpus Check
-- 359 files · ~1,979,939 words
+- 359 files · ~1,980,805 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2674 nodes · 5114 edges · 194 communities (158 shown, 36 thin omitted)
+- 2674 nodes · 5121 edges · 194 communities (158 shown, 36 thin omitted)
 - Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 342 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `af5645da`
+- Built from commit: `d11fbb0d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -747,7 +747,7 @@ Cohesion: 0.18
 Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREEN_W }
 
 ## Knowledge Gaps
-- **797 isolated node(s):** `AuthRequest`, `AVATARS`, `ROLE_OPTIONS`, `INDUSTRIES`, `ORG_SIZES` (+792 more)
+- **797 isolated node(s):** `AuthRequest`, `AuthRequest`, `IMessage`, `MessageSchema`, `onlineSockets` (+792 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **36 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -755,14 +755,14 @@ Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREE
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `React` connect `Community 88` to `Community 2`, `Community 3`, `Community 131`, `Community 5`, `Community 6`, `Community 130`, `Community 9`, `Community 138`, `Community 142`, `Community 143`, `Community 16`, `Community 145`, `Community 18`, `Community 147`, `Community 146`, `Community 150`, `Community 23`, `Community 24`, `Community 32`, `Community 161`, `Community 33`, `Community 35`, `Community 34`, `Community 165`, `Community 38`, `Community 167`, `Community 166`, `Community 39`, `Community 42`, `Community 171`, `Community 45`, `Community 47`, `Community 48`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 57`, `Community 187`, `Community 59`, `Community 61`, `Community 62`, `Community 191`, `Community 64`, `Community 65`, `Community 66`, `Community 63`, `Community 69`, `Community 70`, `Community 73`, `Community 81`, `Community 213`, `Community 91`, `Community 94`, `Community 95`, `Community 96`, `Community 100`, `Community 101`, `Community 110`, `Community 111`, `Community 113`, `Community 114`, `Community 117`, `Community 122`, `Community 123`, `Community 124`, `Community 126`, `Community 127`?**
-  _High betweenness centrality (0.206) - this node is a cross-community bridge._
+  _High betweenness centrality (0.224) - this node is a cross-community bridge._
 - **Why does `cn()` connect `Community 5` to `Community 130`, `Community 3`, `Community 9`, `Community 145`, `Community 18`, `Community 32`, `Community 33`, `Community 34`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 187`, `Community 61`, `Community 62`, `Community 64`, `Community 65`, `Community 66`, `Community 68`, `Community 69`, `Community 70`, `Community 73`, `Community 77`, `Community 81`, `Community 82`, `Community 88`, `Community 91`, `Community 96`, `Community 97`, `Community 99`, `Community 110`, `Community 113`, `Community 123`, `Community 124`, `Community 126`, `Community 127`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `Community 2` to `Community 84`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **Are the 246 inferred relationships involving `cn()` (e.g. with `ChatAvatar()` and `ChatList()`) actually correct?**
   _`cn()` has 246 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `AuthRequest`, `AVATARS`, `ROLE_OPTIONS` to the rest of the system?**
+- **What connects `AuthRequest`, `AuthRequest`, `IMessage` to the rest of the system?**
   _797 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.03063063063063063 - nodes in this community are weakly interconnected._

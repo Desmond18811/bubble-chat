@@ -399,7 +399,7 @@ export const uploadAvatar = async (req: AuthRequest, res: Response): Promise<voi
         mimetype: req.file.mimetype,
         userId: req.user._id
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -709,7 +709,7 @@ export const saveBackup = async (req: AuthRequest, res: Response): Promise<void>
     const backup = await Backup.findOneAndUpdate(
       { userId: req.user._id },
       { backupData, userId: req.user._id },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     res.status(200).json({

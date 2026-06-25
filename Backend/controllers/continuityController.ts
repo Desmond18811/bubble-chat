@@ -40,7 +40,7 @@ export const updateExpertiseRadar = async (
           $setOnInsert: { organizationId },
           $inc: { activityCount: 1, score: weight },
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     }
   } catch (err) {
@@ -292,7 +292,7 @@ export const routeQuestion = async (req: Request, res: Response): Promise<any> =
           users: [userId, targetUserId],
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     // Prefill the routed message with the question + the brain facts we already

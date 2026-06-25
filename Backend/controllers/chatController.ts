@@ -161,7 +161,7 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
         // Restore the conversation for either side if it had been soft-deleted.
         $pull: { deletedBy: { $in: [req.user._id, userId] } },
       },
-      { upsert: true, new: true, includeResultMetadata: true }
+      { upsert: true, returnDocument: 'after', includeResultMetadata: true }
     );
 
     const wasCreated = !result?.lastErrorObject?.updatedExisting;
