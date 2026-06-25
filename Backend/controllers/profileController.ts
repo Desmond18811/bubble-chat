@@ -22,6 +22,21 @@ export const invalidateUserCaches = async (userId: any) => {
   ]);
 };
 
+// Map a MongoDB duplicate-key error (E11000) to a friendly, field-specific message.
+// Unique fields (phone_number, username, email, uniqueTag) otherwise surface as a
+// raw "E11000 ..." string inside a generic 500 — confusing during onboarding.
+const duplicateKeyMessage = (err: any): string | null => {
+  if (err?.code !== 11000) return null;
+  const field = Object.keys(err.keyPattern || err.keyValue || {})[0] || '';
+  const labels: Record<string, string> = {
+    phone_number: 'This phone number is already linked to another account.',
+    username: 'This username is already taken.',
+    email: 'This email is already registered.',
+    uniqueTag: 'Could not generate a unique tag. Please try again.',
+  };
+  return labels[field] || 'That value is already in use by another account.';
+};
+
 // ─── Format Helper ────────────────────────────────────────────────────────────
 
 const formatUser = async (u: any, includePrivate = false) => {
@@ -290,6 +305,19 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     req.body.username = req.body.username.toLowerCase();
   }
 
+  // Same phone_number uniqueness guard as setupProfile so a duplicate returns a
+  // clear 409 instead of an opaque E11000 → 500.
+  if (req.body.phone_number) {
+    const existingPhone = await User.findOne({
+      phone_number: req.body.phone_number,
+      _id: { $ne: req.user._id },
+    });
+    if (existingPhone) {
+      res.status(409).json({ message: 'This phone number is already linked to another account.' });
+      return;
+    }
+  }
+
   const updateData: Record<string, any> = {};
   for (const field of allowedFields) {
     if (req.body[field] !== undefined) {
@@ -320,6 +348,11 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       },
     });
   } catch (err: any) {
+    const dup = duplicateKeyMessage(err);
+    if (dup) {
+      res.status(409).json({ message: dup });
+      return;
+    }
     res.status(500).json({ message: 'Profile update failed: ' + err.message });
   }
 };
@@ -579,6 +612,19 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
     }
   }
 
+  // Check phone_number uniqueness too — it's a unique index, so a duplicate would
+  // otherwise throw E11000 and surface as an opaque 500 during onboarding.
+  if (phone_number) {
+    const existingPhone = await User.findOne({
+      phone_number,
+      _id: { $ne: req.user._id },
+    });
+    if (existingPhone) {
+      res.status(409).json({ message: 'This phone number is already linked to another account.' });
+      return;
+    }
+  }
+
   try {
     // Read the user's current signup state to decide the next step.
     // Org founders (signupKind=organization + role=admin) still need to seed the brain
@@ -637,6 +683,11 @@ export const setupProfile = async (req: AuthRequest, res: Response): Promise<voi
       data: await formatUser(updated, true),
     });
   } catch (err: any) {
+    const dup = duplicateKeyMessage(err);
+    if (dup) {
+      res.status(409).json({ message: dup });
+      return;
+    }
     res.status(500).json({ message: 'Profile setup failed: ' + err.message });
   }
 };

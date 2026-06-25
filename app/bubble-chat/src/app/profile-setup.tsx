@@ -110,6 +110,17 @@ export default function ProfileSetup() {
         const res = await getMyProfile();
         if (res?.data) {
           const u = res.data;
+
+          // Authoritative stage gate (mirrors web): the backend profile decides.
+          // If onboarding is already complete, skip setup entirely so a returning
+          // user never re-submits a finished stage (the source of duplicate/409s).
+          // Keep the stored user fresh so index/login routing uses the latest stage.
+          await authStorage.updateUser(u);
+          if (u.onboardingComplete) {
+            router.replace("/(main)/messages" as any);
+            return;
+          }
+
           setCurrentUser(u);
           setFullName(u.full_name || "");
           setOrgName(u.organization || "");
