@@ -38,6 +38,11 @@ export const initSocket = (server: HttpServer) => {
     jwt.verify(token, secret, async (err: any, decoded: any) => {
       if (err) return next(new Error('Authentication error: Invalid token'));
       (socket as any).userId = decoded.id;
+      // ALSO store on socket.data — custom props set directly on the socket are NOT
+      // carried by the RemoteSocket objects returned from io.fetchSockets(); only
+      // socket.data survives. emitToConversation relies on this to detect who is in
+      // a room (without it, every in-room user gets a duplicate delivery).
+      socket.data.userId = decoded.id;
       try {
         const user = await User.findById(decoded.id).select('username full_name');
         if (user) {

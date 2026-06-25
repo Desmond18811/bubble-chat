@@ -53,7 +53,15 @@ const formatUser = async (u: any) => {
   };
 };
 
-const formatConversation = async (c: any, userId?: any) => ({
+const formatConversation = async (c: any, userId?: any) => {
+  // Group icons live in Filebase like avatars and must be presigned to load — an
+  // unsigned URL 404s, which is why the group picture "saved" (toast) but never
+  // displayed. Sign it the same way formatUser signs avatars.
+  let groupIcon = c.groupIcon || null;
+  if (groupIcon && groupIcon.startsWith('http')) {
+    try { groupIcon = await getSignedMediaUrl(groupIcon); } catch (e) { }
+  }
+  return {
   id: c._id,
   chatName: (c.chatName && c.chatName !== 'direct') ? c.chatName : null,
   isGroupChat: c.isGroupChat ?? false,
@@ -61,7 +69,7 @@ const formatConversation = async (c: any, userId?: any) => ({
   groupAdmin: c.groupAdmin ? await formatUser(c.groupAdmin) : null,
 
   // Group Metadata
-  groupIcon: c.groupIcon || null,
+  groupIcon,
   groupDescription: c.groupDescription || null,
   pinnedMessages: c.pinnedMessages || [],
 
@@ -108,7 +116,8 @@ const formatConversation = async (c: any, userId?: any) => ({
   } : null,
   unreadCount: c.unreadCount || 0,
   updatedAt: c.updatedAt
-});
+  };
+};
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 

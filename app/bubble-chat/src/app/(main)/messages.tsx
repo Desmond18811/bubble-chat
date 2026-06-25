@@ -406,9 +406,9 @@ export default function Messages() {
     if (activeFilter === "All") return true;
     if (activeFilter === "Friends") return c.category === "friend" || c.category === "other";
     if (activeFilter === "Work") return c.category === "work";
-    
+
     return c.category?.toLowerCase() === activeFilter.toLowerCase();
-  });
+  }).filter((c, i, arr) => arr.findIndex(x => String(x.id) === String(c.id)) === i); // dedupe by id
 
   const isEmpty = filteredChats.length === 0 && filteredContacts.length === 0;
 

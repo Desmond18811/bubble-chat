@@ -91,8 +91,14 @@ const ingestEventIntoBrain = async (
 
 const getOrgFromUser = async (userId: string) => {
   const user = await User.findById(userId);
-  if (!user?.organization) return { user: null, org: null };
-  const org = await Organization.findOne({ name: user.organization });
+  if (!user) return { user: null, org: null };
+  // Resolve by canonical organizationId first (robust), then fall back to the
+  // legacy org *name* match. Resolving by name alone silently returned no org
+  // whenever the stored name drifted from the Organization doc — which made the
+  // calendar 400 and render empty even for valid org members.
+  let org = null as any;
+  if ((user as any).organizationId) org = await Organization.findById((user as any).organizationId);
+  if (!org && user.organization) org = await Organization.findOne({ name: user.organization });
   return { user, org };
 };
 
@@ -235,12 +241,17 @@ export const getEvents = async (req: Request, res: Response): Promise<any> => {
     const { start, end, type, mine } = req.query;
 
     const { org } = await getOrgFromUser(userId.toString());
-    if (!org) return res.status(400).json({ error: 'Organization not found.' });
-
-    // Lazily seed Nigerian public holidays the first time they're requested for this org.
-    if (type === 'holiday') {
-      await ensureNigerianHolidays(org, userId);
+    // No org → the calendar is org-scoped (events require an organizationId), so
+    // return an empty set with 200 (not a 400). A blank-but-OK calendar with a hint
+    // beats a silent error that the client swallows into an empty screen.
+    if (!org) {
+      return res.status(200).json({ events: [], count: 0, note: 'Join or create an organization to use the shared calendar.' });
     }
+
+    // Seed Nigerian public holidays for this org on ANY calendar load (idempotent —
+    // early-returns once seeded), so holidays show by default rather than only when
+    // a holiday-typed query is made.
+    await ensureNigerianHolidays(org, userId);
 
     const filter: any = { organizationId: org._id, status: { $ne: 'cancelled' } };
 

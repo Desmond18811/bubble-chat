@@ -189,9 +189,9 @@ function ContactsTab({
     };
   }, []);
 
-  const filtered = contacts.filter((c) =>
-    (c.name + c.username + (c.org_role || '')).toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = contacts
+    .filter((c) => (c.name + c.username + (c.org_role || '')).toLowerCase().includes(search.toLowerCase()))
+    .filter((c, i, arr) => arr.findIndex((x) => String(x.id) === String(c.id)) === i); // dedupe by id
 
   const handleAdd = async () => {
     const tag = addIdentifier.trim();

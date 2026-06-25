@@ -184,4 +184,13 @@ const MessageSchema: Schema<IMessage> = new Schema(
   }
 );
 
+// Idempotency: at most one message per (chat, sender, client_id). Partial index so
+// only documents that actually carry a client_id are constrained — legacy/system
+// messages without one are unaffected. Backs the de-dup guard in sendMessage and
+// also stops two concurrent retries from both inserting.
+MessageSchema.index(
+  { chat: 1, sender: 1, client_id: 1 },
+  { unique: true, partialFilterExpression: { client_id: { $type: 'string' } } }
+);
+
 export const Message = mongoose.model<IMessage>('Message', MessageSchema);

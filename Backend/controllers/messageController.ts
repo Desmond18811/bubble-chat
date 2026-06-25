@@ -106,7 +106,9 @@ const emitToConversation = async (
   try {
     const roomSockets = await io.in(String(chatId)).fetchSockets();
     for (const s of roomSockets) {
-      const uid = (s as any).userId;
+      // RemoteSocket only carries socket.data (not custom props), so read userId
+      // from data first; fall back to the legacy direct prop for safety.
+      const uid = (s as any).data?.userId ?? (s as any).userId;
       if (uid) usersInRoom.add(String(uid));
     }
   } catch {
@@ -174,6 +176,23 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    // Idempotency: if the client retried (double-click, reconnect, network retry)
+    // with the same clientId, return the already-created message instead of
+    // persisting a duplicate. This is the authoritative guard behind "send once".
+    if (clientId) {
+      const existing = await Message.findOne({ chat: chatId, sender: req.user._id, client_id: clientId });
+      if (existing) {
+        const fullExisting = await Message.findById(existing._id)
+          .populate('sender', 'full_name username avatar email uniqueTag isOnline publicKey')
+          .populate('chat')
+          .populate({ path: 'parent_message', populate: { path: 'sender', select: 'full_name uniqueTag' } });
+        const formattedExisting: any = await formatMessage(fullExisting);
+        formattedExisting.clientId = clientId;
+        res.status(200).json({ message: 'Message already sent.', data: formattedExisting });
+        return;
+      }
+    }
+
     const newMessage = await Message.create({
       sender: req.user._id,
       content,
@@ -188,6 +207,7 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       location,
       mentions: mentions || [],
       readBy: [req.user._id],
+      client_id: clientId || undefined,
     });
 
     const fullMessage = await Message.findById(newMessage._id)
@@ -334,6 +354,23 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(201).json(formatted);
   } catch (error: any) {
+    // Concurrent retry raced past the idempotency check and hit the unique
+    // (chat, sender, client_id) index — return the message that did win instead
+    // of a 500, so the client still reconciles to a single bubble.
+    if (error?.code === 11000 && clientId) {
+      try {
+        const winner = await Message.findOne({ chat: chatId, sender: req.user._id, client_id: clientId })
+          .populate('sender', 'full_name username avatar email uniqueTag isOnline publicKey')
+          .populate('chat')
+          .populate({ path: 'parent_message', populate: { path: 'sender', select: 'full_name uniqueTag' } });
+        if (winner) {
+          const formattedWinner: any = await formatMessage(winner);
+          formattedWinner.clientId = clientId;
+          res.status(200).json({ message: 'Message already sent.', data: formattedWinner });
+          return;
+        }
+      } catch { /* fall through to generic error */ }
+    }
     res.status(500).json({ message: error.message });
   }
 };

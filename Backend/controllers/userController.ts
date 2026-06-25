@@ -153,8 +153,10 @@ export const addContact = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    // $addToSet (not $push) so a re-add or a concurrent request can never create a
+    // duplicate contact entry — the root of "users show up twice" in the roster.
     await User.findByIdAndUpdate(req.user._id, {
-      $push: { contacts: targetUser._id },
+      $addToSet: { contacts: targetUser._id },
     });
 
     res.status(200).json({
@@ -377,16 +379,11 @@ export const searchUsers = async (req: AuthRequest, res: Response): Promise<void
         ];
       }
     } else {
-      // No query: default to showing only Coworkers and Contacts. Same org-less guard as
-      // above — without it, `organization: ''` matches every other org-less account.
-      if (currentUser?.organization) {
-        filter.$or = [
-          { organization: currentUser.organization },
-          { _id: { $in: currentUser?.contacts || [] } }
-        ];
-      } else {
-        filter._id = { ...filter._id, $in: currentUser?.contacts || [] };
-      }
+      // No query: default to ONLY the user's explicit contacts. Org colleagues must
+      // never auto-populate a personal surface (chats/calls) — they belong to the
+      // dedicated org directory (getOrgMembers) and only enter your contacts when you
+      // explicitly add them. A keyword search above can still reach coworkers to add.
+      filter._id = { ...filter._id, $in: currentUser?.contacts || [] };
     }
 
     const users = await User.find(filter)
