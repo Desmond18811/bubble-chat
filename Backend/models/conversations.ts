@@ -141,14 +141,11 @@ const ConversationSchema: Schema<IConversation> = new Schema(
   }
 );
 
-// Enforce: every group chat must belong to an organization. 1:1 DMs may remain
-// org-less so users can contact peers in other companies.
-// Mongoose 9+ dropped callback-style middleware (the `next` parameter is no
-// longer passed). Use the async/throw form instead.
-ConversationSchema.pre('validate', async function (this: IConversation) {
-  if (this.isGroupChat && !this.organizationId) {
-    throw new Error('Group chats require organizationId');
-  }
-});
+// A group chat MAY belong to an organization (a "subgroup"), in which case its
+// messages feed the org's AI brain. It is not required: members without an org —
+// and members who opt out of attaching a group to their org — can still create
+// plain groups, and anyone can join one via its invite code. (Previously this was
+// enforced as mandatory, which silently broke ALL group creation because the
+// create path never set organizationId.)
 
 export const Conversation = mongoose.model<IConversation>('Conversation', ConversationSchema);

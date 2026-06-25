@@ -7,6 +7,7 @@ import {
   ScrollView,
   Modal,
   Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
@@ -701,6 +702,14 @@ export default function PeopleScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [attachToOrg, setAttachToOrg] = useState(true);
+  const [myOrg, setMyOrg] = useState<{ id?: string; name?: string }>({});
+
+  useEffect(() => {
+    authStorage.getUser().then((user: any) => {
+      if (user) setMyOrg({ id: user.organizationId ? String(user.organizationId) : undefined, name: user.organization || undefined });
+    });
+  }, []);
 
   // Lifted scanner states
   const [permission, requestPermission] = useCameraPermissions();
@@ -927,13 +936,28 @@ export default function PeopleScreen() {
               placeholderTextColor={colors.textSoft}
             />
 
+            {!!(myOrg.id || myOrg.name) && (
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={{ fontSize: 13, fontFamily: "Poppins_700Bold", color: colors.text }}>Add to {myOrg.name || "your organization"}</Text>
+                  <Text style={{ fontSize: 11, fontFamily: "Poppins_400Regular", color: colors.textSoft, marginTop: 2 }}>Your team's AI learns from this group.</Text>
+                </View>
+                <Switch
+                  value={attachToOrg}
+                  onValueChange={setAttachToOrg}
+                  trackColor={{ false: "#c7c8d6", true: "#6c5ce7" }}
+                  thumbColor="#ffffff"
+                />
+              </View>
+            )}
+
             <TouchableOpacity
               style={{ backgroundColor: "#6c5ce7", borderRadius: 14, paddingVertical: 12, alignItems: "center", marginTop: 4 }}
               onPress={async () => {
                 const name = newGroupName.trim();
                 if (!name) return;
                 try {
-                  await createGroupChat(name, []);
+                  await createGroupChat(name, [], !!(myOrg.id || myOrg.name) && attachToOrg);
                   setNewGroupName("");
                   setShowCreateGroupModal(false);
                   await chatCache.syncChatsWithBackend();

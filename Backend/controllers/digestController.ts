@@ -231,7 +231,7 @@ Be specific and actionable.`,
       yesterdayRecap,
       generatedAt: new Date(),
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   return digest;

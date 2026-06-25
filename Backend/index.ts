@@ -398,6 +398,24 @@ mongoose.connect(mongoURI, { family: 4 })
   .then(async () => {
     console.log('✅ MongoDB connected successfully.');
 
+    // One-time self-heal: an earlier schema named the digest date field
+    // `generatedDate`; it's now `date`. The old unique index
+    // (userId_1_generatedDate_-1) lingers in existing databases and makes every
+    // user's 2nd daily digest fail with E11000 (dup key on generatedDate: null).
+    // Drop the orphaned indexes if present — harmless once they're gone.
+    try {
+      const digestCol = mongoose.connection.collection('dailydigests');
+      const existing = await digestCol.indexes();
+      for (const stale of ['userId_1_generatedDate_-1', 'generatedDate_1']) {
+        if (existing.some((i: any) => i.name === stale)) {
+          await digestCol.dropIndex(stale).catch(() => undefined);
+          console.log(`🧹 Dropped stale dailydigests index: ${stale}`);
+        }
+      }
+    } catch (err: any) {
+      console.warn('Daily-digest index cleanup skipped:', err?.message || err);
+    }
+
     initSecurityScheduler();
     initTranscriptProcessor();
     initTaskReminderScheduler();

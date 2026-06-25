@@ -497,11 +497,11 @@ export const fetchAllUserChats = async () => {
     return handleResponse(res);
 };
 
-export const createGroupChat = async (name: string, users: string[]) => {
+export const createGroupChat = async (name: string, users: string[], attachToOrg = true) => {
     const res = await fetch(`${BASE_URL}/chat/group`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ name, users }),
+        body: JSON.stringify({ name, users, attachToOrg }),
     });
     return handleResponse(res);
 };

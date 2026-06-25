@@ -375,6 +375,32 @@ export default function ProfileScreen() {
 
   const [inviteCodeInput, setInviteCodeInput] = useState("");
   const [isJoiningOrg, setIsJoiningOrg] = useState(false);
+  const [groupCodeInput, setGroupCodeInput] = useState("");
+  const [isJoiningGroup, setIsJoiningGroup] = useState(false);
+
+  const handleJoinGroup = async () => {
+    const code = groupCodeInput.trim();
+    if (!code) {
+      Alert.alert("Error", "Please enter a group code.");
+      return;
+    }
+    setIsJoiningGroup(true);
+    try {
+      const { joinGroupChat } = await import('../../lib/api');
+      const res = await joinGroupChat(code);
+      const chat = res?.conversation || res?.data?.conversation || res?.data || res;
+      const { chatCache } = await import('../../lib/chatCache');
+      await chatCache.syncChatsWithBackend();
+      setGroupCodeInput("");
+      const id = chat?.id || chat?._id;
+      Alert.alert("Success", res?.message || "Joined group!");
+      if (id) router.push(`/chat/${id}` as any);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not join group. Check the code and try again.");
+    } finally {
+      setIsJoiningGroup(false);
+    }
+  };
 
   const handleJoinOrg = async () => {
     if (!inviteCodeInput.trim()) {
@@ -1135,6 +1161,41 @@ export default function ProfileScreen() {
               </View>
             </View>
           )}
+
+          {/* Join a Group Card */}
+          <View className="bg-white dark:bg-[#1a1b28] w-full p-6 border-b border-black/5 dark:border-white/10 mt-3">
+            <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] border-b border-black/10 dark:border-white/20 pb-3 mb-5 font-sans">
+              Join a Group
+            </Text>
+
+            <View className="bg-purple-soft/10 p-4 rounded-2xl border border-black/5 dark:border-white/10">
+              <Text className="text-[13px] font-bold text-ink dark:text-[#f4f5fb] font-sans mb-0.5">Have a group code?</Text>
+              <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mb-2.5 font-sans leading-tight">
+                Paste a group invite code or link to join the conversation.
+              </Text>
+
+              <View className="flex-row gap-2.5 items-center">
+                <TextInput
+                  placeholder="e.g. grp-1a2b3c4d5e6f"
+                  value={groupCodeInput}
+                  onChangeText={setGroupCodeInput}
+                  placeholderTextColor="#9a9aab"
+                  className="flex-1 bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 h-11 px-3.5 rounded-xl text-ink dark:text-[#f4f5fb] font-sans text-sm"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  onPress={handleJoinGroup}
+                  disabled={isJoiningGroup}
+                  className="bg-purple h-11 px-4 rounded-xl items-center justify-center shadow-xs"
+                >
+                  <Text className="text-white text-xs font-bold font-sans">
+                    {isJoiningGroup ? 'Joining...' : 'Join'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
 
           {/* Appearance / Dark Mode */}
           <View className="w-full p-6 border-b mt-3" style={{ backgroundColor: colors.card, borderColor: colors.border }}>

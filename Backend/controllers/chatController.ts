@@ -264,28 +264,34 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
  * POST /api/v1/chat/group
  */
 export const createGroupChat = async (req: AuthRequest, res: Response): Promise<void> => {
-  if (!req.body.users || !req.body.name) {
-    res.status(400).json({ message: 'Please provide both users array and a group name' });
+  if (!req.body.name) {
+    res.status(400).json({ message: 'Please provide a group name' });
     return;
   }
 
   let users: string[] = [];
   try {
-    users = typeof req.body.users === 'string' ? JSON.parse(req.body.users) : req.body.users;
+    const raw = req.body.users ?? [];
+    users = typeof raw === 'string' ? JSON.parse(raw) : raw;
   } catch {
-    users = req.body.users;
+    users = req.body.users || [];
   }
+  if (!Array.isArray(users)) users = [];
 
-  if (users.length < 2) {
-    res.status(400).json({ message: 'A group chat requires at least 2 other members.' });
-    return;
-  }
-
+  // Allow a creator-only group: with join-by-code, the natural flow is to create
+  // a group and share its invite code, so we no longer force pre-selecting members.
   users.push(req.user._id);
 
   try {
     const crypto = await import('crypto');
     const groupInviteCode = 'grp-' + crypto.randomBytes(6).toString('hex');
+
+    // Attach the group to the creator's organization (a "subgroup") unless they
+    // explicitly opt out. This is what lets the org's AI brain learn from the
+    // group: brainEventListener only ingests group messages when the conversation
+    // carries an organizationId. Members without an org just create a plain group.
+    const attachToOrg = req.body.attachToOrg !== false && req.body.attachToOrg !== 'false';
+    const organizationId = attachToOrg ? req.user.organizationId : undefined;
 
     const group = await Conversation.create({
       chatName: req.body.name,
@@ -293,6 +299,7 @@ export const createGroupChat = async (req: AuthRequest, res: Response): Promise<
       isGroupChat: true,
       groupAdmin: req.user._id,
       inviteCode: groupInviteCode,
+      ...(organizationId ? { organizationId } : {}),
     });
 
     const full = await Conversation.findById(group._id)
@@ -701,7 +708,12 @@ export const toggleArchiveChat = async (req: AuthRequest, res: Response): Promis
  * POST /api/v1/chat/group/join
  */
 export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { inviteCode } = req.body;
+  // Normalize the pasted code: trim surrounding whitespace and tolerate a user
+  // pasting the whole invite link instead of just the code.
+  let inviteCode: string = (req.body.inviteCode || '').toString().trim();
+  if (inviteCode.includes('joinGroupCode=')) {
+    inviteCode = decodeURIComponent(inviteCode.split('joinGroupCode=')[1].split('&')[0].trim());
+  }
   const userId = req.user?._id;
 
   if (!inviteCode) {
@@ -719,23 +731,28 @@ export const joinGroupChatByInvite = async (req: AuthRequest, res: Response): Pr
       .populate('groupAdmin', '-password -refreshToken -privateKey');
 
     if (!group) {
-      res.status(404).json({ message: 'Group chat not found' });
+      res.status(404).json({ message: 'Group chat not found. Double-check the code and try again.' });
       return;
     }
 
-    // Check if user is already in the group
+    // Already a member → not an error; just return the conversation so the client
+    // can open it. (Users complained re-joining a group they're in "failed".)
     const isMember = group.users.some((u: any) => String(u._id || u) === String(userId));
-    let systemMessageSaved = null;
-    if (!isMember) {
-      group.users.push(userId);
-      await group.save();
+    if (isMember) {
+      const formattedExisting = await formatConversation(group, userId);
+      res.status(200).json({ message: 'You are already a member of this group.', conversation: formattedExisting });
+      return;
     }
+    // New member from here on (existing members returned above).
+    let systemMessageSaved = null;
+    group.users.push(userId);
+    await group.save();
 
     const updated = await Conversation.findById(group._id)
       .populate('users', '-password -refreshToken -privateKey')
       .populate('groupAdmin', '-password -refreshToken -privateKey');
 
-    if (!isMember) {
+    {
       try {
         const joinedUser = updated?.users.find((u: any) => String(u._id || u) === String(userId)) as any;
         const username = joinedUser?.username || joinedUser?.full_name || 'Someone';
