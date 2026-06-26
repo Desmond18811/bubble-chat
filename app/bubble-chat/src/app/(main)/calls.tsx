@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
 import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { searchUsers, fetchTasks, createTaskFull, getSecureMediaUrl } from '../../lib/api';
+import { getOrgMembers, fetchTasks, createTaskFull, getSecureMediaUrl } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startOutgoingCall } from '../../lib/callManager';
 import { Image } from 'expo-image';
 import { Avatar } from '../../components/Avatar';
-import { useIsOnline } from '../../lib/presence';
+import { useIsOnline, getPresence, subscribePresence } from '../../lib/presence';
 
 // Live presence dot — rendered inside a list `.map`, so it owns its own hook subscription.
 function StaffDot({ userId, fallback }: { userId?: string | null; fallback?: boolean }) {
@@ -83,6 +83,12 @@ export default function CallsScreen() {
   const [coworkers, setCoworkers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
 
+  // "People in the office" / "All Active Staff" — re-render on realtime presence
+  // changes so the list actually reflects who's online, not the full roster.
+  const [, forcePresenceRender] = useReducer((x) => x + 1, 0);
+  useEffect(() => subscribePresence(forcePresenceRender), []);
+  const onlineCoworkers = coworkers.filter((w) => getPresence(w.id ?? w._id) ?? !!w.isOnline);
+
   // Calling states
 
   // Calendar agenda states
@@ -118,9 +124,11 @@ export default function CallsScreen() {
 
   const syncData = async () => {
     try {
-      // Fetch coworkers
-      const coworkersRes = await searchUsers('');
-      const coworkersList = coworkersRes?.users || [];
+      // Fetch coworkers — full org directory (searchUsers('') only returns
+      // explicit contacts now, which left this section empty).
+      const coworkersRes = await getOrgMembers();
+      const rawMembers = coworkersRes?.members || coworkersRes?.data || [];
+      const coworkersList = rawMembers.map((u: any) => ({ ...u, id: String(u.id || u._id) }));
       setCoworkers(coworkersList);
       await AsyncStorage.setItem('bubble_cached_coworkers', JSON.stringify(coworkersList));
 
@@ -340,13 +348,13 @@ export default function CallsScreen() {
               </View>
             </View>
 
-            {coworkers.length === 0 ? (
+            {onlineCoworkers.length === 0 ? (
               <View className="py-8 items-center justify-center">
                 <Text className="text-xs text-ink-soft font-sans">No staff online currently</Text>
               </View>
             ) : (
               <View className="flex-row flex-wrap justify-between">
-                {coworkers.map(worker => {
+                {onlineCoworkers.map(worker => {
                   const displayName = worker.full_name || worker.name || worker.username || 'Unknown staff';
                   return (
                     <View key={worker.id} style={{ width: '48%' }} className="bg-white border border-black/5 rounded-[32px] p-5 mb-4 items-center shadow-sm relative overflow-hidden">

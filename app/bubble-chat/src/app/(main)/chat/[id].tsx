@@ -372,6 +372,9 @@ export default function ChatScreen() {
 
     const onConnect = () => {
       console.log("Socket connected/reconnected in Chat detail screen. Flushing and syncing...");
+      // A reconnect gets a new socket on the server, which loses prior room
+      // membership — re-join so room-scoped events (e.g. group typing) keep flowing.
+      socket.emit('join_room', id);
       syncChatAndMessages();
     };
 

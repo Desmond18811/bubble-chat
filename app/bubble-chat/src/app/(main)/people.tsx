@@ -35,7 +35,7 @@ import {
   subscribeToPlusButton,
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
-import { addContact, createGroupChat, searchUsers, getSecureMediaUrl, accessOrCreateChat } from '../../lib/api';
+import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers } from '../../lib/api';
 import { startOutgoingCall } from '../../lib/callManager';
 import { useIsOnline } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
@@ -471,8 +471,11 @@ function WorkroomTab({
     setChats(cachedChats);
 
     try {
-      const response = await searchUsers('');
-      const rawList = response?.users || [];
+      // searchUsers('') now intentionally returns only explicit contacts (org
+      // colleagues shouldn't auto-populate a personal surface). Workroom needs the
+      // actual org directory, so it uses the same endpoint web's Work tab uses.
+      const response = await getOrgMembers();
+      const rawList = response?.members || response?.data || [];
       const coworkersList = rawList.map((u: any) => ({
         id: String(u.id || u._id),
         name: u.full_name || u.name || u.username || "Unknown",

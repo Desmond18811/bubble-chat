@@ -277,11 +277,19 @@ export const addTranscriptChunk = async (
       return res.status(400).json({ message: 'text is required' });
     }
 
+    // A speech-recognition chunk can land just after the client flips the meeting
+    // to 'ended' during teardown (e.g. trailing words before the mic stops). Accept
+    // it for a short grace window after endedAt instead of dropping it with a 404.
+    const TRANSCRIPT_GRACE_MS = 15_000;
+    const graceWindowStart = new Date(Date.now() - TRANSCRIPT_GRACE_MS);
+
     const meeting = await Meeting.findOneAndUpdate(
       {
         _id: req.params.id,
-        $or: [{ host: userId }, { attendees: userId }],
-        status: 'live',
+        $and: [
+          { $or: [{ host: userId }, { attendees: userId }] },
+          { $or: [{ status: 'live' }, { status: 'ended', endedAt: { $gte: graceWindowStart } }] },
+        ],
       },
       {
         $push: {

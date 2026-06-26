@@ -53,7 +53,7 @@ const formatUser = async (u: any) => {
   };
 };
 
-const formatConversation = async (c: any, userId?: any) => {
+export const formatConversation = async (c: any, userId?: any) => {
   // Group icons live in Filebase like avatars and must be presigned to load — an
   // unsigned URL 404s, which is why the group picture "saved" (toast) but never
   // displayed. Sign it the same way formatUser signs avatars.
@@ -177,11 +177,21 @@ export const accessChat = async (req: AuthRequest, res: Response): Promise<void>
 
     const formatted = await formatConversation(full, req.user._id);
 
+    // Only broadcast a DM into both users' chat lists once it actually belongs
+    // there — i.e. it has messages, or the other party is an explicit friend.
+    // A freshly-created empty DM (tap-to-open from a shared group) must NOT flash
+    // into All chats; it surfaces later when the first message is sent. This keeps
+    // the realtime push consistent with the fetchChats surfacing rule above.
     try {
-      const io = req.io || getIO();
-      [req.user._id, userId].forEach((uId: any) => {
-        io.to(String(uId)).emit('new_chat', formatted);
-      });
+      const me = await User.findById(req.user._id).select('contacts').lean();
+      const friendIds = new Set(((me as any)?.contacts || []).map((id: any) => String(id)));
+      const shouldSurface = !!full?.latestMessage || friendIds.has(String(userId));
+      if (shouldSurface) {
+        const io = req.io || getIO();
+        [req.user._id, userId].forEach((uId: any) => {
+          io.to(String(uId)).emit('new_chat', formatted);
+        });
+      }
     } catch (socketErr) {
       console.error('Socket emit new_chat failed:', socketErr);
     }
@@ -207,7 +217,7 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
 
   try {
     const userObjectId = new mongoose.Types.ObjectId(req.user._id);
-    const results = await Conversation.find({
+    const rawResults = await Conversation.find({
       users: userObjectId,
       deletedBy: { $ne: userObjectId },
     })
@@ -218,6 +228,22 @@ export const fetchChats = async (req: AuthRequest, res: Response): Promise<void>
         populate: { path: 'sender', select: 'full_name username avatar email uniqueTag is_bot' },
       })
       .sort({ updatedAt: -1 });
+
+    // Surfacing rule (mirrors mobile + web "All chats"): a 1:1 DM only belongs in
+    // the chat list if it has actual messages OR the other person is an explicit
+    // friend (in User.contacts). This stops an empty DM — created the moment you
+    // tap a colleague you merely share a group with — from appearing as a textable
+    // contact. Messaging is still permitted; we gate visibility, not permission.
+    // Groups always pass.
+    const me = await User.findById(req.user._id).select('contacts').lean();
+    const friendIds = new Set(((me as any)?.contacts || []).map((id: any) => String(id)));
+    const results = rawResults.filter((c) => {
+      if (c.isGroupChat) return true;
+      if (c.latestMessage) return true;
+      const other = (c.users as any[])?.find((u: any) => String(u?._id || u) !== String(req.user!._id));
+      const otherId = String(other?._id || other || '');
+      return friendIds.has(otherId);
+    });
 
     const chatIds = results.map(c => c._id);
     const objectUserId = new mongoose.Types.ObjectId(req.user._id);
@@ -341,8 +367,21 @@ export const createGroupChat = async (req: AuthRequest, res: Response): Promise<
  */
 export const renameGroup = async (req: AuthRequest, res: Response): Promise<void> => {
   const { chatId, chatName } = req.body;
+  const userId = req.user?._id;
 
   try {
+    const convo = await Conversation.findById(chatId).select('groupAdmin');
+    if (!convo) {
+      res.status(404).json({ message: 'Conversation not found' });
+      return;
+    }
+
+    // Only the group admin can rename — mirrors updateGroupSettings' gating.
+    if (String(convo.groupAdmin) !== String(userId)) {
+      res.status(403).json({ message: 'Only the group admin can rename this group.' });
+      return;
+    }
+
     const updated = await Conversation.findByIdAndUpdate(
       chatId,
       { chatName },

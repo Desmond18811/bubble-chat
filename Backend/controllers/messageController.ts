@@ -8,6 +8,7 @@ import { getIO } from '../utils/socket';
 import { sendPushNotification } from '../utils/push';
 import { brainEventBus } from '../utils/brainEventListener';
 import { logActivity } from './activityLogController';
+import { formatConversation } from './chatController';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -239,6 +240,21 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
     try {
       const io = req.io || getIO();
       await emitToConversation(io, chatId, convo.users as any[], 'new_message', formatted);
+
+      // First message into a DM that was previously hidden (empty colleague DM):
+      // the recipient's chat list ignores new_message for chats it doesn't have,
+      // so push a new_chat now that the DM has surfaced. `convo` was read before
+      // this message was created, so a null latestMessage means this is the first.
+      if (!isSystem && !convo.isGroupChat && !convo.latestMessage) {
+        const fullConvo = await Conversation.findById(chatId)
+          .populate('users', '-password -refreshToken -privateKey -zegoToken')
+          .populate('groupAdmin', '-password -refreshToken -privateKey -zegoToken')
+          .populate({ path: 'latestMessage', populate: { path: 'sender', select: 'full_name username avatar email uniqueTag isOnline is_bot' } });
+        for (const u of convo.users as any[]) {
+          const convoForUser = await formatConversation(fullConvo, u);
+          io.to(String(u)).emit('new_chat', convoForUser);
+        }
+      }
 
       // Live unread badge: recompute each recipient's unread count for this chat
       // and push it to their personal room. Skip system messages (they don't
