@@ -226,6 +226,58 @@ export const removeContact = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
+// ─── Contact Nicknames (private per-viewer aliases) ──────────────────────────
+/**
+ * GET /api/v1/user/contacts/nicknames
+ * Returns the requester's full alias map: { [contactId]: nickname }
+ */
+export const getContactNicknames = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  try {
+    const user = await User.findById(req.user._id).select('contactNicknames');
+    res.status(200).json({
+      message: 'Nicknames retrieved successfully.',
+      data: user?.contactNicknames || {},
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * PATCH /api/v1/user/contacts/:contactId/nickname
+ * Body: { nickname: string } — saving an empty/whitespace nickname clears it.
+ * Not restricted to existing contacts — any user can be aliased (e.g. a group member).
+ */
+export const setContactNickname = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!req.user?._id) {
+    res.status(401).json({ message: 'Unauthorized.' });
+    return;
+  }
+
+  try {
+    const { contactId } = req.params;
+    const trimmed = typeof req.body?.nickname === 'string' ? req.body.nickname.trim() : '';
+
+    const update = trimmed
+      ? { $set: { [`contactNicknames.${contactId}`]: trimmed } }
+      : { $unset: { [`contactNicknames.${contactId}`]: '' } };
+
+    const user = await User.findByIdAndUpdate(req.user._id, update, { new: true }).select('contactNicknames');
+
+    res.status(200).json({
+      message: trimmed ? 'Nickname saved successfully.' : 'Nickname cleared successfully.',
+      data: user?.contactNicknames || {},
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // ─── Block / Unblock User ─────────────────────────────────────────────────────
 /**
  * POST /api/v1/user/block/:userId

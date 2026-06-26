@@ -36,6 +36,9 @@ export interface IUser extends Document {
   links?: string[];
   sharedResources?: string[];
   contacts?: mongoose.Types.ObjectId[];
+  // Private per-viewer aliases for other users (e.g. saved contact names in groups),
+  // keyed by the other user's ObjectId string. Never shown to the aliased user themselves.
+  contactNicknames?: Map<string, string>;
   blocked_users?: mongoose.Types.ObjectId[];
   followers?: mongoose.Types.ObjectId[];
   following?: mongoose.Types.ObjectId[];
@@ -184,6 +187,7 @@ const UserSchema: Schema<IUser> = new Schema(
     sharedResources: [{ type: String }],
 
     contacts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    contactNicknames: { type: Map, of: String, default: {} },
     blocked_users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

@@ -655,7 +655,8 @@ export default function ChatScreen() {
           name: selectedFile.name,
           type: selectedFile.type === 'image' ? 'image/jpeg' : selectedFile.type === 'video' ? 'video/mp4' : 'application/pdf'
         } as any;
-        await sendMediaMessage(chat.id, fileObj, { content: text });
+        const mediaClientId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        await sendMediaMessage(chat.id, fileObj, { content: text, clientId: mediaClientId });
         setMessageText('');
         setSelectedFile(null);
         setIsAttachmentOpen(false);
@@ -683,7 +684,7 @@ export default function ChatScreen() {
         setIsEmojiOpen(false);
 
         try {
-          await sendTextMessage(chat.id, text);
+          await sendTextMessage(chat.id, text, { clientId: tempId });
           // Mark as sent; sync will reconcile the server id shortly.
           setMessages(prev => prev.map((m: any) =>
             m.id === tempId ? { ...m, status: 'sent' } : m
@@ -691,8 +692,11 @@ export default function ChatScreen() {
           await syncChatAndMessages();
         } catch (sendErr) {
           console.warn("API send failed, queuing offline:", sendErr);
-          // Replace the temp bubble's id with the queue id so retry can reference it.
-          const queueId = await chatCache.addToOfflineQueue(chat.id, text);
+          // Reuse tempId as the queue item's clientId — if the original request actually
+          // reached the server and only the response was lost, the retry carries the same
+          // clientId and the backend's unique index returns the existing message instead
+          // of creating a duplicate.
+          const queueId = await chatCache.addToOfflineQueue(chat.id, text, tempId);
           setMessages(prev => prev.map((m: any) =>
             m.id === tempId ? { ...m, id: queueId, status: 'queued' } : m
           ));
@@ -980,11 +984,6 @@ export default function ChatScreen() {
                           <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: INK }}>
                             {member.full_name || member.username}
                           </Text>
-                          {member.username && (
-                            <Text style={{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>
-                              @{member.username}
-                            </Text>
-                          )}
                         </View>
                         {isAdmin && (
                           <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginRight: 6 }}>
@@ -1111,9 +1110,6 @@ export default function ChatScreen() {
                   <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
                     {selectedMember.full_name || selectedMember.username || 'Member'}
                   </Text>
-                  {!!selectedMember.username && (
-                    <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>@{selectedMember.username}</Text>
-                  )}
                   {selectedMember.isAdmin && (
                     <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 }}>
                       <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase', letterSpacing: 1 }}>Group Admin</Text>
@@ -1975,7 +1971,7 @@ export default function ChatScreen() {
                     <View key={i} style={{ width: 6, height: 6, borderRadius: 99, backgroundColor: colors.textSoft }} />
                   ))}
                   <Text style={{ fontSize: 12, color: colors.textSoft, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>
-                    {typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…'}
+                    {typingUser?.name ? `${typingUser.name} is typing…` : 'typing…'}
                   </Text>
                 </View>
               </View>
@@ -2709,9 +2705,6 @@ export default function ChatScreen() {
                 <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
                   {selectedMember.full_name || selectedMember.username || 'Member'}
                 </Text>
-                {!!selectedMember.username && (
-                  <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>@{selectedMember.username}</Text>
-                )}
                 {selectedMember.isAdmin && (
                   <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 }}>
                     <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase', letterSpacing: 1 }}>Group Admin</Text>

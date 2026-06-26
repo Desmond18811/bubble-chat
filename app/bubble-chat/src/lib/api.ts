@@ -458,6 +458,22 @@ export const addContact = async (identifier: string) => {
     return handleResponse(res);
 };
 
+export const getContactNicknames = async () => {
+    const res = await fetch(`${BASE_URL}/user/contacts/nicknames`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+export const setContactNickname = async (contactId: string, nickname: string) => {
+    const res = await fetch(`${BASE_URL}/user/contacts/${contactId}/nickname`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nickname }),
+    });
+    return handleResponse(res);
+};
+
 export const updatePrivacy = async (privacySettings: any) => {
     const res = await fetch(`${BASE_URL}/profile/me`, {
         method: 'PUT',
@@ -565,6 +581,7 @@ export const sendTextMessage = async (
         parent_message?: string;
         mentions?: string[];
         is_forwarded?: boolean;
+        clientId?: string;
     }
 ) => {
     const res = await fetch(`${BASE_URL}/message`, {
@@ -583,6 +600,7 @@ export const sendMediaMessage = async (
         parent_message?: string;
         message_type?: string;
         media_duration?: number;
+        clientId?: string;
     }
 ) => {
     const token = tokenCache.accessToken;
@@ -611,6 +629,7 @@ export const sendMediaMessage = async (
                 media_duration: opts?.media_duration,
                 fileName: file.name || 'attachment',
                 fileSize: file.size || 1024,
+                clientId: opts?.clientId,
             }),
         });
         return handleResponse(res);
@@ -623,6 +642,7 @@ export const sendMediaMessage = async (
         formData.append('parent_message', opts.parent_message);
     if (opts?.media_duration !== undefined)
         formData.append('media_duration', opts.media_duration.toString());
+    if (opts?.clientId) formData.append('clientId', opts.clientId);
 
     const resolvedType =
         opts?.message_type ||
@@ -647,7 +667,7 @@ export const sendMediaMessage = async (
 
 export const updateMessage = async (messageId: string, content: string) => {
     const res = await fetch(`${BASE_URL}/message/${messageId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ content }),
     });
@@ -672,7 +692,7 @@ export const deleteMessageForEveryone = async (messageId: string) => {
 
 export const markMessagesRead = async (chatId: string) => {
     const res = await fetch(`${BASE_URL}/message/read/${chatId}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: getAuthHeaders(),
     });
     return handleResponse(res);
@@ -730,7 +750,7 @@ export const toggleChatPin = async (chatId: string) => {
 
 export const toggleMessagePin = async (messageId: string) => {
     const res = await fetch(`${BASE_URL}/message/${messageId}/pin`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: getAuthHeaders(),
     });
     return handleResponse(res);

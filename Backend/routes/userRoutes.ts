@@ -15,6 +15,8 @@ import {
   getMyContacts,
   addContact,
   removeContact,
+  getContactNicknames,
+  setContactNickname,
 } from '../controllers/userController';
 
 const router = express.Router();
@@ -142,6 +144,12 @@ router.post('/contacts/add', addContact);
 
 /** DELETE /api/v1/user/contacts/:userId — Remove a contact */
 router.delete('/contacts/:userId', removeContact);
+
+/** GET /api/v1/user/contacts/nicknames — Get my saved aliases for other users */
+router.get('/contacts/nicknames', getContactNicknames);
+
+/** PATCH /api/v1/user/contacts/:contactId/nickname — Save or clear an alias for a user */
+router.patch('/contacts/:contactId/nickname', setContactNickname);
 
 export default router;
 

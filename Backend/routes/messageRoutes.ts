@@ -100,7 +100,7 @@ router.post('/share-workspace-file', shareWorkspaceFile);
  *         description: Messages marked as read. Emits read_receipt socket event.
  */
 // NOTE: /read/:chatId must come BEFORE /:chatId to avoid route collision
-router.route('/read/:chatId').put(markMessagesRead);
+router.route('/read/:chatId').patch(markMessagesRead);
 
 /**
  * @swagger
@@ -148,7 +148,7 @@ router.route('/:chatId').get(allMessages);
  *       200:
  *         description: Message updated. Emits message_updated socket event.
  */
-router.route('/:messageId').put(updateMessage);
+router.route('/:messageId').patch(updateMessage);
 
 /**
  * @swagger
@@ -238,6 +238,6 @@ router.post('/:messageId/react', reactToMessage);
  *       200:
  *         description: Message pin status toggled.
  */
-router.put('/:messageId/pin', toggleMessagePin);
+router.patch('/:messageId/pin', toggleMessagePin);
 
 export default router;

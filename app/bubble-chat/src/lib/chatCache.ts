@@ -330,9 +330,12 @@ export const chatCache = {
     }
   },
 
-  async addToOfflineQueue(chatId: string, text: string): Promise<string> {
+  // clientId lets a queued retry be matched against an attempt that actually reached
+  // the server (e.g. the response was lost to a network drop) — without it, the offline
+  // queue would create a genuine duplicate message every time it had to retry.
+  async addToOfflineQueue(chatId: string, text: string, clientId?: string): Promise<string> {
     const queue = await this.getOfflineQueue();
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tempId = clientId || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newItem = {
       id: tempId,
       chatId,
@@ -351,19 +354,30 @@ export const chatCache = {
     return updated;
   },
 
+  _isProcessingQueue: false,
+
   async processOfflineQueue(): Promise<void> {
-    const queue = await this.getOfflineQueue();
-    if (queue.length === 0) return;
-    
-    console.log(`Processing offline queue: ${queue.length} items`);
-    for (const item of queue) {
-      try {
-        await sendTextMessage(item.chatId, item.text);
-        await this.removeFromOfflineQueue(item.id);
-      } catch (err) {
-        console.warn("Offline queue processing failed, stopping queue send:", err);
-        break;
+    // syncChatAndMessages can fire from multiple triggers in quick succession (socket
+    // reconnect, send-success, screen focus) — without this guard, two overlapping
+    // calls would both read the same unprocessed item and send it twice.
+    if (this._isProcessingQueue) return;
+    this._isProcessingQueue = true;
+    try {
+      const queue = await this.getOfflineQueue();
+      if (queue.length === 0) return;
+
+      console.log(`Processing offline queue: ${queue.length} items`);
+      for (const item of queue) {
+        try {
+          await sendTextMessage(item.chatId, item.text, { clientId: item.id });
+          await this.removeFromOfflineQueue(item.id);
+        } catch (err) {
+          console.warn("Offline queue processing failed, stopping queue send:", err);
+          break;
+        }
       }
+    } finally {
+      this._isProcessingQueue = false;
     }
   },
 

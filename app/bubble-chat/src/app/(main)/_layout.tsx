@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import { triggerPlusButton } from "../../lib/mockData";
 import { useTheme } from "../../lib/theme";
+import { NicknameProvider } from "../../lib/nicknames";
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { colors, isDark } = useTheme();
@@ -111,61 +112,63 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: "Chats",
+    <NicknameProvider>
+      <Tabs
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
         }}
-      />
-      <Tabs.Screen
-        name="people"
-        options={{
-          title: "People",
-        }}
-      />
-      <Tabs.Screen
-        name="updates"
-        options={{
-          title: "Updates",
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-        }}
-      />
-      <Tabs.Screen
-        name="brain"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="calls"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="chat/[id]"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="messages"
+          options={{
+            title: "Chats",
+          }}
+        />
+        <Tabs.Screen
+          name="people"
+          options={{
+            title: "People",
+          }}
+        />
+        <Tabs.Screen
+          name="updates"
+          options={{
+            title: "Updates",
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+          }}
+        />
+        <Tabs.Screen
+          name="brain"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="calendar"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="calls"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="chat/[id]"
+          options={{
+            href: null,
+          }}
+        />
+      </Tabs>
+    </NicknameProvider>
   );
 }
 
