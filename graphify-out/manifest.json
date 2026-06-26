@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/chat-window.tsx": {
-    "mtime": 1782482477.2580142,
-    "ast_hash": "50d146667420cd8fff35f201157856b0",
+    "mtime": 1782503601.4838967,
+    "ast_hash": "d1cc0462e28c386aa92f6e99875f71b4",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/create-group-modal.tsx": {
@@ -1655,8 +1655,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/messages.tsx": {
-    "mtime": 1782399857.0931406,
-    "ast_hash": "145798cac37a48dc42d45b4a711ee016",
+    "mtime": 1782509035.1071093,
+    "ast_hash": "361291bf4f3ae6ac2c0a704d2b4f85a8",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/profile.tsx": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1782476040.0704644,
-    "ast_hash": "926739a33a7e8c8d5c539b50eb8e2513",
+    "mtime": 1782508974.1435983,
+    "ast_hash": "6ed7e4a99a13ce80199ebe6751f28516",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
@@ -1720,8 +1720,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/people.tsx": {
-    "mtime": 1782471554.9328105,
-    "ast_hash": "52f54dd754bedeb6c99d479a3eda2d05",
+    "mtime": 1782508883.6102057,
+    "ast_hash": "5f85b3831120a997bf47b4730f291415",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/mockData.ts": {
@@ -1765,8 +1765,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/chatCache.ts": {
-    "mtime": 1782476020.3938277,
-    "ast_hash": "78d00209e784f235c569ef1c39b2cadd",
+    "mtime": 1782508934.8424294,
+    "ast_hash": "00dfed0938e50e8d6c56fcd4325170cc",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/socket.ts": {
@@ -2335,8 +2335,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/nicknames.tsx": {
-    "mtime": 1782478590.5259411,
-    "ast_hash": "6586959f505818f57e55dd85b62a32a8",
+    "mtime": 1782503890.9825995,
+    "ast_hash": "4cbb45d980cbb090ba2a0aa93781cd14",
     "semantic_hash": ""
   }
 }
