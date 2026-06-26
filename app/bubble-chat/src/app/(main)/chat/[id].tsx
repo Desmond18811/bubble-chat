@@ -40,6 +40,7 @@ import { startOutgoingCall } from '../../../lib/callManager';
 import { useTheme } from '../../../lib/theme';
 import { useIsOnline } from '../../../lib/presence';
 import { authStorage } from '../../../lib/authStorage';
+import { useNicknames } from '../../../lib/nicknames';
 import { Avatar } from '../../../components/Avatar';
 
 const PURPLE = '#6c5ce7';
@@ -91,6 +92,7 @@ export default function ChatScreen() {
   const [isPulsing, setIsPulsing] = useState(true);
   const [ownUser, setOwnUser] = useState<any>(null);
   const isPeerOnline = useIsOnline(chat?.otherUserId, !!chat?.isOnline);
+  const { getDisplayName, saveNickname } = useNicknames();
 
   // New States for Lightbox, Forwarding, and Emoji selector
   const [lightboxImageIndex, setLightboxImageIndex] = useState<number | null>(null);
@@ -126,6 +128,9 @@ export default function ChatScreen() {
   // Tapped group member → profile sheet
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const [showAllMembers, setShowAllMembers] = useState(false);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState('');
+  useEffect(() => { setEditingNickname(false); setNicknameDraft(''); }, [selectedMember?.id || selectedMember?._id, isInfoOpen]);
 
   const handleStartEditGroup = () => {
     setGroupFormData({
@@ -710,14 +715,18 @@ export default function ChatScreen() {
     }
   };
 
-  const memberCount = chat.isGroupChat && Array.isArray(chat.users) ? chat.users.length : 0;
+  // Deduplicate members by ID before computing count — prevents double-counting
+  // when the backend returns overlapping entries in both `users` and `members`.
+  const rawChatMembers = chat.isGroupChat ? [...(chat.users || []), ...(chat.members || [])] : []
+  const uniqueMemberIds = [...new Set(rawChatMembers.map((m: any) => String(m._id || m.id || m.username || m.email || '')).filter(Boolean))]
+  const memberCount = uniqueMemberIds.length
   const statusLine = chat.status === 'typing'
     ? 'typing…'
     : chat.isOnline
       ? 'Online'
       : chat.isGroupChat
         ? `${memberCount > 0 ? memberCount : ''} member${memberCount !== 1 ? 's' : ''}`.trim()
-        : 'Offline';
+        : 'Offline'
 
   const filteredMessages = messages.filter(msg => {
     const isSystem = msg.isSystem || msg.message_type === 'system' || msg.is_announcement || msg.sender === 'system';
@@ -902,6 +911,40 @@ export default function ChatScreen() {
             <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_700Bold', color: PURPLE, marginTop: 4 }}>
               @{chat.isGroupChat ? 'group_' + chat.name.toLowerCase().replace(/\s/g, '_') : chat.name.toLowerCase().replace(/\s/g, '_')}
             </Text>
+            {!chat.isGroupChat && chat.otherUserId && (
+              editingNickname ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                  <TextInput
+                    autoFocus
+                    value={nicknameDraft}
+                    onChangeText={setNicknameDraft}
+                    placeholder={chat.realName || chat.name}
+                    style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: INK, textAlign: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, minWidth: 160 }}
+                  />
+                  <TouchableOpacity
+                    onPress={async () => {
+                      await saveNickname(chat.otherUserId, nicknameDraft);
+                      setEditingNickname(false);
+                      chatCache.syncChatsWithBackend();
+                    }}
+                    style={{ paddingHorizontal: 10, paddingVertical: 8 }}
+                  >
+                    <Check size={18} color={PURPLE} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => {
+                    setNicknameDraft('');
+                    setEditingNickname(true);
+                  }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}
+                >
+                  <Text style={{ fontSize: 11.5, fontFamily: 'Poppins_500Medium', color: INK_SOFT }}>Save as...</Text>
+                  <Edit2 size={11} color={INK_SOFT} />
+                </TouchableOpacity>
+              )
+            )}
             <Text style={{ fontSize: 13, fontFamily: 'Poppins_400Regular', color: INK_SOFT, textAlign: 'center', marginTop: 10, lineHeight: 20, paddingHorizontal: 10 }}>
               {chat.bio}
             </Text>
@@ -944,21 +987,31 @@ export default function ChatScreen() {
           })()}
 
           {/* List group members */}
-          {chat.isGroupChat && chat.users && chat.users.length > 0 && (() => {
-            const displayedMembers = showAllMembers ? chat.users : chat.users.slice(0, 3);
+          {chat.isGroupChat && (() => {
+            // Deduplicate members across both `users` and `members` arrays
+            const allRawMembers = [...(chat.users || []), ...(chat.members || [])]
+            const seenIds = new Set<string>()
+            const uniqueMembers = allRawMembers.filter((m: any) => {
+              const id = String(m._id || m.id || m.username || m.email || '')
+              if (!id || seenIds.has(id)) return false
+              seenIds.add(id)
+              return true
+            })
+            if (uniqueMembers.length === 0) return null
+            const displayedMembers = showAllMembers ? uniqueMembers : uniqueMembers.slice(0, 3);
             return (
               <View style={{ marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 10 }}>
                   <Text style={{ fontSize: 13, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Group Members ({chat.users.length})
+                    Group Members ({uniqueMembers.length})
                   </Text>
-                  {chat.users.length > 3 && (
+                  {uniqueMembers.length > 3 && (
                     <TouchableOpacity
                       onPress={() => setShowAllMembers(!showAllMembers)}
                       style={{ backgroundColor: colors.purpleSoft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}
                     >
                       <Text style={{ fontSize: 10.5, fontFamily: 'Poppins_700Bold', color: PURPLE }}>
-                        {showAllMembers ? 'Show Less' : `View All (+${chat.users.length - 3})`}
+                        {showAllMembers ? 'Show Less' : `View All (+${uniqueMembers.length - 3})`}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -975,14 +1028,14 @@ export default function ChatScreen() {
                       >
                         <Avatar
                           url={member.avatar}
-                          name={member.full_name || member.username}
+                          name={getDisplayName(member)}
                           size={36}
                           style={{ borderRadius: 10 }}
                           imageStyle={{ borderRadius: 10 }}
                         />
                         <View style={{ marginLeft: 12, flex: 1 }}>
                           <Text style={{ fontSize: 13.5, fontFamily: 'Poppins_600SemiBold', color: INK }}>
-                            {member.full_name || member.username}
+                            {getDisplayName(member)}
                           </Text>
                         </View>
                         {isAdmin && (
@@ -1101,15 +1154,46 @@ export default function ChatScreen() {
                   <View style={{ marginBottom: 14 }}>
                     <Avatar
                       url={selectedMember.avatar}
-                      name={selectedMember.full_name || selectedMember.username}
+                      name={getDisplayName(selectedMember)}
                       size={76}
                       style={{ borderRadius: 22 }}
                       imageStyle={{ borderRadius: 22 }}
                     />
                   </View>
-                  <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
-                    {selectedMember.full_name || selectedMember.username || 'Member'}
-                  </Text>
+                  {editingNickname ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <TextInput
+                        autoFocus
+                        value={nicknameDraft}
+                        onChangeText={setNicknameDraft}
+                        placeholder={selectedMember.full_name || selectedMember.username}
+                        style={{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: INK, textAlign: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, minWidth: 160 }}
+                      />
+                      <TouchableOpacity
+                        onPress={async () => {
+                          const memberId = String(selectedMember.id || selectedMember._id);
+                          await saveNickname(memberId, nicknameDraft);
+                          setEditingNickname(false);
+                        }}
+                        style={{ paddingHorizontal: 10, paddingVertical: 8 }}
+                      >
+                        <Check size={18} color={PURPLE} />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setNicknameDraft('');
+                        setEditingNickname(true);
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                    >
+                      <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
+                        {getDisplayName(selectedMember)}
+                      </Text>
+                      <Edit2 size={13} color={INK_SOFT} />
+                    </TouchableOpacity>
+                  )}
                   {selectedMember.isAdmin && (
                     <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 }}>
                       <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase', letterSpacing: 1 }}>Group Admin</Text>
@@ -1159,7 +1243,7 @@ export default function ChatScreen() {
                         const m = selectedMember;
                         const memberId = String(m.id || m._id);
                         setSelectedMember(null);
-                        startOutgoingCall({ id: memberId, otherUserId: memberId, name: m.full_name || m.username, avatar: m.avatar }, 'voice');
+                        startOutgoingCall({ id: memberId, otherUserId: memberId, name: getDisplayName(m), avatar: m.avatar }, 'voice');
                       }}
                       style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 18 }}
                     >
@@ -1314,7 +1398,7 @@ export default function ChatScreen() {
                     style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 14, color: INK, borderWidth: 1, borderColor: colors.border }}
                   />
                   <Text style={{ fontSize: 10.5, color: INK_SOFT, marginTop: 4 }}>
-                    Cap how many people can join. Currently {chat?.users?.length || 0} member(s).
+                    Cap how many people can join. Currently {memberCount} member(s).
                   </Text>
                 </View>
 
@@ -1556,7 +1640,7 @@ export default function ChatScreen() {
                   </View>
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: chat.status === 'typing' ? PURPLE : INK_SOFT, marginTop: 1 }}>
                     {chat.status === 'typing'
-                      ? (typingUser?.username ? `@${typingUser.username} is typing…` : typingUser?.name ? `${typingUser.name} is typing…` : 'typing…')
+                      ? (typingUser ? `${getDisplayName(typingUser)} is typing…` : 'typing…')
                       : chat.isGroupChat ? statusLine : isPeerOnline ? 'Online' : 'Offline'}
                   </Text>
                 </View>
@@ -1960,7 +2044,7 @@ export default function ChatScreen() {
               <View style={{ marginRight: 8, marginBottom: 2, alignSelf: 'flex-end', flexShrink: 0 }}>
                 <Avatar
                   url={chat.avatar}
-                  name={chat.isGroupChat && typingUser?.name ? typingUser.name : chat.name}
+                  name={chat.isGroupChat && typingUser ? getDisplayName(typingUser) : chat.name}
                   size={28}
                   isGroup={chat.isGroupChat ? false : !!chat.organization}
                 />
@@ -1971,7 +2055,7 @@ export default function ChatScreen() {
                     <View key={i} style={{ width: 6, height: 6, borderRadius: 99, backgroundColor: colors.textSoft }} />
                   ))}
                   <Text style={{ fontSize: 12, color: colors.textSoft, fontFamily: 'Poppins_500Medium', marginLeft: 4 }}>
-                    {typingUser?.name ? `${typingUser.name} is typing…` : 'typing…'}
+                    {typingUser ? `${getDisplayName(typingUser)} is typing…` : 'typing…'}
                   </Text>
                 </View>
               </View>
@@ -2696,15 +2780,46 @@ export default function ChatScreen() {
                 <View style={{ marginBottom: 14 }}>
                   <Avatar
                     url={selectedMember.avatar}
-                    name={selectedMember.full_name || selectedMember.username}
+                    name={getDisplayName(selectedMember)}
                     size={76}
                     style={{ borderRadius: 22 }}
                     imageStyle={{ borderRadius: 22 }}
                   />
                 </View>
-                <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
-                  {selectedMember.full_name || selectedMember.username || 'Member'}
-                </Text>
+                {editingNickname ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <TextInput
+                      autoFocus
+                      value={nicknameDraft}
+                      onChangeText={setNicknameDraft}
+                      placeholder={selectedMember.full_name || selectedMember.username}
+                      style={{ fontSize: 15, fontFamily: 'Poppins_700Bold', color: INK, textAlign: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, minWidth: 160 }}
+                    />
+                    <TouchableOpacity
+                      onPress={async () => {
+                        const memberId = String(selectedMember.id || selectedMember._id);
+                        await saveNickname(memberId, nicknameDraft);
+                        setEditingNickname(false);
+                      }}
+                      style={{ paddingHorizontal: 10, paddingVertical: 8 }}
+                    >
+                      <Check size={18} color={PURPLE} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setNicknameDraft('');
+                      setEditingNickname(true);
+                    }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                  >
+                    <Text style={{ fontSize: 20, fontFamily: 'SpaceGrotesk_700Bold', color: INK, textAlign: 'center' }}>
+                      {getDisplayName(selectedMember)}
+                    </Text>
+                    <Edit2 size={13} color={INK_SOFT} />
+                  </TouchableOpacity>
+                )}
                 {selectedMember.isAdmin && (
                   <View style={{ backgroundColor: 'rgba(108,92,231,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 10 }}>
                     <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: PURPLE, textTransform: 'uppercase', letterSpacing: 1 }}>Group Admin</Text>
@@ -2754,7 +2869,7 @@ export default function ChatScreen() {
                       const m = selectedMember;
                       const memberId = String(m.id || m._id);
                       setSelectedMember(null);
-                      startOutgoingCall({ id: memberId, otherUserId: memberId, name: m.full_name || m.username, avatar: m.avatar }, 'voice');
+                      startOutgoingCall({ id: memberId, otherUserId: memberId, name: getDisplayName(m), avatar: m.avatar }, 'voice');
                     }}
                     style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PURPLE_SOFT, borderWidth: 1, borderColor: 'rgba(108,92,231,0.2)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 18 }}
                   >

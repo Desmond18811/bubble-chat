@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/chat-window.tsx": {
-    "mtime": 1782476967.3595526,
-    "ast_hash": "6d00dfd650a84644184186087e209d05",
+    "mtime": 1782482477.2580142,
+    "ast_hash": "50d146667420cd8fff35f201157856b0",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/create-group-modal.tsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/group-info.tsx": {
-    "mtime": 1782476868.950094,
-    "ast_hash": "02b122447ab6f669a02fd7ed38794b43",
+    "mtime": 1782482431.263526,
+    "ast_hash": "f418b3c20e3b0430dfb081762e30488e",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/logout-dialog.tsx": {
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
-    "mtime": 1782478345.8936965,
-    "ast_hash": "45d67a14e6b99b680ae9e018ffc7ea6e",
+    "mtime": 1782482384.555888,
+    "ast_hash": "708bb6ef8c3949799c6d83e214e5a3ed",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/BubbleCursor.tsx": {

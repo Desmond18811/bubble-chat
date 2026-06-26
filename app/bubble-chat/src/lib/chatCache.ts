@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchAllUserChats, fetchMessages, getMyContacts, getSecureMediaUrl, sendTextMessage } from './api';
 import { authStorage } from './authStorage';
+import { getCachedNickname } from './nicknames';
 
 // Storage Keys
 const KEYS = {
@@ -195,7 +196,10 @@ export const chatCache = {
 
       return {
         id: String(c.id || c._id),
-        name: isGroup ? (c.chatName || "Group Chat") : (otherUser?.full_name || otherUser?.username || "Unknown User"),
+        name: isGroup
+          ? (c.chatName || "Group Chat")
+          : (getCachedNickname(String(otherUser?.id || otherUser?._id || '')) || otherUser?.full_name || otherUser?.username || "Unknown User"),
+        realName: isGroup ? null : (otherUser?.full_name || otherUser?.username || "Unknown User"),
         avatar: isGroup ? (c.groupIcon || null) : (otherUser?.avatar || null),
         isGroupChat: isGroup,
         otherUserId: otherUser ? String(otherUser.id || otherUser._id) : null,
@@ -264,7 +268,7 @@ export const chatCache = {
         id: String(m.id || m._id),
         text: m.content || (m.mediaUrl ? `📎 [${m.message_type || 'Media'}]` : ''),
         sender: isMe ? 'me' : (isSystem ? 'system' : 'other'),
-        senderName: m.sender?.full_name || m.sender?.username || undefined,
+        senderName: m.sender ? (getCachedNickname(senderId) || m.sender?.full_name || m.sender?.username) : undefined,
         senderIsBot: m.senderIsBot || (m.sender && (m.sender.is_bot || m.sender.username === 'aida' || m.sender.username?.toLowerCase() === 'aida')),
         time: formatMessagePreciseTime(m.createdAt),
         timestamp: m.createdAt,
@@ -301,7 +305,7 @@ export const chatCache = {
 
     const mapped = list.map((u: any) => ({
       id: String(u.id || u._id),
-      name: u.full_name || u.username || "Unknown",
+      name: getCachedNickname(String(u.id || u._id)) || u.full_name || u.username || "Unknown",
       avatar: u.avatar || null,
       isOnline: !!u.isOnline,
       username: u.username || "",

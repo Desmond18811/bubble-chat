@@ -40,6 +40,7 @@ import { startOutgoingCall } from '../../lib/callManager';
 import { useIsOnline } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
+import { useNicknames, getCachedNickname } from '../../lib/nicknames';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { BlurView } from 'expo-blur';
@@ -478,7 +479,7 @@ function WorkroomTab({
       const rawList = response?.members || response?.data || [];
       const coworkersList = rawList.map((u: any) => ({
         id: String(u.id || u._id),
-        name: u.full_name || u.name || u.username || "Unknown",
+        name: getCachedNickname(String(u.id || u._id)) || u.full_name || u.name || u.username || "Unknown",
         avatar: u.avatar || null,
         isOnline: !!u.isOnline,
         username: u.username || "",

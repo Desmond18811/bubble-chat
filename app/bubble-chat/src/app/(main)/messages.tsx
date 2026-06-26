@@ -34,6 +34,7 @@ import {
 import { authStorage } from "../../lib/authStorage";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useTheme } from "../../lib/theme";
+import { getCachedNickname } from "../../lib/nicknames";
 
 export default function Messages() {
   const router = useRouter();
@@ -1217,7 +1218,7 @@ function ChatRow({
         <View style={{ marginTop: 3, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           {isTyping ? (
             <Text style={{ fontSize: 13, color: "#6c5ce7", fontFamily: "Poppins_600SemiBold" }}>
-              {isTyping.fromUsername ? `@${isTyping.fromUsername} is typing...` : isTyping.fromName ? `${isTyping.fromName} is typing...` : 'typing...'}
+              {(getCachedNickname(isTyping.fromUserId) || isTyping.fromName) ? `${getCachedNickname(isTyping.fromUserId) || isTyping.fromName} is typing...` : 'typing...'}
             </Text>
           ) : (
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1, minWidth: 0, paddingRight: 8 }}>
@@ -1325,7 +1326,7 @@ function ContactRow({
         </View>
         {isTyping ? (
           <Text style={{ fontSize: 12, fontFamily: "Poppins_600SemiBold", color: colors.purple, marginTop: 2 }}>
-            {isTyping.fromUsername ? `@${isTyping.fromUsername} is typing...` : isTyping.fromName ? `${isTyping.fromName} is typing...` : 'typing...'}
+            {(getCachedNickname(isTyping.fromUserId) || isTyping.fromName) ? `${getCachedNickname(isTyping.fromUserId) || isTyping.fromName} is typing...` : 'typing...'}
           </Text>
         ) : matchingChat?.latestMessage ? (
           <Text numberOfLines={1} style={{ fontSize: 13, fontFamily: unreadCount > 0 ? "Poppins_600SemiBold" : "Poppins_400Regular", color: unreadCount > 0 ? colors.text : colors.textSoft, marginTop: 2 }}>

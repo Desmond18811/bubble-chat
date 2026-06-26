@@ -16,12 +16,19 @@ const NicknameContext = createContext<NicknameCtx>({
   saveNickname: async () => {},
 });
 
+// Plain module-level mirror of the nickname map, kept in sync by the provider below.
+// Lets non-React singletons (e.g. chatCache.ts, which normalizes chat names outside
+// any component) resolve a nickname synchronously without needing the context.
+let nicknameCache: Record<string, string> = {};
+export const getCachedNickname = (userId?: string | null): string | undefined =>
+  userId ? nicknameCache[userId] : undefined;
+
 export function NicknameProvider({ children }: { children: React.ReactNode }) {
   const [nicknames, setNicknames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     getContactNicknames()
-      .then((res: any) => setNicknames(res?.data || {}))
+      .then((res: any) => { nicknameCache = res?.data || {}; setNicknames(nicknameCache); })
       .catch(() => {});
   }, []);
 
@@ -32,7 +39,8 @@ export function NicknameProvider({ children }: { children: React.ReactNode }) {
 
   const saveNickname = useCallback(async (contactId: string, nickname: string) => {
     const res: any = await setContactNickname(contactId, nickname);
-    setNicknames(res?.data || {});
+    nicknameCache = res?.data || {};
+    setNicknames(nicknameCache);
   }, []);
 
   return (
