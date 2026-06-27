@@ -20,8 +20,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx": {
-    "mtime": 1782522980.0029726,
-    "ast_hash": "1411e41cb62737c5199e96919e14b8cf",
+    "mtime": 1782578972.049114,
+    "ast_hash": "0550275491da148853d5a310668395e0",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/MeetingStatsModal.tsx": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/dashboard.tsx": {
-    "mtime": 1782382771.217136,
-    "ast_hash": "944151ad46d7515ce96f6727008a392d",
+    "mtime": 1782578644.4308288,
+    "ast_hash": "2c7752ceb1bf60cc257b4bdb73b3aa74",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/group-info.tsx": {
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
-    "mtime": 1782523655.3571503,
-    "ast_hash": "acd04202c040d3d65550c4245c112c0d",
+    "mtime": 1782579472.8829303,
+    "ast_hash": "5d966798c756e89e3ddb5c6bcfde645a",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/BubbleCursor.tsx": {
@@ -425,8 +425,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/ui/use-mobile.tsx": {
-    "mtime": 1780257160.4510064,
-    "ast_hash": "aeaddfd0234c8ad696e5bc96ad23ef25",
+    "mtime": 1782578623.0234385,
+    "ast_hash": "c77f9b5ebe792e0d22eb3fb053cfaf75",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/ui/use-toast.ts": {
@@ -445,8 +445,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/hooks/use-mobile.ts": {
-    "mtime": 1780257160.452019,
-    "ast_hash": "aeaddfd0234c8ad696e5bc96ad23ef25",
+    "mtime": 1782578616.55524,
+    "ast_hash": "2bce220c1b061c6ef01f43b2c50476f5",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/hooks/use-toast.ts": {
@@ -670,8 +670,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/meetController.ts": {
-    "mtime": 1782316530.3705091,
-    "ast_hash": "232bae78eaab270814ff17b01c937dc5",
+    "mtime": 1782579079.486816,
+    "ast_hash": "3398c4b8a5c21f50c759ebeeede79b7a",
     "semantic_hash": ""
   },
   "Backend/controllers/meetingController.ts": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "Backend/models/activityLog.ts": {
-    "mtime": 1781899945.0307374,
-    "ast_hash": "2a217138a065e3ea93761da2c8e53894",
+    "mtime": 1782579138.1501477,
+    "ast_hash": "a53ac2e915ac10439f35818aa5edb538",
     "semantic_hash": ""
   },
   "Backend/models/callLog.ts": {
@@ -910,8 +910,8 @@
     "semantic_hash": ""
   },
   "Backend/routes/meetRoutes.ts": {
-    "mtime": 1780513062.1325183,
-    "ast_hash": "6ee8dbcb578e3301e10b29042ee12e42",
+    "mtime": 1782579099.859776,
+    "ast_hash": "ea70f1ccfc244fe345ff51c4f20d4057",
     "semantic_hash": ""
   },
   "Backend/routes/meetingRoutes.ts": {
@@ -1085,8 +1085,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/socket.ts": {
-    "mtime": 1782397906.4171286,
-    "ast_hash": "677eebdf32acb91934b32bcc3a330e24",
+    "mtime": 1782579033.452845,
+    "ast_hash": "bf76fd7a841f8bfa1aa415159a563625",
     "semantic_hash": ""
   },
   "Backend/utils/whisperService.ts": {
@@ -2342,6 +2342,16 @@
   "app/bubble-chat/src/lib/taskListeners.ts": {
     "mtime": 1782523999.6915736,
     "ast_hash": "5abfdb9349300cc54b15427812652723",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-06-27-calling-mobile-web-invites-design.md": {
+    "mtime": 1782578072.7500226,
+    "ast_hash": "fee3980c2623dffb72b4ad2b1e51d9b7",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-06-27-calling-mobile-web-invites.md": {
+    "mtime": 1782578367.3827467,
+    "ast_hash": "12d4cd30a3918cf21dc6ee473ea8c497",
     "semantic_hash": ""
   }
 }

@@ -14,6 +14,11 @@ let listeners: ((state: CallState) => void)[] = [];
 let ringtonePlayer: RingtonePlayer | null = null;
 let durationInterval: any = null;
 let callTimeout: any = null;
+// Signed token from a /call/join deep link; the call overlay forwards it to the
+// LiveKit token endpoint so a link-joined room is verified server-side.
+let linkJoinToken: string | null = null;
+
+export const getLinkJoinToken = () => linkJoinToken;
 
 export const subscribeCallState = (listener: (state: CallState) => void) => {
   listeners.push(listener);
@@ -181,6 +186,59 @@ export const hangUpCall = async () => {
   }
 
   setCallState({ status: 'idle' });
+  linkJoinToken = null;
+};
+
+// Ring an ADDITIONAL participant into the call that's already running. Reuses the
+// current room so they join the same LiveKit room (server emits call_invite →
+// incoming_call). The invitee is idle, so their busy-reject guard passes.
+export const inviteToCall = async (user: any) => {
+  const state = currentCallState;
+  if (state.status !== 'in_call') return;
+  const socket = getSocket();
+  if (!socket) return;
+
+  const currentUser = await authStorage.getUser();
+  const callerName = currentUser?.full_name || currentUser?.username || 'Bubble User';
+  const callerAvatar = currentUser?.avatar || null;
+
+  socket.emit('call_invite', {
+    toUserId: user.id || user._id || user.otherUserId,
+    roomId: state.roomId,
+    callerName,
+    callerAvatar,
+    type: state.type,
+  });
+};
+
+// Join an existing room from a deep link (no call_offer). Stashes the signed
+// joinToken so the overlay's token fetch can verify it.
+export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: string; type: 'voice' | 'video'; joinToken?: string }) => {
+  if (currentCallState.status !== 'idle') return;
+  linkJoinToken = joinToken || null;
+
+  let dbId: string | null = null;
+  try {
+    const res = await createMeeting({
+      roomId,
+      title: `${type === 'video' ? 'Video' : 'Voice'} Call`,
+      type,
+    });
+    dbId = res?.meeting?._id || res?._id || null;
+  } catch (err) {
+    console.warn('Failed to create meeting record for link join:', err);
+  }
+
+  setCallState({
+    status: 'in_call',
+    user: { name: 'Meeting', id: roomId },
+    type,
+    roomId,
+    duration: 0,
+    meetingDbId: dbId,
+  });
+
+  startDurationTimer();
 };
 
 const startDurationTimer = () => {

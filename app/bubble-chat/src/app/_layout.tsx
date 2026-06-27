@@ -9,14 +9,15 @@ import Constants from 'expo-constants';
 import { verifyInstallation } from "nativewind";
 import "../global.css";
 import { initApiFromStorage, getSecureMediaUrl } from "../lib/api";
-import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Share } from "react-native";
 import { Image } from "expo-image";
-import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2 } from "lucide-react-native";
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2, UserPlus, Link2, X } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
-import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, CallState } from "../lib/callManager";
+import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, inviteToCall, getLinkJoinToken, CallState } from "../lib/callManager";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
 import { ThemeProvider } from "../lib/theme";
-import { getLiveKitToken } from "../lib/api";
+import { getLiveKitToken, createCallInviteLink } from "../lib/api";
+import { chatCache } from "../lib/chatCache";
 import { ensureLiveKitRegistered } from "../lib/liveKitInit";
 import type { LiveKitCallRoomProps } from "../components/liveKitCall";
 
@@ -57,6 +58,39 @@ function GlobalCallOverlay() {
   const [lkToken, setLkToken] = useState<string | null>(null);
   const [lkUrl, setLkUrl] = useState<string | null>(null);
 
+  // Add-people / invite sheet
+  const [showAddPeople, setShowAddPeople] = useState(false);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [invitedIds, setInvitedIds] = useState<string[]>([]);
+
+  const openAddPeople = async () => {
+    setShowAddPeople(true);
+    if (contacts.length) return;
+    try {
+      const list = await chatCache.getCachedContacts();
+      setContacts(Array.isArray(list) ? list : []);
+    } catch {
+      /* non-fatal: the share-link path still works */
+    }
+  };
+
+  const handleInvite = (c: any) => {
+    const cid = c.id || c._id || c.otherUserId;
+    if (!cid) return;
+    inviteToCall(c);
+    setInvitedIds((prev) => (prev.includes(cid) ? prev : [...prev, cid]));
+  };
+
+  const handleShareLink = async () => {
+    if (callState.status !== 'in_call') return;
+    try {
+      const { url } = await createCallInviteLink(callState.roomId);
+      await Share.share({ message: `Join my Bubble call: ${url}`, url });
+    } catch {
+      /* user dismissed or link failed */
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = subscribeCallState((state) => {
       setCallState(state);
@@ -82,7 +116,7 @@ function GlobalCallOverlay() {
     if (callState.status !== 'in_call') return;
     if (lkToken) return;
     let cancelled = false;
-    getLiveKitToken(callState.roomId)
+    getLiveKitToken(callState.roomId, getLinkJoinToken() || undefined)
       .then((res: { token?: string; url?: string }) => {
         if (cancelled) return;
         if (res?.token && res?.url) {
@@ -281,6 +315,52 @@ function GlobalCallOverlay() {
           )}
         </View>
 
+        {/* Add-people sheet */}
+        <Modal visible={showAddPeople} transparent animationType="slide" onRequestClose={() => setShowAddPeople(false)}>
+          <View style={styles.sheetBackdrop}>
+            <View style={styles.sheetCard}>
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>Add people</Text>
+                <TouchableOpacity onPress={() => setShowAddPeople(false)} style={styles.sheetClose}>
+                  <X color={INK_SOFT} size={20} />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity onPress={handleShareLink} style={styles.shareLinkBtn}>
+                <Link2 color={PURPLE} size={18} />
+                <Text style={styles.shareLinkText}>Share invite link</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.sheetSection}>RING A CONTACT</Text>
+              <ScrollView style={{ maxHeight: 320 }}>
+                {contacts.length === 0 ? (
+                  <Text style={styles.sheetEmpty}>No contacts to ring</Text>
+                ) : (
+                  contacts.map((c: any) => {
+                    const cid = c.id || c._id || c.otherUserId;
+                    const invited = invitedIds.includes(cid);
+                    const cname = c.full_name || c.name || c.username || 'Contact';
+                    const avatarUrl = c.avatar ? getSecureMediaUrl(c.avatar) : null;
+                    return (
+                      <TouchableOpacity key={cid} disabled={invited} onPress={() => handleInvite(c)} style={styles.contactRow}>
+                        {avatarUrl ? (
+                          <Image source={{ uri: avatarUrl }} style={styles.contactAvatar} />
+                        ) : (
+                          <View style={[styles.contactAvatar, styles.contactAvatarFallback]}>
+                            <Text style={styles.contactInitials}>{getGroupInitials(cname)}</Text>
+                          </View>
+                        )}
+                        <Text style={styles.contactName} numberOfLines={1}>{cname}</Text>
+                        <Text style={[styles.contactAction, invited && { color: INK_SOFT }]}>{invited ? 'Ringing…' : 'Invite'}</Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
         {/* Call Actions */}
         <View style={styles.actionsContainer}>
           {isIncoming ? (
@@ -341,6 +421,16 @@ function GlobalCallOverlay() {
                     style={[styles.optionsButton, isCameraActive && styles.activeOptionsButton]}
                   >
                     {isCameraActive ? <Video color="#ffffff" size={20} /> : <VideoOff color={INK} size={20} />}
+                  </TouchableOpacity>
+                )}
+
+                {/* Add people (only in active calls) */}
+                {callState.status === 'in_call' && (
+                  <TouchableOpacity
+                    onPress={openAddPeople}
+                    style={styles.optionsButton}
+                  >
+                    <UserPlus color={INK} size={20} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -725,5 +815,94 @@ const styles = StyleSheet.create({
   activeOptionsButton: {
     backgroundColor: PURPLE,
     borderColor: PURPLE,
+  },
+
+  // Add-people sheet
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheetCard: {
+    backgroundColor: WHITE,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontFamily: 'Poppins_700Bold',
+    color: INK,
+  },
+  sheetClose: {
+    padding: 4,
+  },
+  shareLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: PURPLE_SOFT,
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  shareLinkText: {
+    color: PURPLE,
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 13,
+  },
+  sheetSection: {
+    fontSize: 10,
+    fontFamily: 'Poppins_700Bold',
+    color: INK_SOFT,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  sheetEmpty: {
+    color: INK_SOFT,
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 24,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  contactAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  contactAvatarFallback: {
+    backgroundColor: PURPLE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactInitials: {
+    color: WHITE,
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 14,
+  },
+  contactName: {
+    flex: 1,
+    fontFamily: 'Poppins_600SemiBold',
+    fontSize: 14,
+    color: INK,
+  },
+  contactAction: {
+    fontFamily: 'Poppins_700Bold',
+    fontSize: 12,
+    color: PURPLE,
   },
 });

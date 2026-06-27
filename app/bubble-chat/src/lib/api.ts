@@ -2017,9 +2017,21 @@ export const respondToMessageRequest = async (requestId: string, action: 'accept
     return handleResponse(res);
 };
 
-export const getLiveKitToken = async (roomId: string) => {
-    const res = await fetch(`${BASE_URL}/meet/livekit-token?roomId=${encodeURIComponent(roomId)}`, {
+export const getLiveKitToken = async (roomId: string, joinToken?: string) => {
+    const qs = new URLSearchParams({ roomId });
+    if (joinToken) qs.set('joinToken', joinToken);
+    const res = await fetch(`${BASE_URL}/meet/livekit-token?${qs.toString()}`, {
         headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+// Sign a shareable join link for the given call room (POST /meet/invite-link).
+export const createCallInviteLink = async (roomId: string): Promise<{ url: string; joinToken: string; roomId: string }> => {
+    const res = await fetch(`${BASE_URL}/meet/invite-link`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ roomId }),
     });
     return handleResponse(res);
 };
