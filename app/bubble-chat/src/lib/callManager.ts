@@ -241,6 +241,50 @@ export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: stri
   startDurationTimer();
 };
 
+// Start a group call: ring every other member into one room (call_invite) and enter
+// the room as host. LiveKit hosts the N-way media; the overlay renders the call.
+export const startGroupCall = async (members: any[], type: 'voice' | 'video', groupName?: string) => {
+  const roomId = `bubble-group-${Math.random().toString(36).slice(2, 11)}`;
+  const socket = getSocket();
+  const currentUser = await authStorage.getUser();
+  const myId = String(currentUser?._id || currentUser?.id || '');
+  const callerName = currentUser?.full_name || currentUser?.username || 'Bubble User';
+  const callerAvatar = currentUser?.avatar || null;
+
+  const targets = (members || [])
+    .map((m: any) => String(m._id || m.id || m))
+    .filter((mid) => mid && mid !== myId);
+
+  if (socket) {
+    for (const toUserId of targets) {
+      socket.emit('call_invite', { toUserId, roomId, callerName, callerAvatar, type });
+    }
+  }
+
+  let dbId: string | null = null;
+  try {
+    const res = await createMeeting({
+      roomId,
+      title: `${groupName || 'Group'} ${type === 'video' ? 'Video' : 'Voice'} Call`,
+      type,
+    });
+    dbId = res?.meeting?._id || res?._id || null;
+    if (dbId && socket) socket.emit('meeting_started', { roomId, meetingId: dbId });
+  } catch (err) {
+    console.warn('Failed to create group meeting record:', err);
+  }
+
+  setCallState({
+    status: 'in_call',
+    user: { name: groupName || 'Group call', id: roomId },
+    type,
+    roomId,
+    duration: 0,
+    meetingDbId: dbId,
+  });
+  startDurationTimer();
+};
+
 const startDurationTimer = () => {
   if (durationInterval) clearInterval(durationInterval);
   durationInterval = setInterval(() => {

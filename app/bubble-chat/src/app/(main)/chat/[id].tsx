@@ -37,7 +37,7 @@ import {
   uploadGroupOrOrgImage,
   accessOrCreateChat,
 } from '../../../lib/api';
-import { startOutgoingCall } from '../../../lib/callManager';
+import { startOutgoingCall, startGroupCall } from '../../../lib/callManager';
 import { useTheme } from '../../../lib/theme';
 import { useIsOnline } from '../../../lib/presence';
 import { authStorage } from '../../../lib/authStorage';
@@ -237,6 +237,11 @@ export default function ChatScreen() {
   };
 
   const handleStartCall = (type: 'voice' | 'video') => {
+    if (chat?.isGroupChat) {
+      const members = [...(chat?.users || []), ...(chat?.members || [])];
+      startGroupCall(members, type, chat?.name);
+      return;
+    }
     if (!chat?.otherUserId) return;
     startOutgoingCall({
       id: chat.otherUserId,
