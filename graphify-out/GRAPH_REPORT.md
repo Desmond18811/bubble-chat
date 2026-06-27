@@ -1,7 +1,7 @@
 # Graph Report - bubble-chat  (2026-06-27)
 
 ## Corpus Check
-- 362 files · ~1,988,247 words
+- 362 files · ~1,988,327 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f5f9dc50`
+- Built from commit: `50680923`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -784,7 +784,7 @@ Cohesion: 0.18
 Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREEN_W }
 
 ## Knowledge Gaps
-- **804 isolated node(s):** `deepseekClient`, `deepseekClient`, `deepseekClient`, `app`, `PRODUCTION_ORIGINS` (+799 more)
+- **804 isolated node(s):** `SUPPORTED_EXTENSIONS`, `NEEDS_TRANSCODE`, `deepseekClient`, `deepseekClient`, `deepseekClient` (+799 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **38 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -792,14 +792,14 @@ Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREE
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `React` connect `Community 88` to `Community 2`, `Community 3`, `Community 131`, `Community 5`, `Community 6`, `Community 130`, `Community 9`, `Community 138`, `Community 142`, `Community 143`, `Community 16`, `Community 18`, `Community 146`, `Community 23`, `Community 24`, `Community 56`, `Community 29`, `Community 32`, `Community 33`, `Community 34`, `Community 35`, `Community 161`, `Community 165`, `Community 38`, `Community 167`, `Community 166`, `Community 39`, `Community 42`, `Community 171`, `Community 45`, `Community 47`, `Community 48`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 184`, `Community 57`, `Community 58`, `Community 59`, `Community 188`, `Community 61`, `Community 189`, `Community 191`, `Community 64`, `Community 65`, `Community 192`, `Community 62`, `Community 63`, `Community 69`, `Community 70`, `Community 73`, `Community 76`, `Community 81`, `Community 213`, `Community 87`, `Community 91`, `Community 94`, `Community 95`, `Community 96`, `Community 99`, `Community 100`, `Community 101`, `Community 110`, `Community 111`, `Community 114`, `Community 117`, `Community 122`, `Community 124`, `Community 126`, `Community 127`?**
-  _High betweenness centrality (0.187) - this node is a cross-community bridge._
+  _High betweenness centrality (0.217) - this node is a cross-community bridge._
 - **Why does `cn()` connect `Community 5` to `Community 130`, `Community 3`, `Community 9`, `Community 143`, `Community 16`, `Community 18`, `Community 32`, `Community 33`, `Community 34`, `Community 161`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 62`, `Community 64`, `Community 65`, `Community 68`, `Community 69`, `Community 70`, `Community 73`, `Community 77`, `Community 81`, `Community 82`, `Community 88`, `Community 91`, `Community 95`, `Community 96`, `Community 97`, `Community 99`, `Community 101`, `Community 110`, `Community 124`, `Community 126`, `Community 127`?**
-  _High betweenness centrality (0.045) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `Community 6` to `Community 185`, `Community 142`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `Community 2` to `Community 84`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Are the 246 inferred relationships involving `cn()` (e.g. with `ChatAvatar()` and `ChatList()`) actually correct?**
   _`cn()` has 246 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `deepseekClient`, `deepseekClient`, `deepseekClient` to the rest of the system?**
+- **What connects `SUPPORTED_EXTENSIONS`, `NEEDS_TRANSCODE`, `deepseekClient` to the rest of the system?**
   _804 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.03176197351076517 - nodes in this community are weakly interconnected._

@@ -4,14 +4,124 @@
   "graph": {},
   "nodes": [
     {
+      "label": "whisperService.ts",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "utils_whisperservice",
+      "community": 20,
+      "norm_label": "whisperservice.ts"
+    },
+    {
+      "label": "getSttClient()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "utils_whisperservice_getsttclient",
+      "community": 20,
+      "norm_label": "getsttclient()"
+    },
+    {
+      "label": "SUPPORTED_EXTENSIONS",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "utils_whisperservice_supported_extensions",
+      "community": 20,
+      "norm_label": "supported_extensions"
+    },
+    {
+      "label": "NEEDS_TRANSCODE",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "utils_whisperservice_needs_transcode",
+      "community": 20,
+      "norm_label": "needs_transcode"
+    },
+    {
+      "label": "transcodeToMp3()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "utils_whisperservice_transcodetomp3",
+      "community": 20,
+      "norm_label": "transcodetomp3()"
+    },
+    {
+      "label": "getAudioDuration()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "utils_whisperservice_getaudioduration",
+      "community": 20,
+      "norm_label": "getaudioduration()"
+    },
+    {
+      "label": "extractSegment()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L68",
+      "_origin": "ast",
+      "id": "utils_whisperservice_extractsegment",
+      "community": 20,
+      "norm_label": "extractsegment()"
+    },
+    {
+      "label": "makeTempPath()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L87",
+      "_origin": "ast",
+      "id": "utils_whisperservice_maketemppath",
+      "community": 20,
+      "norm_label": "maketemppath()"
+    },
+    {
+      "label": "cleanupFiles()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L90",
+      "_origin": "ast",
+      "id": "utils_whisperservice_cleanupfiles",
+      "community": 20,
+      "norm_label": "cleanupfiles()"
+    },
+    {
+      "label": "transcribeAudio()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L104",
+      "_origin": "ast",
+      "id": "utils_whisperservice_transcribeaudio",
+      "community": 20,
+      "norm_label": "transcribeaudio()"
+    },
+    {
+      "label": "transcribeWithTimestamps()",
+      "file_type": "code",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L172",
+      "_origin": "ast",
+      "id": "utils_whisperservice_transcribewithtimestamps",
+      "community": 20,
+      "norm_label": "transcribewithtimestamps()"
+    },
+    {
       "label": "aidaController.ts",
       "file_type": "code",
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_aidacontroller",
       "community": 1,
-      "norm_label": "aidacontroller.ts"
+      "norm_label": "aidacontroller.ts",
+      "id": "controllers_aidacontroller"
     },
     {
       "label": "deepseekClient",
@@ -19,9 +129,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_deepseekclient",
       "community": 1,
-      "norm_label": "deepseekclient"
+      "norm_label": "deepseekclient",
+      "id": "controllers_aidacontroller_deepseekclient"
     },
     {
       "label": "hasKey()",
@@ -29,9 +139,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_haskey",
       "community": 1,
-      "norm_label": "haskey()"
+      "norm_label": "haskey()",
+      "id": "controllers_aidacontroller_haskey"
     },
     {
       "label": "requireAidaKey()",
@@ -39,9 +149,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_requireaidakey",
       "community": 1,
-      "norm_label": "requireaidakey()"
+      "norm_label": "requireaidakey()",
+      "id": "controllers_aidacontroller_requireaidakey"
     },
     {
       "label": "callAIDA()",
@@ -49,9 +159,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L39",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_callaida",
       "community": 1,
-      "norm_label": "callaida()"
+      "norm_label": "callaida()",
+      "id": "controllers_aidacontroller_callaida"
     },
     {
       "label": "buildSmartFallback()",
@@ -59,9 +169,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L64",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_buildsmartfallback",
       "community": 1,
-      "norm_label": "buildsmartfallback()"
+      "norm_label": "buildsmartfallback()",
+      "id": "controllers_aidacontroller_buildsmartfallback"
     },
     {
       "label": "getAidaBotUser()",
@@ -69,9 +179,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L96",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getaidabotuser",
       "community": 211,
-      "norm_label": "getaidabotuser()"
+      "norm_label": "getaidabotuser()",
+      "id": "controllers_aidacontroller_getaidabotuser"
     },
     {
       "label": "retrieveOrgContext()",
@@ -79,9 +189,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L121",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_retrieveorgcontext",
       "community": 1,
-      "norm_label": "retrieveorgcontext()"
+      "norm_label": "retrieveorgcontext()",
+      "id": "controllers_aidacontroller_retrieveorgcontext"
     },
     {
       "label": "buildAidaSystemPrompt()",
@@ -89,9 +199,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L219",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_buildaidasystemprompt",
       "community": 1,
-      "norm_label": "buildaidasystemprompt()"
+      "norm_label": "buildaidasystemprompt()",
+      "id": "controllers_aidacontroller_buildaidasystemprompt"
     },
     {
       "label": "getAidaConversation()",
@@ -99,9 +209,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L290",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getaidaconversation",
       "community": 1,
-      "norm_label": "getaidaconversation()"
+      "norm_label": "getaidaconversation()",
+      "id": "controllers_aidacontroller_getaidaconversation"
     },
     {
       "label": "chatWithAidaInConversation()",
@@ -109,9 +219,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L326",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_chatwithaidainconversation",
       "community": 1,
-      "norm_label": "chatwithaidainconversation()"
+      "norm_label": "chatwithaidainconversation()",
+      "id": "controllers_aidacontroller_chatwithaidainconversation"
     },
     {
       "label": "summarizeConversation()",
@@ -119,9 +229,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L544",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_summarizeconversation",
       "community": 1,
-      "norm_label": "summarizeconversation()"
+      "norm_label": "summarizeconversation()",
+      "id": "controllers_aidacontroller_summarizeconversation"
     },
     {
       "label": "aidaScheduleTask()",
@@ -129,9 +239,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L590",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_aidascheduletask",
       "community": 1,
-      "norm_label": "aidascheduletask()"
+      "norm_label": "aidascheduletask()",
+      "id": "controllers_aidacontroller_aidascheduletask"
     },
     {
       "label": "chatWithAida()",
@@ -139,9 +249,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L625",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_chatwithaida",
       "community": 1,
-      "norm_label": "chatwithaida()"
+      "norm_label": "chatwithaida()",
+      "id": "controllers_aidacontroller_chatwithaida"
     },
     {
       "label": "getDailyBriefing()",
@@ -149,9 +259,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L785",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getdailybriefing",
       "community": 1,
-      "norm_label": "getdailybriefing()"
+      "norm_label": "getdailybriefing()",
+      "id": "controllers_aidacontroller_getdailybriefing"
     },
     {
       "label": "getFinancialAdvice()",
@@ -159,9 +269,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L836",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getfinancialadvice",
       "community": 1,
-      "norm_label": "getfinancialadvice()"
+      "norm_label": "getfinancialadvice()",
+      "id": "controllers_aidacontroller_getfinancialadvice"
     },
     {
       "label": "extractActionItems()",
@@ -169,9 +279,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L872",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_extractactionitems",
       "community": 1,
-      "norm_label": "extractactionitems()"
+      "norm_label": "extractactionitems()",
+      "id": "controllers_aidacontroller_extractactionitems"
     },
     {
       "label": "searchWorkspace()",
@@ -179,9 +289,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L917",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_searchworkspace",
       "community": 1,
-      "norm_label": "searchworkspace()"
+      "norm_label": "searchworkspace()",
+      "id": "controllers_aidacontroller_searchworkspace"
     },
     {
       "label": "scheduleSuggestion()",
@@ -189,9 +299,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L952",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_schedulesuggestion",
       "community": 1,
-      "norm_label": "schedulesuggestion()"
+      "norm_label": "schedulesuggestion()",
+      "id": "controllers_aidacontroller_schedulesuggestion"
     },
     {
       "label": "summarizeFeed()",
@@ -199,9 +309,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1000",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_summarizefeed",
       "community": 1,
-      "norm_label": "summarizefeed()"
+      "norm_label": "summarizefeed()",
+      "id": "controllers_aidacontroller_summarizefeed"
     },
     {
       "label": "flagPayments()",
@@ -209,9 +319,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1032",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_flagpayments",
       "community": 1,
-      "norm_label": "flagpayments()"
+      "norm_label": "flagpayments()",
+      "id": "controllers_aidacontroller_flagpayments"
     },
     {
       "label": "listOrgDocs()",
@@ -219,9 +329,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1068",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_listorgdocs",
       "community": 1,
-      "norm_label": "listorgdocs()"
+      "norm_label": "listorgdocs()",
+      "id": "controllers_aidacontroller_listorgdocs"
     },
     {
       "label": "getOrgDoc()",
@@ -229,9 +339,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1125",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getorgdoc",
       "community": 1,
-      "norm_label": "getorgdoc()"
+      "norm_label": "getorgdoc()",
+      "id": "controllers_aidacontroller_getorgdoc"
     },
     {
       "label": "createOrgDoc()",
@@ -239,9 +349,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1148",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_createorgdoc",
       "community": 210,
-      "norm_label": "createorgdoc()"
+      "norm_label": "createorgdoc()",
+      "id": "controllers_aidacontroller_createorgdoc"
     },
     {
       "label": "updateOrgDoc()",
@@ -249,9 +359,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1202",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_updateorgdoc",
       "community": 1,
-      "norm_label": "updateorgdoc()"
+      "norm_label": "updateorgdoc()",
+      "id": "controllers_aidacontroller_updateorgdoc"
     },
     {
       "label": "deleteOrgDoc()",
@@ -259,9 +369,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1230",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_deleteorgdoc",
       "community": 1,
-      "norm_label": "deleteorgdoc()"
+      "norm_label": "deleteorgdoc()",
+      "id": "controllers_aidacontroller_deleteorgdoc"
     },
     {
       "label": "getConversationContext()",
@@ -269,9 +379,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1255",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getconversationcontext",
       "community": 1,
-      "norm_label": "getconversationcontext()"
+      "norm_label": "getconversationcontext()",
+      "id": "controllers_aidacontroller_getconversationcontext"
     },
     {
       "label": "getAidaWritingSuggestions()",
@@ -279,9 +389,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1457",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_getaidawritingsuggestions",
       "community": 210,
-      "norm_label": "getaidawritingsuggestions()"
+      "norm_label": "getaidawritingsuggestions()",
+      "id": "controllers_aidacontroller_getaidawritingsuggestions"
     },
     {
       "label": "aidaDraft()",
@@ -289,9 +399,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1572",
       "_origin": "ast",
-      "id": "controllers_aidacontroller_aidadraft",
       "community": 1,
-      "norm_label": "aidadraft()"
+      "norm_label": "aidadraft()",
+      "id": "controllers_aidacontroller_aidadraft"
     },
     {
       "label": "meetingController.ts",
@@ -299,9 +409,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller",
       "community": 20,
-      "norm_label": "meetingcontroller.ts"
+      "norm_label": "meetingcontroller.ts",
+      "id": "controllers_meetingcontroller"
     },
     {
       "label": "deepseekClient",
@@ -309,9 +419,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_deepseekclient",
       "community": 20,
-      "norm_label": "deepseekclient"
+      "norm_label": "deepseekclient",
+      "id": "controllers_meetingcontroller_deepseekclient"
     },
     {
       "label": "hasDeepSeekKey()",
@@ -319,9 +429,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_hasdeepseekkey",
       "community": 20,
-      "norm_label": "hasdeepseekkey()"
+      "norm_label": "hasdeepseekkey()",
+      "id": "controllers_meetingcontroller_hasdeepseekkey"
     },
     {
       "label": "extractMeetingIntelligence()",
@@ -329,9 +439,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_extractmeetingintelligence",
       "community": 20,
-      "norm_label": "extractmeetingintelligence()"
+      "norm_label": "extractmeetingintelligence()",
+      "id": "controllers_meetingcontroller_extractmeetingintelligence"
     },
     {
       "label": "createMeeting()",
@@ -339,9 +449,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L103",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_createmeeting",
       "community": 20,
-      "norm_label": "createmeeting()"
+      "norm_label": "createmeeting()",
+      "id": "controllers_meetingcontroller_createmeeting"
     },
     {
       "label": "getMeetings()",
@@ -349,9 +459,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L176",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetings",
       "community": 20,
-      "norm_label": "getmeetings()"
+      "norm_label": "getmeetings()",
+      "id": "controllers_meetingcontroller_getmeetings"
     },
     {
       "label": "getMeetingStatsWithUser()",
@@ -359,9 +469,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L209",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingstatswithuser",
       "community": 20,
-      "norm_label": "getmeetingstatswithuser()"
+      "norm_label": "getmeetingstatswithuser()",
+      "id": "controllers_meetingcontroller_getmeetingstatswithuser"
     },
     {
       "label": "getMeetingById()",
@@ -369,9 +479,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L247",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingbyid",
       "community": 20,
-      "norm_label": "getmeetingbyid()"
+      "norm_label": "getmeetingbyid()",
+      "id": "controllers_meetingcontroller_getmeetingbyid"
     },
     {
       "label": "addTranscriptChunk()",
@@ -379,9 +489,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L278",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_addtranscriptchunk",
       "community": 20,
-      "norm_label": "addtranscriptchunk()"
+      "norm_label": "addtranscriptchunk()",
+      "id": "controllers_meetingcontroller_addtranscriptchunk"
     },
     {
       "label": "logSharedFile()",
@@ -389,9 +499,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L337",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_logsharedfile",
       "community": 20,
-      "norm_label": "logsharedfile()"
+      "norm_label": "logsharedfile()",
+      "id": "controllers_meetingcontroller_logsharedfile"
     },
     {
       "label": "getMeetingFiles()",
@@ -399,9 +509,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L394",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingfiles",
       "community": 20,
-      "norm_label": "getmeetingfiles()"
+      "norm_label": "getmeetingfiles()",
+      "id": "controllers_meetingcontroller_getmeetingfiles"
     },
     {
       "label": "startScreenShare()",
@@ -409,9 +519,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L422",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_startscreenshare",
       "community": 20,
-      "norm_label": "startscreenshare()"
+      "norm_label": "startscreenshare()",
+      "id": "controllers_meetingcontroller_startscreenshare"
     },
     {
       "label": "endScreenShare()",
@@ -419,9 +529,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L474",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_endscreenshare",
       "community": 20,
-      "norm_label": "endscreenshare()"
+      "norm_label": "endscreenshare()",
+      "id": "controllers_meetingcontroller_endscreenshare"
     },
     {
       "label": "endMeeting()",
@@ -429,9 +539,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L514",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_endmeeting",
       "community": 20,
-      "norm_label": "endmeeting()"
+      "norm_label": "endmeeting()",
+      "id": "controllers_meetingcontroller_endmeeting"
     },
     {
       "label": "runBackgroundMeetingAI()",
@@ -439,9 +549,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L618",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_runbackgroundmeetingai",
       "community": 211,
-      "norm_label": "runbackgroundmeetingai()"
+      "norm_label": "runbackgroundmeetingai()",
+      "id": "controllers_meetingcontroller_runbackgroundmeetingai"
     },
     {
       "label": "transcribeUpload()",
@@ -449,9 +559,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L944",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_transcribeupload",
       "community": 20,
-      "norm_label": "transcribeupload()"
+      "norm_label": "transcribeupload()",
+      "id": "controllers_meetingcontroller_transcribeupload"
     },
     {
       "label": "getMeetingActionItems()",
@@ -459,9 +569,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L1066",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_getmeetingactionitems",
       "community": 20,
-      "norm_label": "getmeetingactionitems()"
+      "norm_label": "getmeetingactionitems()",
+      "id": "controllers_meetingcontroller_getmeetingactionitems"
     },
     {
       "label": "downloadTranscriptMarkdown()",
@@ -469,9 +579,9 @@
       "source_file": "Backend/controllers/meetingController.ts",
       "source_location": "L1097",
       "_origin": "ast",
-      "id": "controllers_meetingcontroller_downloadtranscriptmarkdown",
       "community": 20,
-      "norm_label": "downloadtranscriptmarkdown()"
+      "norm_label": "downloadtranscriptmarkdown()",
+      "id": "controllers_meetingcontroller_downloadtranscriptmarkdown"
     },
     {
       "label": "taskController.ts",
@@ -479,9 +589,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_taskcontroller",
       "community": 141,
-      "norm_label": "taskcontroller.ts"
+      "norm_label": "taskcontroller.ts",
+      "id": "controllers_taskcontroller"
     },
     {
       "label": "deepseekClient",
@@ -489,9 +599,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_deepseekclient",
       "community": 141,
-      "norm_label": "deepseekclient"
+      "norm_label": "deepseekclient",
+      "id": "controllers_taskcontroller_deepseekclient"
     },
     {
       "label": "getTasks()",
@@ -499,9 +609,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L17",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_gettasks",
       "community": 141,
-      "norm_label": "gettasks()"
+      "norm_label": "gettasks()",
+      "id": "controllers_taskcontroller_gettasks"
     },
     {
       "label": "createTask()",
@@ -509,9 +619,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L52",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_createtask",
       "community": 66,
-      "norm_label": "createtask()"
+      "norm_label": "createtask()",
+      "id": "controllers_taskcontroller_createtask"
     },
     {
       "label": "updateTask()",
@@ -519,9 +629,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L268",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_updatetask",
       "community": 141,
-      "norm_label": "updatetask()"
+      "norm_label": "updatetask()",
+      "id": "controllers_taskcontroller_updatetask"
     },
     {
       "label": "aiDescribeEvent()",
@@ -529,9 +639,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L356",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_aidescribeevent",
       "community": 141,
-      "norm_label": "aidescribeevent()"
+      "norm_label": "aidescribeevent()",
+      "id": "controllers_taskcontroller_aidescribeevent"
     },
     {
       "label": "suggestRecurrence()",
@@ -539,9 +649,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L401",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_suggestrecurrence",
       "community": 141,
-      "norm_label": "suggestrecurrence()"
+      "norm_label": "suggestrecurrence()",
+      "id": "controllers_taskcontroller_suggestrecurrence"
     },
     {
       "label": "snoozeTask()",
@@ -549,9 +659,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L469",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_snoozetask",
       "community": 141,
-      "norm_label": "snoozetask()"
+      "norm_label": "snoozetask()",
+      "id": "controllers_taskcontroller_snoozetask"
     },
     {
       "label": "clearAllTasks()",
@@ -559,9 +669,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L489",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_clearalltasks",
       "community": 141,
-      "norm_label": "clearalltasks()"
+      "norm_label": "clearalltasks()",
+      "id": "controllers_taskcontroller_clearalltasks"
     },
     {
       "label": "deleteTask()",
@@ -569,9 +679,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L511",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_deletetask",
       "community": 141,
-      "norm_label": "deletetask()"
+      "norm_label": "deletetask()",
+      "id": "controllers_taskcontroller_deletetask"
     },
     {
       "label": "index.ts",
@@ -579,9 +689,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "backend_index",
       "community": 15,
-      "norm_label": "index.ts"
+      "norm_label": "index.ts",
+      "id": "backend_index"
     },
     {
       "label": "app",
@@ -589,9 +699,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L52",
       "_origin": "ast",
-      "id": "backend_index_app",
       "community": 15,
-      "norm_label": "app"
+      "norm_label": "app",
+      "id": "backend_index_app"
     },
     {
       "label": "PRODUCTION_ORIGINS",
@@ -599,9 +709,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L60",
       "_origin": "ast",
-      "id": "backend_index_production_origins",
       "community": 15,
-      "norm_label": "production_origins"
+      "norm_label": "production_origins",
+      "id": "backend_index_production_origins"
     },
     {
       "label": "limiter",
@@ -609,9 +719,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L107",
       "_origin": "ast",
-      "id": "backend_index_limiter",
       "community": 15,
-      "norm_label": "limiter"
+      "norm_label": "limiter",
+      "id": "backend_index_limiter"
     },
     {
       "label": "strictLimiter",
@@ -619,9 +729,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L117",
       "_origin": "ast",
-      "id": "backend_index_strictlimiter",
       "community": 15,
-      "norm_label": "strictlimiter"
+      "norm_label": "strictlimiter",
+      "id": "backend_index_strictlimiter"
     },
     {
       "label": "swaggerOptions",
@@ -629,9 +739,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L160",
       "_origin": "ast",
-      "id": "backend_index_swaggeroptions",
       "community": 15,
-      "norm_label": "swaggeroptions"
+      "norm_label": "swaggeroptions",
+      "id": "backend_index_swaggeroptions"
     },
     {
       "label": "swaggerSpec",
@@ -639,9 +749,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L299",
       "_origin": "ast",
-      "id": "backend_index_swaggerspec",
       "community": 15,
-      "norm_label": "swaggerspec"
+      "norm_label": "swaggerspec",
+      "id": "backend_index_swaggerspec"
     },
     {
       "label": "server",
@@ -649,9 +759,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L388",
       "_origin": "ast",
-      "id": "backend_index_server",
       "community": 15,
-      "norm_label": "server"
+      "norm_label": "server",
+      "id": "backend_index_server"
     },
     {
       "label": "notification.ts",
@@ -659,9 +769,9 @@
       "source_file": "Backend/models/notification.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "models_notification",
       "community": 37,
-      "norm_label": "notification.ts"
+      "norm_label": "notification.ts",
+      "id": "models_notification"
     },
     {
       "label": "NotificationType",
@@ -669,9 +779,9 @@
       "source_file": "Backend/models/notification.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "id": "models_notification_notificationtype",
       "community": 37,
-      "norm_label": "notificationtype"
+      "norm_label": "notificationtype",
+      "id": "models_notification_notificationtype"
     },
     {
       "label": "INotification",
@@ -679,9 +789,9 @@
       "source_file": "Backend/models/notification.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "id": "models_notification_inotification",
       "community": 37,
-      "norm_label": "inotification"
+      "norm_label": "inotification",
+      "id": "models_notification_inotification"
     },
     {
       "label": "NotificationSchema",
@@ -689,9 +799,9 @@
       "source_file": "Backend/models/notification.ts",
       "source_location": "L39",
       "_origin": "ast",
-      "id": "models_notification_notificationschema",
       "community": 37,
-      "norm_label": "notificationschema"
+      "norm_label": "notificationschema",
+      "id": "models_notification_notificationschema"
     },
     {
       "label": "Notification",
@@ -699,9 +809,9 @@
       "source_file": "Backend/models/notification.ts",
       "source_location": "L68",
       "_origin": "ast",
-      "id": "models_notification_notification",
       "community": 37,
-      "norm_label": "notification"
+      "norm_label": "notification",
+      "id": "models_notification_notification"
     },
     {
       "label": "task.ts",
@@ -709,9 +819,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "models_task",
       "community": 140,
-      "norm_label": "task.ts"
+      "norm_label": "task.ts",
+      "id": "models_task"
     },
     {
       "label": "TaskType",
@@ -719,9 +829,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "id": "models_task_tasktype",
       "community": 140,
-      "norm_label": "tasktype"
+      "norm_label": "tasktype",
+      "id": "models_task_tasktype"
     },
     {
       "label": "TaskStatus",
@@ -729,9 +839,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "id": "models_task_taskstatus",
       "community": 140,
-      "norm_label": "taskstatus"
+      "norm_label": "taskstatus",
+      "id": "models_task_taskstatus"
     },
     {
       "label": "TaskSource",
@@ -739,9 +849,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "models_task_tasksource",
       "community": 140,
-      "norm_label": "tasksource"
+      "norm_label": "tasksource",
+      "id": "models_task_tasksource"
     },
     {
       "label": "TaskPriority",
@@ -749,9 +859,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "models_task_taskpriority",
       "community": 140,
-      "norm_label": "taskpriority"
+      "norm_label": "taskpriority",
+      "id": "models_task_taskpriority"
     },
     {
       "label": "ITask",
@@ -759,9 +869,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "id": "models_task_itask",
       "community": 140,
-      "norm_label": "itask"
+      "norm_label": "itask",
+      "id": "models_task_itask"
     },
     {
       "label": "TaskSchema",
@@ -769,9 +879,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L47",
       "_origin": "ast",
-      "id": "models_task_taskschema",
       "community": 140,
-      "norm_label": "taskschema"
+      "norm_label": "taskschema",
+      "id": "models_task_taskschema"
     },
     {
       "label": "Task",
@@ -779,9 +889,9 @@
       "source_file": "Backend/models/task.ts",
       "source_location": "L82",
       "_origin": "ast",
-      "id": "models_task_task",
       "community": 210,
-      "norm_label": "task"
+      "norm_label": "task",
+      "id": "models_task_task"
     },
     {
       "label": "aidaRoutes.ts",
@@ -789,9 +899,9 @@
       "source_file": "Backend/routes/aidaRoutes.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "routes_aidaroutes",
       "community": 1,
-      "norm_label": "aidaroutes.ts"
+      "norm_label": "aidaroutes.ts",
+      "id": "routes_aidaroutes"
     },
     {
       "label": "router",
@@ -799,9 +909,9 @@
       "source_file": "Backend/routes/aidaRoutes.ts",
       "source_location": "L28",
       "_origin": "ast",
-      "id": "routes_aidaroutes_router",
       "community": 15,
-      "norm_label": "router"
+      "norm_label": "router",
+      "id": "routes_aidaroutes_router"
     },
     {
       "label": "requireAuth",
@@ -809,9 +919,9 @@
       "source_file": "Backend/routes/aidaRoutes.ts",
       "source_location": "L29",
       "_origin": "ast",
-      "id": "routes_aidaroutes_requireauth",
       "community": 1,
-      "norm_label": "requireauth"
+      "norm_label": "requireauth",
+      "id": "routes_aidaroutes_requireauth"
     },
     {
       "label": "scheduler.ts",
@@ -819,9 +929,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "utils_scheduler",
       "community": 15,
-      "norm_label": "scheduler.ts"
+      "norm_label": "scheduler.ts",
+      "id": "utils_scheduler"
     },
     {
       "label": "rotateSecurityCode()",
@@ -829,9 +939,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "id": "utils_scheduler_rotatesecuritycode",
       "community": 15,
-      "norm_label": "rotatesecuritycode()"
+      "norm_label": "rotatesecuritycode()",
+      "id": "utils_scheduler_rotatesecuritycode"
     },
     {
       "label": "initSecurityScheduler()",
@@ -839,9 +949,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L33",
       "_origin": "ast",
-      "id": "utils_scheduler_initsecurityscheduler",
       "community": 15,
-      "norm_label": "initsecurityscheduler()"
+      "norm_label": "initsecurityscheduler()",
+      "id": "utils_scheduler_initsecurityscheduler"
     },
     {
       "label": "processTranscriptQueue()",
@@ -849,9 +959,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L55",
       "_origin": "ast",
-      "id": "utils_scheduler_processtranscriptqueue",
       "community": 210,
-      "norm_label": "processtranscriptqueue()"
+      "norm_label": "processtranscriptqueue()",
+      "id": "utils_scheduler_processtranscriptqueue"
     },
     {
       "label": "initTranscriptProcessor()",
@@ -859,9 +969,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L169",
       "_origin": "ast",
-      "id": "utils_scheduler_inittranscriptprocessor",
       "community": 15,
-      "norm_label": "inittranscriptprocessor()"
+      "norm_label": "inittranscriptprocessor()",
+      "id": "utils_scheduler_inittranscriptprocessor"
     },
     {
       "label": "processTaskReminders()",
@@ -869,9 +979,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L189",
       "_origin": "ast",
-      "id": "utils_scheduler_processtaskreminders",
       "community": 66,
-      "norm_label": "processtaskreminders()"
+      "norm_label": "processtaskreminders()",
+      "id": "utils_scheduler_processtaskreminders"
     },
     {
       "label": "initTaskReminderScheduler()",
@@ -879,9 +989,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L263",
       "_origin": "ast",
-      "id": "utils_scheduler_inittaskreminderscheduler",
       "community": 15,
-      "norm_label": "inittaskreminderscheduler()"
+      "norm_label": "inittaskreminderscheduler()",
+      "id": "utils_scheduler_inittaskreminderscheduler"
     },
     {
       "label": "processActionItemFollowUps()",
@@ -889,9 +999,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L284",
       "_origin": "ast",
-      "id": "utils_scheduler_processactionitemfollowups",
       "community": 140,
-      "norm_label": "processactionitemfollowups()"
+      "norm_label": "processactionitemfollowups()",
+      "id": "utils_scheduler_processactionitemfollowups"
     },
     {
       "label": "initActionItemFollowUpScheduler()",
@@ -899,9 +1009,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L369",
       "_origin": "ast",
-      "id": "utils_scheduler_initactionitemfollowupscheduler",
       "community": 15,
-      "norm_label": "initactionitemfollowupscheduler()"
+      "norm_label": "initactionitemfollowupscheduler()",
+      "id": "utils_scheduler_initactionitemfollowupscheduler"
     },
     {
       "label": "runDailyDigestJob()",
@@ -909,9 +1019,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L383",
       "_origin": "ast",
-      "id": "utils_scheduler_rundailydigestjob",
       "community": 66,
-      "norm_label": "rundailydigestjob()"
+      "norm_label": "rundailydigestjob()",
+      "id": "utils_scheduler_rundailydigestjob"
     },
     {
       "label": "initDailyDigestScheduler()",
@@ -919,9 +1029,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L448",
       "_origin": "ast",
-      "id": "utils_scheduler_initdailydigestscheduler",
       "community": 15,
-      "norm_label": "initdailydigestscheduler()"
+      "norm_label": "initdailydigestscheduler()",
+      "id": "utils_scheduler_initdailydigestscheduler"
     },
     {
       "label": "runWeeklyDigestJob()",
@@ -929,9 +1039,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L464",
       "_origin": "ast",
-      "id": "utils_scheduler_runweeklydigestjob",
       "community": 66,
-      "norm_label": "runweeklydigestjob()"
+      "norm_label": "runweeklydigestjob()",
+      "id": "utils_scheduler_runweeklydigestjob"
     },
     {
       "label": "initWeeklyDigestScheduler()",
@@ -939,9 +1049,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L521",
       "_origin": "ast",
-      "id": "utils_scheduler_initweeklydigestscheduler",
       "community": 15,
-      "norm_label": "initweeklydigestscheduler()"
+      "norm_label": "initweeklydigestscheduler()",
+      "id": "utils_scheduler_initweeklydigestscheduler"
     },
     {
       "label": "processHolidayReminders()",
@@ -949,9 +1059,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L534",
       "_origin": "ast",
-      "id": "utils_scheduler_processholidayreminders",
       "community": 66,
-      "norm_label": "processholidayreminders()"
+      "norm_label": "processholidayreminders()",
+      "id": "utils_scheduler_processholidayreminders"
     },
     {
       "label": "initHolidayReminderScheduler()",
@@ -959,9 +1069,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L593",
       "_origin": "ast",
-      "id": "utils_scheduler_initholidayreminderscheduler",
       "community": 15,
-      "norm_label": "initholidayreminderscheduler()"
+      "norm_label": "initholidayreminderscheduler()",
+      "id": "utils_scheduler_initholidayreminderscheduler"
     },
     {
       "label": "calls.tsx",
@@ -969,9 +1079,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "main_calls",
       "community": 131,
-      "norm_label": "calls.tsx"
+      "norm_label": "calls.tsx",
+      "id": "main_calls"
     },
     {
       "label": "StaffDot()",
@@ -979,9 +1089,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L15",
       "_origin": "ast",
-      "id": "main_calls_staffdot",
       "community": 131,
-      "norm_label": "staffdot()"
+      "norm_label": "staffdot()",
+      "id": "main_calls_staffdot"
     },
     {
       "label": "getCalendarCells()",
@@ -989,9 +1099,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L22",
       "_origin": "ast",
-      "id": "main_calls_getcalendarcells",
       "community": 131,
-      "norm_label": "getcalendarcells()"
+      "norm_label": "getcalendarcells()",
+      "id": "main_calls_getcalendarcells"
     },
     {
       "label": "getInitials()",
@@ -999,9 +1109,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L55",
       "_origin": "ast",
-      "id": "main_calls_getinitials",
       "community": 131,
-      "norm_label": "getinitials()"
+      "norm_label": "getinitials()",
+      "id": "main_calls_getinitials"
     },
     {
       "label": "getGroupInitials()",
@@ -1009,9 +1119,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L65",
       "_origin": "ast",
-      "id": "main_calls_getgroupinitials",
       "community": 131,
-      "norm_label": "getgroupinitials()"
+      "norm_label": "getgroupinitials()",
+      "id": "main_calls_getgroupinitials"
     },
     {
       "label": "CallsScreen()",
@@ -1019,9 +1129,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L75",
       "_origin": "ast",
-      "id": "main_calls_callsscreen",
       "community": 131,
-      "norm_label": "callsscreen()"
+      "norm_label": "callsscreen()",
+      "id": "main_calls_callsscreen"
     },
     {
       "label": "[id].tsx",
@@ -1029,9 +1139,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "chat_id",
       "community": 61,
-      "norm_label": "[id].tsx"
+      "norm_label": "[id].tsx",
+      "id": "chat_id"
     },
     {
       "label": "AVATARS",
@@ -1039,9 +1149,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L53",
       "_origin": "ast",
-      "id": "chat_id_avatars",
       "community": 61,
-      "norm_label": "avatars"
+      "norm_label": "avatars",
+      "id": "chat_id_avatars"
     },
     {
       "label": "EMOJI_CATEGORIES",
@@ -1049,9 +1159,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L62",
       "_origin": "ast",
-      "id": "chat_id_emoji_categories",
       "community": 61,
-      "norm_label": "emoji_categories"
+      "norm_label": "emoji_categories",
+      "id": "chat_id_emoji_categories"
     },
     {
       "label": "ChatScreen()",
@@ -1059,9 +1169,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L70",
       "_origin": "ast",
-      "id": "chat_id_chatscreen",
       "community": 24,
-      "norm_label": "chatscreen()"
+      "norm_label": "chatscreen()",
+      "id": "chat_id_chatscreen"
     },
     {
       "label": "IconBtn()",
@@ -1069,9 +1179,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L3156",
       "_origin": "ast",
-      "id": "chat_id_iconbtn",
       "community": 61,
-      "norm_label": "iconbtn()"
+      "norm_label": "iconbtn()",
+      "id": "chat_id_iconbtn"
     },
     {
       "label": "InfoCard()",
@@ -1079,9 +1189,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L3164",
       "_origin": "ast",
-      "id": "chat_id_infocard",
       "community": 24,
-      "norm_label": "infocard()"
+      "norm_label": "infocard()",
+      "id": "chat_id_infocard"
     },
     {
       "label": "DropdownItem()",
@@ -1089,9 +1199,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L3177",
       "_origin": "ast",
-      "id": "chat_id_dropdownitem",
       "community": 61,
-      "norm_label": "dropdownitem()"
+      "norm_label": "dropdownitem()",
+      "id": "chat_id_dropdownitem"
     },
     {
       "label": "ContextMenuItem()",
@@ -1099,9 +1209,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L3206",
       "_origin": "ast",
-      "id": "chat_id_contextmenuitem",
       "community": 61,
-      "norm_label": "contextmenuitem()"
+      "norm_label": "contextmenuitem()",
+      "id": "chat_id_contextmenuitem"
     },
     {
       "label": "countMedia()",
@@ -1109,9 +1219,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L3235",
       "_origin": "ast",
-      "id": "chat_id_countmedia",
       "community": 61,
-      "norm_label": "countmedia()"
+      "norm_label": "countmedia()",
+      "id": "chat_id_countmedia"
     },
     {
       "label": "VoiceMessagePlayer()",
@@ -1119,9 +1229,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L3309",
       "_origin": "ast",
-      "id": "chat_id_voicemessageplayer",
       "community": 61,
-      "norm_label": "voicemessageplayer()"
+      "norm_label": "voicemessageplayer()",
+      "id": "chat_id_voicemessageplayer"
     },
     {
       "label": "api.ts",
@@ -1129,9 +1239,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "lib_api",
       "community": 0,
-      "norm_label": "api.ts"
+      "norm_label": "api.ts",
+      "id": "lib_api"
     },
     {
       "label": "ENV_API_URL",
@@ -1139,9 +1249,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "id": "lib_api_env_api_url",
       "community": 0,
-      "norm_label": "env_api_url"
+      "norm_label": "env_api_url",
+      "id": "lib_api_env_api_url"
     },
     {
       "label": "API_BASE",
@@ -1149,9 +1259,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "id": "lib_api_api_base",
       "community": 0,
-      "norm_label": "api_base"
+      "norm_label": "api_base",
+      "id": "lib_api_api_base"
     },
     {
       "label": "getTokenExp()",
@@ -1159,9 +1269,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L37",
       "_origin": "ast",
-      "id": "lib_api_gettokenexp",
       "community": 90,
-      "norm_label": "gettokenexp()"
+      "norm_label": "gettokenexp()",
+      "id": "lib_api_gettokenexp"
     },
     {
       "label": "isTokenExpiringSoon()",
@@ -1169,9 +1279,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L54",
       "_origin": "ast",
-      "id": "lib_api_istokenexpiringsoon",
       "community": 90,
-      "norm_label": "istokenexpiringsoon()"
+      "norm_label": "istokenexpiringsoon()",
+      "id": "lib_api_istokenexpiringsoon"
     },
     {
       "label": "refreshAccessToken()",
@@ -1179,9 +1289,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L66",
       "_origin": "ast",
-      "id": "lib_api_refreshaccesstoken",
       "community": 90,
-      "norm_label": "refreshaccesstoken()"
+      "norm_label": "refreshaccesstoken()",
+      "id": "lib_api_refreshaccesstoken"
     },
     {
       "label": "customFetch()",
@@ -1189,9 +1299,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L117",
       "_origin": "ast",
-      "id": "lib_api_customfetch",
       "community": 90,
-      "norm_label": "customfetch()"
+      "norm_label": "customfetch()",
+      "id": "lib_api_customfetch"
     },
     {
       "label": "getSecureMediaUrl()",
@@ -1199,9 +1309,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L136",
       "_origin": "ast",
-      "id": "lib_api_getsecuremediaurl",
       "community": 29,
-      "norm_label": "getsecuremediaurl()"
+      "norm_label": "getsecuremediaurl()",
+      "id": "lib_api_getsecuremediaurl"
     },
     {
       "label": "startGoogleAuth()",
@@ -1209,9 +1319,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L151",
       "_origin": "ast",
-      "id": "lib_api_startgoogleauth",
       "community": 191,
-      "norm_label": "startgoogleauth()"
+      "norm_label": "startgoogleauth()",
+      "id": "lib_api_startgoogleauth"
     },
     {
       "label": "tokenCache",
@@ -1219,9 +1329,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L246",
       "_origin": "ast",
-      "id": "lib_api_tokencache",
       "community": 0,
-      "norm_label": "tokencache"
+      "norm_label": "tokencache",
+      "id": "lib_api_tokencache"
     },
     {
       "label": "initApiFromStorage()",
@@ -1229,9 +1339,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L252",
       "_origin": "ast",
-      "id": "lib_api_initapifromstorage",
       "community": 90,
-      "norm_label": "initapifromstorage()"
+      "norm_label": "initapifromstorage()",
+      "id": "lib_api_initapifromstorage"
     },
     {
       "label": "setApiToken()",
@@ -1239,9 +1349,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L276",
       "_origin": "ast",
-      "id": "lib_api_setapitoken",
       "community": 90,
-      "norm_label": "setapitoken()"
+      "norm_label": "setapitoken()",
+      "id": "lib_api_setapitoken"
     },
     {
       "label": "getAuthHeaders()",
@@ -1249,9 +1359,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L288",
       "_origin": "ast",
-      "id": "lib_api_getauthheaders",
       "community": 0,
-      "norm_label": "getauthheaders()"
+      "norm_label": "getauthheaders()",
+      "id": "lib_api_getauthheaders"
     },
     {
       "label": "handleResponse()",
@@ -1259,9 +1369,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L296",
       "_origin": "ast",
-      "id": "lib_api_handleresponse",
       "community": 0,
-      "norm_label": "handleresponse()"
+      "norm_label": "handleresponse()",
+      "id": "lib_api_handleresponse"
     },
     {
       "label": "register()",
@@ -1269,9 +1379,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L314",
       "_origin": "ast",
-      "id": "lib_api_register",
       "community": 0,
-      "norm_label": "register()"
+      "norm_label": "register()",
+      "id": "lib_api_register"
     },
     {
       "label": "UserStatus",
@@ -1279,9 +1389,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L325",
       "_origin": "ast",
-      "id": "lib_api_userstatus",
       "community": 0,
-      "norm_label": "userstatus"
+      "norm_label": "userstatus",
+      "id": "lib_api_userstatus"
     },
     {
       "label": "checkUserStatus()",
@@ -1289,9 +1399,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L335",
       "_origin": "ast",
-      "id": "lib_api_checkuserstatus",
       "community": 0,
-      "norm_label": "checkuserstatus()"
+      "norm_label": "checkuserstatus()",
+      "id": "lib_api_checkuserstatus"
     },
     {
       "label": "verifyOTP()",
@@ -1299,9 +1409,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L341",
       "_origin": "ast",
-      "id": "lib_api_verifyotp",
       "community": 0,
-      "norm_label": "verifyotp()"
+      "norm_label": "verifyotp()",
+      "id": "lib_api_verifyotp"
     },
     {
       "label": "resendOTP()",
@@ -1309,9 +1419,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L350",
       "_origin": "ast",
-      "id": "lib_api_resendotp",
       "community": 0,
-      "norm_label": "resendotp()"
+      "norm_label": "resendotp()",
+      "id": "lib_api_resendotp"
     },
     {
       "label": "login()",
@@ -1319,9 +1429,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L359",
       "_origin": "ast",
-      "id": "lib_api_login",
       "community": 0,
-      "norm_label": "login()"
+      "norm_label": "login()",
+      "id": "lib_api_login"
     },
     {
       "label": "logoutUser()",
@@ -1329,9 +1439,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L368",
       "_origin": "ast",
-      "id": "lib_api_logoutuser",
       "community": 0,
-      "norm_label": "logoutuser()"
+      "norm_label": "logoutuser()",
+      "id": "lib_api_logoutuser"
     },
     {
       "label": "forgotPassword()",
@@ -1339,9 +1449,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L376",
       "_origin": "ast",
-      "id": "lib_api_forgotpassword",
       "community": 0,
-      "norm_label": "forgotpassword()"
+      "norm_label": "forgotpassword()",
+      "id": "lib_api_forgotpassword"
     },
     {
       "label": "resetPassword()",
@@ -1349,9 +1459,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L385",
       "_origin": "ast",
-      "id": "lib_api_resetpassword",
       "community": 0,
-      "norm_label": "resetpassword()"
+      "norm_label": "resetpassword()",
+      "id": "lib_api_resetpassword"
     },
     {
       "label": "setup2FA()",
@@ -1359,9 +1469,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L394",
       "_origin": "ast",
-      "id": "lib_api_setup2fa",
       "community": 0,
-      "norm_label": "setup2fa()"
+      "norm_label": "setup2fa()",
+      "id": "lib_api_setup2fa"
     },
     {
       "label": "verify2FA()",
@@ -1369,9 +1479,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L402",
       "_origin": "ast",
-      "id": "lib_api_verify2fa",
       "community": 0,
-      "norm_label": "verify2fa()"
+      "norm_label": "verify2fa()",
+      "id": "lib_api_verify2fa"
     },
     {
       "label": "joinOrganizationByInvite()",
@@ -1379,9 +1489,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L411",
       "_origin": "ast",
-      "id": "lib_api_joinorganizationbyinvite",
       "community": 0,
-      "norm_label": "joinorganizationbyinvite()"
+      "norm_label": "joinorganizationbyinvite()",
+      "id": "lib_api_joinorganizationbyinvite"
     },
     {
       "label": "searchUsers()",
@@ -1389,9 +1499,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L422",
       "_origin": "ast",
-      "id": "lib_api_searchusers",
       "community": 0,
-      "norm_label": "searchusers()"
+      "norm_label": "searchusers()",
+      "id": "lib_api_searchusers"
     },
     {
       "label": "getUserProfile()",
@@ -1399,9 +1509,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L432",
       "_origin": "ast",
-      "id": "lib_api_getuserprofile",
       "community": 0,
-      "norm_label": "getuserprofile()"
+      "norm_label": "getuserprofile()",
+      "id": "lib_api_getuserprofile"
     },
     {
       "label": "getContacts()",
@@ -1409,9 +1519,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L439",
       "_origin": "ast",
-      "id": "lib_api_getcontacts",
       "community": 0,
-      "norm_label": "getcontacts()"
+      "norm_label": "getcontacts()",
+      "id": "lib_api_getcontacts"
     },
     {
       "label": "getMyContacts()",
@@ -1419,9 +1529,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L447",
       "_origin": "ast",
-      "id": "lib_api_getmycontacts",
       "community": 0,
-      "norm_label": "getmycontacts()"
+      "norm_label": "getmycontacts()",
+      "id": "lib_api_getmycontacts"
     },
     {
       "label": "addContact()",
@@ -1429,9 +1539,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L454",
       "_origin": "ast",
-      "id": "lib_api_addcontact",
       "community": 0,
-      "norm_label": "addcontact()"
+      "norm_label": "addcontact()",
+      "id": "lib_api_addcontact"
     },
     {
       "label": "getContactNicknames()",
@@ -1439,9 +1549,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L463",
       "_origin": "ast",
-      "id": "lib_api_getcontactnicknames",
       "community": 0,
-      "norm_label": "getcontactnicknames()"
+      "norm_label": "getcontactnicknames()",
+      "id": "lib_api_getcontactnicknames"
     },
     {
       "label": "setContactNickname()",
@@ -1449,9 +1559,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L470",
       "_origin": "ast",
-      "id": "lib_api_setcontactnickname",
       "community": 0,
-      "norm_label": "setcontactnickname()"
+      "norm_label": "setcontactnickname()",
+      "id": "lib_api_setcontactnickname"
     },
     {
       "label": "updatePrivacy()",
@@ -1459,9 +1569,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L479",
       "_origin": "ast",
-      "id": "lib_api_updateprivacy",
       "community": 0,
-      "norm_label": "updateprivacy()"
+      "norm_label": "updateprivacy()",
+      "id": "lib_api_updateprivacy"
     },
     {
       "label": "getUserStatus()",
@@ -1469,9 +1579,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L488",
       "_origin": "ast",
-      "id": "lib_api_getuserstatus",
       "community": 0,
-      "norm_label": "getuserstatus()"
+      "norm_label": "getuserstatus()",
+      "id": "lib_api_getuserstatus"
     },
     {
       "label": "getOnlineScannedUsers()",
@@ -1479,9 +1589,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L495",
       "_origin": "ast",
-      "id": "lib_api_getonlinescannedusers",
       "community": 0,
-      "norm_label": "getonlinescannedusers()"
+      "norm_label": "getonlinescannedusers()",
+      "id": "lib_api_getonlinescannedusers"
     },
     {
       "label": "accessOrCreateChat()",
@@ -1489,9 +1599,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L504",
       "_origin": "ast",
-      "id": "lib_api_accessorcreatechat",
       "community": 61,
-      "norm_label": "accessorcreatechat()"
+      "norm_label": "accessorcreatechat()",
+      "id": "lib_api_accessorcreatechat"
     },
     {
       "label": "fetchAllUserChats()",
@@ -1499,9 +1609,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L513",
       "_origin": "ast",
-      "id": "lib_api_fetchalluserchats",
       "community": 0,
-      "norm_label": "fetchalluserchats()"
+      "norm_label": "fetchalluserchats()",
+      "id": "lib_api_fetchalluserchats"
     },
     {
       "label": "createGroupChat()",
@@ -1509,9 +1619,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L518",
       "_origin": "ast",
-      "id": "lib_api_creategroupchat",
       "community": 0,
-      "norm_label": "creategroupchat()"
+      "norm_label": "creategroupchat()",
+      "id": "lib_api_creategroupchat"
     },
     {
       "label": "joinGroupChat()",
@@ -1519,9 +1629,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L527",
       "_origin": "ast",
-      "id": "lib_api_joingroupchat",
       "community": 0,
-      "norm_label": "joingroupchat()"
+      "norm_label": "joingroupchat()",
+      "id": "lib_api_joingroupchat"
     },
     {
       "label": "updateGroupChat()",
@@ -1529,9 +1639,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L536",
       "_origin": "ast",
-      "id": "lib_api_updategroupchat",
       "community": 0,
-      "norm_label": "updategroupchat()"
+      "norm_label": "updategroupchat()",
+      "id": "lib_api_updategroupchat"
     },
     {
       "label": "addToGroup()",
@@ -1539,9 +1649,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L552",
       "_origin": "ast",
-      "id": "lib_api_addtogroup",
       "community": 0,
-      "norm_label": "addtogroup()"
+      "norm_label": "addtogroup()",
+      "id": "lib_api_addtogroup"
     },
     {
       "label": "removeFromGroup()",
@@ -1549,9 +1659,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L561",
       "_origin": "ast",
-      "id": "lib_api_removefromgroup",
       "community": 0,
-      "norm_label": "removefromgroup()"
+      "norm_label": "removefromgroup()",
+      "id": "lib_api_removefromgroup"
     },
     {
       "label": "fetchMessages()",
@@ -1559,9 +1669,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L572",
       "_origin": "ast",
-      "id": "lib_api_fetchmessages",
       "community": 0,
-      "norm_label": "fetchmessages()"
+      "norm_label": "fetchmessages()",
+      "id": "lib_api_fetchmessages"
     },
     {
       "label": "sendTextMessage()",
@@ -1569,9 +1679,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L579",
       "_origin": "ast",
-      "id": "lib_api_sendtextmessage",
       "community": 61,
-      "norm_label": "sendtextmessage()"
+      "norm_label": "sendtextmessage()",
+      "id": "lib_api_sendtextmessage"
     },
     {
       "label": "sendMediaMessage()",
@@ -1579,9 +1689,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L597",
       "_origin": "ast",
-      "id": "lib_api_sendmediamessage",
       "community": 61,
-      "norm_label": "sendmediamessage()"
+      "norm_label": "sendmediamessage()",
+      "id": "lib_api_sendmediamessage"
     },
     {
       "label": "updateMessage()",
@@ -1589,9 +1699,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L670",
       "_origin": "ast",
-      "id": "lib_api_updatemessage",
       "community": 61,
-      "norm_label": "updatemessage()"
+      "norm_label": "updatemessage()",
+      "id": "lib_api_updatemessage"
     },
     {
       "label": "deleteMessageForMe()",
@@ -1599,9 +1709,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L679",
       "_origin": "ast",
-      "id": "lib_api_deletemessageforme",
       "community": 61,
-      "norm_label": "deletemessageforme()"
+      "norm_label": "deletemessageforme()",
+      "id": "lib_api_deletemessageforme"
     },
     {
       "label": "deleteMessageForEveryone()",
@@ -1609,9 +1719,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L687",
       "_origin": "ast",
-      "id": "lib_api_deletemessageforeveryone",
       "community": 61,
-      "norm_label": "deletemessageforeveryone()"
+      "norm_label": "deletemessageforeveryone()",
+      "id": "lib_api_deletemessageforeveryone"
     },
     {
       "label": "markMessagesRead()",
@@ -1619,9 +1729,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L695",
       "_origin": "ast",
-      "id": "lib_api_markmessagesread",
       "community": 61,
-      "norm_label": "markmessagesread()"
+      "norm_label": "markmessagesread()",
+      "id": "lib_api_markmessagesread"
     },
     {
       "label": "reactToMessage()",
@@ -1629,9 +1739,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L703",
       "_origin": "ast",
-      "id": "lib_api_reacttomessage",
       "community": 61,
-      "norm_label": "reacttomessage()"
+      "norm_label": "reacttomessage()",
+      "id": "lib_api_reacttomessage"
     },
     {
       "label": "blockUser()",
@@ -1639,9 +1749,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L712",
       "_origin": "ast",
-      "id": "lib_api_blockuser",
       "community": 0,
-      "norm_label": "blockuser()"
+      "norm_label": "blockuser()",
+      "id": "lib_api_blockuser"
     },
     {
       "label": "reportUser()",
@@ -1649,9 +1759,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L720",
       "_origin": "ast",
-      "id": "lib_api_reportuser",
       "community": 0,
-      "norm_label": "reportuser()"
+      "norm_label": "reportuser()",
+      "id": "lib_api_reportuser"
     },
     {
       "label": "muteChat()",
@@ -1659,9 +1769,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L729",
       "_origin": "ast",
-      "id": "lib_api_mutechat",
       "community": 61,
-      "norm_label": "mutechat()"
+      "norm_label": "mutechat()",
+      "id": "lib_api_mutechat"
     },
     {
       "label": "clearChat()",
@@ -1669,9 +1779,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L737",
       "_origin": "ast",
-      "id": "lib_api_clearchat",
       "community": 61,
-      "norm_label": "clearchat()"
+      "norm_label": "clearchat()",
+      "id": "lib_api_clearchat"
     },
     {
       "label": "toggleChatPin()",
@@ -1679,9 +1789,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L745",
       "_origin": "ast",
-      "id": "lib_api_togglechatpin",
       "community": 61,
-      "norm_label": "togglechatpin()"
+      "norm_label": "togglechatpin()",
+      "id": "lib_api_togglechatpin"
     },
     {
       "label": "toggleMessagePin()",
@@ -1689,9 +1799,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L753",
       "_origin": "ast",
-      "id": "lib_api_togglemessagepin",
       "community": 61,
-      "norm_label": "togglemessagepin()"
+      "norm_label": "togglemessagepin()",
+      "id": "lib_api_togglemessagepin"
     },
     {
       "label": "deleteChat()",
@@ -1699,9 +1809,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L761",
       "_origin": "ast",
-      "id": "lib_api_deletechat",
       "community": 61,
-      "norm_label": "deletechat()"
+      "norm_label": "deletechat()",
+      "id": "lib_api_deletechat"
     },
     {
       "label": "removeContact()",
@@ -1709,9 +1819,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L769",
       "_origin": "ast",
-      "id": "lib_api_removecontact",
       "community": 0,
-      "norm_label": "removecontact()"
+      "norm_label": "removecontact()",
+      "id": "lib_api_removecontact"
     },
     {
       "label": "getSuggestions()",
@@ -1719,9 +1829,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L777",
       "_origin": "ast",
-      "id": "lib_api_getsuggestions",
       "community": 0,
-      "norm_label": "getsuggestions()"
+      "norm_label": "getsuggestions()",
+      "id": "lib_api_getsuggestions"
     },
     {
       "label": "getUnreadChatCount()",
@@ -1729,9 +1839,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L784",
       "_origin": "ast",
-      "id": "lib_api_getunreadchatcount",
       "community": 0,
-      "norm_label": "getunreadchatcount()"
+      "norm_label": "getunreadchatcount()",
+      "id": "lib_api_getunreadchatcount"
     },
     {
       "label": "toggleArchiveChat()",
@@ -1739,9 +1849,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L791",
       "_origin": "ast",
-      "id": "lib_api_togglearchivechat",
       "community": 0,
-      "norm_label": "togglearchivechat()"
+      "norm_label": "togglearchivechat()",
+      "id": "lib_api_togglearchivechat"
     },
     {
       "label": "getAidaWritingSuggestions()",
@@ -1749,9 +1859,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L799",
       "_origin": "ast",
-      "id": "lib_api_getaidawritingsuggestions",
       "community": 61,
-      "norm_label": "getaidawritingsuggestions()"
+      "norm_label": "getaidawritingsuggestions()",
+      "id": "lib_api_getaidawritingsuggestions"
     },
     {
       "label": "aidaDraft()",
@@ -1759,9 +1869,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L810",
       "_origin": "ast",
-      "id": "lib_api_aidadraft",
       "community": 61,
-      "norm_label": "aidadraft()"
+      "norm_label": "aidadraft()",
+      "id": "lib_api_aidadraft"
     },
     {
       "label": "fetchStories()",
@@ -1769,9 +1879,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L821",
       "_origin": "ast",
-      "id": "lib_api_fetchstories",
       "community": 0,
-      "norm_label": "fetchstories()"
+      "norm_label": "fetchstories()",
+      "id": "lib_api_fetchstories"
     },
     {
       "label": "uploadStory()",
@@ -1779,9 +1889,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L826",
       "_origin": "ast",
-      "id": "lib_api_uploadstory",
       "community": 0,
-      "norm_label": "uploadstory()"
+      "norm_label": "uploadstory()",
+      "id": "lib_api_uploadstory"
     },
     {
       "label": "deleteStory()",
@@ -1789,9 +1899,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L845",
       "_origin": "ast",
-      "id": "lib_api_deletestory",
       "community": 0,
-      "norm_label": "deletestory()"
+      "norm_label": "deletestory()",
+      "id": "lib_api_deletestory"
     },
     {
       "label": "uploadPublicKey()",
@@ -1799,9 +1909,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L855",
       "_origin": "ast",
-      "id": "lib_api_uploadpublickey",
       "community": 0,
-      "norm_label": "uploadpublickey()"
+      "norm_label": "uploadpublickey()",
+      "id": "lib_api_uploadpublickey"
     },
     {
       "label": "getPublicKey()",
@@ -1809,9 +1919,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L864",
       "_origin": "ast",
-      "id": "lib_api_getpublickey",
       "community": 0,
-      "norm_label": "getpublickey()"
+      "norm_label": "getpublickey()",
+      "id": "lib_api_getpublickey"
     },
     {
       "label": "uploadWorkspaceFile()",
@@ -1819,9 +1929,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L875",
       "_origin": "ast",
-      "id": "lib_api_uploadworkspacefile",
       "community": 0,
-      "norm_label": "uploadworkspacefile()"
+      "norm_label": "uploadworkspacefile()",
+      "id": "lib_api_uploadworkspacefile"
     },
     {
       "label": "createWorkspaceFolder()",
@@ -1829,9 +1939,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L906",
       "_origin": "ast",
-      "id": "lib_api_createworkspacefolder",
       "community": 0,
-      "norm_label": "createworkspacefolder()"
+      "norm_label": "createworkspacefolder()",
+      "id": "lib_api_createworkspacefolder"
     },
     {
       "label": "listWorkspaceFiles()",
@@ -1839,9 +1949,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L918",
       "_origin": "ast",
-      "id": "lib_api_listworkspacefiles",
       "community": 0,
-      "norm_label": "listworkspacefiles()"
+      "norm_label": "listworkspacefiles()",
+      "id": "lib_api_listworkspacefiles"
     },
     {
       "label": "getSharedWorkspaceFolder()",
@@ -1849,9 +1959,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L935",
       "_origin": "ast",
-      "id": "lib_api_getsharedworkspacefolder",
       "community": 0,
-      "norm_label": "getsharedworkspacefolder()"
+      "norm_label": "getsharedworkspacefolder()",
+      "id": "lib_api_getsharedworkspacefolder"
     },
     {
       "label": "deleteWorkspaceFile()",
@@ -1859,9 +1969,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L942",
       "_origin": "ast",
-      "id": "lib_api_deleteworkspacefile",
       "community": 0,
-      "norm_label": "deleteworkspacefile()"
+      "norm_label": "deleteworkspacefile()",
+      "id": "lib_api_deleteworkspacefile"
     },
     {
       "label": "shareWorkspaceFile()",
@@ -1869,9 +1979,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L950",
       "_origin": "ast",
-      "id": "lib_api_shareworkspacefile",
       "community": 0,
-      "norm_label": "shareworkspacefile()"
+      "norm_label": "shareworkspacefile()",
+      "id": "lib_api_shareworkspacefile"
     },
     {
       "label": "manageWorkspaceFileAccess()",
@@ -1879,9 +1989,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L959",
       "_origin": "ast",
-      "id": "lib_api_manageworkspacefileaccess",
       "community": 0,
-      "norm_label": "manageworkspacefileaccess()"
+      "norm_label": "manageworkspacefileaccess()",
+      "id": "lib_api_manageworkspacefileaccess"
     },
     {
       "label": "blockWorkspaceFileUser()",
@@ -1889,9 +1999,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L971",
       "_origin": "ast",
-      "id": "lib_api_blockworkspacefileuser",
       "community": 0,
-      "norm_label": "blockworkspacefileuser()"
+      "norm_label": "blockworkspacefileuser()",
+      "id": "lib_api_blockworkspacefileuser"
     },
     {
       "label": "getWorkspaceFileProxyUrl()",
@@ -1899,9 +2009,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L984",
       "_origin": "ast",
-      "id": "lib_api_getworkspacefileproxyurl",
       "community": 0,
-      "norm_label": "getworkspacefileproxyurl()"
+      "norm_label": "getworkspacefileproxyurl()",
+      "id": "lib_api_getworkspacefileproxyurl"
     },
     {
       "label": "updateWorkspaceFileMeta()",
@@ -1909,9 +2019,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L987",
       "_origin": "ast",
-      "id": "lib_api_updateworkspacefilemeta",
       "community": 0,
-      "norm_label": "updateworkspacefilemeta()"
+      "norm_label": "updateworkspacefilemeta()",
+      "id": "lib_api_updateworkspacefilemeta"
     },
     {
       "label": "fetchCallLogs()",
@@ -1919,9 +2029,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1006",
       "_origin": "ast",
-      "id": "lib_api_fetchcalllogs",
       "community": 0,
-      "norm_label": "fetchcalllogs()"
+      "norm_label": "fetchcalllogs()",
+      "id": "lib_api_fetchcalllogs"
     },
     {
       "label": "saveCallLog()",
@@ -1929,9 +2039,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1013",
       "_origin": "ast",
-      "id": "lib_api_savecalllog",
       "community": 0,
-      "norm_label": "savecalllog()"
+      "norm_label": "savecalllog()",
+      "id": "lib_api_savecalllog"
     },
     {
       "label": "clearCallLogs()",
@@ -1939,9 +2049,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1028",
       "_origin": "ast",
-      "id": "lib_api_clearcalllogs",
       "community": 0,
-      "norm_label": "clearcalllogs()"
+      "norm_label": "clearcalllogs()",
+      "id": "lib_api_clearcalllogs"
     },
     {
       "label": "deleteCallLog()",
@@ -1949,9 +2059,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1036",
       "_origin": "ast",
-      "id": "lib_api_deletecalllog",
       "community": 0,
-      "norm_label": "deletecalllog()"
+      "norm_label": "deletecalllog()",
+      "id": "lib_api_deletecalllog"
     },
     {
       "label": "fetchFeedPosts()",
@@ -1959,9 +2069,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1046",
       "_origin": "ast",
-      "id": "lib_api_fetchfeedposts",
       "community": 0,
-      "norm_label": "fetchfeedposts()"
+      "norm_label": "fetchfeedposts()",
+      "id": "lib_api_fetchfeedposts"
     },
     {
       "label": "getTrendingFeedPosts()",
@@ -1969,9 +2079,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1053",
       "_origin": "ast",
-      "id": "lib_api_gettrendingfeedposts",
       "community": 0,
-      "norm_label": "gettrendingfeedposts()"
+      "norm_label": "gettrendingfeedposts()",
+      "id": "lib_api_gettrendingfeedposts"
     },
     {
       "label": "getFollowingFeedPosts()",
@@ -1979,9 +2089,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1061",
       "_origin": "ast",
-      "id": "lib_api_getfollowingfeedposts",
       "community": 0,
-      "norm_label": "getfollowingfeedposts()"
+      "norm_label": "getfollowingfeedposts()",
+      "id": "lib_api_getfollowingfeedposts"
     },
     {
       "label": "createFeedPost()",
@@ -1989,9 +2099,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1069",
       "_origin": "ast",
-      "id": "lib_api_createfeedpost",
       "community": 0,
-      "norm_label": "createfeedpost()"
+      "norm_label": "createfeedpost()",
+      "id": "lib_api_createfeedpost"
     },
     {
       "label": "likeFeedPost()",
@@ -1999,9 +2109,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1082",
       "_origin": "ast",
-      "id": "lib_api_likefeedpost",
       "community": 0,
-      "norm_label": "likefeedpost()"
+      "norm_label": "likefeedpost()",
+      "id": "lib_api_likefeedpost"
     },
     {
       "label": "repostFeedPost()",
@@ -2009,9 +2119,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1090",
       "_origin": "ast",
-      "id": "lib_api_repostfeedpost",
       "community": 0,
-      "norm_label": "repostfeedpost()"
+      "norm_label": "repostfeedpost()",
+      "id": "lib_api_repostfeedpost"
     },
     {
       "label": "addFeedComment()",
@@ -2019,9 +2129,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1098",
       "_origin": "ast",
-      "id": "lib_api_addfeedcomment",
       "community": 0,
-      "norm_label": "addfeedcomment()"
+      "norm_label": "addfeedcomment()",
+      "id": "lib_api_addfeedcomment"
     },
     {
       "label": "fetchCommunityCategories()",
@@ -2029,9 +2139,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1109",
       "_origin": "ast",
-      "id": "lib_api_fetchcommunitycategories",
       "community": 0,
-      "norm_label": "fetchcommunitycategories()"
+      "norm_label": "fetchcommunitycategories()",
+      "id": "lib_api_fetchcommunitycategories"
     },
     {
       "label": "fetchTrendingNetworks()",
@@ -2039,9 +2149,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1116",
       "_origin": "ast",
-      "id": "lib_api_fetchtrendingnetworks",
       "community": 0,
-      "norm_label": "fetchtrendingnetworks()"
+      "norm_label": "fetchtrendingnetworks()",
+      "id": "lib_api_fetchtrendingnetworks"
     },
     {
       "label": "fetchNetworkOfTheMonth()",
@@ -2049,9 +2159,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1123",
       "_origin": "ast",
-      "id": "lib_api_fetchnetworkofthemonth",
       "community": 0,
-      "norm_label": "fetchnetworkofthemonth()"
+      "norm_label": "fetchnetworkofthemonth()",
+      "id": "lib_api_fetchnetworkofthemonth"
     },
     {
       "label": "fetchNetworks()",
@@ -2059,9 +2169,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1130",
       "_origin": "ast",
-      "id": "lib_api_fetchnetworks",
       "community": 0,
-      "norm_label": "fetchnetworks()"
+      "norm_label": "fetchnetworks()",
+      "id": "lib_api_fetchnetworks"
     },
     {
       "label": "fetchNetworkById()",
@@ -2069,9 +2179,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1148",
       "_origin": "ast",
-      "id": "lib_api_fetchnetworkbyid",
       "community": 0,
-      "norm_label": "fetchnetworkbyid()"
+      "norm_label": "fetchnetworkbyid()",
+      "id": "lib_api_fetchnetworkbyid"
     },
     {
       "label": "createNetwork()",
@@ -2079,9 +2189,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1155",
       "_origin": "ast",
-      "id": "lib_api_createnetwork",
       "community": 0,
-      "norm_label": "createnetwork()"
+      "norm_label": "createnetwork()",
+      "id": "lib_api_createnetwork"
     },
     {
       "label": "joinNetwork()",
@@ -2089,9 +2199,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1164",
       "_origin": "ast",
-      "id": "lib_api_joinnetwork",
       "community": 0,
-      "norm_label": "joinnetwork()"
+      "norm_label": "joinnetwork()",
+      "id": "lib_api_joinnetwork"
     },
     {
       "label": "leaveNetwork()",
@@ -2099,9 +2209,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1172",
       "_origin": "ast",
-      "id": "lib_api_leavenetwork",
       "community": 0,
-      "norm_label": "leavenetwork()"
+      "norm_label": "leavenetwork()",
+      "id": "lib_api_leavenetwork"
     },
     {
       "label": "fetchNetworkPosts()",
@@ -2109,9 +2219,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1180",
       "_origin": "ast",
-      "id": "lib_api_fetchnetworkposts",
       "community": 0,
-      "norm_label": "fetchnetworkposts()"
+      "norm_label": "fetchnetworkposts()",
+      "id": "lib_api_fetchnetworkposts"
     },
     {
       "label": "createNetworkPost()",
@@ -2119,9 +2229,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1188",
       "_origin": "ast",
-      "id": "lib_api_createnetworkpost",
       "community": 0,
-      "norm_label": "createnetworkpost()"
+      "norm_label": "createnetworkpost()",
+      "id": "lib_api_createnetworkpost"
     },
     {
       "label": "reactToNetworkPost()",
@@ -2129,9 +2239,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1200",
       "_origin": "ast",
-      "id": "lib_api_reacttonetworkpost",
       "community": 0,
-      "norm_label": "reacttonetworkpost()"
+      "norm_label": "reacttonetworkpost()",
+      "id": "lib_api_reacttonetworkpost"
     },
     {
       "label": "forwardNetworkPost()",
@@ -2139,9 +2249,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1216",
       "_origin": "ast",
-      "id": "lib_api_forwardnetworkpost",
       "community": 0,
-      "norm_label": "forwardnetworkpost()"
+      "norm_label": "forwardnetworkpost()",
+      "id": "lib_api_forwardnetworkpost"
     },
     {
       "label": "deleteNetworkPost()",
@@ -2149,9 +2259,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1232",
       "_origin": "ast",
-      "id": "lib_api_deletenetworkpost",
       "community": 0,
-      "norm_label": "deletenetworkpost()"
+      "norm_label": "deletenetworkpost()",
+      "id": "lib_api_deletenetworkpost"
     },
     {
       "label": "saveFeedPost()",
@@ -2159,9 +2269,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1242",
       "_origin": "ast",
-      "id": "lib_api_savefeedpost",
       "community": 0,
-      "norm_label": "savefeedpost()"
+      "norm_label": "savefeedpost()",
+      "id": "lib_api_savefeedpost"
     },
     {
       "label": "fetchSavedPosts()",
@@ -2169,9 +2279,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1250",
       "_origin": "ast",
-      "id": "lib_api_fetchsavedposts",
       "community": 0,
-      "norm_label": "fetchsavedposts()"
+      "norm_label": "fetchsavedposts()",
+      "id": "lib_api_fetchsavedposts"
     },
     {
       "label": "fetchAidaConversationObj()",
@@ -2179,9 +2289,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1259",
       "_origin": "ast",
-      "id": "lib_api_fetchaidaconversationobj",
       "community": 0,
-      "norm_label": "fetchaidaconversationobj()"
+      "norm_label": "fetchaidaconversationobj()",
+      "id": "lib_api_fetchaidaconversationobj"
     },
     {
       "label": "chatMessageAida()",
@@ -2189,9 +2299,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1264",
       "_origin": "ast",
-      "id": "lib_api_chatmessageaida",
       "community": 0,
-      "norm_label": "chatmessageaida()"
+      "norm_label": "chatmessageaida()",
+      "id": "lib_api_chatmessageaida"
     },
     {
       "label": "fetchAidaConversationSummary()",
@@ -2199,9 +2309,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1273",
       "_origin": "ast",
-      "id": "lib_api_fetchaidaconversationsummary",
       "community": 0,
-      "norm_label": "fetchaidaconversationsummary()"
+      "norm_label": "fetchaidaconversationsummary()",
+      "id": "lib_api_fetchaidaconversationsummary"
     },
     {
       "label": "fetchConversationContext()",
@@ -2209,9 +2319,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1278",
       "_origin": "ast",
-      "id": "lib_api_fetchconversationcontext",
       "community": 0,
-      "norm_label": "fetchconversationcontext()"
+      "norm_label": "fetchconversationcontext()",
+      "id": "lib_api_fetchconversationcontext"
     },
     {
       "label": "chatWithAida()",
@@ -2219,9 +2329,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1283",
       "_origin": "ast",
-      "id": "lib_api_chatwithaida",
       "community": 0,
-      "norm_label": "chatwithaida()"
+      "norm_label": "chatwithaida()",
+      "id": "lib_api_chatwithaida"
     },
     {
       "label": "fetchAidaBriefing()",
@@ -2229,9 +2339,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1292",
       "_origin": "ast",
-      "id": "lib_api_fetchaidabriefing",
       "community": 0,
-      "norm_label": "fetchaidabriefing()"
+      "norm_label": "fetchaidabriefing()",
+      "id": "lib_api_fetchaidabriefing"
     },
     {
       "label": "fetchAidaFinanceAdvice()",
@@ -2239,9 +2349,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1299",
       "_origin": "ast",
-      "id": "lib_api_fetchaidafinanceadvice",
       "community": 0,
-      "norm_label": "fetchaidafinanceadvice()"
+      "norm_label": "fetchaidafinanceadvice()",
+      "id": "lib_api_fetchaidafinanceadvice"
     },
     {
       "label": "aidaExtractActionItems()",
@@ -2249,9 +2359,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1306",
       "_origin": "ast",
-      "id": "lib_api_aidaextractactionitems",
       "community": 0,
-      "norm_label": "aidaextractactionitems()"
+      "norm_label": "aidaextractactionitems()",
+      "id": "lib_api_aidaextractactionitems"
     },
     {
       "label": "aidaSearchWorkspace()",
@@ -2259,9 +2369,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1318",
       "_origin": "ast",
-      "id": "lib_api_aidasearchworkspace",
       "community": 0,
-      "norm_label": "aidasearchworkspace()"
+      "norm_label": "aidasearchworkspace()",
+      "id": "lib_api_aidasearchworkspace"
     },
     {
       "label": "aidaScheduleSuggestion()",
@@ -2269,9 +2379,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1327",
       "_origin": "ast",
-      "id": "lib_api_aidaschedulesuggestion",
       "community": 0,
-      "norm_label": "aidaschedulesuggestion()"
+      "norm_label": "aidaschedulesuggestion()",
+      "id": "lib_api_aidaschedulesuggestion"
     },
     {
       "label": "aidaScheduleTask()",
@@ -2279,9 +2389,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1339",
       "_origin": "ast",
-      "id": "lib_api_aidascheduletask",
       "community": 0,
-      "norm_label": "aidascheduletask()"
+      "norm_label": "aidascheduletask()",
+      "id": "lib_api_aidascheduletask"
     },
     {
       "label": "aidaSummarizeFeed()",
@@ -2289,9 +2399,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1352",
       "_origin": "ast",
-      "id": "lib_api_aidasummarizefeed",
       "community": 0,
-      "norm_label": "aidasummarizefeed()"
+      "norm_label": "aidasummarizefeed()",
+      "id": "lib_api_aidasummarizefeed"
     },
     {
       "label": "aidaFlagPayments()",
@@ -2299,9 +2409,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1360",
       "_origin": "ast",
-      "id": "lib_api_aidaflagpayments",
       "community": 0,
-      "norm_label": "aidaflagpayments()"
+      "norm_label": "aidaflagpayments()",
+      "id": "lib_api_aidaflagpayments"
     },
     {
       "label": "fetchOrgDocs()",
@@ -2309,9 +2419,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1369",
       "_origin": "ast",
-      "id": "lib_api_fetchorgdocs",
       "community": 0,
-      "norm_label": "fetchorgdocs()"
+      "norm_label": "fetchorgdocs()",
+      "id": "lib_api_fetchorgdocs"
     },
     {
       "label": "fetchOrgDoc()",
@@ -2319,9 +2429,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1380",
       "_origin": "ast",
-      "id": "lib_api_fetchorgdoc",
       "community": 0,
-      "norm_label": "fetchorgdoc()"
+      "norm_label": "fetchorgdoc()",
+      "id": "lib_api_fetchorgdoc"
     },
     {
       "label": "createOrgDoc()",
@@ -2329,9 +2439,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1385",
       "_origin": "ast",
-      "id": "lib_api_createorgdoc",
       "community": 0,
-      "norm_label": "createorgdoc()"
+      "norm_label": "createorgdoc()",
+      "id": "lib_api_createorgdoc"
     },
     {
       "label": "updateOrgDoc()",
@@ -2339,9 +2449,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1400",
       "_origin": "ast",
-      "id": "lib_api_updateorgdoc",
       "community": 0,
-      "norm_label": "updateorgdoc()"
+      "norm_label": "updateorgdoc()",
+      "id": "lib_api_updateorgdoc"
     },
     {
       "label": "deleteOrgDoc()",
@@ -2349,9 +2459,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1415",
       "_origin": "ast",
-      "id": "lib_api_deleteorgdoc",
       "community": 0,
-      "norm_label": "deleteorgdoc()"
+      "norm_label": "deleteorgdoc()",
+      "id": "lib_api_deleteorgdoc"
     },
     {
       "label": "fetchNotifications()",
@@ -2359,9 +2469,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1427",
       "_origin": "ast",
-      "id": "lib_api_fetchnotifications",
       "community": 0,
-      "norm_label": "fetchnotifications()"
+      "norm_label": "fetchnotifications()",
+      "id": "lib_api_fetchnotifications"
     },
     {
       "label": "fetchUnreadCount()",
@@ -2369,9 +2479,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1435",
       "_origin": "ast",
-      "id": "lib_api_fetchunreadcount",
       "community": 0,
-      "norm_label": "fetchunreadcount()"
+      "norm_label": "fetchunreadcount()",
+      "id": "lib_api_fetchunreadcount"
     },
     {
       "label": "markNotificationRead()",
@@ -2379,9 +2489,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1442",
       "_origin": "ast",
-      "id": "lib_api_marknotificationread",
       "community": 0,
-      "norm_label": "marknotificationread()"
+      "norm_label": "marknotificationread()",
+      "id": "lib_api_marknotificationread"
     },
     {
       "label": "markAllNotificationsRead()",
@@ -2389,9 +2499,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1450",
       "_origin": "ast",
-      "id": "lib_api_markallnotificationsread",
       "community": 0,
-      "norm_label": "markallnotificationsread()"
+      "norm_label": "markallnotificationsread()",
+      "id": "lib_api_markallnotificationsread"
     },
     {
       "label": "deleteNotification()",
@@ -2399,9 +2509,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1458",
       "_origin": "ast",
-      "id": "lib_api_deletenotification",
       "community": 0,
-      "norm_label": "deletenotification()"
+      "norm_label": "deletenotification()",
+      "id": "lib_api_deletenotification"
     },
     {
       "label": "clearAllNotifications()",
@@ -2409,9 +2519,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1466",
       "_origin": "ast",
-      "id": "lib_api_clearallnotifications",
       "community": 0,
-      "norm_label": "clearallnotifications()"
+      "norm_label": "clearallnotifications()",
+      "id": "lib_api_clearallnotifications"
     },
     {
       "label": "createMeeting()",
@@ -2419,9 +2529,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1476",
       "_origin": "ast",
-      "id": "lib_api_createmeeting",
       "community": 0,
-      "norm_label": "createmeeting()"
+      "norm_label": "createmeeting()",
+      "id": "lib_api_createmeeting"
     },
     {
       "label": "fetchMeetings()",
@@ -2429,9 +2539,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1492",
       "_origin": "ast",
-      "id": "lib_api_fetchmeetings",
       "community": 0,
-      "norm_label": "fetchmeetings()"
+      "norm_label": "fetchmeetings()",
+      "id": "lib_api_fetchmeetings"
     },
     {
       "label": "fetchMeetingById()",
@@ -2439,9 +2549,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1500",
       "_origin": "ast",
-      "id": "lib_api_fetchmeetingbyid",
       "community": 0,
-      "norm_label": "fetchmeetingbyid()"
+      "norm_label": "fetchmeetingbyid()",
+      "id": "lib_api_fetchmeetingbyid"
     },
     {
       "label": "addMeetingTranscriptChunk()",
@@ -2449,9 +2559,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1512",
       "_origin": "ast",
-      "id": "lib_api_addmeetingtranscriptchunk",
       "community": 0,
-      "norm_label": "addmeetingtranscriptchunk()"
+      "norm_label": "addmeetingtranscriptchunk()",
+      "id": "lib_api_addmeetingtranscriptchunk"
     },
     {
       "label": "endMeeting()",
@@ -2459,9 +2569,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1524",
       "_origin": "ast",
-      "id": "lib_api_endmeeting",
       "community": 0,
-      "norm_label": "endmeeting()"
+      "norm_label": "endmeeting()",
+      "id": "lib_api_endmeeting"
     },
     {
       "label": "uploadMeetingRecording()",
@@ -2469,9 +2579,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1536",
       "_origin": "ast",
-      "id": "lib_api_uploadmeetingrecording",
       "community": 0,
-      "norm_label": "uploadmeetingrecording()"
+      "norm_label": "uploadmeetingrecording()",
+      "id": "lib_api_uploadmeetingrecording"
     },
     {
       "label": "getMeetingStatsWithUser()",
@@ -2479,9 +2589,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1554",
       "_origin": "ast",
-      "id": "lib_api_getmeetingstatswithuser",
       "community": 0,
-      "norm_label": "getmeetingstatswithuser()"
+      "norm_label": "getmeetingstatswithuser()",
+      "id": "lib_api_getmeetingstatswithuser"
     },
     {
       "label": "fetchMeetingActionItems()",
@@ -2489,9 +2599,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1561",
       "_origin": "ast",
-      "id": "lib_api_fetchmeetingactionitems",
       "community": 0,
-      "norm_label": "fetchmeetingactionitems()"
+      "norm_label": "fetchmeetingactionitems()",
+      "id": "lib_api_fetchmeetingactionitems"
     },
     {
       "label": "logMeetingFile()",
@@ -2499,9 +2609,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1576",
       "_origin": "ast",
-      "id": "lib_api_logmeetingfile",
       "community": 0,
-      "norm_label": "logmeetingfile()"
+      "norm_label": "logmeetingfile()",
+      "id": "lib_api_logmeetingfile"
     },
     {
       "label": "fetchMeetingFiles()",
@@ -2509,9 +2619,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1597",
       "_origin": "ast",
-      "id": "lib_api_fetchmeetingfiles",
       "community": 0,
-      "norm_label": "fetchmeetingfiles()"
+      "norm_label": "fetchmeetingfiles()",
+      "id": "lib_api_fetchmeetingfiles"
     },
     {
       "label": "startMeetingScreenShare()",
@@ -2519,9 +2629,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1610",
       "_origin": "ast",
-      "id": "lib_api_startmeetingscreenshare",
       "community": 0,
-      "norm_label": "startmeetingscreenshare()"
+      "norm_label": "startmeetingscreenshare()",
+      "id": "lib_api_startmeetingscreenshare"
     },
     {
       "label": "endMeetingScreenShare()",
@@ -2529,9 +2639,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1629",
       "_origin": "ast",
-      "id": "lib_api_endmeetingscreenshare",
       "community": 0,
-      "norm_label": "endmeetingscreenshare()"
+      "norm_label": "endmeetingscreenshare()",
+      "id": "lib_api_endmeetingscreenshare"
     },
     {
       "label": "fetchTemplates()",
@@ -2539,9 +2649,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1645",
       "_origin": "ast",
-      "id": "lib_api_fetchtemplates",
       "community": 0,
-      "norm_label": "fetchtemplates()"
+      "norm_label": "fetchtemplates()",
+      "id": "lib_api_fetchtemplates"
     },
     {
       "label": "createTemplate()",
@@ -2549,9 +2659,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1655",
       "_origin": "ast",
-      "id": "lib_api_createtemplate",
       "community": 0,
-      "norm_label": "createtemplate()"
+      "norm_label": "createtemplate()",
+      "id": "lib_api_createtemplate"
     },
     {
       "label": "updateTemplate()",
@@ -2559,9 +2669,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1670",
       "_origin": "ast",
-      "id": "lib_api_updatetemplate",
       "community": 0,
-      "norm_label": "updatetemplate()"
+      "norm_label": "updatetemplate()",
+      "id": "lib_api_updatetemplate"
     },
     {
       "label": "useTemplate()",
@@ -2569,9 +2679,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1679",
       "_origin": "ast",
-      "id": "lib_api_usetemplate",
       "community": 0,
-      "norm_label": "usetemplate()"
+      "norm_label": "usetemplate()",
+      "id": "lib_api_usetemplate"
     },
     {
       "label": "deleteTemplate()",
@@ -2579,9 +2689,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1687",
       "_origin": "ast",
-      "id": "lib_api_deletetemplate",
       "community": 0,
-      "norm_label": "deletetemplate()"
+      "norm_label": "deletetemplate()",
+      "id": "lib_api_deletetemplate"
     },
     {
       "label": "fetchActivityLog()",
@@ -2589,9 +2699,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1697",
       "_origin": "ast",
-      "id": "lib_api_fetchactivitylog",
       "community": 0,
-      "norm_label": "fetchactivitylog()"
+      "norm_label": "fetchactivitylog()",
+      "id": "lib_api_fetchactivitylog"
     },
     {
       "label": "clearActivityLog()",
@@ -2599,9 +2709,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1714",
       "_origin": "ast",
-      "id": "lib_api_clearactivitylog",
       "community": 0,
-      "norm_label": "clearactivitylog()"
+      "norm_label": "clearactivitylog()",
+      "id": "lib_api_clearactivitylog"
     },
     {
       "label": "createInvoice()",
@@ -2609,9 +2719,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1724",
       "_origin": "ast",
-      "id": "lib_api_createinvoice",
       "community": 0,
-      "norm_label": "createinvoice()"
+      "norm_label": "createinvoice()",
+      "id": "lib_api_createinvoice"
     },
     {
       "label": "fetchInvoices()",
@@ -2619,9 +2729,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1742",
       "_origin": "ast",
-      "id": "lib_api_fetchinvoices",
       "community": 0,
-      "norm_label": "fetchinvoices()"
+      "norm_label": "fetchinvoices()",
+      "id": "lib_api_fetchinvoices"
     },
     {
       "label": "fetchInvoiceById()",
@@ -2629,9 +2739,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1750",
       "_origin": "ast",
-      "id": "lib_api_fetchinvoicebyid",
       "community": 0,
-      "norm_label": "fetchinvoicebyid()"
+      "norm_label": "fetchinvoicebyid()",
+      "id": "lib_api_fetchinvoicebyid"
     },
     {
       "label": "updateInvoice()",
@@ -2639,9 +2749,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1757",
       "_origin": "ast",
-      "id": "lib_api_updateinvoice",
       "community": 0,
-      "norm_label": "updateinvoice()"
+      "norm_label": "updateinvoice()",
+      "id": "lib_api_updateinvoice"
     },
     {
       "label": "deleteInvoice()",
@@ -2649,9 +2759,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1774",
       "_origin": "ast",
-      "id": "lib_api_deleteinvoice",
       "community": 0,
-      "norm_label": "deleteinvoice()"
+      "norm_label": "deleteinvoice()",
+      "id": "lib_api_deleteinvoice"
     },
     {
       "label": "createTaskFull()",
@@ -2659,9 +2769,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1784",
       "_origin": "ast",
-      "id": "lib_api_createtaskfull",
       "community": 0,
-      "norm_label": "createtaskfull()"
+      "norm_label": "createtaskfull()",
+      "id": "lib_api_createtaskfull"
     },
     {
       "label": "updateTaskFull()",
@@ -2669,9 +2779,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1808",
       "_origin": "ast",
-      "id": "lib_api_updatetaskfull",
       "community": 0,
-      "norm_label": "updatetaskfull()"
+      "norm_label": "updatetaskfull()",
+      "id": "lib_api_updatetaskfull"
     },
     {
       "label": "deleteTaskFull()",
@@ -2679,9 +2789,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1817",
       "_origin": "ast",
-      "id": "lib_api_deletetaskfull",
       "community": 0,
-      "norm_label": "deletetaskfull()"
+      "norm_label": "deletetaskfull()",
+      "id": "lib_api_deletetaskfull"
     },
     {
       "label": "fetchTasks()",
@@ -2689,9 +2799,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1825",
       "_origin": "ast",
-      "id": "lib_api_fetchtasks",
       "community": 0,
-      "norm_label": "fetchtasks()"
+      "norm_label": "fetchtasks()",
+      "id": "lib_api_fetchtasks"
     },
     {
       "label": "snoozeTask()",
@@ -2699,9 +2809,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1844",
       "_origin": "ast",
-      "id": "lib_api_snoozetask",
       "community": 0,
-      "norm_label": "snoozetask()"
+      "norm_label": "snoozetask()",
+      "id": "lib_api_snoozetask"
     },
     {
       "label": "getTrendingTags()",
@@ -2709,9 +2819,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1855",
       "_origin": "ast",
-      "id": "lib_api_gettrendingtags",
       "community": 0,
-      "norm_label": "gettrendingtags()"
+      "norm_label": "gettrendingtags()",
+      "id": "lib_api_gettrendingtags"
     },
     {
       "label": "followUser()",
@@ -2719,9 +2829,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1864",
       "_origin": "ast",
-      "id": "lib_api_followuser",
       "community": 0,
-      "norm_label": "followuser()"
+      "norm_label": "followuser()",
+      "id": "lib_api_followuser"
     },
     {
       "label": "getSuggestedUsers()",
@@ -2729,9 +2839,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1872",
       "_origin": "ast",
-      "id": "lib_api_getsuggestedusers",
       "community": 0,
-      "norm_label": "getsuggestedusers()"
+      "norm_label": "getsuggestedusers()",
+      "id": "lib_api_getsuggestedusers"
     },
     {
       "label": "getMyFollowers()",
@@ -2739,9 +2849,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1879",
       "_origin": "ast",
-      "id": "lib_api_getmyfollowers",
       "community": 0,
-      "norm_label": "getmyfollowers()"
+      "norm_label": "getmyfollowers()",
+      "id": "lib_api_getmyfollowers"
     },
     {
       "label": "getMyFollowing()",
@@ -2749,9 +2859,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1886",
       "_origin": "ast",
-      "id": "lib_api_getmyfollowing",
       "community": 0,
-      "norm_label": "getmyfollowing()"
+      "norm_label": "getmyfollowing()",
+      "id": "lib_api_getmyfollowing"
     },
     {
       "label": "uploadAvatar()",
@@ -2759,9 +2869,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1895",
       "_origin": "ast",
-      "id": "lib_api_uploadavatar",
       "community": 0,
-      "norm_label": "uploadavatar()"
+      "norm_label": "uploadavatar()",
+      "id": "lib_api_uploadavatar"
     },
     {
       "label": "getAllAvatars()",
@@ -2769,9 +2879,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1917",
       "_origin": "ast",
-      "id": "lib_api_getallavatars",
       "community": 0,
-      "norm_label": "getallavatars()"
+      "norm_label": "getallavatars()",
+      "id": "lib_api_getallavatars"
     },
     {
       "label": "uploadGroupOrOrgImage()",
@@ -2779,9 +2889,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1924",
       "_origin": "ast",
-      "id": "lib_api_uploadgroupororgimage",
       "community": 61,
-      "norm_label": "uploadgroupororgimage()"
+      "norm_label": "uploadgroupororgimage()",
+      "id": "lib_api_uploadgroupororgimage"
     },
     {
       "label": "uploadBackground()",
@@ -2789,9 +2899,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1944",
       "_origin": "ast",
-      "id": "lib_api_uploadbackground",
       "community": 0,
-      "norm_label": "uploadbackground()"
+      "norm_label": "uploadbackground()",
+      "id": "lib_api_uploadbackground"
     },
     {
       "label": "getMyProfile()",
@@ -2799,9 +2909,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1958",
       "_origin": "ast",
-      "id": "lib_api_getmyprofile",
       "community": 35,
-      "norm_label": "getmyprofile()"
+      "norm_label": "getmyprofile()",
+      "id": "lib_api_getmyprofile"
     },
     {
       "label": "updateProfile()",
@@ -2809,9 +2919,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1965",
       "_origin": "ast",
-      "id": "lib_api_updateprofile",
       "community": 0,
-      "norm_label": "updateprofile()"
+      "norm_label": "updateprofile()",
+      "id": "lib_api_updateprofile"
     },
     {
       "label": "setupProfile()",
@@ -2819,9 +2929,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1974",
       "_origin": "ast",
-      "id": "lib_api_setupprofile",
       "community": 35,
-      "norm_label": "setupprofile()"
+      "norm_label": "setupprofile()",
+      "id": "lib_api_setupprofile"
     },
     {
       "label": "getSharedWithMeFiles()",
@@ -2829,9 +2939,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1985",
       "_origin": "ast",
-      "id": "lib_api_getsharedwithmefiles",
       "community": 0,
-      "norm_label": "getsharedwithmefiles()"
+      "norm_label": "getsharedwithmefiles()",
+      "id": "lib_api_getsharedwithmefiles"
     },
     {
       "label": "fetchUnreadMessageCount()",
@@ -2839,9 +2949,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L1994",
       "_origin": "ast",
-      "id": "lib_api_fetchunreadmessagecount",
       "community": 0,
-      "norm_label": "fetchunreadmessagecount()"
+      "norm_label": "fetchunreadmessagecount()",
+      "id": "lib_api_fetchunreadmessagecount"
     },
     {
       "label": "sendMessageRequest()",
@@ -2849,9 +2959,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2003",
       "_origin": "ast",
-      "id": "lib_api_sendmessagerequest",
       "community": 0,
-      "norm_label": "sendmessagerequest()"
+      "norm_label": "sendmessagerequest()",
+      "id": "lib_api_sendmessagerequest"
     },
     {
       "label": "respondToMessageRequest()",
@@ -2859,9 +2969,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2011",
       "_origin": "ast",
-      "id": "lib_api_respondtomessagerequest",
       "community": 0,
-      "norm_label": "respondtomessagerequest()"
+      "norm_label": "respondtomessagerequest()",
+      "id": "lib_api_respondtomessagerequest"
     },
     {
       "label": "getLiveKitToken()",
@@ -2869,9 +2979,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2020",
       "_origin": "ast",
-      "id": "lib_api_getlivekittoken",
       "community": 0,
-      "norm_label": "getlivekittoken()"
+      "norm_label": "getlivekittoken()",
+      "id": "lib_api_getlivekittoken"
     },
     {
       "label": "onboardOrgBrain()",
@@ -2879,9 +2989,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2027",
       "_origin": "ast",
-      "id": "lib_api_onboardorgbrain",
       "community": 35,
-      "norm_label": "onboardorgbrain()"
+      "norm_label": "onboardorgbrain()",
+      "id": "lib_api_onboardorgbrain"
     },
     {
       "label": "getOrgInviteCode()",
@@ -2889,9 +2999,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2036",
       "_origin": "ast",
-      "id": "lib_api_getorginvitecode",
       "community": 35,
-      "norm_label": "getorginvitecode()"
+      "norm_label": "getorginvitecode()",
+      "id": "lib_api_getorginvitecode"
     },
     {
       "label": "ingestOrgDocument()",
@@ -2899,9 +3009,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2043",
       "_origin": "ast",
-      "id": "lib_api_ingestorgdocument",
       "community": 35,
-      "norm_label": "ingestorgdocument()"
+      "norm_label": "ingestorgdocument()",
+      "id": "lib_api_ingestorgdocument"
     },
     {
       "label": "ingestOrgDocumentFromUrl()",
@@ -2909,9 +3019,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2053",
       "_origin": "ast",
-      "id": "lib_api_ingestorgdocumentfromurl",
       "community": 35,
-      "norm_label": "ingestorgdocumentfromurl()"
+      "norm_label": "ingestorgdocumentfromurl()",
+      "id": "lib_api_ingestorgdocumentfromurl"
     },
     {
       "label": "ingestOrgDocumentFromFile()",
@@ -2919,9 +3029,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2064",
       "_origin": "ast",
-      "id": "lib_api_ingestorgdocumentfromfile",
       "community": 35,
-      "norm_label": "ingestorgdocumentfromfile()"
+      "norm_label": "ingestorgdocumentfromfile()",
+      "id": "lib_api_ingestorgdocumentfromfile"
     },
     {
       "label": "fetchAiDescription()",
@@ -2929,9 +3039,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2088",
       "_origin": "ast",
-      "id": "lib_api_fetchaidescription",
       "community": 0,
-      "norm_label": "fetchaidescription()"
+      "norm_label": "fetchaidescription()",
+      "id": "lib_api_fetchaidescription"
     },
     {
       "label": "uploadCloudBackup()",
@@ -2939,9 +3049,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2097",
       "_origin": "ast",
-      "id": "lib_api_uploadcloudbackup",
       "community": 0,
-      "norm_label": "uploadcloudbackup()"
+      "norm_label": "uploadcloudbackup()",
+      "id": "lib_api_uploadcloudbackup"
     },
     {
       "label": "fetchCloudBackup()",
@@ -2949,9 +3059,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2106",
       "_origin": "ast",
-      "id": "lib_api_fetchcloudbackup",
       "community": 0,
-      "norm_label": "fetchcloudbackup()"
+      "norm_label": "fetchcloudbackup()",
+      "id": "lib_api_fetchcloudbackup"
     },
     {
       "label": "registerPushToken()",
@@ -2959,9 +3069,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2113",
       "_origin": "ast",
-      "id": "lib_api_registerpushtoken",
       "community": 159,
-      "norm_label": "registerpushtoken()"
+      "norm_label": "registerpushtoken()",
+      "id": "lib_api_registerpushtoken"
     },
     {
       "label": "updateOrgProfile()",
@@ -2969,9 +3079,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2122",
       "_origin": "ast",
-      "id": "lib_api_updateorgprofile",
       "community": 0,
-      "norm_label": "updateorgprofile()"
+      "norm_label": "updateorgprofile()",
+      "id": "lib_api_updateorgprofile"
     },
     {
       "label": "updateGroupSettings()",
@@ -2979,9 +3089,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2138",
       "_origin": "ast",
-      "id": "lib_api_updategroupsettings",
       "community": 0,
-      "norm_label": "updategroupsettings()"
+      "norm_label": "updategroupsettings()",
+      "id": "lib_api_updategroupsettings"
     },
     {
       "label": "getOrgMembers()",
@@ -2989,9 +3099,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2158",
       "_origin": "ast",
-      "id": "lib_api_getorgmembers",
       "community": 0,
-      "norm_label": "getorgmembers()"
+      "norm_label": "getorgmembers()",
+      "id": "lib_api_getorgmembers"
     },
     {
       "label": "getOrgTranscripts()",
@@ -2999,9 +3109,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2165",
       "_origin": "ast",
-      "id": "lib_api_getorgtranscripts",
       "community": 0,
-      "norm_label": "getorgtranscripts()"
+      "norm_label": "getorgtranscripts()",
+      "id": "lib_api_getorgtranscripts"
     },
     {
       "label": "ingestOrgFile()",
@@ -3009,9 +3119,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2175",
       "_origin": "ast",
-      "id": "lib_api_ingestorgfile",
       "community": 0,
-      "norm_label": "ingestorgfile()"
+      "norm_label": "ingestorgfile()",
+      "id": "lib_api_ingestorgfile"
     },
     {
       "label": "brainIngestFile()",
@@ -3019,9 +3129,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2196",
       "_origin": "ast",
-      "id": "lib_api_brainingestfile",
       "community": 0,
-      "norm_label": "brainingestfile()"
+      "norm_label": "brainingestfile()",
+      "id": "lib_api_brainingestfile"
     },
     {
       "label": "brainIngestText()",
@@ -3029,9 +3139,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2213",
       "_origin": "ast",
-      "id": "lib_api_brainingesttext",
       "community": 0,
-      "norm_label": "brainingesttext()"
+      "norm_label": "brainingesttext()",
+      "id": "lib_api_brainingesttext"
     },
     {
       "label": "brainIngestUrl()",
@@ -3039,9 +3149,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2223",
       "_origin": "ast",
-      "id": "lib_api_brainingesturl",
       "community": 0,
-      "norm_label": "brainingesturl()"
+      "norm_label": "brainingesturl()",
+      "id": "lib_api_brainingesturl"
     },
     {
       "label": "brainGetJobStatus()",
@@ -3049,9 +3159,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2233",
       "_origin": "ast",
-      "id": "lib_api_braingetjobstatus",
       "community": 0,
-      "norm_label": "braingetjobstatus()"
+      "norm_label": "braingetjobstatus()",
+      "id": "lib_api_braingetjobstatus"
     },
     {
       "label": "brainGetJobs()",
@@ -3059,9 +3169,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2241",
       "_origin": "ast",
-      "id": "lib_api_braingetjobs",
       "community": 0,
-      "norm_label": "braingetjobs()"
+      "norm_label": "braingetjobs()",
+      "id": "lib_api_braingetjobs"
     },
     {
       "label": "brainSearch()",
@@ -3069,9 +3179,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2249",
       "_origin": "ast",
-      "id": "lib_api_brainsearch",
       "community": 0,
-      "norm_label": "brainsearch()"
+      "norm_label": "brainsearch()",
+      "id": "lib_api_brainsearch"
     },
     {
       "label": "brainOnboardingBrief()",
@@ -3079,9 +3189,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2260",
       "_origin": "ast",
-      "id": "lib_api_brainonboardingbrief",
       "community": 0,
-      "norm_label": "brainonboardingbrief()"
+      "norm_label": "brainonboardingbrief()",
+      "id": "lib_api_brainonboardingbrief"
     },
     {
       "label": "brainAskQuestion()",
@@ -3089,9 +3199,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2268",
       "_origin": "ast",
-      "id": "lib_api_brainaskquestion",
       "community": 0,
-      "norm_label": "brainaskquestion()"
+      "norm_label": "brainaskquestion()",
+      "id": "lib_api_brainaskquestion"
     },
     {
       "label": "brainResolveQuestion()",
@@ -3099,9 +3209,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2278",
       "_origin": "ast",
-      "id": "lib_api_brainresolvequestion",
       "community": 0,
-      "norm_label": "brainresolvequestion()"
+      "norm_label": "brainresolvequestion()",
+      "id": "lib_api_brainresolvequestion"
     },
     {
       "label": "getDailyDigest()",
@@ -3109,9 +3219,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2288",
       "_origin": "ast",
-      "id": "lib_api_getdailydigest",
       "community": 0,
-      "norm_label": "getdailydigest()"
+      "norm_label": "getdailydigest()",
+      "id": "lib_api_getdailydigest"
     },
     {
       "label": "getDigestHistory()",
@@ -3119,9 +3229,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2295",
       "_origin": "ast",
-      "id": "lib_api_getdigesthistory",
       "community": 0,
-      "norm_label": "getdigesthistory()"
+      "norm_label": "getdigesthistory()",
+      "id": "lib_api_getdigesthistory"
     },
     {
       "label": "getExpertiseRadar()",
@@ -3129,9 +3239,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2301",
       "_origin": "ast",
-      "id": "lib_api_getexpertiseradar",
       "community": 0,
-      "norm_label": "getexpertiseradar()"
+      "norm_label": "getexpertiseradar()",
+      "id": "lib_api_getexpertiseradar"
     },
     {
       "label": "createCalendarEvent()",
@@ -3139,9 +3249,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2310",
       "_origin": "ast",
-      "id": "lib_api_createcalendarevent",
       "community": 0,
-      "norm_label": "createcalendarevent()"
+      "norm_label": "createcalendarevent()",
+      "id": "lib_api_createcalendarevent"
     },
     {
       "label": "getCalendarEvents()",
@@ -3149,9 +3259,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2332",
       "_origin": "ast",
-      "id": "lib_api_getcalendarevents",
       "community": 0,
-      "norm_label": "getcalendarevents()"
+      "norm_label": "getcalendarevents()",
+      "id": "lib_api_getcalendarevents"
     },
     {
       "label": "getCalendarEvent()",
@@ -3159,9 +3269,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2348",
       "_origin": "ast",
-      "id": "lib_api_getcalendarevent",
       "community": 0,
-      "norm_label": "getcalendarevent()"
+      "norm_label": "getcalendarevent()",
+      "id": "lib_api_getcalendarevent"
     },
     {
       "label": "updateCalendarEvent()",
@@ -3169,9 +3279,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2354",
       "_origin": "ast",
-      "id": "lib_api_updatecalendarevent",
       "community": 0,
-      "norm_label": "updatecalendarevent()"
+      "norm_label": "updatecalendarevent()",
+      "id": "lib_api_updatecalendarevent"
     },
     {
       "label": "deleteCalendarEvent()",
@@ -3179,9 +3289,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2364",
       "_origin": "ast",
-      "id": "lib_api_deletecalendarevent",
       "community": 0,
-      "norm_label": "deletecalendarevent()"
+      "norm_label": "deletecalendarevent()",
+      "id": "lib_api_deletecalendarevent"
     },
     {
       "label": "startCalendarMeeting()",
@@ -3189,9 +3299,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2373",
       "_origin": "ast",
-      "id": "lib_api_startcalendarmeeting",
       "community": 0,
-      "norm_label": "startcalendarmeeting()"
+      "norm_label": "startcalendarmeeting()",
+      "id": "lib_api_startcalendarmeeting"
     },
     {
       "label": "endCalendarMeeting()",
@@ -3199,9 +3309,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2382",
       "_origin": "ast",
-      "id": "lib_api_endcalendarmeeting",
       "community": 0,
-      "norm_label": "endcalendarmeeting()"
+      "norm_label": "endcalendarmeeting()",
+      "id": "lib_api_endcalendarmeeting"
     },
     {
       "label": "bulkImportHolidays()",
@@ -3209,9 +3319,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2395",
       "_origin": "ast",
-      "id": "lib_api_bulkimportholidays",
       "community": 0,
-      "norm_label": "bulkimportholidays()"
+      "norm_label": "bulkimportholidays()",
+      "id": "lib_api_bulkimportholidays"
     },
     {
       "label": "getEventSuggestions()",
@@ -3219,9 +3329,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2405",
       "_origin": "ast",
-      "id": "lib_api_geteventsuggestions",
       "community": 0,
-      "norm_label": "geteventsuggestions()"
+      "norm_label": "geteventsuggestions()",
+      "id": "lib_api_geteventsuggestions"
     },
     {
       "label": "suggestRecurrence()",
@@ -3229,9 +3339,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L2418",
       "_origin": "ast",
-      "id": "lib_api_suggestrecurrence",
       "community": 0,
-      "norm_label": "suggestrecurrence()"
+      "norm_label": "suggestrecurrence()",
+      "id": "lib_api_suggestrecurrence"
     },
     {
       "label": "callManager.ts",
@@ -3239,9 +3349,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "lib_callmanager",
       "community": 58,
-      "norm_label": "callmanager.ts"
+      "norm_label": "callmanager.ts",
+      "id": "lib_callmanager"
     },
     {
       "label": "CallState",
@@ -3249,9 +3359,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "lib_callmanager_callstate",
       "community": 58,
-      "norm_label": "callstate"
+      "norm_label": "callstate",
+      "id": "lib_callmanager_callstate"
     },
     {
       "label": "currentCallState",
@@ -3259,9 +3369,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "id": "lib_callmanager_currentcallstate",
       "community": 58,
-      "norm_label": "currentcallstate"
+      "norm_label": "currentcallstate",
+      "id": "lib_callmanager_currentcallstate"
     },
     {
       "label": "listeners",
@@ -3269,9 +3379,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "id": "lib_callmanager_listeners",
       "community": 58,
-      "norm_label": "listeners"
+      "norm_label": "listeners",
+      "id": "lib_callmanager_listeners"
     },
     {
       "label": "subscribeCallState()",
@@ -3279,9 +3389,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L18",
       "_origin": "ast",
-      "id": "lib_callmanager_subscribecallstate",
       "community": 58,
-      "norm_label": "subscribecallstate()"
+      "norm_label": "subscribecallstate()",
+      "id": "lib_callmanager_subscribecallstate"
     },
     {
       "label": "notify()",
@@ -3289,9 +3399,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L26",
       "_origin": "ast",
-      "id": "lib_callmanager_notify",
       "community": 58,
-      "norm_label": "notify()"
+      "norm_label": "notify()",
+      "id": "lib_callmanager_notify"
     },
     {
       "label": "setCallState()",
@@ -3299,9 +3409,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L32",
       "_origin": "ast",
-      "id": "lib_callmanager_setcallstate",
       "community": 58,
-      "norm_label": "setcallstate()"
+      "norm_label": "setcallstate()",
+      "id": "lib_callmanager_setcallstate"
     },
     {
       "label": "getCallState()",
@@ -3309,9 +3419,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L37",
       "_origin": "ast",
-      "id": "lib_callmanager_getcallstate",
       "community": 58,
-      "norm_label": "getcallstate()"
+      "norm_label": "getcallstate()",
+      "id": "lib_callmanager_getcallstate"
     },
     {
       "label": "startRingtone()",
@@ -3319,9 +3429,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L39",
       "_origin": "ast",
-      "id": "lib_callmanager_startringtone",
       "community": 58,
-      "norm_label": "startringtone()"
+      "norm_label": "startringtone()",
+      "id": "lib_callmanager_startringtone"
     },
     {
       "label": "stopRingtone()",
@@ -3329,9 +3439,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L46",
       "_origin": "ast",
-      "id": "lib_callmanager_stopringtone",
       "community": 58,
-      "norm_label": "stopringtone()"
+      "norm_label": "stopringtone()",
+      "id": "lib_callmanager_stopringtone"
     },
     {
       "label": "startOutgoingCall()",
@@ -3339,9 +3449,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L53",
       "_origin": "ast",
-      "id": "lib_callmanager_startoutgoingcall",
       "community": 58,
-      "norm_label": "startoutgoingcall()"
+      "norm_label": "startoutgoingcall()",
+      "id": "lib_callmanager_startoutgoingcall"
     },
     {
       "label": "acceptIncomingCall()",
@@ -3349,9 +3459,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L94",
       "_origin": "ast",
-      "id": "lib_callmanager_acceptincomingcall",
       "community": 58,
-      "norm_label": "acceptincomingcall()"
+      "norm_label": "acceptincomingcall()",
+      "id": "lib_callmanager_acceptincomingcall"
     },
     {
       "label": "declineIncomingCall()",
@@ -3359,9 +3469,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L136",
       "_origin": "ast",
-      "id": "lib_callmanager_declineincomingcall",
       "community": 58,
-      "norm_label": "declineincomingcall()"
+      "norm_label": "declineincomingcall()",
+      "id": "lib_callmanager_declineincomingcall"
     },
     {
       "label": "hangUpCall()",
@@ -3369,9 +3479,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L148",
       "_origin": "ast",
-      "id": "lib_callmanager_hangupcall",
       "community": 58,
-      "norm_label": "hangupcall()"
+      "norm_label": "hangupcall()",
+      "id": "lib_callmanager_hangupcall"
     },
     {
       "label": "startDurationTimer()",
@@ -3379,9 +3489,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L186",
       "_origin": "ast",
-      "id": "lib_callmanager_startdurationtimer",
       "community": 58,
-      "norm_label": "startdurationtimer()"
+      "norm_label": "startdurationtimer()",
+      "id": "lib_callmanager_startdurationtimer"
     },
     {
       "label": "stopDurationTimer()",
@@ -3389,9 +3499,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L196",
       "_origin": "ast",
-      "id": "lib_callmanager_stopdurationtimer",
       "community": 58,
-      "norm_label": "stopdurationtimer()"
+      "norm_label": "stopdurationtimer()",
+      "id": "lib_callmanager_stopdurationtimer"
     },
     {
       "label": "setupCallSocketListeners()",
@@ -3399,9 +3509,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L204",
       "_origin": "ast",
-      "id": "lib_callmanager_setupcallsocketlisteners",
       "community": 58,
-      "norm_label": "setupcallsocketlisteners()"
+      "norm_label": "setupcallsocketlisteners()",
+      "id": "lib_callmanager_setupcallsocketlisteners"
     },
     {
       "label": "taskListeners.ts",
@@ -3409,9 +3519,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "lib_tasklisteners",
       "community": 131,
-      "norm_label": "tasklisteners.ts"
+      "norm_label": "tasklisteners.ts",
+      "id": "lib_tasklisteners"
     },
     {
       "label": "Listener",
@@ -3419,9 +3529,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L11",
       "_origin": "ast",
-      "id": "lib_tasklisteners_listener",
       "community": 58,
-      "norm_label": "listener"
+      "norm_label": "listener",
+      "id": "lib_tasklisteners_listener"
     },
     {
       "label": "listeners",
@@ -3429,9 +3539,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L12",
       "_origin": "ast",
-      "id": "lib_tasklisteners_listeners",
       "community": 131,
-      "norm_label": "listeners"
+      "norm_label": "listeners",
+      "id": "lib_tasklisteners_listeners"
     },
     {
       "label": "subscribeTasksChanged()",
@@ -3439,9 +3549,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L14",
       "_origin": "ast",
-      "id": "lib_tasklisteners_subscribetaskschanged",
       "community": 131,
-      "norm_label": "subscribetaskschanged()"
+      "norm_label": "subscribetaskschanged()",
+      "id": "lib_tasklisteners_subscribetaskschanged"
     },
     {
       "label": "emitTasksChanged()",
@@ -3449,9 +3559,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L21",
       "_origin": "ast",
-      "id": "lib_tasklisteners_emittaskschanged",
       "community": 131,
-      "norm_label": "emittaskschanged()"
+      "norm_label": "emittaskschanged()",
+      "id": "lib_tasklisteners_emittaskschanged"
     },
     {
       "label": "setupTaskListeners()",
@@ -3459,9 +3569,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L27",
       "_origin": "ast",
-      "id": "lib_tasklisteners_setuptasklisteners",
       "community": 131,
-      "norm_label": "setuptasklisteners()"
+      "norm_label": "setuptasklisteners()",
+      "id": "lib_tasklisteners_setuptasklisteners"
     },
     {
       "label": "updateTaskStatus",
@@ -3469,9 +3579,9 @@
       "source_file": "Backend/controllers/taskController.ts",
       "source_location": "L466",
       "_origin": "ast",
-      "id": "controllers_taskcontroller_updatetaskstatus",
       "community": 177,
-      "norm_label": "updatetaskstatus"
+      "norm_label": "updatetaskstatus",
+      "id": "controllers_taskcontroller_updatetaskstatus"
     },
     {
       "label": "messages.tsx",
@@ -22094,116 +22204,6 @@
       "id": "utils_push_sendpushnotification"
     },
     {
-      "label": "whisperService.ts",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "whisperservice.ts",
-      "id": "utils_whisperservice"
-    },
-    {
-      "label": "getOpenAIClient()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L10",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "getopenaiclient()",
-      "id": "utils_whisperservice_getopenaiclient"
-    },
-    {
-      "label": "SUPPORTED_EXTENSIONS",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L19",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "supported_extensions",
-      "id": "utils_whisperservice_supported_extensions"
-    },
-    {
-      "label": "NEEDS_TRANSCODE",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L24",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "needs_transcode",
-      "id": "utils_whisperservice_needs_transcode"
-    },
-    {
-      "label": "transcodeToMp3()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L30",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "transcodetomp3()",
-      "id": "utils_whisperservice_transcodetomp3"
-    },
-    {
-      "label": "getAudioDuration()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L44",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "getaudioduration()",
-      "id": "utils_whisperservice_getaudioduration"
-    },
-    {
-      "label": "extractSegment()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L54",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "extractsegment()",
-      "id": "utils_whisperservice_extractsegment"
-    },
-    {
-      "label": "makeTempPath()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L73",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "maketemppath()",
-      "id": "utils_whisperservice_maketemppath"
-    },
-    {
-      "label": "cleanupFiles()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L76",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "cleanupfiles()",
-      "id": "utils_whisperservice_cleanupfiles"
-    },
-    {
-      "label": "transcribeAudio()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L90",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "transcribeaudio()",
-      "id": "utils_whisperservice_transcribeaudio"
-    },
-    {
-      "label": "transcribeWithTimestamps()",
-      "file_type": "code",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L158",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "transcribewithtimestamps()",
-      "id": "utils_whisperservice_transcribewithtimestamps"
-    },
-    {
       "label": "zego.ts",
       "file_type": "code",
       "source_file": "Backend/utils/zego.ts",
@@ -27079,14 +27079,400 @@
   ],
   "links": [
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/brainController.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_braincontroller",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/meetingController.ts",
+      "source_location": "L887",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_meetingcontroller_transcribeupload",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test-transcoder.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "scripts_test_transcoder",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/brainEventListener.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_braineventlistener",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/livekitEgress.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_livekitegress",
+      "target": "utils_whisperservice"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_cleanupfiles"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_extractsegment"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_getaudioduration"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_getsttclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_maketemppath"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_needs_transcode"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_supported_extensions"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_transcodetomp3"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L158",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice",
+      "target": "utils_whisperservice_transcribewithtimestamps"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "utils_whisperservice_transcribeaudio",
+      "target": "utils_whisperservice_getsttclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L191",
+      "weight": 1.0,
+      "source": "utils_whisperservice_transcribewithtimestamps",
+      "target": "utils_whisperservice_getsttclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribeaudio",
+      "target": "utils_whisperservice_transcodetomp3"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L173",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribewithtimestamps",
+      "target": "utils_whisperservice_transcodetomp3"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribeaudio",
+      "target": "utils_whisperservice_getaudioduration"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L201",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribewithtimestamps",
+      "target": "utils_whisperservice_getaudioduration"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L130",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribeaudio",
+      "target": "utils_whisperservice_extractsegment"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L209",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribewithtimestamps",
+      "target": "utils_whisperservice_extractsegment"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L101",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribeaudio",
+      "target": "utils_whisperservice_maketemppath"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L171",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribewithtimestamps",
+      "target": "utils_whisperservice_maketemppath"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L146",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribeaudio",
+      "target": "utils_whisperservice_cleanupfiles"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/whisperService.ts",
+      "source_location": "L225",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_whisperservice_transcribewithtimestamps",
+      "target": "utils_whisperservice_cleanupfiles"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/brainController.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_braincontroller",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test-transcoder.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "scripts_test_transcoder",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test-transcoder.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "scripts_test_transcoder_runtest",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/brainEventListener.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_braineventlistener",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/utils/livekitEgress.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_livekitegress",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Backend/utils/livekitEgress.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "utils_livekitegress_transcribemeetingrecording",
+      "target": "utils_whisperservice_transcribeaudio"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/controllers/calendarController.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "controllers_calendarcontroller",
+      "target": "utils_whisperservice_transcribewithtimestamps"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "Backend/controllers/meetingController.ts",
+      "source_location": "L888",
+      "weight": 1.0,
+      "source": "controllers_meetingcontroller_transcribeupload",
+      "target": "utils_whisperservice_transcribewithtimestamps"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1572",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "controllers_aidacontroller",
-      "target": "controllers_aidacontroller_aidadraft",
-      "confidence_score": 1.0
+      "target": "controllers_aidacontroller_aidadraft"
     },
     {
       "relation": "contains",
@@ -27772,9 +28158,9 @@
       "source_file": "Backend/controllers/aidaController.ts",
       "source_location": "L1683",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "controllers_aidacontroller_aidadraft",
-      "target": "controllers_aidacontroller_callaida",
-      "confidence_score": 1.0
+      "target": "controllers_aidacontroller_callaida"
     },
     {
       "relation": "calls",
@@ -28421,9 +28807,9 @@
       "source_file": "Backend/routes/aidaRoutes.ts",
       "source_location": "L2",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "routes_aidaroutes",
-      "target": "controllers_aidacontroller_aidadraft",
-      "confidence_score": 1.0
+      "target": "controllers_aidacontroller_aidadraft"
     },
     {
       "relation": "imports_from",
@@ -29232,28 +29618,6 @@
       "weight": 1.0,
       "source": "controllers_meetingcontroller_runbackgroundmeetingai",
       "target": "utils_socket_getio"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/meetingController.ts",
-      "source_location": "L887",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_meetingcontroller_transcribeupload",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "Backend/controllers/meetingController.ts",
-      "source_location": "L888",
-      "weight": 1.0,
-      "source": "controllers_meetingcontroller_transcribeupload",
-      "target": "utils_whisperservice_transcribewithtimestamps"
     },
     {
       "relation": "imports",
@@ -30500,9 +30864,9 @@
       "source_file": "Backend/index.ts",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "backend_index",
-      "target": "utils_scheduler_initactionitemfollowupscheduler",
-      "confidence_score": 1.0
+      "target": "utils_scheduler_initactionitemfollowupscheduler"
     },
     {
       "relation": "imports",
@@ -30808,9 +31172,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L286",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_scheduler_processactionitemfollowups",
-      "target": "models_task",
-      "confidence_score": 1.0
+      "target": "models_task"
     },
     {
       "relation": "imports_from",
@@ -30893,9 +31257,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L369",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_scheduler",
-      "target": "utils_scheduler_initactionitemfollowupscheduler",
-      "confidence_score": 1.0
+      "target": "utils_scheduler_initactionitemfollowupscheduler"
     },
     {
       "relation": "contains",
@@ -30963,9 +31327,9 @@
       "source_file": "Backend/utils/scheduler.ts",
       "source_location": "L284",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "utils_scheduler",
-      "target": "utils_scheduler_processactionitemfollowups",
-      "confidence_score": 1.0
+      "target": "utils_scheduler_processactionitemfollowups"
     },
     {
       "relation": "contains",
@@ -31386,9 +31750,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "main_calls",
-      "target": "lib_api",
-      "confidence_score": 1.0
+      "target": "lib_api"
     },
     {
       "relation": "imports",
@@ -31441,9 +31805,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L6",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "main_calls",
-      "target": "lib_api_updatetaskfull",
-      "confidence_score": 1.0
+      "target": "lib_api_updatetaskfull"
     },
     {
       "relation": "imports_from",
@@ -31518,9 +31882,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "main_calls",
-      "target": "lib_tasklisteners",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners"
     },
     {
       "relation": "imports",
@@ -31529,9 +31893,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/calls.tsx",
       "source_location": "L9",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "main_calls",
-      "target": "lib_tasklisteners_subscribetaskschanged",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners_subscribetaskschanged"
     },
     {
       "relation": "contains",
@@ -31768,9 +32132,9 @@
       "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "chat_id",
-      "target": "lib_api_aidadraft",
-      "confidence_score": 1.0
+      "target": "lib_api_aidadraft"
     },
     {
       "relation": "imports",
@@ -32279,9 +32643,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L810",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_api",
-      "target": "lib_api_aidadraft",
-      "confidence_score": 1.0
+      "target": "lib_api_aidadraft"
     },
     {
       "relation": "contains",
@@ -34330,9 +34694,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_callmanager",
-      "target": "lib_api",
-      "confidence_score": 1.0
+      "target": "lib_api"
     },
     {
       "relation": "imports_from",
@@ -34572,9 +34936,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L268",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_api_initapifromstorage",
-      "target": "lib_tasklisteners",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners"
     },
     {
       "relation": "imports_from",
@@ -34605,9 +34969,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L282",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_api_setapitoken",
-      "target": "lib_tasklisteners",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners"
     },
     {
       "relation": "imports",
@@ -34682,9 +35046,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L813",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_api_aidadraft",
-      "target": "lib_api_getauthheaders",
-      "confidence_score": 1.0
+      "target": "lib_api_getauthheaders"
     },
     {
       "relation": "calls",
@@ -36651,9 +37015,9 @@
       "source_file": "app/bubble-chat/src/lib/api.ts",
       "source_location": "L816",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_api_aidadraft",
-      "target": "lib_api_handleresponse",
-      "confidence_score": 1.0
+      "target": "lib_api_handleresponse"
     },
     {
       "relation": "calls",
@@ -38983,9 +39347,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_callmanager",
-      "target": "lib_api_createmeeting",
-      "confidence_score": 1.0
+      "target": "lib_api_createmeeting"
     },
     {
       "relation": "calls",
@@ -39005,9 +39369,9 @@
       "source_file": "app/bubble-chat/src/lib/callManager.ts",
       "source_location": "L3",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_callmanager",
-      "target": "lib_api_endmeeting",
-      "confidence_score": 1.0
+      "target": "lib_api_endmeeting"
     },
     {
       "relation": "calls",
@@ -39615,9 +39979,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L21",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_tasklisteners",
-      "target": "lib_tasklisteners_emittaskschanged",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners_emittaskschanged"
     },
     {
       "relation": "contains",
@@ -39625,9 +39989,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L11",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_tasklisteners",
-      "target": "lib_tasklisteners_listener",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners_listener"
     },
     {
       "relation": "contains",
@@ -39635,9 +39999,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L12",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_tasklisteners",
-      "target": "lib_tasklisteners_listeners",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners_listeners"
     },
     {
       "relation": "contains",
@@ -39645,9 +40009,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L27",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_tasklisteners",
-      "target": "lib_tasklisteners_setuptasklisteners",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners_setuptasklisteners"
     },
     {
       "relation": "contains",
@@ -39655,9 +40019,9 @@
       "source_file": "app/bubble-chat/src/lib/taskListeners.ts",
       "source_location": "L14",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "lib_tasklisteners",
-      "target": "lib_tasklisteners_subscribetaskschanged",
-      "confidence_score": 1.0
+      "target": "lib_tasklisteners_subscribetaskschanged"
     },
     {
       "relation": "imports_from",
@@ -47437,28 +47801,6 @@
       "confidence_score": 1.0,
       "source": "controllers_calendarcontroller",
       "target": "utils_pinecone_upsertvectors"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L14",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/calendarController.ts",
-      "source_location": "L14",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_calendarcontroller",
-      "target": "utils_whisperservice_transcribewithtimestamps"
     },
     {
       "relation": "imports_from",
@@ -69860,28 +70202,6 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/brainController.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_braincontroller",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/controllers/brainController.ts",
-      "source_location": "L10",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "controllers_braincontroller",
-      "target": "utils_whisperservice_transcribeaudio"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
       "source_file": "Backend/routes/brainRoutes.ts",
       "source_location": "L3",
       "weight": 1.0,
@@ -74920,39 +75240,6 @@
       "target": "scripts_test_transcoder_runtest"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/scripts/test-transcoder.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "scripts_test_transcoder",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/scripts/test-transcoder.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "scripts_test_transcoder",
-      "target": "utils_whisperservice_transcribeaudio"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/scripts/test-transcoder.ts",
-      "source_location": "L46",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "scripts_test_transcoder_runtest",
-      "target": "utils_whisperservice_transcribeaudio"
-    },
-    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "Backend/scripts/verify-brain-ingest.ts",
@@ -75523,28 +75810,6 @@
       "target": "utils_pinecone_upsertvectors"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/brainEventListener.ts",
-      "source_location": "L11",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_braineventlistener",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/brainEventListener.ts",
-      "source_location": "L11",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_braineventlistener",
-      "target": "utils_whisperservice_transcribeaudio"
-    },
-    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -75995,28 +76260,6 @@
       "target": "utils_livekitegress_transcribemeetingrecording"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/livekitEgress.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_livekitegress",
-      "target": "utils_whisperservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/livekitEgress.ts",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_livekitegress",
-      "target": "utils_whisperservice_transcribeaudio"
-    },
-    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -76070,17 +76313,6 @@
       "confidence_score": 1.0,
       "source": "utils_livekitegress_transcribemeetingrecording",
       "target": "utils_livekitegress_downloadtotempfile"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "Backend/utils/livekitEgress.ts",
-      "source_location": "L64",
-      "weight": 1.0,
-      "source": "utils_livekitegress_transcribemeetingrecording",
-      "target": "utils_whisperservice_transcribeaudio"
     },
     {
       "relation": "contains",
@@ -76515,238 +76747,6 @@
       "confidence_score": 1.0,
       "source": "utils_push",
       "target": "utils_push_sendpushnotification"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L76",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_cleanupfiles"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L54",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_extractsegment"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L44",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_getaudioduration"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L4",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_getopenaiclient"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L73",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_maketemppath"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L24",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_needs_transcode"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_supported_extensions"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L30",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_transcodetomp3"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L16",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_transcribeaudio"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L158",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice",
-      "target": "utils_whisperservice_transcribewithtimestamps"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L21",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribeaudio",
-      "target": "utils_whisperservice_getopenaiclient"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L177",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribewithtimestamps",
-      "target": "utils_whisperservice_getopenaiclient"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L103",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribeaudio",
-      "target": "utils_whisperservice_transcodetomp3"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L173",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribewithtimestamps",
-      "target": "utils_whisperservice_transcodetomp3"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L122",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribeaudio",
-      "target": "utils_whisperservice_getaudioduration"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L201",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribewithtimestamps",
-      "target": "utils_whisperservice_getaudioduration"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L130",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribeaudio",
-      "target": "utils_whisperservice_extractsegment"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L209",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribewithtimestamps",
-      "target": "utils_whisperservice_extractsegment"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L101",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribeaudio",
-      "target": "utils_whisperservice_maketemppath"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L171",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribewithtimestamps",
-      "target": "utils_whisperservice_maketemppath"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L146",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribeaudio",
-      "target": "utils_whisperservice_cleanupfiles"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "Backend/utils/whisperService.ts",
-      "source_location": "L225",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_whisperservice_transcribewithtimestamps",
-      "target": "utils_whisperservice_cleanupfiles"
     },
     {
       "relation": "contains",
@@ -82250,5 +82250,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "f5f9dc504d8791abeadf11032abfe2ac5b0b67e0"
+  "built_at_commit": "50680923b7ddc7bf87d9fe6fd5b28c1ad9ba59eb"
 }
