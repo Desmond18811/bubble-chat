@@ -462,6 +462,16 @@ export default function ChatScreen() {
     };
     socket.on('message_deleted', onMessageDeleted);
 
+    // Live membership/metadata update for THIS conversation so the member count and
+    // members list reflect adds/removes immediately (no reload).
+    const onChatUpdated = (updated: any) => {
+      const u = updated?.data || updated;
+      const uid = u?.id || u?._id;
+      if (!uid || String(uid) !== String(id)) return;
+      setChat((prev: any) => (prev ? { ...prev, ...u } : prev));
+    };
+    socket.on('chat_updated', onChatUpdated);
+
     // Real-time edits from the other side. Payload is the formatted message from the backend.
     const onMessageEdited = (data: any) => {
       if (!data) return;
@@ -507,6 +517,7 @@ export default function ChatScreen() {
       socket.off('new_message', onNewMessage);
       socket.off('receive_message', onNewMessage);
       socket.off('message_deleted', onMessageDeleted);
+      socket.off('chat_updated', onChatUpdated);
       socket.off('message_edited', onMessageEdited);
       socket.off('message_reaction', onMessageReaction);
       if (typingTimer.current) clearTimeout(typingTimer.current);

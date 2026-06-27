@@ -463,6 +463,22 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
 
     const addedUser = await User.findById(userId).select('full_name email avatar uniqueTag');
 
+    // Broadcast the updated conversation (with the new member) to ALL members so
+    // every client's cached member list + count refreshes live. addToGroup
+    // previously emitted only the system message, leaving everyone else's count
+    // stale (the "group shows 3 members but has more" bug).
+    const formattedConv = await formatConversation(updated, req.user?._id);
+    try {
+      const io = req.io || getIO();
+      updated.users.forEach((u: any) => {
+        io.to(String(u._id || u)).emit('chat_updated', formattedConv);
+      });
+      // The newly-added user may not have the conversation yet.
+      io.to(String(userId)).emit('new_chat', formattedConv);
+    } catch (socketErr) {
+      console.error('Socket emit chat_updated (addToGroup) failed:', socketErr);
+    }
+
     // Broadcast system message to group members
     if (systemMessageSaved) {
       try {
@@ -496,7 +512,7 @@ export const addToGroup = async (req: AuthRequest, res: Response): Promise<void>
     res.status(200).json({
       message: 'Member added to group successfully.',
       added_member: addedUser ? await formatUser(addedUser) : { id: userId },
-      conversation: await formatConversation(updated, req.user?._id),
+      conversation: formattedConv,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -524,10 +540,23 @@ export const removeFromGroup = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
+    // Refresh the remaining members' cached member list/count live, and tell the
+    // removed user to drop the conversation.
+    const formattedConv = await formatConversation(updated, req.user?._id);
+    try {
+      const io = req.io || getIO();
+      updated.users.forEach((u: any) => {
+        io.to(String(u._id || u)).emit('chat_updated', formattedConv);
+      });
+      io.to(String(userId)).emit('chat_deleted', { chatId: String(chatId), userId: String(userId) });
+    } catch (socketErr) {
+      console.error('Socket emit chat_updated (removeFromGroup) failed:', socketErr);
+    }
+
     res.status(200).json({
       message: 'Member removed from group successfully.',
       removed_user_id: userId,
-      conversation: await formatConversation(updated, req.user?._id),
+      conversation: formattedConv,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

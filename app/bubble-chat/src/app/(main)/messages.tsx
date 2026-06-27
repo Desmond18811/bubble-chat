@@ -296,12 +296,22 @@ export default function Messages() {
       });
     };
 
+    // A group's membership/metadata changed (member added/removed). Merge the fresh
+    // conversation so the list reflects the correct members/count without a reload.
+    const handleChatUpdated = (updated: any) => {
+      const u = updated?.data || updated;
+      const uid = u?.id || u?._id;
+      if (!uid) return;
+      setChatsList(prev => prev.map(c => (String(c.id) === String(uid) ? { ...c, ...u } : c)));
+    };
+
     socket.on('typing_start', handleTypingStart);
     socket.on('typing_stop', handleTypingStop);
     socket.on('new_message', handleNewMessage);
     socket.on('receive_message', handleNewMessage);
     socket.on('messages_read', handleMessagesRead);
     socket.on('unread_count_updated', handleUnreadCountUpdated);
+    socket.on('chat_updated', handleChatUpdated);
     socket.on('connect', handleConnect);
 
     if (socket.connected) {
@@ -315,6 +325,7 @@ export default function Messages() {
       socket.off('receive_message', handleNewMessage);
       socket.off('messages_read', handleMessagesRead);
       socket.off('unread_count_updated', handleUnreadCountUpdated);
+      socket.off('chat_updated', handleChatUpdated);
       socket.off('connect', handleConnect);
     };
   }, []);
