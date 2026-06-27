@@ -7,10 +7,24 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 // Set the path to the statically bundled ffmpeg binary
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
-const getOpenAIClient = () => {
+// Speech-to-text provider. Groq serves Whisper (whisper-large-v3) on an
+// OpenAI-compatible API with a free tier, so we prefer it when GROQ_API_KEY is
+// set and transparently fall back to OpenAI's hosted Whisper otherwise. Both use
+// the same OpenAI SDK — only the baseURL, key, and model id differ.
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+
+const STT_MODEL = process.env.GROQ_API_KEY
+  ? (process.env.GROQ_WHISPER_MODEL || 'whisper-large-v3')
+  : 'whisper-1';
+
+const getSttClient = () => {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) {
+    return new OpenAI({ apiKey: groqKey, baseURL: GROQ_BASE_URL });
+  }
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('OpenAI API key is not configured in environment variables');
+    throw new Error('No speech-to-text key configured: set GROQ_API_KEY (preferred) or OPENAI_API_KEY');
   }
   return new OpenAI({ apiKey });
 };
@@ -105,13 +119,13 @@ export const transcribeAudio = async (filePath: string): Promise<string> => {
     }
 
     const fileSize = fs.statSync(workingPath).size;
-    const openai = getOpenAIClient();
+    const openai = getSttClient();
 
     // Step 2: Small file — single Whisper call
     if (fileSize <= WHISPER_MAX_BYTES) {
       const response = await openai.audio.transcriptions.create({
         file: fs.createReadStream(workingPath),
-        model: 'whisper-1',
+        model: STT_MODEL,
         response_format: 'text',
       });
       return typeof response === 'string' ? response : (response as any).text || '';
@@ -131,7 +145,7 @@ export const transcribeAudio = async (filePath: string): Promise<string> => {
 
       const response = await openai.audio.transcriptions.create({
         file: fs.createReadStream(segPath),
-        model: 'whisper-1',
+        model: STT_MODEL,
         response_format: 'text',
       });
       const text = typeof response === 'string' ? response : (response as any).text || '';
@@ -174,7 +188,7 @@ export const transcribeWithTimestamps = async (
       workingPath = transcodedPath;
     }
 
-    const openai = getOpenAIClient();
+    const openai = getSttClient();
     const fileSize = fs.statSync(workingPath).size;
     const chunks: { speaker?: string; text: string; timestamp: number }[] = [];
 
@@ -194,7 +208,7 @@ export const transcribeWithTimestamps = async (
     if (fileSize <= WHISPER_MAX_BYTES) {
       const response = await openai.audio.transcriptions.create({
         file: fs.createReadStream(workingPath),
-        model: 'whisper-1',
+        model: STT_MODEL,
         response_format: 'verbose_json',
         timestamp_granularities: ['segment'],
       }) as any;
@@ -211,7 +225,7 @@ export const transcribeWithTimestamps = async (
 
         const response = await openai.audio.transcriptions.create({
           file: fs.createReadStream(segPath),
-          model: 'whisper-1',
+          model: STT_MODEL,
           response_format: 'verbose_json',
           timestamp_granularities: ['segment'],
         }) as any;
