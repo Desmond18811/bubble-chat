@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useReducer } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
-import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check } from 'lucide-react-native';
+import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, PhoneMissed, Trash2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl } from '../../lib/api';
+import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl, fetchCallLogs, deleteCallLog, clearCallLogs } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startOutgoingCall } from '../../lib/callManager';
 import { subscribeTasksChanged } from '../../lib/taskListeners';
@@ -73,7 +73,42 @@ function getGroupInitials(name: string) {
 }
 
 export default function CallsScreen() {
-  const [callsTab, setCallsTab] = useState<'meet' | 'calendar'>('meet');
+  const [callsTab, setCallsTab] = useState<'meet' | 'calendar' | 'logs'>('meet');
+  const [callLogs, setCallLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  const loadCallLogs = React.useCallback(async () => {
+    setLogsLoading(true);
+    try {
+      const res = await fetchCallLogs();
+      setCallLogs(res?.logs || res?.data || (Array.isArray(res) ? res : []));
+    } catch {
+      /* keep whatever we have */
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (callsTab === 'logs') loadCallLogs();
+  }, [callsTab, loadCallLogs]);
+
+  const handleDeleteLog = async (id: string) => {
+    setCallLogs(prev => prev.filter(l => String(l._id || l.id) !== String(id)));
+    try { await deleteCallLog(id); } catch { /* best-effort */ }
+  };
+
+  const handleClearLogs = () => {
+    Alert.alert('Clear call logs', 'Remove all call history?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear', style: 'destructive', onPress: async () => {
+          setCallLogs([]);
+          try { await clearCallLogs(); } catch { /* best-effort */ }
+        },
+      },
+    ]);
+  };
 
   // Live collaborative spaces (mock rooms for meeting coordination)
   const [activeRooms] = useState([
@@ -261,16 +296,16 @@ export default function CallsScreen() {
               y="26"
               letterSpacing="-0.5"
             >
-              {callsTab === 'meet' ? "Calls" : "Calendar"}
+              {callsTab === 'meet' ? "Calls" : callsTab === 'calendar' ? "Calendar" : "Call Logs"}
             </SvgText>
           </Svg>
           <Text className="text-xs text-ink-soft mt-0.5 font-sans">
-            {callsTab === 'meet' ? "Experience seamless communication" : "Organize team meetings & agendas"}
+            {callsTab === 'meet' ? "Experience seamless communication" : callsTab === 'calendar' ? "Organize team meetings & agendas" : "Your recent call history"}
           </Text>
         </View>
 
         {callsTab === 'meet' ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               startOutgoingCall({ name: 'Quick Meet Room', avatar: null }, 'video');
             }}
@@ -278,7 +313,7 @@ export default function CallsScreen() {
           >
             <Text className="text-white text-xs font-bold font-sans">New Meet</Text>
           </TouchableOpacity>
-        ) : (
+        ) : callsTab === 'calendar' ? (
           <TouchableOpacity
             onPress={() => setIsModalOpen(true)}
             className="flex-row items-center bg-purple px-4 py-2.5 rounded-xl shadow-sm"
@@ -286,7 +321,15 @@ export default function CallsScreen() {
             <Plus color="#fff" size={15} />
             <Text className="text-white text-xs font-bold font-sans ml-1">Add Event</Text>
           </TouchableOpacity>
-        )}
+        ) : callLogs.length > 0 ? (
+          <TouchableOpacity
+            onPress={handleClearLogs}
+            className="flex-row items-center bg-red-500/10 px-4 py-2.5 rounded-xl"
+          >
+            <Trash2 color="#ef4444" size={15} />
+            <Text className="text-red-500 text-xs font-bold font-sans ml-1">Clear</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {/* Tab Switcher */}
@@ -313,6 +356,18 @@ export default function CallsScreen() {
             callsTab === 'calendar' ? 'text-purple' : 'text-ink-soft'
           }`}>
             Business Calendar
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setCallsTab('logs')}
+          className={`mr-6 pb-3 pt-1 border-b-2 ${
+            callsTab === 'logs' ? 'border-purple' : 'border-transparent'
+          }`}
+        >
+          <Text className={`text-sm font-bold font-sans ${
+            callsTab === 'logs' ? 'text-purple' : 'text-ink-soft'
+          }`}>
+            Call Logs
           </Text>
         </TouchableOpacity>
       </View>
@@ -419,7 +474,7 @@ export default function CallsScreen() {
             )}
           </View>
         </ScrollView>
-      ) : (
+      ) : callsTab === 'calendar' ? (
         <ScrollView className="flex-1 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
           {/* Calendar Widget */}
           <View className="bg-purple-soft/20 p-6 border-b border-black/5 w-full">
@@ -598,6 +653,48 @@ export default function CallsScreen() {
               })
             )}
           </View>
+        </ScrollView>
+      ) : (
+        <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+          {logsLoading && callLogs.length === 0 ? (
+            <Text className="text-center text-ink-soft text-sm mt-12 font-sans">Loading call history…</Text>
+          ) : callLogs.length === 0 ? (
+            <View className="items-center mt-16">
+              <View className="w-16 h-16 rounded-full bg-purple-soft/40 items-center justify-center mb-3">
+                <Phone color="#6c5ce7" size={26} />
+              </View>
+              <Text className="text-ink font-bold font-sans">No call history yet</Text>
+              <Text className="text-ink-soft text-xs mt-1 font-sans">Your voice and video calls will show up here.</Text>
+            </View>
+          ) : (
+            callLogs.map((log) => {
+              const logId = String(log._id || log.id);
+              const isVideo = log.type === 'video';
+              const missed = !!log.missed;
+              const when = log.timestamp || log.createdAt;
+              const whenStr = when ? new Date(when).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+              const mins = Math.floor((log.duration || 0) / 60);
+              const secs = (log.duration || 0) % 60;
+              const durStr = log.duration ? `${mins}:${secs.toString().padStart(2, '0')}` : '';
+              const Icon = missed ? PhoneMissed : isVideo ? Video : Phone;
+              return (
+                <View key={logId} className="flex-row items-center bg-white rounded-2xl p-3.5 mb-2.5 border border-black/5">
+                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${missed ? 'bg-red-500/10' : 'bg-purple-soft/40'}`}>
+                    <Icon color={missed ? '#ef4444' : '#6c5ce7'} size={18} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-ink font-bold text-sm font-sans" numberOfLines={1}>{log.label || 'Call'}</Text>
+                    <Text className={`text-xs mt-0.5 font-sans ${missed ? 'text-red-500' : 'text-ink-soft'}`}>
+                      {missed ? 'Missed' : isVideo ? 'Video' : 'Voice'}{durStr ? ` · ${durStr}` : ''}{whenStr ? ` · ${whenStr}` : ''}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => handleDeleteLog(logId)} className="p-2">
+                    <X color="#9a9aab" size={16} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          )}
         </ScrollView>
       )}
 
