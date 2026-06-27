@@ -259,6 +259,45 @@ export const initSocket = (server: HttpServer) => {
       ).catch(err => console.error('[Push] Incoming call push failed:', err));
     });
 
+    // Ring an ADDITIONAL participant into a call that is already running. Unlike
+    // call_offer (which the client pairs with a freshly-minted room), call_invite
+    // reuses the caller's CURRENT roomId so the invitee joins the same LiveKit room.
+    // LiveKit handles the N-way media natively; this only fans out the ring.
+    socket.on('call_invite', async (data: { toUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
+      const callerName = (socket as any).fullName || (socket as any).username || data.callerName || 'Colleague';
+
+      // Inviter is already in the room, but join defensively in case this socket isn't.
+      socket.join(data.roomId);
+
+      io.to(data.toUserId).emit('incoming_call', {
+        ...data,
+        fromUserId: userId,
+        callerName,
+      });
+
+      logActivity({
+        actor: userId,
+        action: 'call_invited',
+        entityId: data.toUserId,
+        entityType: 'Call',
+        entityLabel: callerName,
+        metadata: { roomId: data.roomId, callType: data.type || 'voice', to: data.toUserId },
+      });
+
+      const typeStr = data.type === 'video' ? 'video call' : 'voice call';
+      sendPushNotification(
+        [data.toUserId],
+        `${callerName} invited you to a ${typeStr}`,
+        `${callerName} is inviting you to join...`,
+        {
+          roomId: data.roomId,
+          type: 'incoming_call',
+          callType: data.type || 'voice',
+          callerName,
+        }
+      ).catch(err => console.error('[Push] Call invite push failed:', err));
+    });
+
     socket.on('call_answer', async (data: { toUserId: string; roomId: string }) => {
       // Callee joins the room so subsequent meeting_ended / call_ended events reach them.
       socket.join(data.roomId);

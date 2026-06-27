@@ -21,6 +21,7 @@ export type ActivityAction =
   | 'transcript_saved'
   // Calls
   | 'call_initiated'
+  | 'call_invited'
   | 'call_accepted'
   | 'call_rejected'
   | 'call_missed'

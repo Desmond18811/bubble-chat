@@ -204,12 +204,50 @@ export const saveTranscriptChunk = async (req: Request, res: Response) => {
 }; 
 
 // NEW: GET /api/v1/meet/livekit-token
+// POST /api/v1/meet/invite-link — sign a shareable, tamper-evident join link for a room.
+// Authenticated users only (route is JWT-guarded). The link carries the roomId plus a
+// short-lived signed token so the recipient's /call/join can verify it wasn't fabricated.
+export const createInviteLink = async (req: Request, res: Response) => {
+  try {
+    const roomId = (req.body?.roomId || '').toString().trim();
+    if (!roomId) return res.status(400).json({ message: 'roomId is required' });
+
+    const secret = process.env.JWT_KEY;
+    if (!secret) return res.status(500).json({ message: 'Server misconfigured: JWT_KEY missing' });
+
+    const jwt = (await import('jsonwebtoken')).default;
+    const joinToken = jwt.sign({ roomId, scope: 'room-join' }, secret, { expiresIn: '24h' });
+
+    const base = (process.env.FRONTEND_URL || process.env.ORIGIN || '').replace(/\/$/, '');
+    const url = `${base}/call/join?room=${encodeURIComponent(roomId)}&t=${joinToken}`;
+    res.json({ url, joinToken, roomId });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const getLiveKitToken = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id?.toString() || 'guest';
     const userName = (req as any).user?.full_name || (req as any).user?.username || 'Colleague';
     const roomId = req.query.roomId as string || `meet-${Math.random().toString(36).substring(7)}`;
     const userAvatar = (req as any).user?.avatar || '';
+
+    // When the request carries a signed invite token, verify it matches this room.
+    // Absent a token, behavior is unchanged (any authenticated user may join).
+    const joinToken = req.query.joinToken as string | undefined;
+    if (joinToken) {
+      const secret = process.env.JWT_KEY;
+      try {
+        const jwt = (await import('jsonwebtoken')).default;
+        const payload = jwt.verify(joinToken, secret as string) as any;
+        if (payload?.scope !== 'room-join' || payload?.roomId !== roomId) {
+          return res.status(403).json({ message: 'Invalid or mismatched invite token' });
+        }
+      } catch {
+        return res.status(403).json({ message: 'Invalid or expired invite token' });
+      }
+    }
 
     const { generateLiveKitToken } = await import('../utils/livekitService');
     const token = await generateLiveKitToken(roomId, userName, userId, userAvatar);

@@ -1,12 +1,13 @@
 import express from 'express';
 import passport from 'passport';
-import { getCallLogs, createCallLog, clearCallLogs, deleteCallLog, getRoomTranscript, saveTranscriptChunk, getLiveKitToken } from '../controllers/meetController';
+import { getCallLogs, createCallLog, clearCallLogs, deleteCallLog, getRoomTranscript, saveTranscriptChunk, getLiveKitToken, createInviteLink } from '../controllers/meetController';
 import { getZegoToken } from '../utils/zego';
 
 const router = express.Router();
 router.use(passport.authenticate('jwt', { session: false }));
 
 router.get('/livekit-token', getLiveKitToken);
+router.post('/invite-link', createInviteLink);
 
 /**
  * @swagger
