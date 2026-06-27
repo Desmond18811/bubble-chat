@@ -36,6 +36,10 @@ export interface ITask extends Document {
   snoozedUntil?: Date;
   reminderLevelsSent?: string[];
 
+  // Action-item follow-up: set once a "still pending" nudge has been sent for a
+  // meeting-sourced task, so the follow-up job never double-pings the assignee.
+  followUpSentAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,6 +71,7 @@ const TaskSchema = new Schema<ITask>(
     recurrence: { type: String, enum: ['daily', 'weekly', 'monthly'] },
     snoozedUntil: { type: Date },
     reminderLevelsSent: { type: [String], default: [] },
+    followUpSentAt: { type: Date },
   },
   { timestamps: true }
 );

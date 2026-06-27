@@ -279,9 +279,15 @@ export const setupCallSocketListeners = (socket: any) => {
     }
   });
 
-  socket.on('meeting_ended', (data: { roomId: string }) => {
+  socket.on('meeting_ended', (data: { roomId: string; summary?: string; actionItems?: any[] }) => {
     if (currentCallState.status === 'in_call' && currentCallState.roomId === data.roomId) {
       hangUpCall();
+    }
+    // The enriched meeting_ended (post-AI) carries summary + action items and also
+    // arrives after the call already ended — refresh any open Action Items list so the
+    // newly-extracted items show up live. (Push notifications still alert the user.)
+    if (data?.actionItems || data?.summary) {
+      import('./taskListeners').then(m => m.emitTasksChanged()).catch(() => undefined);
     }
   });
 

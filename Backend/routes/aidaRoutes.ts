@@ -14,6 +14,7 @@ import {
   summarizeConversation,
   getConversationContext,
   getAidaWritingSuggestions,
+  aidaDraft,
   // Org Knowledge Base (RAG)
   listOrgDocs,
   getOrgDoc,
@@ -36,6 +37,7 @@ router.get('/conversation-context/:conversationId', requireAuth, requireAidaKey,
 // ── Core conversational endpoints (AidaPage) ─────────────────────────────────
 router.post('/chat', requireAuth, requireAidaKey, chatWithAida);
 router.post('/writing-suggestions', requireAuth, requireAidaKey, getAidaWritingSuggestions);
+router.post('/draft', requireAuth, requireAidaKey, aidaDraft);
 router.get('/daily-briefing', requireAuth, requireAidaKey, getDailyBriefing);
 router.get('/financial-advice', requireAuth, requireAidaKey, getFinancialAdvice);
 

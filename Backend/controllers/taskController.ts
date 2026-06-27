@@ -298,6 +298,54 @@ export const updateTask = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
+    // Keep the source meeting truthful: when a transcript-sourced task changes status
+    // or assignee, mirror it onto Meeting.actionItems so the meeting record (and any
+    // participant viewing it) stays in sync. Best-effort — never block the response.
+    if (
+      task.source === 'meeting' &&
+      task.meetingRef &&
+      (updateFields.status !== undefined || updateFields.assignedTo !== undefined)
+    ) {
+      try {
+        const { Meeting } = await import('../models/meeting');
+        const meeting = await Meeting.findById(task.meetingRef);
+        if (meeting && Array.isArray(meeting.actionItems)) {
+          const item = meeting.actionItems.find(
+            (ai: any) =>
+              (ai.taskRef && String(ai.taskRef) === String(task._id)) ||
+              ai.text === task.title
+          );
+          if (item) {
+            if (updateFields.status !== undefined) {
+              (item as any).status = task.status === 'done' ? 'done' : 'pending';
+            }
+            if (updateFields.assignedTo !== undefined) {
+              (item as any).assignedTo = task.assignedTo;
+              (item as any).assignedToName = task.assignedToName;
+            }
+            if (!(item as any).taskRef) (item as any).taskRef = task._id;
+            await meeting.save();
+
+            // Nudge participants so their Action Items view refreshes in realtime.
+            try {
+              const { getIO } = await import('../utils/socket');
+              const io = getIO();
+              const recipients = [meeting.host, ...(meeting.attendees || [])];
+              const payload = {
+                meetingId: String(meeting._id),
+                taskId: String(task._id),
+                status: task.status,
+                assignedTo: task.assignedTo ? String(task.assignedTo) : null,
+              };
+              for (const r of recipients) io.to(String(r)).emit('action_item_updated', payload);
+            } catch { /* socket not ready */ }
+          }
+        }
+      } catch (syncErr: any) {
+        console.error('[updateTask] Meeting action-item sync failed:', syncErr?.message || syncErr);
+      }
+    }
+
     res.status(200).json({ message: 'Task updated', task });
   } catch (err: any) {
     res.status(500).json({ message: 'Failed to update task', error: err.message });
@@ -316,7 +364,7 @@ export const aiDescribeEvent = async (req: Request, res: Response): Promise<any>
     const hasDeepSeekKey = !!(key && key.length > 10 && !key.startsWith('your_') && !key.startsWith('add_your_'));
     if (!hasDeepSeekKey) {
       return res.status(200).json({
-        description: `Scheduled event based on prompt: "${prompt}". (AI description unavailable - DeepSeek key not configured.)`
+        description: `Scheduled event based on prompt: "${prompt}". (AI-enhanced description will be available once Aida is enabled for this workspace.)`
       });
     }
 

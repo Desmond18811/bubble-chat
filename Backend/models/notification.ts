@@ -8,6 +8,7 @@ export type NotificationType =
   | 'meeting_started'
   | 'meeting_ended'
   | 'meeting_action_item'
+  | 'task_followup'
   | 'meeting_invite'
   | 'payment_received'
   | 'payment_due'
@@ -43,7 +44,7 @@ const NotificationSchema = new Schema<INotification>(
       type: String,
       enum: [
         'new_message', 'new_group_message', 'task_assigned', 'task_due_soon',
-        'meeting_started', 'meeting_ended', 'meeting_action_item', 'meeting_invite',
+        'meeting_started', 'meeting_ended', 'meeting_action_item', 'task_followup', 'meeting_invite',
         'payment_received', 'payment_due', 'invoice_sent', 'file_shared',
         'community_post', 'feed_mention', 'feed_like', 'feed_comment',
         'contact_added', 'message_request', 'system',

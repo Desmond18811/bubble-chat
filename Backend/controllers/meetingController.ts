@@ -31,9 +31,19 @@ export const extractMeetingIntelligence = async (
   summary: string;
   actionItems: { text: string; assignedToName?: string }[];
 }> => {
-  if (!hasDeepSeekKey() || !transcript) {
+  // The transcript itself is produced independently (live captions / Whisper). Only
+  // the AI *summary + action items* depend on Aida (DeepSeek). When that's unavailable
+  // we still return a usable record — never leak provider/config wording to end users,
+  // which previously made a working transcript look broken ("DeepSeek key not configured").
+  if (!transcript) {
     return {
-      summary: 'Meeting summary unavailable — DeepSeek API key not configured.',
+      summary: 'No transcript was captured for this meeting, so no summary is available.',
+      actionItems: [],
+    };
+  }
+  if (!hasDeepSeekKey()) {
+    return {
+      summary: 'AI summary will appear here once Aida is enabled for this workspace. The full transcript is available below.',
       actionItems: [],
     };
   }
@@ -711,6 +721,9 @@ export const runBackgroundMeetingAI = async (
           status: 'todo',
         });
         createdTasks.push(task);
+        // Link the meeting's action item back to its Task so status changes can be
+        // mirrored both ways (see updateTask's meeting sync).
+        (ai as any).taskRef = task._id;
 
         if (ai.assignedTo) {
           await createNotification({
@@ -724,6 +737,14 @@ export const runBackgroundMeetingAI = async (
           });
         }
       }
+    }
+
+    // Persist the taskRef linkage onto Meeting.actionItems (they were saved above
+    // before the Tasks existed).
+    if (createdTasks.length > 0) {
+      await Meeting.findByIdAndUpdate(meeting._id, {
+        $set: { actionItems: resolvedActionItems },
+      });
     }
 
     // Find organization for meeting host and save Minutes as a .md document to storage center

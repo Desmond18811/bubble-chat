@@ -265,6 +265,7 @@ export const initApiFromStorage = async (): Promise<void> => {
             const sock = initSocket(token);
             import('./callManager').then(m => m.setupCallSocketListeners(sock));
             import('./presence').then(m => m.setupPresenceListeners(sock));
+            import('./taskListeners').then(m => m.setupTaskListeners(sock));
         }
     } catch {
         tokenCache.accessToken = null;
@@ -278,6 +279,7 @@ export const setApiToken = (token: string | null): void => {
         const sock = initSocket(token);
         import('./callManager').then(m => m.setupCallSocketListeners(sock));
         import('./presence').then(m => m.setupPresenceListeners(sock));
+        import('./taskListeners').then(m => m.setupTaskListeners(sock));
     } else {
         disconnectSocket();
     }
@@ -799,6 +801,17 @@ export const getAidaWritingSuggestions = async (message: string, conversationId:
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ message, conversationId }),
+    });
+    return handleResponse(res);
+};
+
+// Context-Aware Draft on Behalf (Deep Aida): one full reply from the whole
+// conversation + related meeting transcripts + open action items (F5).
+export const aidaDraft = async (conversationId: string, currentMessage?: string) => {
+    const res = await fetch(`${BASE_URL}/aida/draft`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ conversationId, currentMessage }),
     });
     return handleResponse(res);
 };

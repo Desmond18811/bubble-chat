@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } fro
 import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getOrgMembers, fetchTasks, createTaskFull, getSecureMediaUrl } from '../../lib/api';
+import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startOutgoingCall } from '../../lib/callManager';
+import { subscribeTasksChanged } from '../../lib/taskListeners';
 import { Image } from 'expo-image';
 import { Avatar } from '../../components/Avatar';
 import { useIsOnline, getPresence, subscribePresence } from '../../lib/presence';
@@ -132,9 +133,9 @@ export default function CallsScreen() {
       setCoworkers(coworkersList);
       await AsyncStorage.setItem('bubble_cached_coworkers', JSON.stringify(coworkersList));
 
-      // Fetch tasks/agenda
+      // Fetch tasks/agenda. getTasks responds with { tasks: [...] }.
       const tasksRes = await fetchTasks();
-      const tasksList = Array.isArray(tasksRes) ? tasksRes : (tasksRes?.data || []);
+      const tasksList = Array.isArray(tasksRes) ? tasksRes : (tasksRes?.tasks || tasksRes?.data || []);
       setTasks(tasksList);
       await AsyncStorage.setItem('bubble_cached_tasks', JSON.stringify(tasksList));
     } catch (err) {
@@ -152,7 +153,25 @@ export default function CallsScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // Live-refresh when an action item is followed-up / completed / a meeting ends (F3).
+  useEffect(() => subscribeTasksChanged(syncData), []);
 
+
+
+  // Toggle a meeting-sourced action item done / open. Backend mirrors it onto the
+  // meeting record and notifies other participants (F3).
+  const handleToggleActionItem = async (task: any) => {
+    const id = task._id || task.id;
+    const next = task.status === 'done' ? 'todo' : 'done';
+    // Optimistic update so the checkbox feels instant.
+    setTasks(prev => prev.map((t: any) => ((t._id || t.id) === id ? { ...t, status: next } : t)));
+    try {
+      await updateTaskFull(id, { status: next });
+    } catch {
+      Alert.alert('Error', 'Could not update action item.');
+      syncData();
+    }
+  };
 
   const handleCreateEvent = async () => {
     if (!title.trim()) {
@@ -471,6 +490,49 @@ export default function CallsScreen() {
               })}
             </View>
           </View>
+
+          {/* Action Items captured from meeting transcripts (F3) */}
+          {(() => {
+            const actionItems = tasks.filter((t: any) => t.source === 'meeting');
+            if (actionItems.length === 0) return null;
+            const now = Date.now();
+            return (
+              <View className="px-6 pt-6">
+                <View className="flex-row items-center gap-1.5 mb-3">
+                  <Check color="#6c5ce7" size={14} />
+                  <Text className="text-xs font-bold uppercase tracking-wider text-purple font-sans">Action Items</Text>
+                  <Text className="text-[10px] text-ink-soft font-sans">from meetings</Text>
+                </View>
+                {actionItems.map((item: any) => {
+                  const done = item.status === 'done';
+                  const overdue = !done && item.end_time && new Date(item.end_time).getTime() < now;
+                  const meetingName = item.meetingRef?.title || (item.description || '').replace(/^From meeting:\s*/, '');
+                  const chipColor = done ? 'bg-emerald-50' : overdue ? 'bg-red-50' : 'bg-yellow-50';
+                  const chipText = done ? 'text-emerald-600' : overdue ? 'text-red-500' : 'text-yellow-600';
+                  return (
+                    <View key={item._id || item.id} className="p-3.5 rounded-2xl bg-white border border-black/5 mb-2.5 shadow-sm flex-row items-start gap-2.5">
+                      <TouchableOpacity
+                        onPress={() => handleToggleActionItem(item)}
+                        className={`mt-0.5 w-5 h-5 rounded-md border items-center justify-center ${done ? 'bg-emerald-500 border-emerald-500' : 'border-black/20'}`}
+                      >
+                        {done && <Check size={12} color="#fff" />}
+                      </TouchableOpacity>
+                      <View className="flex-1">
+                        <Text className={`text-[13px] font-semibold font-sans ${done ? 'line-through text-ink-soft' : 'text-ink'}`}>{item.title}</Text>
+                        <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
+                          <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${chipColor} ${chipText}`}>
+                            {done ? 'Done' : overdue ? 'Overdue' : 'Pending'}
+                          </Text>
+                          {item.assignedToName ? <Text className="text-[10px] text-ink-soft font-sans">· {item.assignedToName}</Text> : null}
+                          {meetingName ? <Text className="text-[10px] text-ink-soft font-sans" numberOfLines={1}>· {meetingName}</Text> : null}
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })()}
 
           {/* Agenda view */}
           <View className="p-6 mb-24">

@@ -1562,3 +1562,138 @@ export const getAidaWritingSuggestions = async (req: Request, res: Response): Pr
     res.status(200).json({ suggestions: ['How are you?', 'Let me know if you can help.', 'Thanks!'], contextRecall: null });
   }
 };
+
+// ─── POST /api/v1/aida/draft ─── Context-Aware Draft on Behalf (Deep Aida) ─────
+//
+// Unlike single-channel smart-compose (which only sees the email/thread), this
+// drafts ONE complete reply using the full conversation history + any meeting
+// transcripts shared by this group in the last 14 days + open action items the
+// other party owes. That cross-channel context is what no single-channel AI can do.
+export const aidaDraft = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { conversationId, currentMessage } = req.body;
+    const userId = (req.user as any)?._id;
+
+    if (!conversationId) {
+      res.status(400).json({ message: 'conversationId is required' });
+      return;
+    }
+
+    const conv = await Conversation.findById(conversationId).populate('users', 'full_name username org_role');
+    if (!conv) {
+      res.status(404).json({ message: 'Conversation not found' });
+      return;
+    }
+
+    const me = await User.findById(userId).select('full_name username');
+    const myName = me?.full_name || me?.username || 'me';
+    const participants = (conv.users as any[]) || [];
+    const others = participants.filter((u: any) => String(u._id) !== String(userId));
+    const otherIds = others.map((u: any) => u._id);
+    const recipientName = conv.isGroupChat
+      ? (conv.chatName || 'the group')
+      : (others[0]?.full_name || others[0]?.username || 'them');
+
+    // 1. Last ~20 messages of the thread (chronological).
+    const recent = await Message.find({ chat: conversationId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate('sender', 'full_name username')
+      .lean();
+    const conversationContext = recent
+      .reverse()
+      .map((m: any) => `${m.sender?.full_name || m.sender?.username || 'User'}: ${m.content || `[${m.message_type || 'media'}]`}`)
+      .join('\n');
+
+    // 2. Meeting transcripts shared by this group in the last 14 days. Prefer a direct
+    //    chatId link; otherwise fall back to meetings among these participants.
+    const { Meeting } = await import('../models/meeting');
+    const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+    const meetings = await Meeting.find({
+      status: 'ended',
+      endedAt: { $gte: since },
+      $or: [
+        { chatId: conversationId },
+        { host: { $in: [userId, ...otherIds] }, attendees: { $in: [userId, ...otherIds] } },
+      ],
+    })
+      .sort({ endedAt: -1 })
+      .limit(3)
+      .select('title summary transcriptRaw endedAt')
+      .lean();
+
+    const meetingContext = meetings
+      .map((m: any) => {
+        const when = m.endedAt ? new Date(m.endedAt).toLocaleDateString() : '';
+        const body = (m.summary || m.transcriptRaw || '').slice(0, 1200);
+        return `Meeting "${m.title}"${when ? ` (${when})` : ''}:\n${body}`;
+      })
+      .join('\n\n');
+
+    // 3. Open action items the OTHER party owes (so the draft can chase them).
+    let actionItemContext = '';
+    if (otherIds.length > 0) {
+      const openItems = await Task.find({
+        source: 'meeting',
+        assignedTo: { $in: otherIds },
+        status: { $ne: 'done' },
+      })
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .select('title assignedToName')
+        .lean();
+      actionItemContext = openItems
+        .map((t: any) => `• ${t.title}${t.assignedToName ? ` (owner: ${t.assignedToName})` : ''}`)
+        .join('\n');
+    }
+
+    // 4. Org brain knowledge (same Pinecone retrieval as suggestions).
+    let brainKnowledge = '';
+    let usedOrgContext = false;
+    try {
+      const { resolveUserOrg } = await import('../utils/orgResolver');
+      const org = me ? await resolveUserOrg(me) : null;
+      if (org && hasPinecone()) {
+        const seed = `${conversationContext}\n${currentMessage || ''}`.slice(-1500);
+        const embedding = await generateEmbedding(seed);
+        if (embedding.length > 0) {
+          const namespace = org.pineconeNamespace || `org-${org._id}`;
+          const matches = await queryVectors(embedding, 6, org._id.toString(), namespace);
+          const relevant = matches.filter((m) => m.score >= 0.55);
+          brainKnowledge = relevant.map((m: any) => `• ${m.metadata?.chunk || ''}`).join('\n');
+          usedOrgContext = relevant.length > 0;
+        }
+      }
+    } catch (brainErr) {
+      console.error('[Aida Draft] brain retrieval failed:', brainErr);
+    }
+
+    const systemPrompt = `You are Aida, drafting a reply ON BEHALF OF ${myName} inside a company chat. Write ONE complete, professional, contextually accurate reply to the latest message from ${recipientName}. Use the full context provided — conversation history, meeting notes, and open action items — to sound informed and specific. Do not invent facts. Write only the message body (no greetings like "Hi Aida", no quotes, no preamble, no signature).`;
+
+    const userPrompt = [
+      conversationContext ? `Conversation so far:\n${conversationContext}` : '',
+      meetingContext ? `Relevant meeting notes (last 14 days):\n${meetingContext}` : '',
+      actionItemContext ? `Open action items owed by ${recipientName}:\n${actionItemContext}` : '',
+      brainKnowledge ? `Organization knowledge:\n${brainKnowledge}` : '',
+      currentMessage ? `${myName} has started typing: "${currentMessage}". Continue/complete in that direction.` : `Write the best reply ${myName} could send next.`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    const draft = await callAIDA(systemPrompt, userPrompt, 1500, 0.6);
+
+    if (!draft) {
+      res.status(200).json({ draft: '', meetingCount: meetings.length, usedOrgContext });
+      return;
+    }
+
+    res.status(200).json({
+      draft: draft.replace(/^["']|["']$/g, '').trim(),
+      meetingCount: meetings.length,
+      usedOrgContext,
+    });
+  } catch (error: any) {
+    console.error('[Aida Draft] error:', error?.message || error);
+    res.status(500).json({ message: 'Failed to generate draft' });
+  }
+};

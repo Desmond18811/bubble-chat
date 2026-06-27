@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch, Keyboard,
+  TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch, Keyboard, ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +32,7 @@ import {
   toggleChatPin,
   deleteChat,
   getAidaWritingSuggestions,
+  aidaDraft,
   getSecureMediaUrl,
   uploadGroupOrOrgImage,
   accessOrCreateChat,
@@ -210,6 +211,30 @@ export default function ChatScreen() {
   // Aida Suggestions state
   const [aidaSuggestions, setAidaSuggestions] = useState<string[]>([]);
   const [aidaUnavailable, setAidaUnavailable] = useState(false);
+  // Deep Aida "Draft" (F5): a full context-aware reply fills the input.
+  const [isDrafting, setIsDrafting] = useState(false);
+
+  const handleDraftForMe = async () => {
+    if (isDrafting) return;
+    setIsDrafting(true);
+    try {
+      const res = await aidaDraft(String(id), messageText.trim() || undefined);
+      if (res?.draft) {
+        setMessageText(res.draft);
+        setAidaSuggestions([]);
+      } else {
+        Alert.alert('Aida', 'Could not draft a reply right now.');
+      }
+    } catch (err: any) {
+      if (err?.status === 503 || err?.code === 'AIDA_UNCONFIGURED') {
+        setAidaUnavailable(true);
+      } else {
+        Alert.alert('Aida', 'Could not generate draft.');
+      }
+    } finally {
+      setIsDrafting(false);
+    }
+  };
 
   const handleStartCall = (type: 'voice' | 'video') => {
     if (!chat?.otherUserId) return;
@@ -2304,6 +2329,24 @@ export default function ChatScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
+                  {/* Dismiss the suggestions row */}
+                  <TouchableOpacity
+                    onPress={() => setAidaSuggestions([])}
+                    accessibilityLabel="Dismiss suggestions"
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 28,
+                      height: 28,
+                      borderRadius: 100,
+                      backgroundColor: 'rgba(0,0,0,0.04)',
+                      borderColor: 'rgba(0,0,0,0.06)',
+                      borderWidth: 1,
+                    }}
+                  >
+                    <X size={13} color={INK_SOFT} />
+                  </TouchableOpacity>
                 </ScrollView>
               )}
 
@@ -2445,6 +2488,28 @@ export default function ChatScreen() {
                     onChangeText={handleTextChange}
                     onFocus={() => setIsEmojiOpen(false)}
                   />
+
+                  {/* Deep Aida: draft a full, context-aware reply (F5) */}
+                  {!aidaUnavailable && (
+                    <TouchableOpacity
+                      onPress={handleDraftForMe}
+                      disabled={isDrafting}
+                      accessibilityLabel="Draft a reply for me"
+                      style={{
+                        width: 38,
+                        height: 38,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        opacity: isDrafting ? 0.5 : 1,
+                      }}
+                    >
+                      {isDrafting ? (
+                        <ActivityIndicator size="small" color={PURPLE} />
+                      ) : (
+                        <Sparkles size={20} color={PURPLE} />
+                      )}
+                    </TouchableOpacity>
+                  )}
 
                   {/* Smile Emoji button inside the capsule */}
                   <TouchableOpacity

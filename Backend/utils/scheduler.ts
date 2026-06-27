@@ -269,6 +269,111 @@ export const initTaskReminderScheduler = () => {
   console.log('⏰ [TaskReminders] Background auto-reminder initialized (runs every 30 min).');
 };
 
+// ─── Action-Item Follow-Up Loop ───────────────────────────────────────────────
+
+/**
+ * Closes the loop on meeting action items: if an item extracted from a transcript
+ * is still pending 24h after it was created, nudge the assignee once — via realtime
+ * socket (`task_followup`), push, and an in-app notification — then stamp
+ * `followUpSentAt` so we never double-ping. This is what makes BubbleChat "follow up
+ * automatically" where Zoom just sends the transcript and stops.
+ *
+ * Runs every 6 hours. Distinct from processTaskReminders (which is due-date based);
+ * this is "still not actioned since the meeting" based.
+ */
+export const processActionItemFollowUps = async () => {
+  try {
+    const { Task } = await import('../models/task');
+    const { User } = await import('../models/users');
+    const { createNotification } = await import('../controllers/notificationController');
+    const { getIO } = await import('./socket');
+
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000); // created > 24h ago
+
+    const stale = await Task.find({
+      source: 'meeting',
+      status: { $in: ['todo', 'in-progress'] },
+      followUpSentAt: null, // matches both null and missing in MongoDB
+      createdAt: { $lte: cutoff },
+    })
+      .populate('meetingRef', 'title')
+      .limit(50);
+
+    if (stale.length === 0) return;
+
+    let io: any = null;
+    try { io = getIO(); } catch { /* socket not ready */ }
+
+    for (const task of stale) {
+      try {
+        const assigneeId = String(task.assignedTo || task.user_id);
+        const meetingTitle = (task.meetingRef as any)?.title || 'a meeting';
+        const overdue = !!(task.end_time && task.end_time.getTime() < now.getTime());
+
+        const payload = {
+          taskId: String(task._id),
+          title: task.title,
+          meetingTitle,
+          dueAt: task.end_time,
+          overdue,
+        };
+
+        // Realtime: assignee's personal room (joined on connect as socket.join(userId)).
+        if (io) io.to(assigneeId).emit('task_followup', payload);
+
+        const body = overdue
+          ? `Overdue action item from "${meetingTitle}": ${task.title}`
+          : `Still open from "${meetingTitle}": ${task.title}`;
+
+        // createNotification persists the in-app notification AND fires the push.
+        await createNotification({
+          recipient: assigneeId,
+          sender: assigneeId,
+          type: 'task_followup',
+          title: overdue ? 'Overdue action item' : 'Action item still open',
+          body,
+          entityId: String(task._id),
+          entityType: 'Task',
+        });
+
+        // Best-effort email nudge.
+        try {
+          const user = await User.findById(assigneeId).select('email full_name username');
+          if (user?.email) {
+            const { sendTaskReminderEmail } = await import('./mailer');
+            await sendTaskReminderEmail(
+              user.email,
+              user.full_name || user.username || 'User',
+              `${task.title} (from ${meetingTitle})`,
+              task.end_time || now,
+              task.description
+            );
+          }
+        } catch (mailErr) {
+          console.error(`❌ [ActionItemFollowUp] email failed for task ${task._id}:`, mailErr);
+        }
+
+        task.followUpSentAt = now;
+        await task.save();
+        console.log(`✅ [ActionItemFollowUp] Nudged assignee for task ${task._id}`);
+      } catch (err) {
+        console.error(`❌ [ActionItemFollowUp] Failed for task ${task._id}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('❌ [ActionItemFollowUp] Scheduler processing error:', err);
+  }
+};
+
+export const initActionItemFollowUpScheduler = () => {
+  // Every 6 hours
+  cron.schedule('0 */6 * * *', async () => {
+    await processActionItemFollowUps();
+  });
+  console.log('⏰ [ActionItemFollowUp] Action-item follow-up loop initialized (runs every 6h).');
+};
+
 // ─── Daily Digest Generator ────────────────────────────────────────────────────
 
 /**
