@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
-const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+// Env-driven; localhost dev fallback only (no hardcoded production host).
+const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.replace(/ i$/, '')?.trim()) || 'http://localhost:3000/api/v1';
 const SOCKET_URL = BASE_URL.replace(/\/api\/v1\/?$/, '');
 
 let socket: Socket | null = null;

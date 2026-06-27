@@ -55,10 +55,10 @@ app.disable('x-powered-by');
 // FIX 1: Railway injects PORT dynamically — never hardcode this
 const PORT = process.env.PORT || 3000;
 
-// CORS: always allow both local dev and all production Railway deployments.
-// Set CORS_ORIGINS in Railway to a comma-separated list to override.
+// CORS: allow local dev + the Bubble Space production domain. Set CORS_ORIGINS
+// (comma-separated) or FRONTEND_URL in the environment to add/override origins.
+// No Railway host is hardcoded — production origins come from env or the line below.
 const PRODUCTION_ORIGINS = [
-  'https://bubble-frontend-production.up.railway.app',
   'https://bubblespace.xyz',
 ];
 

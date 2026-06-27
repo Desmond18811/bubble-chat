@@ -19,9 +19,9 @@ if (!isExpoGo) {
 
 const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL?.trim();
 if (!ENV_API_URL) {
-  console.warn('[api] EXPO_PUBLIC_API_URL is not set — falling back to the public Railway URL. Set it via EAS secret for production builds.');
+  console.warn('[api] EXPO_PUBLIC_API_URL is not set — using the localhost dev fallback. Set it (EAS secret) to the Bubble Space backend for real builds.');
 }
-const BASE_URL = ENV_API_URL || 'https://bubble-backend-production-96a0.up.railway.app/api/v1';
+const BASE_URL = ENV_API_URL || 'http://localhost:3000/api/v1';
 const API_BASE = BASE_URL.replace(/\/api\/v1\/?$/, '');
 
 const originalFetch = globalThis.fetch;
