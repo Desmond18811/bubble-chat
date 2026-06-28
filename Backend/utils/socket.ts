@@ -18,6 +18,26 @@ const onlineSockets = new Map<string, Set<string>>();
 
 export const getOnlineUserIds = (): string[] => Array.from(onlineSockets.keys());
 
+// Active group/multi-party calls, keyed by roomId. Lets us re-remind members who
+// were invited but haven't joined yet, every few minutes, while the call is live.
+interface ActiveGroupCall {
+  invited: Set<string>;
+  joined: Set<string>;
+  type: 'voice' | 'video';
+  callerName: string;
+  callerAvatar?: string;
+  startedAt: number;
+  lastReminder: number;
+}
+const activeGroupCalls = new Map<string, ActiveGroupCall>();
+
+const GROUP_REMINDER_INTERVAL_MS = 5 * 60 * 1000;  // re-ring inactive members every 5 min
+const GROUP_CALL_MAX_AGE_MS = 30 * 60 * 1000;      // stop reminding after 30 min
+
+const endGroupCallTracking = (roomId?: string) => {
+  if (roomId) activeGroupCalls.delete(roomId);
+};
+
 export const initSocket = (server: HttpServer) => {
   io = new Server(server, {
     pingTimeout: 60000,
@@ -27,6 +47,37 @@ export const initSocket = (server: HttpServer) => {
       methods: ['GET', 'POST'],
     },
   });
+
+  // Recurring reminder: every minute, re-ring + push members who were invited to a
+  // group call but haven't joined, at most once per GROUP_REMINDER_INTERVAL_MS, until
+  // they join or the call ages out / ends.
+  setInterval(() => {
+    const now = Date.now();
+    for (const [roomId, call] of activeGroupCalls) {
+      if (now - call.startedAt > GROUP_CALL_MAX_AGE_MS) { activeGroupCalls.delete(roomId); continue; }
+      if (now - call.lastReminder < GROUP_REMINDER_INTERVAL_MS) continue;
+      const pending = [...call.invited].filter((u) => !call.joined.has(u));
+      if (pending.length === 0) continue;
+      call.lastReminder = now;
+      for (const uid of pending) {
+        io.to(uid).emit('incoming_call', {
+          fromUserId: 'group',
+          roomId,
+          callerName: call.callerName,
+          callerAvatar: call.callerAvatar,
+          type: call.type,
+          isReminder: true,
+        });
+      }
+      const typeStr = call.type === 'video' ? 'video call' : 'voice call';
+      sendPushNotification(
+        pending,
+        `Ongoing ${typeStr}`,
+        `${call.callerName}'s group ${typeStr} is still going — tap to join`,
+        { roomId, type: 'incoming_call', callType: call.type, callerName: call.callerName }
+      ).catch((err) => console.error('[GroupCall] reminder push failed:', err));
+    }
+  }, 60 * 1000);
 
   // Socket authentication middleware
   io.use((socket, next) => {
@@ -210,6 +261,7 @@ export const initSocket = (server: HttpServer) => {
     socket.on('meeting_ended', (data: { roomId: string }) => {
       console.log(`[Meeting] Relaying meeting_ended for room: ${data.roomId}`);
       io.to(data.roomId).emit('meeting_ended', data);
+      endGroupCallTracking(data.roomId);
     });
 
     // ─── E2EE Public Key Exchange ─────────────────────────────────────────────
@@ -296,9 +348,30 @@ export const initSocket = (server: HttpServer) => {
           callerName,
         }
       ).catch(err => console.error('[Push] Call invite push failed:', err));
+
+      // Track this as an active group call so we can re-remind no-shows. The inviter
+      // (host) counts as joined; each invitee is pending until they answer.
+      let call = activeGroupCalls.get(data.roomId);
+      if (!call) {
+        call = {
+          invited: new Set<string>(),
+          joined: new Set<string>([String(userId)]),
+          type: data.type || 'voice',
+          callerName,
+          callerAvatar: data.callerAvatar,
+          startedAt: Date.now(),
+          lastReminder: Date.now(),
+        };
+        activeGroupCalls.set(data.roomId, call);
+      }
+      call.invited.add(String(data.toUserId));
     });
 
     socket.on('call_answer', async (data: { toUserId: string; roomId: string }) => {
+      // Mark this member as joined so the group-call reminder stops ringing them.
+      const groupCall = activeGroupCalls.get(data.roomId);
+      if (groupCall) groupCall.joined.add(String(userId));
+
       // Callee joins the room so subsequent meeting_ended / call_ended events reach them.
       socket.join(data.roomId);
 
@@ -324,6 +397,13 @@ export const initSocket = (server: HttpServer) => {
     });
 
     socket.on('call_reject', async (data: { toUserId: string; roomId?: string }) => {
+      // A member who declines shouldn't keep getting group-call reminders — mark them
+      // resolved (reuse the joined set) so the recurring ring skips them.
+      if (data.roomId) {
+        const gc = activeGroupCalls.get(data.roomId);
+        if (gc) gc.joined.add(String(userId));
+      }
+
       // Reach BOTH parties by userId regardless of whether they joined a room.
       io.to(data.toUserId).emit('call_rejected', { byUserId: userId });
       io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
@@ -344,6 +424,7 @@ export const initSocket = (server: HttpServer) => {
       if (data.toUserId) io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
       io.to(userId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
       if (data.roomId) io.to(data.roomId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+      endGroupCallTracking(data.roomId);
 
       logActivity({
         actor: userId,
