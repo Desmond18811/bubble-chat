@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/chat-window.tsx": {
-    "mtime": 1782523818.7345378,
-    "ast_hash": "8231c172a75e0e28ffe5f4f8a4a3185a",
+    "mtime": 1782584089.8217962,
+    "ast_hash": "a55267fc506daa3a05e15de0e23d8600",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/create-group-modal.tsx": {
@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/contexts/AppContext.tsx": {
-    "mtime": 1782582543.9185886,
-    "ast_hash": "d76bff96a64da74212c9977f116a963f",
+    "mtime": 1782584067.7023835,
+    "ast_hash": "74032831bd483e6a8c4ec92d1fe0d1ad",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/contexts/DashboardContext.tsx": {
@@ -1085,8 +1085,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/socket.ts": {
-    "mtime": 1782579033.452845,
-    "ast_hash": "bf76fd7a841f8bfa1aa415159a563625",
+    "mtime": 1782584450.3007271,
+    "ast_hash": "e02f1e034c5b403e4a3db29a5c01fa86",
     "semantic_hash": ""
   },
   "Backend/utils/whisperService.ts": {
@@ -1705,8 +1705,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1782582648.2525227,
-    "ast_hash": "a41674ff6361ac2cfe3661870e7b3fa4",
+    "mtime": 1782584183.3255692,
+    "ast_hash": "66b38ab71a1aef43c8c9ea5793907d53",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
@@ -1775,8 +1775,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/callManager.ts": {
-    "mtime": 1782580651.4069042,
-    "ast_hash": "505a9ee5e553cb121def00af17a22a29",
+    "mtime": 1782584168.0586157,
+    "ast_hash": "efc478ae9e557a742588b577cda562f2",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/ringtone.ts": {
