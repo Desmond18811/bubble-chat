@@ -13,6 +13,7 @@ import {
   getDailyDigest, getCalendarEvents, createCalendarEvent,
   getEventSuggestions, startCalendarMeeting, deleteCalendarEvent,
 } from '../../lib/api';
+import { notifyDailyBrief } from '../../lib/pushNotifications';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -47,20 +48,65 @@ interface DigestData {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const EVENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  meeting_video: { bg: '#ede9fe', border: '#6c5ce7', text: '#6c5ce7' },
-  meeting_audio: { bg: '#e0f2fe', border: '#0ea5e9', text: '#0ea5e9' },
-  company:       { bg: '#fef3c7', border: '#f59e0b', text: '#d97706' },
-  holiday:       { bg: '#dcfce7', border: '#22c55e', text: '#16a34a' },
-  all_day:       { bg: '#f1f5f9', border: '#94a3b8', text: '#64748b' },
+// Indicator palette — shared spec across web + mobile:
+//   green = meetings · yellow = recurring · blue = events · purple = tasks · red = holidays
+const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  meeting:   { bg: '#dcfce7', border: '#22c55e', text: '#16a34a' }, // green
+  recurring: { bg: '#fef9c3', border: '#eab308', text: '#ca8a04' }, // yellow
+  event:     { bg: '#dbeafe', border: '#3b82f6', text: '#2563eb' }, // blue
+  task:      { bg: '#ede9fe', border: '#6c5ce7', text: '#6c5ce7' }, // purple
+  holiday:   { bg: '#fee2e2', border: '#ef4444', text: '#dc2626' }, // red
 };
 
+// Map a calendar item to one of the five indicator categories. Recurrence wins
+// over the base type so a repeating meeting still reads as "recurring" (yellow).
+// `__recurring` is annotated by detectRecurringIds during load.
+function eventCategory(event: any): string {
+  if (event?.eventType === 'holiday') return 'holiday';
+  if (event?.isRecurring || event?.recurrenceRule || event?.parentEventId || event?.__recurring) return 'recurring';
+  if (event?.eventType === 'task' || event?.type === 'task') return 'task';
+  if (event?.eventType === 'meeting_video' || event?.eventType === 'meeting_audio') return 'meeting';
+  return 'event'; // company / all_day / everything else
+}
+
+function eventColors(event: any) {
+  return CATEGORY_COLORS[eventCategory(event)] || CATEGORY_COLORS.event;
+}
+
+// Lightweight recurrence recognition: events that aren't explicitly recurring
+// but repeat (same title appearing 3+ times, or twice at a steady weekly/daily
+// cadence) are treated as structured recurring events going forward.
+function detectRecurringIds(events: any[]): Set<string> {
+  const byTitle = new Map<string, any[]>();
+  for (const e of events) {
+    const key = String(e?.title || '').trim().toLowerCase();
+    if (!key) continue;
+    if (!byTitle.has(key)) byTitle.set(key, []);
+    byTitle.get(key)!.push(e);
+  }
+  const ids = new Set<string>();
+  for (const group of byTitle.values()) {
+    if (group.length < 2) continue;
+    if (group.length >= 3) {
+      group.forEach(e => ids.add(String(e._id || e.id)));
+      continue;
+    }
+    // Exactly two: only treat as recurring if spaced a whole number of weeks/days apart.
+    const times = group.map(e => new Date(e.startTime).getTime()).sort((a, b) => a - b);
+    const gapDays = Math.round((times[1] - times[0]) / 86400000);
+    if (gapDays === 1 || gapDays === 7 || gapDays === 14 || gapDays === 30 || gapDays === 28) {
+      group.forEach(e => ids.add(String(e._id || e.id)));
+    }
+  }
+  return ids;
+}
+
 const EVENT_ICONS: Record<string, React.ReactNode> = {
-  meeting_video: <Video size={13} color="#6c5ce7" />,
-  meeting_audio: <Mic size={13} color="#0ea5e9" />,
-  company:       <Globe size={13} color="#d97706" />,
-  holiday:       <CheckCircle size={13} color="#16a34a" />,
-  all_day:       <Clock size={13} color="#64748b" />,
+  meeting_video: <Video size={13} color="#16a34a" />,
+  meeting_audio: <Mic size={13} color="#16a34a" />,
+  company:       <Globe size={13} color="#2563eb" />,
+  holiday:       <CheckCircle size={13} color="#dc2626" />,
+  all_day:       <Clock size={13} color="#2563eb" />,
 };
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -79,7 +125,7 @@ const isSameDay = (a: Date, b: Date) =>
 // ─── Event Badge ──────────────────────────────────────────────────────────────
 
 const EventBadge = ({ event, onPress }: { event: CalEvent; onPress: () => void }) => {
-  const colors = EVENT_COLORS[event.eventType] || EVENT_COLORS.all_day;
+  const colors = eventColors(event);
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -165,10 +211,11 @@ const MorningBriefCard = ({ digest, loading }: { digest: DigestData | null; load
 // ─── Create Event Modal ────────────────────────────────────────────────────────
 
 const EVENT_TYPES = [
-  { key: 'meeting_video', label: 'Video Meeting', icon: <Video size={16} color="#6c5ce7" /> },
-  { key: 'meeting_audio', label: 'Audio Meeting', icon: <Mic size={16} color="#0ea5e9" /> },
-  { key: 'company',       label: 'Company Event', icon: <Globe size={16} color="#d97706" /> },
-  { key: 'all_day',       label: 'All Day',        icon: <Clock size={16} color="#64748b" /> },
+  { key: 'meeting_video', label: 'Video Meeting', icon: <Video size={16} color="#16a34a" /> },
+  { key: 'meeting_audio', label: 'Audio Meeting', icon: <Mic size={16} color="#16a34a" /> },
+  { key: 'company',       label: 'Company Event', icon: <Globe size={16} color="#2563eb" /> },
+  { key: 'all_day',       label: 'All Day',        icon: <Clock size={16} color="#2563eb" /> },
+  { key: 'holiday',       label: 'Holiday',        icon: <CheckCircle size={16} color="#dc2626" /> },
 ];
 
 const QUICK_TEMPLATES = [
@@ -383,7 +430,7 @@ const CreateEventModal = ({ visible, onClose, onCreated, defaultDate }: CreateEv
 
 const EventDetailModal = ({ event, onClose, onStartMeeting }: { event: CalEvent | null; onClose: () => void; onStartMeeting: (e: CalEvent) => void }) => {
   if (!event) return null;
-  const colors = EVENT_COLORS[event.eventType] || EVENT_COLORS.all_day;
+  const colors = eventColors(event);
 
   return (
     <Modal visible={!!event} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -469,7 +516,10 @@ export default function CalendarScreen() {
       const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       const data = await getCalendarEvents({ start: start.toISOString(), end: end.toISOString() });
-      setEvents(data?.events || []);
+      const raw = data?.events || [];
+      // Recognize repeated patterns and tag them so they render as recurring (yellow).
+      const recurringIds = detectRecurringIds(raw);
+      setEvents(raw.map((e: any) => ({ ...e, __recurring: e.isRecurring || recurringIds.has(String(e._id || e.id)) })));
     } catch { /* silent */ } finally {
       setLoading(false);
     }
@@ -480,7 +530,10 @@ export default function CalendarScreen() {
     setDigestLoading(true);
     try {
       const data = await getDailyDigest();
-      setDigest(data?.digest || null);
+      const d = data?.digest || null;
+      setDigest(d);
+      // Surface the brief as a local notification (once per day), like web.
+      if (d?.morningBrief) notifyDailyBrief(d.morningBrief);
     } catch { /* silent */ } finally {
       setDigestLoading(false);
     }
@@ -608,7 +661,7 @@ export default function CalendarScreen() {
                     {dayEvents.slice(0, 3).map(e => (
                       <View
                         key={e._id}
-                        style={[styles.eventDot, { backgroundColor: EVENT_COLORS[e.eventType]?.border || '#6c5ce7' }]}
+                        style={[styles.eventDot, { backgroundColor: eventColors(e).border }]}
                       />
                     ))}
                   </View>
@@ -656,7 +709,7 @@ export default function CalendarScreen() {
                 onPress={() => setSelectedEvent(event)}
                 activeOpacity={0.75}
               >
-                <View style={[styles.upcomingAccent, { backgroundColor: EVENT_COLORS[event.eventType]?.border }]} />
+                <View style={[styles.upcomingAccent, { backgroundColor: eventColors(event).border }]} />
                 <View style={styles.upcomingBody}>
                   <Text style={styles.upcomingTitle2} numberOfLines={1}>{event.title}</Text>
                   <Text style={styles.upcomingTime}>{fmtDate(event.startTime)} · {fmtTime(event.startTime)}</Text>

@@ -279,6 +279,7 @@ function GlobalCallOverlay() {
                 micEnabled={!isMuted}
                 cameraEnabled={isCameraActive}
                 speakerEnabled={isSpeaker}
+                roomId={(callState as any).roomId}
                 fallback={renderAvatar(156)}
                 onError={(err) => console.warn('[LiveKit] room error:', err)}
                 onDisconnected={() => {

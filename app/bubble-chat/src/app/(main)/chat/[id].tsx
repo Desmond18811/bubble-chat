@@ -11,10 +11,14 @@ import {
   Camera, FileText, Image as ImageIcon,
   Info, Sparkles, BellOff, EyeOff, Archive, Trash2,
   Copy, Pin, Edit2, Check, CheckCheck,
-  MicOff, PhoneOff, Volume2, Clock, Play, Pause, MessageSquare,
+  MicOff, PhoneOff, Volume2, Clock, Play, Pause, MessageSquare, Reply,
 } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import {
+  useAudioRecorder, useAudioPlayer, useAudioPlayerStatus,
+  RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync,
+} from 'expo-audio';
 import { Message } from '../../../lib/mockData';
 import { chatCache } from '../../../lib/chatCache';
 import { getSocket } from '../../../lib/socket';
@@ -86,6 +90,10 @@ export default function ChatScreen() {
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: string; type: string; url?: string } | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
+  // Real microphone recorder (expo-audio). Produces a local file URI we upload
+  // as a voice note — replaces the old hardcoded sample-URL mock.
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [typingUser, setTypingUser] = useState<{ id: string; name?: string; username?: string } | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -510,6 +518,15 @@ export default function ChatScreen() {
     };
     socket.on('message_reaction', onMessageReaction);
 
+    const onMessageTranscribed = (data: any) => {
+      if (!data?.messageId) return;
+      if (data.chatId && String(data.chatId) !== String(id)) return;
+      setMessages(prev => prev.map((m: any) =>
+        String(m.id) === String(data.messageId) ? { ...m, transcript: data.transcript } : m
+      ));
+    };
+    socket.on('message_transcribed', onMessageTranscribed);
+
     if (socket.connected) {
       onConnect();
     }
@@ -525,6 +542,7 @@ export default function ChatScreen() {
       socket.off('chat_updated', onChatUpdated);
       socket.off('message_edited', onMessageEdited);
       socket.off('message_reaction', onMessageReaction);
+      socket.off('message_transcribed', onMessageTranscribed);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       if (chatRef.current) {
         socket.emit('typing_stop', { toUserId: chatRef.current.otherUserId, chatId: chatRef.current.id });
@@ -543,6 +561,9 @@ export default function ChatScreen() {
 
   // Message context & long-press actions
   const [activeContextMessage, setActiveContextMessage] = useState<Message | null>(null);
+
+  // Reply (quote) target — set via long-press "Reply" or swipe-to-reply.
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
   // Selection mode
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -669,6 +690,12 @@ export default function ChatScreen() {
     sendingRef.current = true;
     let text = messageText.trim();
 
+    // Capture and clear the reply target up-front so the preview bar dismisses
+    // immediately and a follow-up message isn't accidentally sent as a reply.
+    const replyTarget = replyingTo;
+    const replyParentId = replyTarget ? String((replyTarget as any).id) : undefined;
+    setReplyingTo(null);
+
     const socket = getSocket();
     if (socket && chat) {
       if (typingTimer.current) clearTimeout(typingTimer.current);
@@ -702,7 +729,7 @@ export default function ChatScreen() {
           type: selectedFile.type === 'image' ? 'image/jpeg' : selectedFile.type === 'video' ? 'video/mp4' : 'application/pdf'
         } as any;
         const mediaClientId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-        await sendMediaMessage(chat.id, fileObj, { content: text, clientId: mediaClientId });
+        await sendMediaMessage(chat.id, fileObj, { content: text, clientId: mediaClientId, ...(replyParentId && { parent_message: replyParentId }) });
         setMessageText('');
         setSelectedFile(null);
         setIsAttachmentOpen(false);
@@ -723,6 +750,11 @@ export default function ChatScreen() {
           isPinned: false,
           isRead: false,
           status: 'sending',
+          parent_message: replyTarget ? {
+            id: replyParentId,
+            content: replyTarget.text || '[Media]',
+            sender: { full_name: replyTarget.senderName || null },
+          } : null,
         } as any;
         setMessages(prev => [...prev, tempMsg]);
         setMessageText('');
@@ -730,7 +762,7 @@ export default function ChatScreen() {
         setIsEmojiOpen(false);
 
         try {
-          await sendTextMessage(chat.id, text, { clientId: tempId });
+          await sendTextMessage(chat.id, text, { clientId: tempId, ...(replyParentId && { parent_message: replyParentId }) });
           // Mark as sent; sync will reconcile the server id shortly.
           setMessages(prev => prev.map((m: any) =>
             m.id === tempId ? { ...m, status: 'sent' } : m
@@ -844,6 +876,66 @@ export default function ChatScreen() {
     setEditingMessageId(msg.id);
     setMessageText(msg.text);
     setActiveContextMessage(null);
+  };
+
+  const handleReplyTo = (msg: Message) => {
+    setReplyingTo(msg);
+    setActiveContextMessage(null);
+    inputRef.current?.focus();
+  };
+
+  // ── Voice note recording (real microphone via expo-audio) ──
+  const startRecording = async () => {
+    try {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Microphone needed', 'Enable microphone access to send voice messages.');
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
+      setIsRecording(true);
+    } catch (err: any) {
+      console.warn('startRecording failed:', err);
+      Alert.alert('Recording error', err?.message || 'Could not start recording.');
+      setIsRecording(false);
+    }
+  };
+
+  const cancelRecording = async () => {
+    setIsRecording(false);
+    try { await audioRecorder.stop(); } catch { /* ignore */ }
+  };
+
+  const stopAndSendRecording = async () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
+    const durationSecs = recordingSeconds;
+    const replyTarget = replyingTo;
+    const replyParentId = replyTarget ? String((replyTarget as any).id) : undefined;
+    setReplyingTo(null);
+    setIsRecording(false);
+    try {
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
+      if (!uri) throw new Error('No audio was captured.');
+      await sendMediaMessage(
+        chat.id,
+        { uri, name: `voice-${Date.now()}.m4a`, type: 'audio/m4a' } as any,
+        {
+          message_type: 'voice',
+          media_duration: durationSecs,
+          ...(replyParentId && { parent_message: replyParentId }),
+        }
+      );
+      await syncChatAndMessages();
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to send voice message.');
+    } finally {
+      try { await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }); } catch { /* ignore */ }
+      sendingRef.current = false;
+    }
   };
 
   const handleToggleMessageSelect = (msgId: string) => {
@@ -1965,6 +2057,31 @@ export default function ChatScreen() {
                           {msg.senderName}
                         </Text>
                       )}
+                      {msg.parent_message && (
+                        <TouchableOpacity
+                          activeOpacity={0.7}
+                          onPress={() => {
+                            const idx = messages.findIndex(mm => String(mm.id) === String(msg.parent_message?.id));
+                            if (idx !== -1) scrollViewRef.current?.scrollTo({ y: Math.max(0, idx * 64), animated: true });
+                          }}
+                          style={{
+                            borderLeftWidth: 2,
+                            borderLeftColor: isMe ? 'rgba(255,255,255,0.6)' : PURPLE,
+                            backgroundColor: isMe ? 'rgba(255,255,255,0.15)' : 'rgba(108,92,231,0.06)',
+                            borderRadius: 8,
+                            paddingHorizontal: 8,
+                            paddingVertical: 5,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: isMe ? 'rgba(255,255,255,0.9)' : PURPLE }}>
+                            {msg.parent_message.sender?.full_name || 'Reply'}
+                          </Text>
+                          <Text numberOfLines={1} style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: isMe ? 'rgba(255,255,255,0.75)' : INK_SOFT }}>
+                            {msg.parent_message.content || '[Media]'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                       {msg.message_type === 'voice' ? (
                         <VoiceMessagePlayer msg={msg} isMe={isMe} />
                       ) : msg.message_type === 'image' && (msg.mediaUrl || msg.media_url) ? (
@@ -2375,6 +2492,35 @@ export default function ChatScreen() {
                 </View>
               )}
 
+              {/* ── Reply (quote) preview bar ── */}
+              {replyingTo && (
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(108,92,231,0.06)',
+                  borderLeftWidth: 3,
+                  borderLeftColor: PURPLE,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  marginHorizontal: 4,
+                  marginBottom: 8,
+                }}>
+                  <Reply size={16} color={PURPLE} style={{ marginRight: 8 }} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: PURPLE }}>
+                      Replying to {replyingTo.sender === 'me' ? 'yourself' : (replyingTo.senderName || 'message')}
+                    </Text>
+                    <Text numberOfLines={1} style={{ fontSize: 12, fontFamily: 'Poppins_400Regular', color: INK_SOFT }}>
+                      {replyingTo.text || (replyingTo.message_type === 'voice' ? '🎤 Voice message' : replyingTo.message_type === 'image' ? '📷 Photo' : '[Media]')}
+                    </Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setReplyingTo(null)} style={{ padding: 4, marginLeft: 6 }}>
+                    <X size={16} color={INK_SOFT} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {/* ── Main Input Bar Row styled as a single continuous capsule ── */}
               {isRecording ? (
                 <View style={{
@@ -2404,7 +2550,7 @@ export default function ChatScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     {/* Cancel button */}
                     <TouchableOpacity
-                      onPress={() => setIsRecording(false)}
+                      onPress={cancelRecording}
                       style={{
                         width: 32,
                         height: 32,
@@ -2419,32 +2565,7 @@ export default function ChatScreen() {
 
                     {/* Send voice message button */}
                     <TouchableOpacity
-                      onPress={async () => {
-                        if (sendingRef.current) return;
-                        sendingRef.current = true;
-                        const durationSecs = recordingSeconds;
-                        setIsRecording(false);
-                        try {
-                          await sendMediaMessage(
-                            chat.id,
-                            {
-                              uri: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-                              name: 'voice_memo.mp3',
-                              type: 'audio/mpeg'
-                            },
-                            {
-                              message_type: 'voice',
-                              media_duration: durationSecs,
-                              content: 'Voice Memo'
-                            }
-                          );
-                          await syncChatAndMessages();
-                        } catch (err: any) {
-                          Alert.alert("Error", err.message || "Failed to send voice memo.");
-                        } finally {
-                          sendingRef.current = false;
-                        }
-                      }}
+                      onPress={stopAndSendRecording}
                       style={{
                         width: 32,
                         height: 32,
@@ -2487,6 +2608,7 @@ export default function ChatScreen() {
 
                   {/* Input text inside the capsule */}
                   <TextInput
+                    ref={inputRef}
                     style={{
                       flex: 1,
                       fontSize: 15,
@@ -2563,9 +2685,7 @@ export default function ChatScreen() {
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
-                      onPress={() => {
-                        setIsRecording(true);
-                      }}
+                      onPress={startRecording}
                       style={{
                         width: 38,
                         height: 38,
@@ -2716,6 +2836,11 @@ export default function ChatScreen() {
               <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 8 }} />
 
               {/* Actions */}
+              <ContextMenuItem
+                icon={<Reply size={16} color={INK_SOFT} />}
+                label="Reply"
+                onPress={() => handleReplyTo(activeContextMessage)}
+              />
               <ContextMenuItem
                 icon={<Copy size={16} color={INK_SOFT} />}
                 label="Copy Text"
@@ -3323,35 +3448,35 @@ function countMedia(messages: any[]) {
 }
 
 function VoiceMessagePlayer({ msg, isMe }: { msg: any; isMe: boolean }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // 0 to 1
-  const duration = msg.media_duration || msg.duration || 14; // default to 14s
-  const intervalRef = useRef<any>(null);
+  // Resolve the stored voice note through the secure media proxy and play it for
+  // real via expo-audio (replaces the old timer-driven fake waveform).
+  const audioUri = getSecureMediaUrl(msg.mediaUrl || msg.media_url);
+  const player = useAudioPlayer(audioUri ? { uri: audioUri } : null);
+  const status = useAudioPlayerStatus(player);
 
+  const fallbackDuration = msg.media_metadata?.duration || msg.media_duration || msg.duration || 14;
+  const duration = status?.duration && status.duration > 0 ? status.duration : fallbackDuration;
+  const currentSecs = status?.currentTime || 0;
+  const progress = duration > 0 ? Math.min(1, currentSecs / duration) : 0;
+  const isPlaying = !!status?.playing;
+
+  // Restart from the top once playback finishes so the bubble is replayable.
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+    if (status?.didJustFinish) {
+      try { player.seekTo(0); player.pause(); } catch { /* ignore */ }
+    }
+  }, [status?.didJustFinish]);
 
   const handlePlayPause = () => {
-    if (isPlaying) {
-      clearInterval(intervalRef.current);
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      const step = 0.1 / duration;
-      intervalRef.current = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 1) {
-            clearInterval(intervalRef.current);
-            setIsPlaying(false);
-            return 0;
-          }
-          return prev + step;
-        });
-      }, 100);
-    }
+    if (!audioUri) return;
+    try {
+      if (isPlaying) {
+        player.pause();
+      } else {
+        if (progress >= 1) player.seekTo(0);
+        player.play();
+      }
+    } catch { /* ignore */ }
   };
 
   const formatTime = (secs: number) => {
@@ -3360,64 +3485,76 @@ function VoiceMessagePlayer({ msg, isMe }: { msg: any; isMe: boolean }) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const currentSecs = Math.floor(progress * duration);
-
-  // Mock waveform heights (15 bars)
   const waveformBars = [12, 18, 8, 24, 14, 28, 10, 16, 22, 12, 26, 8, 18, 14, 20];
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', width: 220, paddingVertical: 4 }}>
-      <TouchableOpacity
-        onPress={handlePlayPause}
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 16,
-          backgroundColor: isMe ? '#ffffff' : '#6c5ce7',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 10,
-        }}
-      >
-        {isPlaying ? (
-          <Pause size={14} color={isMe ? '#6c5ce7' : '#ffffff'} />
-        ) : (
-          <Play size={14} color={isMe ? '#6c5ce7' : '#ffffff'} style={{ marginLeft: 2 }} />
-        )}
-      </TouchableOpacity>
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', width: 220, paddingVertical: 4 }}>
+        <TouchableOpacity
+          onPress={handlePlayPause}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: isMe ? '#ffffff' : '#6c5ce7',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 10,
+          }}
+        >
+          {isPlaying ? (
+            <Pause size={14} color={isMe ? '#6c5ce7' : '#ffffff'} />
+          ) : (
+            <Play size={14} color={isMe ? '#6c5ce7' : '#ffffff'} style={{ marginLeft: 2 }} />
+          )}
+        </TouchableOpacity>
 
-      <View style={{ flex: 1 }}>
-        {/* Waveform Mockup */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2.5, height: 32, marginBottom: 2 }}>
-          {waveformBars.map((barHeight, idx) => {
-            const barProgress = idx / waveformBars.length;
-            const isPlayed = progress >= barProgress;
-            return (
-              <View
-                key={idx}
-                style={{
-                  width: 3,
-                  height: barHeight,
-                  borderRadius: 1.5,
-                  backgroundColor: isMe
-                    ? (isPlayed ? '#ffffff' : 'rgba(255,255,255,0.4)')
-                    : (isPlayed ? '#6c5ce7' : 'rgba(108,92,231,0.2)'),
-                }}
-              />
-            );
-          })}
-        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2.5, height: 32, marginBottom: 2 }}>
+            {waveformBars.map((barHeight, idx) => {
+              const barProgress = idx / waveformBars.length;
+              const isPlayed = progress >= barProgress;
+              return (
+                <View
+                  key={idx}
+                  style={{
+                    width: 3,
+                    height: barHeight,
+                    borderRadius: 1.5,
+                    backgroundColor: isMe
+                      ? (isPlayed ? '#ffffff' : 'rgba(255,255,255,0.4)')
+                      : (isPlayed ? '#6c5ce7' : 'rgba(108,92,231,0.2)'),
+                  }}
+                />
+              );
+            })}
+          </View>
 
-        {/* Duration / Progress Text */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ fontSize: 10.5, color: isMe ? 'rgba(255,255,255,0.8)' : '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
-            {formatTime(currentSecs)}
-          </Text>
-          <Text style={{ fontSize: 10.5, color: isMe ? 'rgba(255,255,255,0.8)' : '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
-            {formatTime(duration)}
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 10.5, color: isMe ? 'rgba(255,255,255,0.8)' : '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
+              {formatTime(currentSecs)}
+            </Text>
+            <Text style={{ fontSize: 10.5, color: isMe ? 'rgba(255,255,255,0.8)' : '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
+              {formatTime(duration)}
+            </Text>
+          </View>
         </View>
       </View>
+
+      {/* Auto-transcription, shown once the backend's STT job completes. */}
+      {msg.transcript ? (
+        <Text style={{
+          fontSize: 11.5,
+          fontStyle: 'italic',
+          lineHeight: 16,
+          maxWidth: 220,
+          marginTop: 2,
+          color: isMe ? 'rgba(255,255,255,0.8)' : '#6b6b7b',
+          fontFamily: 'Poppins_400Regular',
+        }}>
+          “{msg.transcript}”
+        </Text>
+      ) : null}
     </View>
   );
 }

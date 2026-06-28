@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { registerPushToken } from './api';
 
@@ -71,4 +72,38 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   return token;
+}
+
+const DAILY_BRIEF_KEY = 'daily_brief_notified_on';
+
+/**
+ * Surface the morning/daily brief as a local notification — once per calendar
+ * day — mirroring the web behaviour of presenting the brief when it's ready.
+ * Safe to call repeatedly; it self-throttles via AsyncStorage.
+ */
+export async function notifyDailyBrief(brief: string): Promise<void> {
+  try {
+    if (!brief || Platform.OS === 'web') return;
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const last = await AsyncStorage.getItem(DAILY_BRIEF_KEY);
+    if (last === today) return; // already shown today
+
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      const req = await Notifications.requestPermissionsAsync();
+      if (req.status !== 'granted') return;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '☀️ Your Morning Brief',
+        body: brief.length > 180 ? `${brief.slice(0, 177)}…` : brief,
+        data: { type: 'daily_brief' },
+      },
+      trigger: null, // present immediately
+    });
+    await AsyncStorage.setItem(DAILY_BRIEF_KEY, today);
+  } catch (err) {
+    console.warn('[Push] notifyDailyBrief failed:', err);
+  }
 }

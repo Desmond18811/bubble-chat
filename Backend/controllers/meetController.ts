@@ -19,7 +19,7 @@ export const getCallLogs = async (req: Request, res: Response) => {
 export const createCallLog = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id;
-    const { roomId, type, label, duration, missed } = req.body;
+    const { roomId, type, label, duration, missed, agenda, notes } = req.body;
     const log = await CallLog.create({
       user: userId,
       roomId,
@@ -27,9 +27,36 @@ export const createCallLog = async (req: Request, res: Response) => {
       label: label || `${type === 'video' ? 'Video' : 'Voice'} Call`,
       duration,
       missed: missed || false,
+      agenda: agenda || '',
+      notes: notes || '',
       timestamp: new Date(),
     });
     res.status(201).json({ log });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// PATCH /api/v1/meet/logs/:id — attach an agenda and/or activity notes to a past call.
+export const updateCallLog = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const { id } = req.params;
+    const { agenda, notes, label } = req.body;
+
+    const update: any = {};
+    if (agenda !== undefined) update.agenda = agenda;
+    if (notes !== undefined) update.notes = notes;
+    if (label !== undefined) update.label = label;
+
+    const log = await CallLog.findOneAndUpdate(
+      { _id: id, user: userId },
+      { $set: update },
+      { new: true }
+    ).lean();
+
+    if (!log) return res.status(404).json({ message: 'Call log not found or access denied.' });
+    res.json({ log });
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }

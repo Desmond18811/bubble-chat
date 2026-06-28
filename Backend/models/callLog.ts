@@ -8,6 +8,9 @@ export interface ICallLog extends Document {
   timestamp: Date;
   duration?: number;
   missed: boolean;
+  // User-attached follow-up context for a past call.
+  agenda?: string;
+  notes?: string;
 }
 
 const CallLogSchema = new Schema<ICallLog>(
@@ -19,6 +22,8 @@ const CallLogSchema = new Schema<ICallLog>(
     timestamp: { type: Date, default: Date.now },
     duration: { type: Number },
     missed: { type: Boolean, default: false },
+    agenda: { type: String, default: '' },
+    notes: { type: String, default: '' },
   },
   { timestamps: false }
 );

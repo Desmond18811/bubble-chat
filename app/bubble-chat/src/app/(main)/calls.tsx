@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useReducer } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert } from 'react-native';
-import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, PhoneMissed, Trash2 } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, PhoneMissed, Trash2, FileText, Sparkles } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl, fetchCallLogs, deleteCallLog, clearCallLogs } from '../../lib/api';
+import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl, fetchCallLogs, deleteCallLog, clearCallLogs, updateCallLog, fetchMeetings, fetchMeetingById } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startOutgoingCall } from '../../lib/callManager';
 import { subscribeTasksChanged } from '../../lib/taskListeners';
@@ -77,6 +77,33 @@ export default function CallsScreen() {
   const [callLogs, setCallLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
+  // Call-log detail: revisit a past call + attach an agenda / activity notes.
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  const [logAgenda, setLogAgenda] = useState('');
+  const [logNotes, setLogNotes] = useState('');
+  const [savingLog, setSavingLog] = useState(false);
+
+  const openLogDetail = (log: any) => {
+    setSelectedLog(log);
+    setLogAgenda(log.agenda || '');
+    setLogNotes(log.notes || '');
+  };
+
+  const saveLogDetail = async () => {
+    if (!selectedLog) return;
+    const id = String(selectedLog._id || selectedLog.id);
+    setSavingLog(true);
+    try {
+      await updateCallLog(id, { agenda: logAgenda, notes: logNotes });
+      setCallLogs(prev => prev.map(l => String(l._id || l.id) === id ? { ...l, agenda: logAgenda, notes: logNotes } : l));
+      setSelectedLog(null);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not save notes.');
+    } finally {
+      setSavingLog(false);
+    }
+  };
+
   const loadCallLogs = React.useCallback(async () => {
     setLogsLoading(true);
     try {
@@ -110,11 +137,40 @@ export default function CallsScreen() {
     ]);
   };
 
-  // Live collaborative spaces (mock rooms for meeting coordination)
-  const [activeRooms] = useState([
-    { id: '1', title: 'Design Sync', members: 4, callers: ['A', 'B', 'C'] },
-    { id: '2', title: 'Engineering Standup', members: 12, callers: ['D', 'E', 'F'] }
-  ]);
+  // Real meeting history (replaces the old hardcoded mock rooms). Mirrors the
+  // web meetings tab — backed by GET /api/v1/meetings.
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [meetingsLoading, setMeetingsLoading] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null);
+  const [meetingDetailLoading, setMeetingDetailLoading] = useState(false);
+
+  const loadMeetings = React.useCallback(async () => {
+    setMeetingsLoading(true);
+    try {
+      const res: any = await fetchMeetings(1, 20);
+      setMeetings(Array.isArray(res?.meetings) ? res.meetings : (Array.isArray(res) ? res : []));
+    } catch (err) {
+      console.warn('Failed to load meetings:', err);
+    } finally {
+      setMeetingsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadMeetings(); }, [loadMeetings]);
+
+  const openMeetingDetail = async (meeting: any) => {
+    setSelectedMeeting(meeting);
+    setMeetingDetailLoading(true);
+    try {
+      const res: any = await fetchMeetingById(String(meeting._id || meeting.id));
+      const full = res?.meeting || res?.data || res;
+      if (full) setSelectedMeeting(full);
+    } catch (err) {
+      console.warn('Failed to load meeting detail:', err);
+    } finally {
+      setMeetingDetailLoading(false);
+    }
+  };
 
   const [coworkers, setCoworkers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -374,43 +430,76 @@ export default function CallsScreen() {
 
       {callsTab === 'meet' ? (
         <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
-          {/* Live Collaborative Spaces (Active Rooms) */}
+          {/* Meetings history (real data, mirrors the web meetings tab) */}
           <View className="mb-8">
             <View className="flex-row items-center justify-between mb-4 px-1">
-              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Live Collaborative Spaces</Text>
-              <View className="flex-row items-center bg-emerald-500/10 px-3 py-1 rounded-full">
-                <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
-                <Text className="text-[10px] font-bold text-emerald-600 font-sans">{activeRooms.length} ACTIVE ROOMS</Text>
+              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Recent Meetings</Text>
+              <View className="flex-row items-center bg-purple/10 px-3 py-1 rounded-full">
+                <View className="w-1.5 h-1.5 rounded-full bg-purple mr-2" />
+                <Text className="text-[10px] font-bold text-purple font-sans">{meetings.length} MEETINGS</Text>
               </View>
             </View>
 
-            <View className="space-y-4">
-              {activeRooms.map(room => (
-                <TouchableOpacity 
-                  key={room.id} 
-                  onPress={() => {
-                    startOutgoingCall({ name: room.title, avatar: null }, 'voice');
-                  }}
-                  className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm mb-3"
-                >
-                  <Text className="text-[17px] font-bold text-ink font-sans">{room.title}</Text>
-                  <Text className="text-[11px] text-ink-soft font-medium uppercase font-sans mt-1">{room.members} members joined</Text>
-                  
-                  <View className="flex-row items-end justify-between mt-6">
-                    <View className="flex-row -space-x-3">
-                      {room.callers.map((c, i) => (
-                        <View key={i} className="w-10 h-10 rounded-full border-2 border-white bg-purple items-center justify-center shadow-sm">
-                          <Text className="text-white text-[12px] font-bold font-sans">{c}</Text>
+            {meetingsLoading && meetings.length === 0 ? (
+              <View className="py-8 items-center justify-center">
+                <Text className="text-xs text-ink-soft font-sans">Loading meetings…</Text>
+              </View>
+            ) : meetings.length === 0 ? (
+              <View className="py-8 items-center justify-center">
+                <Text className="text-xs text-ink-soft font-sans">No meetings yet</Text>
+              </View>
+            ) : (
+              <View className="space-y-4">
+                {meetings.map((m: any) => {
+                  const attendees = Array.isArray(m.attendees) ? m.attendees : [];
+                  const isLive = m.status === 'live';
+                  const when = m.startedAt ? new Date(m.startedAt) : (m.createdAt ? new Date(m.createdAt) : null);
+                  const durationMin = m.duration ? Math.round(m.duration / 60) : null;
+                  return (
+                    <TouchableOpacity
+                      key={String(m._id || m.id)}
+                      onPress={() => openMeetingDetail(m)}
+                      className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm mb-3"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <Text className="text-[17px] font-bold text-ink font-sans flex-1" numberOfLines={1}>{m.title || 'Untitled Meeting'}</Text>
+                        {isLive && (
+                          <View className="flex-row items-center bg-emerald-500/10 px-2 py-0.5 rounded-full ml-2">
+                            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5" />
+                            <Text className="text-[9px] font-bold text-emerald-600 font-sans">LIVE</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text className="text-[11px] text-ink-soft font-medium uppercase font-sans mt-1">
+                        {attendees.length} {attendees.length === 1 ? 'attendee' : 'attendees'}
+                        {when ? ` · ${when.toLocaleDateString([], { month: 'short', day: 'numeric' })}` : ''}
+                        {durationMin != null ? ` · ${durationMin}m` : ''}
+                      </Text>
+
+                      <View className="flex-row items-end justify-between mt-6">
+                        <View className="flex-row -space-x-3">
+                          {attendees.slice(0, 3).map((a: any, i: number) => (
+                            <View key={i} className="w-10 h-10 rounded-full border-2 border-white bg-purple items-center justify-center shadow-sm overflow-hidden">
+                              <Text className="text-white text-[12px] font-bold font-sans">
+                                {(a.full_name || a.username || '?').charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                          ))}
                         </View>
-                      ))}
-                    </View>
-                    <View className="w-12 h-12 rounded-2xl bg-purple items-center justify-center shadow-lg shadow-purple/20">
-                      <Video color="#fff" size={20} />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+                        <View className="flex-row items-center gap-1.5">
+                          {(m.summary || m.transcriptRaw) && <FileText color="#6c5ce7" size={16} />}
+                          {Array.isArray(m.actionItems) && m.actionItems.length > 0 && (
+                            <View className="bg-purple/10 px-2 py-0.5 rounded-full">
+                              <Text className="text-[9px] font-bold text-purple font-sans">{m.actionItems.length} TASKS</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
           {/* People in the Office */}
@@ -523,12 +612,16 @@ export default function CallsScreen() {
                       {hasMeeting && (
                         <View className="flex-row gap-0.5 mt-auto flex-wrap">
                           {dayTasks.map(t => {
-                            let dotColor = 'bg-violet-500';
-                            if (t.priority === 'urgent') {
+                            // Shared indicator spec: green=meeting, yellow=recurring,
+                            // blue=event, purple=task, red=holiday.
+                            let dotColor = 'bg-violet-500'; // task → purple (default)
+                            if (t.eventType === 'holiday' || t.type === 'holiday') {
                               dotColor = 'bg-red-500';
-                            } else if (t.type === 'meeting') {
+                            } else if (t.isRecurring || t.__recurring || t.recurrenceRule) {
+                              dotColor = 'bg-yellow-500';
+                            } else if (t.type === 'meeting' || t.eventType === 'meeting_video' || t.eventType === 'meeting_audio') {
                               dotColor = 'bg-emerald-500';
-                            } else if (t.type === 'event') {
+                            } else if (t.type === 'event' || t.eventType === 'company' || t.eventType === 'all_day') {
                               dotColor = 'bg-blue-500';
                             } else if (t.type === 'task') {
                               dotColor = 'bg-violet-500';
@@ -601,8 +694,13 @@ export default function CallsScreen() {
               </View>
             ) : (
               selectedDayTasks.map(task => {
-                const labelColor = task.type === 'meeting' ? 'bg-emerald-100' : task.type === 'event' ? 'bg-purple/10' : 'bg-blue-100';
-                const labelTextColor = task.type === 'meeting' ? 'text-emerald-600' : task.type === 'event' ? 'text-purple' : 'text-blue-600';
+                // Shared indicator spec: green=meeting, yellow=recurring, blue=event, purple=task, red=holiday.
+                const isHoliday = task.eventType === 'holiday' || task.type === 'holiday';
+                const isRecurring = task.isRecurring || task.__recurring || task.recurrenceRule;
+                const isMeeting = task.type === 'meeting' || task.eventType === 'meeting_video' || task.eventType === 'meeting_audio';
+                const isEvent = task.type === 'event' || task.eventType === 'company' || task.eventType === 'all_day';
+                const labelColor = isHoliday ? 'bg-red-100' : isRecurring ? 'bg-yellow-100' : isMeeting ? 'bg-emerald-100' : isEvent ? 'bg-blue-100' : 'bg-purple/10';
+                const labelTextColor = isHoliday ? 'text-red-600' : isRecurring ? 'text-yellow-700' : isMeeting ? 'text-emerald-600' : isEvent ? 'text-blue-600' : 'text-purple';
                 const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
                 return (
                   <View key={task._id || task.id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
@@ -677,8 +775,9 @@ export default function CallsScreen() {
               const secs = (log.duration || 0) % 60;
               const durStr = log.duration ? `${mins}:${secs.toString().padStart(2, '0')}` : '';
               const Icon = missed ? PhoneMissed : isVideo ? Video : Phone;
+              const hasNotes = !!(log.agenda || log.notes);
               return (
-                <View key={logId} className="flex-row items-center bg-white rounded-2xl p-3.5 mb-2.5 border border-black/5">
+                <TouchableOpacity key={logId} activeOpacity={0.8} onPress={() => openLogDetail(log)} className="flex-row items-center bg-white rounded-2xl p-3.5 mb-2.5 border border-black/5">
                   <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${missed ? 'bg-red-500/10' : 'bg-purple-soft/40'}`}>
                     <Icon color={missed ? '#ef4444' : '#6c5ce7'} size={18} />
                   </View>
@@ -688,10 +787,15 @@ export default function CallsScreen() {
                       {missed ? 'Missed' : isVideo ? 'Video' : 'Voice'}{durStr ? ` · ${durStr}` : ''}{whenStr ? ` · ${whenStr}` : ''}
                     </Text>
                   </View>
+                  {hasNotes && <FileText color="#6c5ce7" size={15} style={{ marginRight: 6 }} />}
+                  {/* Revisit (re-call the same room) */}
+                  <TouchableOpacity onPress={() => startOutgoingCall({ name: log.label || 'Call', avatar: null }, isVideo ? 'video' : 'voice')} className="p-2">
+                    <Icon color="#6c5ce7" size={16} />
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleDeleteLog(logId)} className="p-2">
                     <X color="#9a9aab" size={16} />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               );
             })
           )}
@@ -852,6 +956,138 @@ export default function CallsScreen() {
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
+      </Modal>
+
+      {/* ── Meeting detail (transcript / summary / action items / files) ── */}
+      <Modal visible={selectedMeeting !== null} transparent animationType="slide" onRequestClose={() => setSelectedMeeting(null)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#ffffff', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, maxHeight: '85%' }}>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className="text-[18px] font-bold text-ink font-sans flex-1" numberOfLines={1}>
+                {selectedMeeting?.title || 'Meeting'}
+              </Text>
+              <TouchableOpacity onPress={() => setSelectedMeeting(null)} className="p-1.5">
+                <X size={20} color="#1f2030" />
+              </TouchableOpacity>
+            </View>
+
+            {meetingDetailLoading && (
+              <Text className="text-xs text-ink-soft font-sans mb-3">Loading…</Text>
+            )}
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+              {/* Summary */}
+              {selectedMeeting?.summary ? (
+                <View className="mb-5">
+                  <View className="flex-row items-center mb-2">
+                    <Sparkles size={14} color="#6c5ce7" />
+                    <Text className="text-xs font-bold uppercase tracking-wider text-purple ml-1.5 font-sans">Summary</Text>
+                  </View>
+                  <Text className="text-[13px] text-ink leading-5 font-sans">{selectedMeeting.summary}</Text>
+                </View>
+              ) : null}
+
+              {/* Action items */}
+              {Array.isArray(selectedMeeting?.actionItems) && selectedMeeting.actionItems.length > 0 ? (
+                <View className="mb-5">
+                  <Text className="text-xs font-bold uppercase tracking-wider text-black/30 mb-2 font-sans">Action Items</Text>
+                  {selectedMeeting.actionItems.map((ai: any, i: number) => (
+                    <View key={i} className="flex-row items-start mb-2">
+                      <Check size={14} color={ai.status === 'done' ? '#10b981' : '#9a9aab'} style={{ marginTop: 2 }} />
+                      <Text className="text-[13px] text-ink ml-2 flex-1 font-sans">{ai.text || ai.title || String(ai)}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {/* Files shared */}
+              {Array.isArray(selectedMeeting?.filesShared) && selectedMeeting.filesShared.length > 0 ? (
+                <View className="mb-5">
+                  <Text className="text-xs font-bold uppercase tracking-wider text-black/30 mb-2 font-sans">Files Shared</Text>
+                  {selectedMeeting.filesShared.map((f: any, i: number) => (
+                    <View key={i} className="flex-row items-center mb-2">
+                      <FileText size={14} color="#6c5ce7" />
+                      <Text className="text-[13px] text-ink ml-2 flex-1 font-sans" numberOfLines={1}>{f.label || f.name || f.url}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {/* Transcript */}
+              <View className="mb-2">
+                <View className="flex-row items-center mb-2">
+                  <FileText size={14} color="#6c5ce7" />
+                  <Text className="text-xs font-bold uppercase tracking-wider text-purple ml-1.5 font-sans">Transcript</Text>
+                </View>
+                {Array.isArray(selectedMeeting?.transcriptChunks) && selectedMeeting.transcriptChunks.length > 0 ? (
+                  selectedMeeting.transcriptChunks.map((c: any, i: number) => (
+                    <View key={i} className="mb-2">
+                      {c.speaker ? <Text className="text-[11px] font-bold text-purple font-sans">{c.speaker}</Text> : null}
+                      <Text className="text-[13px] text-ink leading-5 font-sans">{c.text}</Text>
+                    </View>
+                  ))
+                ) : selectedMeeting?.transcriptRaw ? (
+                  <Text className="text-[13px] text-ink leading-5 font-sans">{selectedMeeting.transcriptRaw}</Text>
+                ) : (
+                  <Text className="text-[12px] text-ink-soft italic font-sans">No transcript captured for this meeting.</Text>
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Call-log detail: revisit + agenda + activity notes ── */}
+      <Modal visible={selectedLog !== null} transparent animationType="slide" onRequestClose={() => setSelectedLog(null)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#ffffff', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, maxHeight: '85%' }}>
+            <View className="flex-row items-center justify-between mb-1">
+              <Text className="text-[18px] font-bold text-ink font-sans flex-1" numberOfLines={1}>{selectedLog?.label || 'Call'}</Text>
+              <TouchableOpacity onPress={() => setSelectedLog(null)} className="p-1.5"><X size={20} color="#1f2030" /></TouchableOpacity>
+            </View>
+            <Text className="text-xs text-ink-soft font-sans mb-4">
+              {selectedLog?.missed ? 'Missed' : selectedLog?.type === 'video' ? 'Video call' : 'Voice call'}
+              {selectedLog?.timestamp ? ` · ${new Date(selectedLog.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : ''}
+              {selectedLog?.duration ? ` · ${Math.floor(selectedLog.duration / 60)}:${String(selectedLog.duration % 60).padStart(2, '0')}` : ''}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => { const v = selectedLog?.type === 'video'; setSelectedLog(null); startOutgoingCall({ name: selectedLog?.label || 'Call', avatar: null }, v ? 'video' : 'voice'); }}
+              className="flex-row items-center justify-center bg-purple rounded-2xl py-3 mb-5"
+            >
+              <Phone size={16} color="#fff" style={{ marginRight: 8 }} />
+              <Text className="text-white font-bold text-sm font-sans">Revisit call</Text>
+            </TouchableOpacity>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 mb-1.5 font-sans">Agenda</Text>
+              <TextInput
+                value={logAgenda}
+                onChangeText={setLogAgenda}
+                placeholder="What was this call about?"
+                placeholderTextColor="#9a9aab"
+                multiline
+                className="bg-purple-soft/20 rounded-2xl p-3 text-[14px] text-ink font-sans mb-5"
+                style={{ minHeight: 70, textAlignVertical: 'top' }}
+              />
+
+              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 mb-1.5 font-sans">Activity notes</Text>
+              <TextInput
+                value={logNotes}
+                onChangeText={setLogNotes}
+                placeholder="Decisions, follow-ups, takeaways…"
+                placeholderTextColor="#9a9aab"
+                multiline
+                className="bg-purple-soft/20 rounded-2xl p-3 text-[14px] text-ink font-sans mb-5"
+                style={{ minHeight: 110, textAlignVertical: 'top' }}
+              />
+
+              <TouchableOpacity onPress={saveLogDetail} disabled={savingLog} className="bg-purple rounded-2xl py-3 items-center" style={{ opacity: savingLog ? 0.6 : 1 }}>
+                <Text className="text-white font-bold text-sm font-sans">{savingLog ? 'Saving…' : 'Save notes'}</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
     </SafeAreaView>

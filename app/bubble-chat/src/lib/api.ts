@@ -1041,6 +1041,16 @@ export const deleteCallLog = async (id: string) => {
     return handleResponse(res);
 };
 
+// Attach/update an agenda or activity notes on a past call log.
+export const updateCallLog = async (id: string, data: { agenda?: string; notes?: string; label?: string }) => {
+    const res = await fetch(`${BASE_URL}/meet/logs/${id}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+};
+
 // ─── Feed / Blog ──────────────────────────────────────────────────────────────
 
 export const fetchFeedPosts = async (page = 1, limit = 20) => {
@@ -2138,6 +2148,7 @@ export const updateOrgProfile = async (data: {
     description?: string;
     logo?: string;
     allowMembersToShareInvite?: boolean;
+    emailTranscriptsToMembers?: boolean;
 }) => {
     const res = await fetch(`${BASE_URL}/org/profile`, {
         method: 'PUT',

@@ -3,7 +3,10 @@ import { Message } from '../models/messages';
 import { Conversation } from '../models/conversations';
 import { uploadToFilebase, getSignedMediaUrl, streamS3Object } from '../utils/filebase';
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { enqueueMessage } from '../utils/queue';
+import { transcribeAudio } from '../utils/whisperService';
 import { getIO } from '../utils/socket';
 import { sendPushNotification } from '../utils/push';
 import { brainEventBus } from '../utils/brainEventListener';
@@ -59,6 +62,7 @@ export const formatMessage = async (m: any) => ({
   mediaType: m.mediaType || null,
   fileSize: m.fileSize || null,
   media_metadata: m.media_metadata || null,
+  transcript: m.transcript || null,
   location: m.location || null,
 
   // Interactions & State
@@ -124,8 +128,43 @@ const emitToConversation = async (
   }
 };
 
+/**
+ * Transcribe a voice note off the request path. Reuses the same Whisper/Groq
+ * service the meeting transcription uses, persists the result on the message,
+ * and emits `message_transcribed` so both clients can show the text under the
+ * voice bubble. Always cleans up the staged audio file.
+ */
+const transcribeVoiceNoteAsync = async (
+  audioPath: string,
+  messageId: string,
+  chatId: string,
+  users: any[],
+  io: any,
+): Promise<void> => {
+  try {
+    const transcript = (await transcribeAudio(audioPath))?.trim();
+    if (!transcript) return;
+
+    await Message.findByIdAndUpdate(messageId, { transcript });
+
+    try {
+      await emitToConversation(io, chatId, users, 'message_transcribed', { messageId, chatId, transcript });
+    } catch (emitErr) {
+      console.error('[Voice STT] emit message_transcribed failed:', emitErr);
+    }
+  } catch (err: any) {
+    console.error(`[Voice STT] Transcription failed for message ${messageId}:`, err?.message || err);
+  } finally {
+    try { if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath); } catch { /* silent */ }
+  }
+};
+
 export const sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
   let { content, chatId, message_type, mediaUrl, mediaType, parent_message, fileSize, media_metadata, is_encrypted, location, mentions, media_duration, clientId } = req.body;
+
+  // Set when a voice note is uploaded: a copy of the audio kept on disk so the
+  // async transcription can run after we've already replied to the client.
+  let voiceTranscriptionPath: string | undefined;
 
   if (req.file) {
     try {
@@ -134,10 +173,7 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
         req.file.originalname,
         req.file.mimetype
       );
-      fs.unlinkSync(req.file.path);
-      mediaUrl = result.url;
-      fileSize = req.file.size;
-      
+
       if (!message_type || message_type === 'text') {
         if (req.file.mimetype.startsWith('image/')) message_type = 'image';
         else if (req.file.mimetype.startsWith('video/')) message_type = 'video';
@@ -145,6 +181,23 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
         else message_type = 'file';
       }
       mediaType = message_type;
+
+      // Preserve a copy of the audio for transcription before the temp file is
+      // unlinked (transcription is slow, so it can't block the send response).
+      if (message_type === 'voice' || req.file.mimetype.startsWith('audio/')) {
+        try {
+          const ext = path.extname(req.file.originalname) || '.webm';
+          voiceTranscriptionPath = path.join(os.tmpdir(), `voice-stt-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+          fs.copyFileSync(req.file.path, voiceTranscriptionPath);
+        } catch (copyErr) {
+          console.error('[Voice STT] Failed to stage audio for transcription:', copyErr);
+          voiceTranscriptionPath = undefined;
+        }
+      }
+
+      fs.unlinkSync(req.file.path);
+      mediaUrl = result.url;
+      fileSize = req.file.size;
 
       const durationVal = media_duration ? parseFloat(media_duration) : undefined;
       media_metadata = {
@@ -189,6 +242,12 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
           .populate({ path: 'parent_message', populate: { path: 'sender', select: 'full_name uniqueTag' } });
         const formattedExisting: any = await formatMessage(fullExisting);
         formattedExisting.clientId = clientId;
+        // Duplicate retry — the original already handled (or is handling)
+        // transcription, so drop this retry's staged audio copy.
+        if (voiceTranscriptionPath) {
+          try { if (fs.existsSync(voiceTranscriptionPath)) fs.unlinkSync(voiceTranscriptionPath); } catch { /* silent */ }
+          voiceTranscriptionPath = undefined;
+        }
         res.status(200).json({ message: 'Message already sent.', data: formattedExisting });
         return;
       }
@@ -240,6 +299,13 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
     try {
       const io = req.io || getIO();
       await emitToConversation(io, chatId, convo.users as any[], 'new_message', formatted);
+
+      // Voice note: transcribe in the background, then patch the message and
+      // notify the room. Fire-and-forget so the send response isn't blocked.
+      if (voiceTranscriptionPath) {
+        transcribeVoiceNoteAsync(voiceTranscriptionPath, String(newMessage._id), String(chatId), convo.users as any[], io);
+        voiceTranscriptionPath = undefined; // ownership handed to the async job
+      }
 
       // First message into a DM that was previously hidden (empty colleague DM):
       // the recipient's chat list ignores new_message for chats it doesn't have,

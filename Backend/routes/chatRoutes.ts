@@ -15,6 +15,7 @@ import {
   toggleArchiveChat,
   joinGroupChatByInvite,
   updateGroupSettings,
+  getChatById,
 } from '../controllers/chatController';
 
 
@@ -245,5 +246,11 @@ router.patch('/toggle-archive/:chatId', toggleArchiveChat);
  *         description: Chat deleted from your view.
  */
 router.delete('/:chatId', deleteChat);
+
+/**
+ * GET /api/v1/chat/:chatId — Fetch one conversation with fully-populated members.
+ * Registered last so static GET routes (e.g. /unread-count) match first.
+ */
+router.get('/:chatId', getChatById);
 
 export default router;

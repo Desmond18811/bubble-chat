@@ -707,6 +707,49 @@ export const deleteChat = async (req: AuthRequest, res: Response): Promise<void>
 };
 
 /**
+ * Get a single conversation by id, with all members fully populated.
+ * GET /api/v1/chat/:chatId
+ *
+ * This is the authoritative source for a group's full member list + count.
+ * The chat-list payload a client holds can become partial (stale cache, a
+ * socket merge, or a `new_chat` insert built from a trimmed payload), which is
+ * why GroupInfo must refetch from here rather than trust the list object.
+ */
+export const getChatById = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { chatId } = req.params;
+  const userId = req.user?._id;
+
+  if (!userId) { res.status(401).json({ message: 'Unauthorized' }); return; }
+  if (!chatId || !mongoose.Types.ObjectId.isValid(String(chatId))) {
+    res.status(400).json({ message: 'Invalid chat id' });
+    return;
+  }
+
+  try {
+    const convo: any = await Conversation.findById(chatId)
+      .populate('users', '-password -refreshToken -privateKey')
+      .populate('groupAdmin', '-password -refreshToken -privateKey')
+      .populate({
+        path: 'latestMessage',
+        populate: { path: 'sender', select: 'full_name username avatar email uniqueTag is_bot' },
+      });
+
+    if (!convo) { res.status(404).json({ message: 'Conversation not found' }); return; }
+
+    const isParticipant = convo.users.some((u: any) => String(u._id || u) === String(userId));
+    if (!isParticipant) {
+      res.status(403).json({ message: 'Forbidden: You are not a participant in this conversation' });
+      return;
+    }
+
+    const conversation = await formatConversation(convo, userId);
+    res.status(200).json({ message: 'Conversation retrieved successfully.', conversation });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
  * Get unread chat message count
  * GET /api/v1/chat/unread-count
  */

@@ -47,6 +47,9 @@ export interface IMessage extends Document {
     quality?: 'sd' | 'hd';
   };
 
+  // Speech-to-text of a voice note, filled in asynchronously after upload.
+  transcript?: string;
+
   // Location specific
   location?: {
     latitude: number;
@@ -151,6 +154,9 @@ const MessageSchema: Schema<IMessage> = new Schema(
       mime_type: { type: String },
       quality: { type: String, enum: ['sd', 'hd'], default: 'sd' },
     },
+
+    // STT transcript for voice notes (populated asynchronously post-upload).
+    transcript: { type: String },
 
     // Location
     location: {

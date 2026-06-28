@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import { getCallLogs, createCallLog, clearCallLogs, deleteCallLog, getRoomTranscript, saveTranscriptChunk, getLiveKitToken, createInviteLink } from '../controllers/meetController';
+import { getCallLogs, createCallLog, updateCallLog, clearCallLogs, deleteCallLog, getRoomTranscript, saveTranscriptChunk, getLiveKitToken, createInviteLink } from '../controllers/meetController';
 import { getZegoToken } from '../utils/zego';
 
 const router = express.Router();
@@ -29,6 +29,7 @@ router.post('/invite-link', createInviteLink);
  *         description: List of call logs
  */
 router.get('/logs', getCallLogs);
+router.patch('/logs/:id', updateCallLog);
 
 /**
  * @swagger

@@ -11,12 +11,20 @@ export interface Message {
   reactions?: string[];
   isPinned?: boolean;
   isRead?: boolean;
-  status?: 'queued' | 'sent' | 'delivered';
+  status?: 'queued' | 'sent' | 'delivered' | 'sending' | 'failed';
   message_type?: string;
   is_announcement?: boolean;
   isSystem?: boolean;
   mediaUrl?: string | null;
   media_url?: string | null;
+  media_metadata?: { duration?: number; mime_type?: string; [k: string]: any } | null;
+  transcript?: string | null;
+  // Populated quoted message when this is a reply (shape from backend formatMessage).
+  parent_message?: {
+    id: string;
+    content?: string | null;
+    sender?: { full_name?: string | null; uniqueTag?: string | null } | null;
+  } | null;
 }
 
 export interface Chat {
