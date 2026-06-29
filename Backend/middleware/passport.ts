@@ -39,8 +39,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         // backend domain in production. No hardcoded host — must match the Authorized
         // redirect URI in Google Cloud Console. Falls back to localhost for dev only.
         callbackURL: process.env.GOOGLE_CALLBACK_URL ||
-            `${process.env.SERVER_URL || 'http://localhost:3000'}/api/v1/auth/google/callback`
+            `${process.env.SERVER_URL || 'http://localhost:3000'}/api/v1/auth/google/callback`,
+        // proxy: true makes passport trust the exact callbackURL you specified,
+        // preventing query-string drift like ?flowName=GeneralOAuthFlow
+        proxy: true,
     }, async (accessToken, refreshToken, profile, done) => {
+
         try {
             const { findOrCreateGoogleUser } = await import('../utils/googleAuth');
             const user = await findOrCreateGoogleUser({
