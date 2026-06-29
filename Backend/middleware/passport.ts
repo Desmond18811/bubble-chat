@@ -58,7 +58,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                 //
                 // The fallback below is for local development only.
                 callbackURL:
-                    process.env.GOOGLE_CALLBACK_URL ||
+                    process.env.ORIGIN ||
                     `${process.env.SERVER_URL || 'http://localhost:3000'}/api/v1/auth/google/callback`,
 
                 // proxy: true tells passport to trust the exact callbackURL string above
