@@ -640,8 +640,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/authController.ts": {
-    "mtime": 1782755651.9971802,
-    "ast_hash": "9d621cbfb5f12f28118d9c7ef07d87ee",
+    "mtime": 1782759783.362996,
+    "ast_hash": "3d799df486e3b171abeda462ade2b59b",
     "semantic_hash": ""
   },
   "Backend/controllers/chatController.ts": {
@@ -745,8 +745,8 @@
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {
-    "mtime": 1782755652.002392,
-    "ast_hash": "907e6e26bb1932dd421a5537e31e1cdf",
+    "mtime": 1782759837.848058,
+    "ast_hash": "5ef8d7b56fbc1b28ff93a12a38aff760",
     "semantic_hash": ""
   },
   "Backend/middleware/upload.ts": {
@@ -885,8 +885,8 @@
     "semantic_hash": ""
   },
   "Backend/routes/authRoutes.ts": {
-    "mtime": 1782755459.3314145,
-    "ast_hash": "c28f6c1ad7e3015d9bbd98170c9a275a",
+    "mtime": 1782759817.920233,
+    "ast_hash": "5210083991678d8f664bbcb1ad5788c2",
     "semantic_hash": ""
   },
   "Backend/routes/chatRoutes.ts": {
@@ -1310,7 +1310,7 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/index.html": {
-    "mtime": 1782755635.8775485,
+    "mtime": 1782756391.6717215,
     "ast_hash": "0f912853a83974065262d0cce4a1f7d9",
     "semantic_hash": ""
   },
