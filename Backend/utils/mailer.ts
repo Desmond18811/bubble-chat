@@ -479,3 +479,54 @@ export const sendCalendarEventEmail = async (
   return await sendMail(to, subject, html);
 };
 
+/**
+ * Notify a user that Aida detected a repeating event pattern.
+ * The confirm/dismiss links hit the backend endpoint with a signed token.
+ */
+export const sendRecurringPatternEmail = async (
+  to: string,
+  name: string,
+  patternTitle: string,
+  occurrences: number,
+  confirmUrl: string,
+  dismissUrl: string
+) => {
+  const subject = `🔁 Aida noticed a pattern: "${patternTitle}"`;
+  const html = `
+    <div style="font-family:'Poppins','Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #eae7fa;box-shadow:0 15px 35px -5px rgba(108,92,231,0.06);">
+      <div style="background:linear-gradient(135deg,#6c5ce7 0%,#4834d4 100%);padding:36px;text-align:center;">
+        <div style="font-size:26px;font-weight:900;letter-spacing:5px;color:#fff;text-transform:uppercase;">BUBBLESPACE</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.75);letter-spacing:3px;text-transform:uppercase;margin-top:5px;font-weight:700;">Aida · Pattern Intelligence</div>
+      </div>
+      <div style="padding:36px;">
+        <h2 style="color:#1f2030;font-size:20px;font-weight:800;margin:0 0 8px;">Pattern Detected 🔁</h2>
+        <p style="font-size:14px;line-height:1.7;color:#4a5568;margin:0 0 10px;">Hi ${name},</p>
+        <p style="font-size:14px;line-height:1.7;color:#4a5568;margin:0 0 24px;">
+          Aida has noticed that you've had <strong style="color:#6c5ce7;">"${patternTitle}"</strong> scheduled
+          <strong>${occurrences} times</strong> recently. Would you like to make it an official recurring event?
+        </p>
+        <div style="background:#efedfb;border-left:4px solid #6c5ce7;border-radius:16px;padding:18px 22px;margin-bottom:28px;">
+          <p style="font-size:13px;color:#6c5ce7;font-weight:700;margin:0 0 6px;">✦ What happens when you confirm:</p>
+          <ul style="font-size:13px;color:#4a5568;margin:0;padding-left:18px;line-height:1.8;">
+            <li>This event gets flagged as recurring in your calendar</li>
+            <li>Future instances appear with a yellow recurring indicator</li>
+            <li>You won't get notified about this pattern again</li>
+          </ul>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="${confirmUrl}" style="flex:1;min-width:140px;display:inline-block;padding:14px 20px;background:#6c5ce7;color:#fff;font-weight:800;font-size:13px;text-decoration:none;border-radius:14px;text-align:center;letter-spacing:0.5px;box-shadow:0 6px 20px rgba(108,92,231,0.25);">
+            ✓ Yes, make it recurring
+          </a>
+          <a href="${dismissUrl}" style="flex:1;min-width:120px;display:inline-block;padding:14px 20px;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;text-decoration:none;border-radius:14px;text-align:center;border:1px solid #e2e8f0;">
+            ✗ No thanks
+          </a>
+        </div>
+      </div>
+      <div style="padding:20px 36px;background:#fbfbfe;border-top:1px solid #eae7fa;text-align:center;">
+        <p style="font-size:10px;color:#9a9aab;margin:0;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;">BUBBLESPACE · AIDA PATTERN INTELLIGENCE</p>
+      </div>
+    </div>
+  `;
+  return await sendMail(to, subject, html);
+};
+

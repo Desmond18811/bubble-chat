@@ -1000,7 +1000,11 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
     }
 
     const userAgent = req.headers['user-agent'] || '';
-    const isMobileUA = userAgent.includes('Expo') || userAgent.includes('Darwin') || userAgent.includes('Android') || userAgent.includes('Mobile');
+    const isMobileUA = userAgent.includes('Expo')
+      || userAgent.includes('Android')
+      || userAgent.includes('iPhone')
+      || userAgent.includes('iPad')
+      || (userAgent.includes('Mobile') && !userAgent.includes('Macintosh'));
     const isMobileRequest = (state && state.startsWith('mobile_')) || isMobileUA;
 
     let redirectUrl = `${process.env.FRONTEND_URL || process.env.ORIGIN || 'http://localhost:5173'}/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken}&user=${userJson}`;
@@ -1022,7 +1026,11 @@ export const googleCallback = async (req: any, res: Response): Promise<void> => 
     const rawState = req.query.state as string;
     const state = rawState ? decodeURIComponent(rawState) : '';
     const userAgent = req.headers['user-agent'] || '';
-    const isMobileUA = userAgent.includes('Expo') || userAgent.includes('Darwin') || userAgent.includes('Android') || userAgent.includes('Mobile');
+    const isMobileUA = userAgent.includes('Expo')
+      || userAgent.includes('Android')
+      || userAgent.includes('iPhone')
+      || userAgent.includes('iPad')
+      || (userAgent.includes('Mobile') && !userAgent.includes('Macintosh'));
     const isMobileRequest = (state && state.startsWith('mobile_')) || isMobileUA;
 
     if (isMobileRequest) {

@@ -11,6 +11,12 @@ import {
   bulkImportHolidays,
   getEventSuggestions,
 } from '../controllers/calendarController';
+import {
+  detectAndNotifyPatterns,
+  confirmPattern,
+  dismissPattern,
+  getPendingPatterns,
+} from '../controllers/recurringPatternController';
 
 const router = express.Router();
 const requireAuth = passport.authenticate('jwt', { session: false });
@@ -73,5 +79,17 @@ router.post('/:id/start-meeting', startMeeting);
  * Body: { transcriptText?, transcriptChunks? }
  */
 router.post('/:id/end-meeting', endMeeting);
+
+/**
+ * Recurring pattern detection + notification
+ * POST /api/v1/events/patterns/detect  — run detection for current user
+ * GET  /api/v1/events/patterns/pending — get unacted-on patterns (for in-app banner)
+ * POST /api/v1/events/patterns/:id/confirm
+ * POST /api/v1/events/patterns/:id/dismiss
+ */
+router.post('/patterns/detect', detectAndNotifyPatterns);
+router.get('/patterns/pending', getPendingPatterns);
+router.post('/patterns/:id/confirm', confirmPattern);
+router.post('/patterns/:id/dismiss', dismissPattern);
 
 export default router;
