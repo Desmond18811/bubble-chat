@@ -91,8 +91,8 @@ function MeetingDetailModal({ meeting, loading, onClose }: { meeting: any; loadi
           </View>
 
           {/* Title row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 12 }}>
-            <Text style={{ fontSize: 17, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030', flex: 1 }} numberOfLines={1}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 4 }}>
+            <Text style={{ fontSize: 17, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030', flex: 1 }} numberOfLines={2}>
               {meeting.title || 'Meeting'}
             </Text>
             <TouchableOpacity onPress={onClose} style={{ padding: 6 }}>
@@ -100,8 +100,54 @@ function MeetingDetailModal({ meeting, loading, onClose }: { meeting: any; loadi
             </TouchableOpacity>
           </View>
 
-          {loading && (
-            <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular', paddingHorizontal: 22, marginBottom: 6 }}>Loading…</Text>
+          {/* Metadata: date + duration */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 22, paddingBottom: 10, gap: 12 }}>
+            {meeting.startedAt ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Calendar size={12} color="#9a9aab" />
+                <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
+                  {new Date(meeting.startedAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </View>
+            ) : null}
+            {meeting.duration ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Clock size={12} color="#9a9aab" />
+                <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
+                  {Math.floor(meeting.duration / 60)}:{String(meeting.duration % 60).padStart(2, '0')}
+                </Text>
+              </View>
+            ) : null}
+            {loading && (
+              <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular' }}>Loading…</Text>
+            )}
+          </View>
+
+          {/* Attendees */}
+          {Array.isArray(meeting.attendees) && meeting.attendees.length > 0 && (
+            <View style={{ paddingHorizontal: 22, paddingBottom: 10 }}>
+              <Text style={{ fontSize: 10, color: '#9a9aab', fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Attendees</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {meeting.attendees.map((a: any, i: number) => {
+                  const name = a?.full_name || a?.username || (typeof a === 'string' ? a : 'User');
+                  const initials = getInitials(name);
+                  return (
+                    <View key={i} style={{ alignItems: 'center', marginRight: 12 }}>
+                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#ede9fe', alignItems: 'center', justifyContent: 'center', marginBottom: 3 }}>
+                        {a?.avatar ? (
+                          <Image source={{ uri: a.avatar }} style={{ width: 36, height: 36, borderRadius: 18 }} contentFit="cover" />
+                        ) : (
+                          <Text style={{ fontSize: 12, fontFamily: 'SpaceGrotesk_700Bold', color: '#6c5ce7' }}>{initials}</Text>
+                        )}
+                      </View>
+                      <Text style={{ fontSize: 9, color: '#1f2030', fontFamily: 'Poppins_600SemiBold', maxWidth: 50, textAlign: 'center' }} numberOfLines={1}>
+                        {name.split(' ')[0]}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
           )}
 
           {/* Tab bar */}
