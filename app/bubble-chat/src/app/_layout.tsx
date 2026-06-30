@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,9 +9,9 @@ import Constants from 'expo-constants';
 import { verifyInstallation } from "nativewind";
 import "../global.css";
 import { initApiFromStorage, getSecureMediaUrl } from "../lib/api";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Share } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Share, PanResponder, Dimensions, Alert } from "react-native";
 import { Image } from "expo-image";
-import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2, UserPlus, Link2, X } from "lucide-react-native";
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2, UserPlus, Link2, X, Monitor, MonitorOff } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
 import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, inviteToCall, getLinkJoinToken, CallState } from "../lib/callManager";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
@@ -47,6 +47,8 @@ const SURFACE = '#f5f4fb';
 const BORDER = '#ece9f7';
 const GREEN = '#10b981';
 const RED = '#ef4444';
+const PILL_W = 142;
+const PILL_H = 184;
 
 function GlobalCallOverlay() {
   const [callState, setCallState] = useState<CallState>({ status: 'idle' });
@@ -55,8 +57,34 @@ function GlobalCallOverlay() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  const handleScreenShareError = (err: Error) => {
+    setIsScreenSharing(false);
+    Alert.alert('Screen share unavailable', "This build doesn't support screen sharing yet. Try a video call instead.");
+    console.warn('[LiveKit] screen share failed:', err);
+  };
   const [lkToken, setLkToken] = useState<string | null>(null);
   const [lkUrl, setLkUrl] = useState<string | null>(null);
+
+  // Draggable floating pill position when minimized — clamped to the screen.
+  const [pillPos, setPillPos] = useState(() => {
+    const { width, height } = Dimensions.get('window');
+    return { x: width - PILL_W - 16, y: height - PILL_H - 96 };
+  });
+  const dragOrigin = useRef({ x: 0, y: 0 });
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4,
+      onPanResponderGrant: () => { dragOrigin.current = { ...pillPos }; },
+      onPanResponderMove: (_, g) => {
+        const { width, height } = Dimensions.get('window');
+        const nx = Math.max(8, Math.min(width - PILL_W - 8, dragOrigin.current.x + g.dx));
+        const ny = Math.max(40, Math.min(height - PILL_H - 8, dragOrigin.current.y + g.dy));
+        setPillPos({ x: nx, y: ny });
+      },
+    })
+  ).current;
 
   // Add-people / invite sheet
   const [showAddPeople, setShowAddPeople] = useState(false);
@@ -99,10 +127,12 @@ function GlobalCallOverlay() {
         setIsSpeaker(false);
         setIsCameraActive(state.type === 'video');
         setIsMinimized(false);
+        setIsScreenSharing(false);
       }
       if (state.status === 'idle') {
         setLkToken(null);
         setLkUrl(null);
+        setIsScreenSharing(false);
       }
     });
     return unsubscribe;
@@ -205,61 +235,37 @@ function GlobalCallOverlay() {
     )
   );
 
-  if (isMinimized) {
-    return (
-      <View style={styles.minimizedContainer}>
-        <View style={styles.miniHeader}>
-          <TouchableOpacity onPress={() => setIsMinimized(false)} style={styles.miniOptionButton}>
-            <Maximize2 color={PURPLE} size={16} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ alignItems: 'center', width: '100%', marginTop: 4 }}>
-          {renderAvatar(46)}
-          <Text numberOfLines={1} style={styles.miniNameText}>{name}</Text>
-          <Text style={styles.miniDurationText}>
-            {callState.status === 'in_call' ? formatDuration(callState.duration) : 'Calling…'}
-          </Text>
-        </View>
-
-        <View style={styles.miniButtonsRow}>
-          <TouchableOpacity
-            onPress={() => setIsMuted(!isMuted)}
-            style={[styles.miniOptionsButton, isMuted && styles.activeMiniOptionsButton]}
-          >
-            {isMuted ? <MicOff color="#ffffff" size={14} /> : <Mic color={INK_SOFT} size={14} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => hangUpCall()}
-            style={[styles.miniOptionsButton, { backgroundColor: RED }]}
-          >
-            <PhoneOff color="#ffffff" size={14} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
+  // Single unified tree for both full-screen and minimized states. The media slot
+  // holding <LiveKitCallRoom> always renders at the same JSX position regardless of
+  // isMinimized — only its wrapping style changes — so React never unmounts the
+  // LiveKitRoom connection when the user minimizes/restores. (Previously this used
+  // two separate `return` branches — a Modal for full screen, a plain View for mini —
+  // which silently dropped the live call on minimize since LiveKitCallRoom only
+  // existed inside the Modal branch.) A plain absolutely-positioned root (not a RN
+  // Modal) is used so the minimized pill can float over the rest of the app while
+  // still letting touches reach screens underneath it.
   return (
-    <Modal
-      visible={true}
-      animationType="slide"
-      presentationStyle="fullScreen"
-      statusBarTranslucent={true}
+    <View
+      style={[styles.callContainer, isMinimized && [styles.minimizedContainer, { left: pillPos.x, top: pillPos.y }]]}
+      pointerEvents={isMinimized ? 'box-none' : 'auto'}
     >
-      <View style={styles.callContainer}>
-        {/* Minimize Button (not while an incoming call is ringing) */}
-        {!isIncoming && (
-          <TouchableOpacity
-            onPress={() => setIsMinimized(true)}
-            style={styles.minimizeButton}
-          >
+      {/* Minimize / Maximize toggle (not while an incoming call is ringing) */}
+      {!isIncoming && (
+        isMinimized ? (
+          <View style={styles.miniHeader}>
+            <TouchableOpacity onPress={() => setIsMinimized(false)} style={styles.miniOptionButton}>
+              <Maximize2 color={PURPLE} size={16} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity onPress={() => setIsMinimized(true)} style={styles.minimizeButton}>
             <Minimize2 color={INK_SOFT} size={18} />
           </TouchableOpacity>
-        )}
+        )
+      )}
 
-        {/* Header */}
+      {/* Full-mode header */}
+      {!isMinimized && (
         <View style={styles.callHeader}>
           <Text style={styles.callTypeTitle}>
             BUBBLE {isVideo ? 'VIDEO CALL' : 'VOICE CALL'}
@@ -267,56 +273,72 @@ function GlobalCallOverlay() {
           <Text style={styles.callerNameText} numberOfLines={2}>{name}</Text>
           <Text style={styles.statusText}>{statusLabel}</Text>
         </View>
+      )}
 
-        {/* Media / Video Stream area */}
-        <View style={styles.mediaContainer}>
-          {callState.status === 'in_call' && LiveKitCallRoom && lkToken && lkUrl ? (
-            <View style={isVideo ? styles.videoPreviewFrame : styles.avatarOuterRing}>
-              <LiveKitCallRoom
-                serverUrl={lkUrl}
-                token={lkToken}
-                isVideo={isVideo}
-                micEnabled={!isMuted}
-                cameraEnabled={isCameraActive}
-                speakerEnabled={isSpeaker}
-                roomId={(callState as any).roomId}
-                fallback={renderAvatar(156)}
-                onError={(err) => console.warn('[LiveKit] room error:', err)}
-                onDisconnected={() => {
-                  // When the LiveKit room ends (peer left, network drop, or normal
-                  // hangup) reset the call state so the user can place/receive another
-                  // call. Without this the overlay stayed stuck in 'in_call' and every
-                  // subsequent call was blocked.
-                  hangUpCall();
-                }}
-              />
-            </View>
-          ) : callState.status === 'in_call' && isCameraActive && hasPermission ? (
-            <View style={styles.videoPreviewFrame}>
-              <CameraView style={StyleSheet.absoluteFill} facing="front" />
-              <View style={styles.remoteVideoPreviewOverlay}>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri || undefined }} style={styles.remoteAvatarImage} />
-                ) : (
-                  <View style={styles.remoteInitialsPlaceholder}>
-                    <Text style={styles.remoteInitialsText}>{getGroupInitials(name)}</Text>
-                  </View>
-                )}
-                <Text style={styles.remoteLabel}>You</Text>
-              </View>
-            </View>
-          ) : (
-            <View style={[styles.avatarOuterRing, isIncoming && styles.avatarOuterRingIncoming]}>
-              <View style={styles.avatarInnerRing}>
-                <View style={styles.avatarPlaceholderContainer}>
-                  {renderAvatar(156)}
-                </View>
-              </View>
-            </View>
-          )}
+      {/* Mini-mode name/timer — doubles as the drag handle for repositioning the pill */}
+      {isMinimized && (
+        <View {...panResponder.panHandlers} style={{ alignItems: 'center', width: '100%', marginTop: 4 }}>
+          <Text numberOfLines={1} style={styles.miniNameText}>{name}</Text>
+          <Text style={styles.miniDurationText}>
+            {callState.status === 'in_call' ? formatDuration(callState.duration) : 'Calling…'}
+          </Text>
         </View>
+      )}
 
-        {/* Add-people sheet */}
+      {/* Media / Video Stream area — stable slot, see note above */}
+      <View style={isMinimized ? styles.miniMediaSlot : styles.mediaContainer}>
+        {callState.status === 'in_call' && LiveKitCallRoom && lkToken && lkUrl ? (
+          <View style={isVideo ? (isMinimized ? styles.miniVideoFrame : styles.videoPreviewFrame) : (isMinimized ? styles.miniAvatarRing : styles.avatarOuterRing)}>
+            <LiveKitCallRoom
+              serverUrl={lkUrl}
+              token={lkToken}
+              isVideo={isVideo}
+              micEnabled={!isMuted}
+              cameraEnabled={isCameraActive}
+              speakerEnabled={isSpeaker}
+              screenShareEnabled={isScreenSharing}
+              onScreenShareError={handleScreenShareError}
+              roomId={(callState as any).roomId}
+              fallback={renderAvatar(isMinimized ? 46 : 156)}
+              onError={(err) => console.warn('[LiveKit] room error:', err)}
+              onDisconnected={() => {
+                // When the LiveKit room ends (peer left, network drop, or normal
+                // hangup) reset the call state so the user can place/receive another
+                // call. Without this the overlay stayed stuck in 'in_call' and every
+                // subsequent call was blocked.
+                hangUpCall();
+              }}
+            />
+          </View>
+        ) : callState.status === 'in_call' && isCameraActive && hasPermission && !isMinimized ? (
+          <View style={styles.videoPreviewFrame}>
+            <CameraView style={StyleSheet.absoluteFill} facing="front" />
+            <View style={styles.remoteVideoPreviewOverlay}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri || undefined }} style={styles.remoteAvatarImage} />
+              ) : (
+                <View style={styles.remoteInitialsPlaceholder}>
+                  <Text style={styles.remoteInitialsText}>{getGroupInitials(name)}</Text>
+                </View>
+              )}
+              <Text style={styles.remoteLabel}>You</Text>
+            </View>
+          </View>
+        ) : isMinimized ? (
+          renderAvatar(46)
+        ) : (
+          <View style={[styles.avatarOuterRing, isIncoming && styles.avatarOuterRingIncoming]}>
+            <View style={styles.avatarInnerRing}>
+              <View style={styles.avatarPlaceholderContainer}>
+                {renderAvatar(156)}
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Add-people sheet (full mode only) */}
+      {!isMinimized && (
         <Modal visible={showAddPeople} transparent animationType="slide" onRequestClose={() => setShowAddPeople(false)}>
           <View style={styles.sheetBackdrop}>
             <View style={styles.sheetCard}>
@@ -361,8 +383,26 @@ function GlobalCallOverlay() {
             </View>
           </View>
         </Modal>
+      )}
 
-        {/* Call Actions */}
+      {/* Call Actions */}
+      {isMinimized ? (
+        <View style={styles.miniButtonsRow}>
+          <TouchableOpacity
+            onPress={() => setIsMuted(!isMuted)}
+            style={[styles.miniOptionsButton, isMuted && styles.activeMiniOptionsButton]}
+          >
+            {isMuted ? <MicOff color="#ffffff" size={14} /> : <Mic color={INK_SOFT} size={14} />}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => hangUpCall()}
+            style={[styles.miniOptionsButton, { backgroundColor: RED }]}
+          >
+            <PhoneOff color="#ffffff" size={14} />
+          </TouchableOpacity>
+        </View>
+      ) : (
         <View style={styles.actionsContainer}>
           {isIncoming ? (
             <View style={styles.incomingButtonsRow}>
@@ -425,6 +465,17 @@ function GlobalCallOverlay() {
                   </TouchableOpacity>
                 )}
 
+                {/* Screen share (only in active calls; gracefully no-ops if the
+                    build lacks native screen-capture support — see handleScreenShareError) */}
+                {callState.status === 'in_call' && (
+                  <TouchableOpacity
+                    onPress={() => setIsScreenSharing(!isScreenSharing)}
+                    style={[styles.optionsButton, isScreenSharing && styles.activeOptionsButton]}
+                  >
+                    {isScreenSharing ? <Monitor color="#ffffff" size={20} /> : <MonitorOff color={INK} size={20} />}
+                  </TouchableOpacity>
+                )}
+
                 {/* Add people (only in active calls) */}
                 {callState.status === 'in_call' && (
                   <TouchableOpacity
@@ -438,8 +489,8 @@ function GlobalCallOverlay() {
             </View>
           )}
         </View>
-      </View>
-    </Modal>
+      )}
+    </View>
   );
 }
 
@@ -544,16 +595,19 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   minimizedContainer: {
+    // top/left are set inline from draggable `pillPos` state.
     position: 'absolute',
-    bottom: 96,
-    right: 16,
-    width: 142,
-    height: 184,
+    width: PILL_W,
+    height: PILL_H,
     backgroundColor: WHITE,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 10,
+    // paddingVertical/paddingHorizontal (not `padding`) so this wins over
+    // callContainer's paddingVertical:72/paddingHorizontal:24 at matching specificity
+    // when both styles are merged for the minimized pill.
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     shadowColor: '#6c5ce7',
     shadowOpacity: 0.18,
     shadowRadius: 16,
@@ -562,6 +616,25 @@ const styles = StyleSheet.create({
     zIndex: 9999,
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  miniMediaSlot: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniVideoFrame: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#0b0b12',
+    overflow: 'hidden',
+  },
+  miniAvatarRing: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   miniHeader: {
     width: '100%',
@@ -604,7 +677,13 @@ const styles = StyleSheet.create({
     backgroundColor: PURPLE,
   },
   callContainer: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    elevation: 24,
     backgroundColor: WHITE,
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -110,6 +110,29 @@ export const createMeeting = async (
 
     const { roomId, title, type, attendees, attendeeNames, chatId } = req.body;
 
+    // Every participant's client calls this when joining a call (caller AND callee).
+    // Without this guard each of them would create their own Meeting document for the
+    // same roomId, with themselves as "host" — fragmenting the transcript/history and
+    // making host-only-end logic meaningless. Join the existing live record instead.
+    if (roomId) {
+      const existing = await Meeting.findOne({ roomId, status: 'live' });
+      if (existing) {
+        const alreadyIn =
+          String(existing.host) === String(userId) ||
+          existing.attendees.some((a: any) => String(a) === String(userId));
+        if (!alreadyIn) {
+          existing.attendees.push(userId);
+          if (attendeeNames?.length) {
+            existing.attendeeNames = Array.from(
+              new Set([...(existing.attendeeNames || []), ...attendeeNames])
+            );
+          }
+          await existing.save();
+        }
+        return res.status(200).json({ message: 'Joined existing meeting', meeting: existing });
+      }
+    }
+
     const meeting = await Meeting.create({
       roomId: roomId || `room-${Date.now()}`,
       title: title || 'Untitled Meeting',
@@ -536,6 +559,16 @@ export const endMeeting = async (
     if (!meeting)
       return res.status(404).json({ message: 'Meeting not found' });
 
+    // A multi-party meeting only terminates for everyone when the host ends it.
+    // A non-host calling /end is just leaving — keep the meeting 'live' for the
+    // rest of the group instead of tearing it down under them. 1:1 calls (at most
+    // one other attendee) keep the old phone-call semantics: either side ends it.
+    const isHost = String(meeting.host) === String(userId);
+    const isGroupMeeting = (meeting.attendees?.length || 0) >= 2;
+    if (isGroupMeeting && !isHost) {
+      return res.status(200).json({ message: 'Left meeting', meeting, left: true });
+    }
+
     const endedAt = new Date();
     const duration = Math.round(
       (endedAt.getTime() - meeting.startedAt.getTime()) / 1000
@@ -611,6 +644,61 @@ export const endMeeting = async (
     res
       .status(500)
       .json({ message: 'Failed to end meeting', error: err.message });
+  }
+};
+
+// ─── Server safeguard: auto-end a meeting whose LiveKit room has emptied ──────
+// Called from socket.ts after a grace period once the last socket leaves a
+// meeting room (host disconnected without clicking End, or a network drop left
+// nobody behind). Mirrors endMeeting's termination + background-AI path but
+// has no req/res — it's invoked off the socket lifecycle, not an HTTP call.
+export const autoEndMeetingByRoomId = async (roomId: string): Promise<void> => {
+  try {
+    const meeting = await Meeting.findOne({ roomId, status: 'live' });
+    if (!meeting) return;
+
+    const endedAt = new Date();
+    const duration = Math.round(
+      (endedAt.getTime() - meeting.startedAt.getTime()) / 1000
+    );
+    const rawTranscript =
+      meeting.transcriptChunks
+        ?.map((c) => `${c.speaker ? c.speaker + ': ' : ''}${c.text}`)
+        .join('\n') || '';
+
+    meeting.endedAt = endedAt;
+    meeting.duration = duration;
+    meeting.status = 'ended';
+    meeting.transcriptRaw = rawTranscript;
+    await meeting.save();
+
+    try {
+      const { getIO } = await import('../utils/socket');
+      const io = getIO();
+      const endPayload = {
+        roomId: meeting.roomId,
+        meetingId: String(meeting._id),
+        title: meeting.title,
+      };
+      io.to(meeting.roomId).emit('meeting_ended', endPayload);
+      const allParticipantIds = [String(meeting.host), ...meeting.attendees.map((a: any) => String(a))];
+      for (const pid of allParticipantIds) {
+        io.to(pid).emit('meeting_ended', endPayload);
+      }
+    } catch (socketErr) {
+      console.error('[Meeting] autoEndMeetingByRoomId socket emit failed:', socketErr);
+    }
+
+    console.log(`[Meeting] Auto-ended empty-room meeting ${meeting._id} (room ${roomId})`);
+
+    setImmediate(async () => {
+      // No explicit user chose save/email preferences here — default to saving the
+      // transcript to storage (so the history isn't silently lost) without emailing
+      // anyone, since an unattended auto-end is not the same as a deliberate end.
+      await runBackgroundMeetingAI(meeting, rawTranscript, String(meeting.host), true, false);
+    });
+  } catch (err) {
+    console.error('[Meeting] autoEndMeetingByRoomId failed:', err);
   }
 };
 

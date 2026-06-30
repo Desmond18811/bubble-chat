@@ -424,6 +424,28 @@ export const chatCache = {
     }
   },
 
+  // Patches a single cached chat entry (e.g. after a group rename/icon change or a
+  // `chat_updated` socket event) so chat-list / Work / All-chats reflect it without
+  // a full backend resync. Accepts raw conversation fields (groupIcon/chatName) and
+  // maps them onto the cached chat's UI shape (avatar/name).
+  async patchCachedChat(chatId: string, patch: { groupIcon?: string | null; chatName?: string | null; groupDescription?: string | null }): Promise<void> {
+    try {
+      const cachedChats = await this.getCachedChats();
+      const updatedChats = cachedChats.map((c: any) => {
+        if (String(c.id) !== String(chatId)) return c;
+        return {
+          ...c,
+          avatar: patch.groupIcon !== undefined ? (patch.groupIcon || null) : c.avatar,
+          name: patch.chatName !== undefined && patch.chatName ? patch.chatName : c.name,
+          bio: patch.groupDescription !== undefined ? (patch.groupDescription || c.bio) : c.bio,
+        };
+      });
+      await AsyncStorage.setItem(KEYS.CACHED_CHATS, JSON.stringify(updatedChats));
+    } catch (err) {
+      console.warn("Failed to patch cached chat:", err);
+    }
+  },
+
   async performCloudBackup(): Promise<boolean> {
     try {
       const allKeys = await AsyncStorage.getAllKeys();

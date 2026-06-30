@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator, Platform, Switch } from 'react-native';
-import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper, Mail } from 'lucide-react-native';
+import { Calendar, ChevronLeft, ChevronRight, ChevronDown, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper, Mail } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useNavigation } from 'expo-router';
@@ -8,7 +8,7 @@ import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { fetchTasks, createTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence } from '../../lib/api';
+import { fetchTasks, createTaskFull, updateTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import { authStorage } from '../../lib/authStorage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -235,6 +235,18 @@ export default function UpdatesScreen() {
 
   // Tasks state
   const [tasks, setTasks] = useState<any[]>([]);
+  const [actionItemsOpen, setActionItemsOpen] = useState(false);
+
+  const handleToggleActionItem = async (task: any) => {
+    const id = String(task._id || task.id);
+    const next = task.status === 'done' ? 'pending' : 'done';
+    setTasks(prev => prev.map(t => (String(t._id || t.id) === id ? { ...t, status: next } : t)));
+    try {
+      await updateTaskFull(id, { status: next });
+    } catch (_) {
+      Alert.alert('Error', 'Could not update action item.');
+    }
+  };
 
   const loadCache = async () => {
     try {
@@ -804,6 +816,66 @@ export default function UpdatesScreen() {
               );
             })
           )}
+
+          {/* Action Items from meeting transcripts — collapsible accordion below agenda */}
+          {(() => {
+            const actionItems = tasks.filter((t: any) => t.source === 'meeting');
+            if (actionItems.length === 0) return null;
+            const now = Date.now();
+            const pendingCount = actionItems.filter((item: any) => item.status !== 'done').length;
+            return (
+              <View style={{ marginTop: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', backgroundColor: '#ffffff', overflow: 'hidden' }}>
+                <TouchableOpacity
+                  onPress={() => setActionItemsOpen(v => !v)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}
+                  activeOpacity={0.7}
+                >
+                  <Check size={14} color="#6c5ce7" />
+                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 0.6, textTransform: 'uppercase', color: '#6c5ce7' }}>Action Items</Text>
+                  {pendingCount > 0 && (
+                    <View style={{ backgroundColor: 'rgba(108,92,231,0.1)', borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>{pendingCount}</Text>
+                    </View>
+                  )}
+                  <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }}>from meetings</Text>
+                  <View style={{ marginLeft: 'auto', transform: [{ rotate: actionItemsOpen ? '180deg' : '0deg' }] }}>
+                    <ChevronDown size={14} color="#9ca3af" />
+                  </View>
+                </TouchableOpacity>
+                {actionItemsOpen && (
+                  <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                    {actionItems.map((item: any) => {
+                      const done = item.status === 'done';
+                      const overdue = !done && item.end_time && new Date(item.end_time).getTime() < now;
+                      const meetingName = item.meetingRef?.title || (item.description || '').replace(/^From meeting:\s*/, '');
+                      const chipBg = done ? '#ecfdf5' : overdue ? '#fef2f2' : '#fefce8';
+                      const chipFg = done ? '#059669' : overdue ? '#ef4444' : '#ca8a04';
+                      return (
+                        <View key={item._id || item.id} style={{ padding: 14, borderRadius: 16, backgroundColor: 'rgba(248,248,252,0.8)', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                          <TouchableOpacity
+                            onPress={() => handleToggleActionItem(item)}
+                            style={{ marginTop: 2, width: 18, height: 18, borderRadius: 6, borderWidth: 1, borderColor: done ? '#10b981' : '#d1d5db', backgroundColor: done ? '#10b981' : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            {done && <Check size={11} color="#fff" />}
+                          </TouchableOpacity>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 13, fontFamily: done ? 'Poppins_400Regular' : 'Poppins_600SemiBold', color: done ? '#9ca3af' : '#1f2030', textDecorationLine: done ? 'line-through' : 'none' }}>{item.title}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                              <Text style={{ backgroundColor: chipBg, color: chipFg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontSize: 9, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                                {done ? 'Done' : overdue ? 'Overdue' : 'Pending'}
+                              </Text>
+                              {item.assignedToName ? <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }}>· {item.assignedToName}</Text> : null}
+                              {meetingName ? <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>· {meetingName}</Text> : null}
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            );
+          })()}
         </View>
       </ScrollView>
 

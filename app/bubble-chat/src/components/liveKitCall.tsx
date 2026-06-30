@@ -13,10 +13,21 @@ import { MessageSquare, Users, FileText, X, Send } from 'lucide-react-native';
 import { getSocket } from '../lib/socket';
 
 /**
- * Headless bridge: keeps the LiveKit local participant's mic/camera in sync with the
- * overlay's toggle state. Lives inside <LiveKitRoom> so it can use the room context.
+ * Headless bridge: keeps the LiveKit local participant's mic/camera/screen-share in
+ * sync with the overlay's toggle state. Lives inside <LiveKitRoom> so it can use the
+ * room context.
  */
-function LocalDeviceBridge({ micEnabled, cameraEnabled }: { micEnabled: boolean; cameraEnabled: boolean }) {
+function LocalDeviceBridge({
+  micEnabled,
+  cameraEnabled,
+  screenShareEnabled,
+  onScreenShareError,
+}: {
+  micEnabled: boolean;
+  cameraEnabled: boolean;
+  screenShareEnabled?: boolean;
+  onScreenShareError?: (err: Error) => void;
+}) {
   const { localParticipant } = useLocalParticipant();
 
   useEffect(() => {
@@ -27,23 +38,55 @@ function LocalDeviceBridge({ micEnabled, cameraEnabled }: { micEnabled: boolean;
     localParticipant?.setCameraEnabled(cameraEnabled).catch(() => {});
   }, [cameraEnabled, localParticipant]);
 
+  // Screen share needs native MediaProjection (Android) / a broadcast extension (iOS)
+  // wired into the dev/release build — neither is guaranteed present, so any failure
+  // here is reported back to the overlay instead of thrown, which resets the toggle
+  // and shows an "unsupported" message rather than crashing the call.
+  useEffect(() => {
+    if (!localParticipant) return;
+    if (!screenShareEnabled) {
+      localParticipant.setScreenShareEnabled(false).catch(() => {});
+      return;
+    }
+    localParticipant.setScreenShareEnabled(true).catch((err: Error) => {
+      onScreenShareError?.(err);
+    });
+  }, [screenShareEnabled, localParticipant, onScreenShareError]);
+
   return null;
 }
 
 /**
  * Renders the remote participant's camera full-bleed, with the local camera as a
  * picture-in-picture tile. Falls back to `fallback` (avatar) until a remote video
- * track arrives or for voice-only calls.
+ * track arrives or for voice-only calls. A screen-share track (local or remote) takes
+ * over the main stage whenever one is live, matching the web meeting modal.
  */
 function VideoArea({ isVideo, fallback }: { isVideo: boolean; fallback: React.ReactNode }) {
-  const tracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
+  const cameraTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
+  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
 
-  const remote = tracks.find(
+  const screenShare = screenTracks.find((t) => isTrackReference(t));
+  const remote = cameraTracks.find(
     (t) => isTrackReference(t) && t.participant && !t.participant.isLocal
   );
-  const local = tracks.find(
+  const local = cameraTracks.find(
     (t) => isTrackReference(t) && t.participant?.isLocal
   );
+
+  if (screenShare) {
+    const sharerIsLocal = screenShare.participant?.isLocal;
+    return (
+      <View style={styles.fill}>
+        <VideoTrack trackRef={screenShare as any} style={styles.fill} objectFit="contain" zOrder={0} />
+        <View style={styles.screenShareBadge} pointerEvents="none">
+          <Text style={styles.screenShareBadgeText}>
+            {sharerIsLocal ? "You're presenting" : `${screenShare.participant?.name || 'Someone'} is presenting`}
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   if (!isVideo) {
     return <>{fallback}</>;
@@ -200,6 +243,10 @@ export interface LiveKitCallRoomProps {
   micEnabled: boolean;
   cameraEnabled: boolean;
   speakerEnabled: boolean;
+  /** Toggle local screen sharing. Requires native screen-capture support in this
+   *  build; failures are reported via onScreenShareError instead of throwing. */
+  screenShareEnabled?: boolean;
+  onScreenShareError?: (err: Error) => void;
   /** LiveKit room id — used to scope the in-call transcript socket. */
   roomId?: string;
   /** Avatar/placeholder shown before remote video or on voice calls. */
@@ -220,6 +267,8 @@ export default function LiveKitCallRoom({
   micEnabled,
   cameraEnabled,
   speakerEnabled,
+  screenShareEnabled,
+  onScreenShareError,
   roomId,
   fallback,
   onConnected,
@@ -256,7 +305,12 @@ export default function LiveKitCallRoom({
       onDisconnected={onDisconnected}
       onError={onError}
     >
-      <LocalDeviceBridge micEnabled={micEnabled} cameraEnabled={cameraEnabled} />
+      <LocalDeviceBridge
+        micEnabled={micEnabled}
+        cameraEnabled={cameraEnabled}
+        screenShareEnabled={screenShareEnabled}
+        onScreenShareError={onScreenShareError}
+      />
       <VideoArea isVideo={isVideo} fallback={fallback} />
       <CallPanel roomId={roomId} />
     </LiveKitRoom>
@@ -266,6 +320,12 @@ export default function LiveKitCallRoom({
 const styles = StyleSheet.create({
   fill: { flex: 1, width: '100%', height: '100%' },
   fillCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', width: '100%' },
+  screenShareBadge: {
+    position: 'absolute', top: 12, left: 12,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
+  },
+  screenShareBadgeText: { color: '#fff', fontSize: 11, fontFamily: 'Poppins_600SemiBold' },
   pip: {
     position: 'absolute',
     top: 16,

@@ -10,8 +10,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/package.json": {
-    "mtime": 1781120207.647087,
-    "ast_hash": "8207207bda7e2f36151651d40019ca6e",
+    "mtime": 1782838603.2211041,
+    "ast_hash": "4531d56fc54ff1f119abeac133757350",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/railway.json": {
@@ -20,18 +20,13 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/LiveKitMeetingModal.tsx": {
-    "mtime": 1782755635.8788836,
-    "ast_hash": "0eddcd0ab0781e6470513bd95d441b7d",
+    "mtime": 1782847699.7954555,
+    "ast_hash": "c6398395be28d571a46b181b4567c17c",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/MeetingStatsModal.tsx": {
     "mtime": 1780695365.558925,
     "ast_hash": "1a48bd03d17e868e58ea093e524b1334",
-    "semantic_hash": ""
-  },
-  "BUBBLESPACE/frontend/src/components/chat/ZegoMeetingModal.tsx": {
-    "mtime": 1782046733.8185382,
-    "ast_hash": "6e719fa1f14bbea763584437f79859df",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/bubble-background.tsx": {
@@ -90,8 +85,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/tab-views.tsx": {
-    "mtime": 1782755635.8838549,
-    "ast_hash": "0777a3a5dc09eee54c5e50f23b1dcc8c",
+    "mtime": 1782838487.9856122,
+    "ast_hash": "edbcda41e36afa9472ac470709d3d9aa",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/landing/BubbleCursor.tsx": {
@@ -435,8 +430,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/contexts/AppContext.tsx": {
-    "mtime": 1782755635.8860571,
-    "ast_hash": "71b41639caf2bafd4fc9c081c6abd123",
+    "mtime": 1782838426.2847724,
+    "ast_hash": "b30b5679dbf55cceb61618aa1af1037a",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/contexts/DashboardContext.tsx": {
@@ -675,8 +670,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/meetingController.ts": {
-    "mtime": 1782523267.6563494,
-    "ast_hash": "0d183a01ca8da10da9300e903e92ee8d",
+    "mtime": 1782847342.7120519,
+    "ast_hash": "20ddcb707cf8cc839dcec007f38c9fe8",
     "semantic_hash": ""
   },
   "Backend/controllers/messageController.ts": {
@@ -740,13 +735,13 @@
     "semantic_hash": ""
   },
   "Backend/index.ts": {
-    "mtime": 1782755652.001587,
+    "mtime": 1782841676.3313823,
     "ast_hash": "bde30845e5fb486304e34bcf39cb05f7",
     "semantic_hash": ""
   },
   "Backend/middleware/passport.ts": {
-    "mtime": 1782760894.8148966,
-    "ast_hash": "5ef8d7b56fbc1b28ff93a12a38aff760",
+    "mtime": 1782794399.6397862,
+    "ast_hash": "907e6e26bb1932dd421a5537e31e1cdf",
     "semantic_hash": ""
   },
   "Backend/middleware/upload.ts": {
@@ -1085,8 +1080,8 @@
     "semantic_hash": ""
   },
   "Backend/utils/socket.ts": {
-    "mtime": 1782755652.0115166,
-    "ast_hash": "e02f1e034c5b403e4a3db29a5c01fa86",
+    "mtime": 1782847427.2865295,
+    "ast_hash": "811884709c85a8521d93a455c5cf4780",
     "semantic_hash": ""
   },
   "Backend/utils/whisperService.ts": {
@@ -1120,8 +1115,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/app.json": {
-    "mtime": 1782755652.0124917,
-    "ast_hash": "14d3d27f1ddcd5b8c0e8524e502f6095",
+    "mtime": 1782842907.9915733,
+    "ast_hash": "65b39c04ed0b096409eb7627d57bd72d",
     "semantic_hash": ""
   },
   "app/bubble-chat/assets/expo.icon/icon.json": {
@@ -1225,8 +1220,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/_layout.tsx": {
-    "mtime": 1782755652.0231295,
-    "ast_hash": "76e851a215a36ac9559b3583aa2a7048",
+    "mtime": 1782842756.164741,
+    "ast_hash": "610f676917de357943c05922537bdf26",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/index.tsx": {
@@ -2030,8 +2025,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/components/liveKitCall.tsx": {
-    "mtime": 1782755652.0250793,
-    "ast_hash": "da28445faf5716af7bde2982e55c5785",
+    "mtime": 1782842188.1045966,
+    "ast_hash": "dbac91df82e977064100e1fb8e4c2c45",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/lib/liveKitInit.ts": {

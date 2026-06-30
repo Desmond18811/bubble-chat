@@ -26,6 +26,8 @@ import {
   MicOff,
   Volume2,
   Scan,
+  History as HistoryIcon,
+  PhoneMissed,
 } from 'lucide-react-native';
 import { Link, useNavigation, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -35,7 +37,7 @@ import {
   subscribeToPlusButton,
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
-import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers } from '../../lib/api';
+import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers, fetchMeetings } from '../../lib/api';
 import { startOutgoingCall } from '../../lib/callManager';
 import { useIsOnline } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
@@ -694,9 +696,295 @@ function WorkroomTab({
 }
 
 // ─────────────────────────────────────────────
+// History Sub-Tab — per-person interaction log (recent calls + recent chats)
+// ─────────────────────────────────────────────
+type HistoryPerson = {
+  id: string;
+  name: string;
+  avatar?: string | null;
+  username?: string;
+  chatId?: string;
+  lastMessage?: string;
+  lastMessageAt?: number;
+  lastCallAt?: number;
+  lastCallType?: 'voice' | 'video';
+  lastCallDuration?: number;
+  callCount: number;
+};
+
+function HistoryTab({
+  onStartCall,
+}: {
+  onStartCall: (user: any, type: 'voice' | 'video') => void;
+}) {
+  const { colors } = useTheme();
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [people, setPeople] = useState<HistoryPerson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionPerson, setActionPerson] = useState<HistoryPerson | null>(null);
+
+  const load = async () => {
+    try {
+      const user = await authStorage.getUser();
+      const myId = user ? String((user as any).id || (user as any)._id) : null;
+
+      const [cachedChats, meetingsRes] = await Promise.all([
+        chatCache.getCachedChats(),
+        fetchMeetings(1, 50).catch(() => ({ meetings: [] })),
+      ]);
+
+      const byId = new Map<string, HistoryPerson>();
+
+      for (const c of cachedChats) {
+        if (c.isGroupChat || !c.otherUserId) continue;
+        const otherId = String(c.otherUserId);
+        const entry: HistoryPerson = byId.get(otherId) || { id: otherId, name: c.name || 'Unknown', callCount: 0 };
+        entry.name = c.name || entry.name;
+        entry.avatar = c.avatar || entry.avatar;
+        entry.username = c.username || entry.username;
+        entry.lastMessage = c.latestMessage || entry.lastMessage;
+        entry.lastMessageAt = c.updatedAt ? new Date(c.updatedAt).getTime() : entry.lastMessageAt;
+        entry.chatId = c.id;
+        byId.set(otherId, entry);
+      }
+
+      const meetings = meetingsRes?.meetings || [];
+      for (const m of meetings) {
+        const participants = [m.host, ...(m.attendees || [])].filter(Boolean);
+        for (const p of participants) {
+          const isPopulated = typeof p === 'object';
+          const pid = String(isPopulated ? (p._id || p.id) : p);
+          if (!myId || pid === myId) continue;
+          const startedAt = m.startedAt ? new Date(m.startedAt).getTime() : (m.createdAt ? new Date(m.createdAt).getTime() : 0);
+          const entry: HistoryPerson = byId.get(pid) || {
+            id: pid,
+            name: (isPopulated && (p.full_name || p.username)) || 'Unknown',
+            callCount: 0,
+          };
+          if (isPopulated) {
+            entry.name = p.full_name || p.username || entry.name;
+            entry.avatar = p.avatar || entry.avatar;
+            entry.username = p.username || entry.username;
+          }
+          entry.callCount += 1;
+          if (!entry.lastCallAt || startedAt > entry.lastCallAt) {
+            entry.lastCallAt = startedAt;
+            entry.lastCallType = m.type === 'voice' ? 'voice' : 'video';
+            entry.lastCallDuration = m.duration || 0;
+          }
+          byId.set(pid, entry);
+        }
+      }
+
+      const list = Array.from(byId.values()).sort((a, b) => {
+        const aT = Math.max(a.lastMessageAt || 0, a.lastCallAt || 0);
+        const bT = Math.max(b.lastMessageAt || 0, b.lastCallAt || 0);
+        return bT - aT;
+      });
+      setPeople(list);
+    } catch (err) {
+      console.warn('Failed to load people history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const filtered = people.filter((p) =>
+    (p.name + (p.username || '')).toLowerCase().includes(search.toLowerCase())
+  );
+
+  const formatDuration = (sec?: number) => {
+    if (!sec) return '';
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  };
+
+  const formatRelative = (ts?: number) => {
+    if (!ts) return '';
+    const diff = Date.now() - ts;
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'just now';
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr}h ago`;
+    return `${Math.floor(hr / 24)}d ago`;
+  };
+
+  const handleOpenChat = (person: HistoryPerson) => {
+    setActionPerson(null);
+    router.push(`/chat/${person.chatId || person.id}`);
+  };
+
+  return (
+    <View className="flex-1">
+      <View className="px-5 pb-3 pt-2 flex-row items-center gap-3">
+        <View className="flex-1 flex-row items-center bg-purple/10 rounded-3xl border border-purple/5 px-4 py-2.5 shadow-sm shadow-purple/5">
+          <Search color="#6c5ce7" size={16} />
+          <TextInput
+            placeholder="Search history..."
+            value={search}
+            onChangeText={setSearch}
+            placeholderTextColor="rgba(108,92,231,0.4)"
+            className="flex-1 text-[14px] text-ink dark:text-[#f4f5fb] font-medium font-sans ml-2"
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <X color="#9a9aab" size={14} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+        <View className="flex-row items-center mb-3 mt-1">
+          <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
+            Recent Interactions
+          </Text>
+          <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
+        </View>
+
+        {!loading && filtered.length === 0 ? (
+          <View
+            className="py-16 items-center justify-center border-2 border-dashed rounded-3xl mt-2"
+            style={{ backgroundColor: colors.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', borderColor: colors.border }}
+          >
+            <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
+              <HistoryIcon color="#6c5ce7" size={28} />
+            </View>
+            <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No history yet</Text>
+            <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-1 text-center max-w-[220px] leading-relaxed font-sans">
+              Calls and chats with people will show up here.
+            </Text>
+          </View>
+        ) : (
+          filtered.map((person) => {
+            const showCallFirst = (person.lastCallAt || 0) > (person.lastMessageAt || 0);
+            return (
+              <TouchableOpacity
+                key={person.id}
+                activeOpacity={0.75}
+                onPress={() => setActionPerson(person)}
+                className="flex-row items-center rounded-2xl px-4 py-3.5 mb-3 shadow-sm shadow-purple/5"
+                style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderStrong }}
+              >
+                <Avatar name={person.name} avatar={person.avatar} size={50} userId={person.id} />
+                <View className="flex-1 min-w-0 ml-3">
+                  <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
+                    {person.name}
+                  </Text>
+                  {showCallFirst ? (
+                    <View className="flex-row items-center mt-0.5">
+                      {person.lastCallType === 'voice' ? (
+                        <Phone color="#6c5ce7" size={11} />
+                      ) : (
+                        <Video color="#6c5ce7" size={11} />
+                      )}
+                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] ml-1.5 font-sans flex-1" numberOfLines={1}>
+                        {person.lastCallType === 'voice' ? 'Voice call' : 'Video call'}
+                        {person.lastCallDuration ? ` · ${formatDuration(person.lastCallDuration)}` : ''}
+                        {' · '}{formatRelative(person.lastCallAt)}
+                      </Text>
+                    </View>
+                  ) : person.lastMessage ? (
+                    <View className="flex-row items-center mt-0.5">
+                      <MessageSquare color="#6c5ce7" size={11} />
+                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] ml-1.5 font-sans flex-1" numberOfLines={1}>
+                        {person.lastMessage} · {formatRelative(person.lastMessageAt)}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {person.callCount > 0 && (
+                    <Text className="text-[10px] text-purple/70 mt-0.5 font-sans">
+                      {person.callCount} call{person.callCount > 1 ? 's' : ''} together
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
+      </ScrollView>
+
+      {/* Quick Actions Sheet */}
+      <Modal visible={!!actionPerson} transparent animationType="slide">
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setActionPerson(null)}
+          className="flex-1 bg-black/60 justify-end"
+        >
+          <TouchableOpacity activeOpacity={1}>
+            <SafeAreaView className="bg-white dark:bg-[#1a1b28] rounded-t-3xl shadow-2xl" edges={['bottom']}>
+              {actionPerson && (
+                <View className="px-6 pt-6 pb-4">
+                  <View className="flex-row items-center mb-5">
+                    <Avatar name={actionPerson.name} avatar={actionPerson.avatar} size={48} userId={actionPerson.id} />
+                    <View className="flex-1 min-w-0 ml-3">
+                      <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans" numberOfLines={1}>
+                        {actionPerson.name}
+                      </Text>
+                      {actionPerson.username ? (
+                        <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] font-sans">@{actionPerson.username}</Text>
+                      ) : null}
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setActionPerson(null)}
+                      className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/[0.06] items-center justify-center"
+                    >
+                      <X color="#6c5ce7" size={16} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View className="flex-row gap-3">
+                    <TouchableOpacity
+                      onPress={() => handleOpenChat(actionPerson)}
+                      className="flex-1 items-center bg-purple-soft/40 rounded-2xl py-4"
+                    >
+                      <MessageSquare color="#6c5ce7" size={20} />
+                      <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] mt-1.5 font-sans">Message</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        onStartCall(actionPerson, 'voice');
+                        setActionPerson(null);
+                      }}
+                      className="flex-1 items-center bg-purple-soft/40 rounded-2xl py-4"
+                    >
+                      <Phone color="#6c5ce7" size={20} />
+                      <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] mt-1.5 font-sans">Call</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        onStartCall(actionPerson, 'video');
+                        setActionPerson(null);
+                      }}
+                      className="flex-1 items-center bg-purple-soft/40 rounded-2xl py-4"
+                    >
+                      <Video color="#6c5ce7" size={20} />
+                      <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] mt-1.5 font-sans">Video</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </SafeAreaView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main People Screen
 // ─────────────────────────────────────────────
-const TABS = ['Contacts', 'Workroom'] as const;
+const TABS = ['Contacts', 'Workroom', 'History'] as const;
 type TabType = (typeof TABS)[number];
 
 export default function PeopleScreen() {
@@ -848,11 +1136,13 @@ export default function PeopleScreen() {
             onStartCall={handleStartCall}
             onOpenScanner={() => setIsScannerOpen(true)}
           />
-        ) : (
+        ) : activeTab === 'Workroom' ? (
           <WorkroomTab
             onStartCall={handleStartCall}
             onOpenScanner={() => setIsScannerOpen(true)}
           />
+        ) : (
+          <HistoryTab onStartCall={handleStartCall} />
         )}
       </View>
 

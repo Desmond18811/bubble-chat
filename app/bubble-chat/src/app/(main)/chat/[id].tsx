@@ -482,6 +482,13 @@ export default function ChatScreen() {
       const uid = u?.id || u?._id;
       if (!uid || String(uid) !== String(id)) return;
       setChat((prev: any) => (prev ? { ...prev, ...u } : prev));
+      // Keep chat-list / Work / All-chats in sync so a group rename or icon change
+      // (made by anyone, including this device) shows up everywhere immediately.
+      chatCache.patchCachedChat(String(uid), {
+        groupIcon: u.groupIcon,
+        chatName: u.chatName,
+        groupDescription: u.groupDescription,
+      });
     };
     socket.on('chat_updated', onChatUpdated);
 
@@ -1643,6 +1650,11 @@ export default function ChatScreen() {
                       });
                       if (res?.conversation) {
                         setChat(res.conversation);
+                        await chatCache.patchCachedChat(String(chat.id), {
+                          groupIcon: res.conversation.groupIcon,
+                          chatName: res.conversation.chatName,
+                          groupDescription: res.conversation.groupDescription,
+                        });
                         Alert.alert("Success", "Group settings updated successfully.");
                         setIsEditingGroup(false);
                       }

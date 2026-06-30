@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, Clock, Plus, X, Check, PhoneMissed, Trash2, FileText, Sparkles } from 'lucide-react-native';
+import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Clock, Plus, X, Check, PhoneMissed, Trash2, FileText, Sparkles } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl, fetchCallLogs, deleteCallLog, clearCallLogs, updateCallLog, fetchMeetings, fetchMeetingById } from '../../lib/api';
@@ -158,6 +158,37 @@ export default function CallsScreen() {
 
   useEffect(() => { loadMeetings(); }, [loadMeetings]);
 
+  // Unified Call Logs tab data: the legacy CallLog collection is rarely populated
+  // (no client ever calls saveCallLog), so on its own this tab looked empty even
+  // after real calls happened. Merge in the real Meeting records — same shape web's
+  // CallLogsSection (tab-views.tsx) already unifies — so both clients show the same
+  // call history.
+  const unifiedLogs = React.useMemo(() => {
+    const rawLogs = callLogs.map((l) => ({
+      id: String(l._id || l.id),
+      isMeeting: false as const,
+      raw: l,
+      timestamp: l.timestamp || l.createdAt,
+      type: l.type,
+      duration: l.duration || 0,
+      missed: !!l.missed,
+      label: l.label || 'Call',
+    }));
+    const rawMeetings = meetings.map((m) => ({
+      id: String(m._id || m.id),
+      isMeeting: true as const,
+      raw: m,
+      timestamp: m.startedAt || m.createdAt,
+      type: m.type || 'video',
+      duration: m.duration || 0,
+      missed: false,
+      label: m.title || 'Untitled Meeting',
+    }));
+    return [...rawLogs, ...rawMeetings].sort(
+      (a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+    );
+  }, [callLogs, meetings]);
+
   const openMeetingDetail = async (meeting: any) => {
     setSelectedMeeting(meeting);
     setMeetingDetailLoading(true);
@@ -187,6 +218,7 @@ export default function CallsScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [actionItemsOpen, setActionItemsOpen] = useState(false);
 
   // New Event form states
   const [title, setTitle] = useState('');
@@ -639,49 +671,6 @@ export default function CallsScreen() {
             </View>
           </View>
 
-          {/* Action Items captured from meeting transcripts (F3) */}
-          {(() => {
-            const actionItems = tasks.filter((t: any) => t.source === 'meeting');
-            if (actionItems.length === 0) return null;
-            const now = Date.now();
-            return (
-              <View className="px-6 pt-6">
-                <View className="flex-row items-center gap-1.5 mb-3">
-                  <Check color="#6c5ce7" size={14} />
-                  <Text className="text-xs font-bold uppercase tracking-wider text-purple font-sans">Action Items</Text>
-                  <Text className="text-[10px] text-ink-soft font-sans">from meetings</Text>
-                </View>
-                {actionItems.map((item: any) => {
-                  const done = item.status === 'done';
-                  const overdue = !done && item.end_time && new Date(item.end_time).getTime() < now;
-                  const meetingName = item.meetingRef?.title || (item.description || '').replace(/^From meeting:\s*/, '');
-                  const chipColor = done ? 'bg-emerald-50' : overdue ? 'bg-red-50' : 'bg-yellow-50';
-                  const chipText = done ? 'text-emerald-600' : overdue ? 'text-red-500' : 'text-yellow-600';
-                  return (
-                    <View key={item._id || item.id} className="p-3.5 rounded-2xl bg-white border border-black/5 mb-2.5 shadow-sm flex-row items-start gap-2.5">
-                      <TouchableOpacity
-                        onPress={() => handleToggleActionItem(item)}
-                        className={`mt-0.5 w-5 h-5 rounded-md border items-center justify-center ${done ? 'bg-emerald-500 border-emerald-500' : 'border-black/20'}`}
-                      >
-                        {done && <Check size={12} color="#fff" />}
-                      </TouchableOpacity>
-                      <View className="flex-1">
-                        <Text className={`text-[13px] font-semibold font-sans ${done ? 'line-through text-ink-soft' : 'text-ink'}`}>{item.title}</Text>
-                        <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
-                          <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${chipColor} ${chipText}`}>
-                            {done ? 'Done' : overdue ? 'Overdue' : 'Pending'}
-                          </Text>
-                          {item.assignedToName ? <Text className="text-[10px] text-ink-soft font-sans">· {item.assignedToName}</Text> : null}
-                          {meetingName ? <Text className="text-[10px] text-ink-soft font-sans" numberOfLines={1}>· {meetingName}</Text> : null}
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            );
-          })()}
-
           {/* Agenda view */}
           <View className="p-6 mb-24">
             <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic mb-1 font-sans">Agenda for</Text>
@@ -694,13 +683,13 @@ export default function CallsScreen() {
               </View>
             ) : (
               selectedDayTasks.map(task => {
-                // Shared indicator spec: green=meeting, yellow=recurring, blue=event, purple=task, red=holiday.
+                // Shared indicator spec: green=meeting, yellow=recurring, blue=event, purple=task, orange=holiday.
                 const isHoliday = task.eventType === 'holiday' || task.type === 'holiday';
                 const isRecurring = task.isRecurring || task.__recurring || task.recurrenceRule;
                 const isMeeting = task.type === 'meeting' || task.eventType === 'meeting_video' || task.eventType === 'meeting_audio';
                 const isEvent = task.type === 'event' || task.eventType === 'company' || task.eventType === 'all_day';
-                const labelColor = isHoliday ? 'bg-red-100' : isRecurring ? 'bg-yellow-100' : isMeeting ? 'bg-emerald-100' : isEvent ? 'bg-blue-100' : 'bg-purple/10';
-                const labelTextColor = isHoliday ? 'text-red-600' : isRecurring ? 'text-yellow-700' : isMeeting ? 'text-emerald-600' : isEvent ? 'text-blue-600' : 'text-purple';
+                const labelColor = isHoliday ? 'bg-orange-100' : isRecurring ? 'bg-yellow-100' : isMeeting ? 'bg-emerald-100' : isEvent ? 'bg-blue-100' : 'bg-purple/10';
+                const labelTextColor = isHoliday ? 'text-orange-600' : isRecurring ? 'text-yellow-700' : isMeeting ? 'text-emerald-600' : isEvent ? 'text-blue-600' : 'text-purple';
                 const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
                 return (
                   <View key={task._id || task.id} className="p-4 rounded-2xl bg-white border border-black/5 mb-3 shadow-sm">
@@ -750,13 +739,73 @@ export default function CallsScreen() {
                 );
               })
             )}
+
+            {/* Action Items captured from meeting transcripts — collapsible accordion below agenda */}
+            {(() => {
+              const actionItems = tasks.filter((t: any) => t.source === 'meeting');
+              if (actionItems.length === 0) return null;
+              const now = Date.now();
+              const pendingCount = actionItems.filter((item: any) => item.status !== 'done').length;
+              return (
+                <View className="mt-4 rounded-2xl border border-black/5 bg-white overflow-hidden">
+                  <TouchableOpacity
+                    onPress={() => setActionItemsOpen(v => !v)}
+                    className="flex-row items-center gap-1.5 px-4 py-3"
+                    activeOpacity={0.7}
+                  >
+                    <Check color="#6c5ce7" size={14} />
+                    <Text className="text-xs font-bold uppercase tracking-wider text-purple font-sans">Action Items</Text>
+                    {pendingCount > 0 && (
+                      <View className="bg-purple/10 rounded-full px-1.5 py-0.5">
+                        <Text className="text-[10px] font-bold text-purple font-sans">{pendingCount}</Text>
+                      </View>
+                    )}
+                    <Text className="text-[10px] text-ink-soft font-sans">from meetings</Text>
+                    <View className="ml-auto" style={{ transform: [{ rotate: actionItemsOpen ? '180deg' : '0deg' }] }}>
+                      <ChevronDown size={14} color="#9ca3af" />
+                    </View>
+                  </TouchableOpacity>
+                  {actionItemsOpen && (
+                    <View className="px-4 pb-4">
+                      {actionItems.map((item: any) => {
+                        const done = item.status === 'done';
+                        const overdue = !done && item.end_time && new Date(item.end_time).getTime() < now;
+                        const meetingName = item.meetingRef?.title || (item.description || '').replace(/^From meeting:\s*/, '');
+                        const chipColor = done ? '#ecfdf5' : overdue ? '#fef2f2' : '#fefce8';
+                        const chipText = done ? '#059669' : overdue ? '#ef4444' : '#ca8a04';
+                        return (
+                          <View key={item._id || item.id} className="p-3.5 rounded-2xl bg-slate-50/60 border border-black/5 mb-2 flex-row items-start gap-2.5">
+                            <TouchableOpacity
+                              onPress={() => handleToggleActionItem(item)}
+                              style={{ marginTop: 2, width: 18, height: 18, borderRadius: 6, borderWidth: 1, borderColor: done ? '#10b981' : '#d1d5db', backgroundColor: done ? '#10b981' : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              {done && <Check size={11} color="#fff" />}
+                            </TouchableOpacity>
+                            <View className="flex-1">
+                              <Text className={`text-[13px] font-semibold font-sans ${done ? 'line-through text-ink-soft' : 'text-ink'}`}>{item.title}</Text>
+                              <View className="flex-row items-center gap-1.5 mt-1 flex-wrap">
+                                <Text style={{ backgroundColor: chipColor, color: chipText }} className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans">
+                                  {done ? 'Done' : overdue ? 'Overdue' : 'Pending'}
+                                </Text>
+                                {item.assignedToName ? <Text className="text-[10px] text-ink-soft font-sans">· {item.assignedToName}</Text> : null}
+                                {meetingName ? <Text className="text-[10px] text-ink-soft font-sans" numberOfLines={1}>· {meetingName}</Text> : null}
+                              </View>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
           </View>
         </ScrollView>
       ) : (
         <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
-          {logsLoading && callLogs.length === 0 ? (
+          {(logsLoading || meetingsLoading) && unifiedLogs.length === 0 ? (
             <Text className="text-center text-ink-soft text-sm mt-12 font-sans">Loading call history…</Text>
-          ) : callLogs.length === 0 ? (
+          ) : unifiedLogs.length === 0 ? (
             <View className="items-center mt-16">
               <View className="w-16 h-16 rounded-full bg-purple-soft/40 items-center justify-center mb-3">
                 <Phone color="#6c5ce7" size={26} />
@@ -765,36 +814,48 @@ export default function CallsScreen() {
               <Text className="text-ink-soft text-xs mt-1 font-sans">Your voice and video calls will show up here.</Text>
             </View>
           ) : (
-            callLogs.map((log) => {
-              const logId = String(log._id || log.id);
-              const isVideo = log.type === 'video';
-              const missed = !!log.missed;
-              const when = log.timestamp || log.createdAt;
-              const whenStr = when ? new Date(when).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-              const mins = Math.floor((log.duration || 0) / 60);
-              const secs = (log.duration || 0) % 60;
-              const durStr = log.duration ? `${mins}:${secs.toString().padStart(2, '0')}` : '';
+            unifiedLogs.map((item) => {
+              const log = item.raw;
+              const isVideo = item.type === 'video';
+              const missed = item.missed;
+              const whenStr = item.timestamp ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+              const mins = Math.floor(item.duration / 60);
+              const secs = item.duration % 60;
+              const durStr = item.duration ? `${mins}:${secs.toString().padStart(2, '0')}` : '';
               const Icon = missed ? PhoneMissed : isVideo ? Video : Phone;
-              const hasNotes = !!(log.agenda || log.notes);
+              const hasNotes = !item.isMeeting && !!(log.agenda || log.notes);
               return (
-                <TouchableOpacity key={logId} activeOpacity={0.8} onPress={() => openLogDetail(log)} className="flex-row items-center bg-white rounded-2xl p-3.5 mb-2.5 border border-black/5">
-                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${missed ? 'bg-red-500/10' : 'bg-purple-soft/40'}`}>
-                    <Icon color={missed ? '#ef4444' : '#6c5ce7'} size={18} />
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.8}
+                  onPress={() => (item.isMeeting ? openMeetingDetail(log) : openLogDetail(log))}
+                  className="flex-row items-center bg-white rounded-2xl p-3.5 mb-2.5 border border-black/5"
+                >
+                  <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${missed ? 'bg-red-500/10' : item.isMeeting ? 'bg-emerald-500/10' : 'bg-purple-soft/40'}`}>
+                    <Icon color={missed ? '#ef4444' : item.isMeeting ? '#10b981' : '#6c5ce7'} size={18} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-ink font-bold text-sm font-sans" numberOfLines={1}>{log.label || 'Call'}</Text>
+                    <Text className="text-ink font-bold text-sm font-sans" numberOfLines={1}>{item.label}</Text>
                     <Text className={`text-xs mt-0.5 font-sans ${missed ? 'text-red-500' : 'text-ink-soft'}`}>
-                      {missed ? 'Missed' : isVideo ? 'Video' : 'Voice'}{durStr ? ` · ${durStr}` : ''}{whenStr ? ` · ${whenStr}` : ''}
+                      {missed ? 'Missed' : isVideo ? 'Video' : 'Voice'}{item.isMeeting ? ' · Meeting' : ''}{durStr ? ` · ${durStr}` : ''}{whenStr ? ` · ${whenStr}` : ''}
                     </Text>
                   </View>
                   {hasNotes && <FileText color="#6c5ce7" size={15} style={{ marginRight: 6 }} />}
-                  {/* Revisit (re-call the same room) */}
-                  <TouchableOpacity onPress={() => startOutgoingCall({ name: log.label || 'Call', avatar: null }, isVideo ? 'video' : 'voice')} className="p-2">
-                    <Icon color="#6c5ce7" size={16} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDeleteLog(logId)} className="p-2">
-                    <X color="#9a9aab" size={16} />
-                  </TouchableOpacity>
+                  {item.isMeeting ? (
+                    <TouchableOpacity onPress={() => openMeetingDetail(log)} className="p-2">
+                      <FileText color="#10b981" size={16} />
+                    </TouchableOpacity>
+                  ) : (
+                    <>
+                      {/* Revisit (re-call the same room) */}
+                      <TouchableOpacity onPress={() => startOutgoingCall({ name: item.label, avatar: null }, isVideo ? 'video' : 'voice')} className="p-2">
+                        <Icon color="#6c5ce7" size={16} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDeleteLog(item.id)} className="p-2">
+                        <X color="#9a9aab" size={16} />
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </TouchableOpacity>
               );
             })

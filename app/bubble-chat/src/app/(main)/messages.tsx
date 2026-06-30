@@ -296,13 +296,28 @@ export default function Messages() {
       });
     };
 
-    // A group's membership/metadata changed (member added/removed). Merge the fresh
-    // conversation so the list reflects the correct members/count without a reload.
+    // A group's membership/metadata changed (member added/removed/icon/name edited).
+    // The backend sends the raw conversation shape (groupIcon/chatName); map those
+    // onto the cached chat's UI shape (avatar/name) so the list actually reflects it.
     const handleChatUpdated = (updated: any) => {
       const u = updated?.data || updated;
       const uid = u?.id || u?._id;
       if (!uid) return;
-      setChatsList(prev => prev.map(c => (String(c.id) === String(uid) ? { ...c, ...u } : c)));
+      setChatsList(prev => prev.map(c => {
+        if (String(c.id) !== String(uid)) return c;
+        return {
+          ...c,
+          ...u,
+          avatar: u.groupIcon !== undefined ? (u.groupIcon || null) : c.avatar,
+          name: u.chatName !== undefined && u.chatName ? u.chatName : c.name,
+          bio: u.groupDescription !== undefined ? (u.groupDescription || c.bio) : c.bio,
+        };
+      }));
+      chatCache.patchCachedChat(String(uid), {
+        groupIcon: u.groupIcon,
+        chatName: u.chatName,
+        groupDescription: u.groupDescription,
+      });
     };
 
     socket.on('typing_start', handleTypingStart);

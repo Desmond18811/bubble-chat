@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/users';
+import { Meeting } from '../models/meeting';
 import mongoose from 'mongoose';
 import { sendPushNotification } from './push';
 import { logActivity } from '../controllers/activityLogController';
@@ -36,6 +37,27 @@ const GROUP_CALL_MAX_AGE_MS = 30 * 60 * 1000;      // stop reminding after 30 mi
 
 const endGroupCallTracking = (roomId?: string) => {
   if (roomId) activeGroupCalls.delete(roomId);
+};
+
+// ─── Empty-room safeguard ──────────────────────────────────────────────────
+// Leaving never ends a meeting by itself — only the host's explicit End does
+// (see call_end/meeting_ended handlers). But if a meeting's room genuinely
+// empties out (everyone left or dropped, including the host, without anyone
+// clicking End), the Meeting record would stay 'live' forever. Give it a short
+// grace period for reconnects, then auto-end it.
+const EMPTY_ROOM_GRACE_MS = 45 * 1000;
+const scheduleEmptyRoomCheck = (roomId: string) => {
+  if (!roomId) return;
+  setTimeout(async () => {
+    try {
+      const stillOccupied = (io.sockets.adapter.rooms.get(roomId)?.size || 0) > 0;
+      if (stillOccupied) return;
+      const { autoEndMeetingByRoomId } = await import('../controllers/meetingController');
+      await autoEndMeetingByRoomId(roomId);
+    } catch (err) {
+      console.error('[Meeting] Empty-room check failed:', err);
+    }
+  }, EMPTY_ROOM_GRACE_MS);
 };
 
 export const initSocket = (server: HttpServer) => {
@@ -172,6 +194,7 @@ export const initSocket = (server: HttpServer) => {
 
     socket.on('leave_room', (chatId: string) => {
       socket.leave(chatId);
+      scheduleEmptyRoomCheck(chatId);
       console.log(`[Room] User ${userId} left room: ${chatId}`);
     });
 
@@ -258,7 +281,20 @@ export const initSocket = (server: HttpServer) => {
       socket.to(data.roomId).emit('meeting_chat_message', data);
     });
 
-    socket.on('meeting_ended', (data: { roomId: string }) => {
+    socket.on('meeting_ended', async (data: { roomId: string }) => {
+      // A non-host leaving a multi-party meeting must not end it for the rest of the
+      // group — only relay this as a real termination when the sender is the host
+      // (or it's a 1:1 call, where either side ending it is the expected phone-call
+      // behavior). Otherwise just drop them from the room silently.
+      try {
+        const meeting = await Meeting.findOne({ roomId: data.roomId, status: 'live' }).select('host attendees');
+        if (meeting && meeting.attendees.length >= 2 && String(meeting.host) !== String(userId)) {
+          socket.leave(data.roomId);
+          return;
+        }
+      } catch (err) {
+        console.error('[Meeting] Failed to verify host on meeting_ended:', err);
+      }
       console.log(`[Meeting] Relaying meeting_ended for room: ${data.roomId}`);
       io.to(data.roomId).emit('meeting_ended', data);
       endGroupCallTracking(data.roomId);
@@ -394,6 +430,16 @@ export const initSocket = (server: HttpServer) => {
         entityType: 'Call',
         metadata: { roomId: data.roomId, from: data.toUserId },
       });
+
+      // If this room already has a Meeting record (it does for any call/meeting
+      // created via createMeeting — both 1:1 calls and Events & Meets), record the
+      // accepter as an attendee. This is what makes a mid-call invite's "consent"
+      // actually count: meeting history, transcript access, and action-item
+      // attribution all key off Meeting.attendees, not just who answered the ring.
+      Meeting.updateOne(
+        { roomId: data.roomId, host: { $ne: userId } },
+        { $addToSet: { attendees: userId } }
+      ).catch(err => console.error('[Meeting] Failed to add attendee on call_answer:', err));
     });
 
     socket.on('call_reject', async (data: { toUserId: string; roomId?: string }) => {
@@ -419,12 +465,30 @@ export const initSocket = (server: HttpServer) => {
     });
 
     socket.on('call_end', async (data: { toUserId?: string; roomId?: string }) => {
-      // Explicit hangup from either side. Fan out to both userIds AND the room
-      // so the call ends cleanly regardless of join state.
+      // Explicit hangup. For a 1:1 call, either side ending it ends it for both —
+      // notifying the named toUserId/self covers that regardless of room broadcast.
+      // For a multi-party meeting, a non-host hanging up must NOT fan out to the
+      // whole room (that would end it for every other participant); only the host's
+      // hangup tears down the room broadcast.
+      let broadcastToRoom = true;
+      if (data.roomId) {
+        try {
+          const meeting = await Meeting.findOne({ roomId: data.roomId, status: 'live' }).select('host attendees');
+          if (meeting && meeting.attendees.length >= 2 && String(meeting.host) !== String(userId)) {
+            broadcastToRoom = false;
+            socket.leave(data.roomId);
+          }
+        } catch (err) {
+          console.error('[Call] Failed to verify host on call_end:', err);
+        }
+      }
+
       if (data.toUserId) io.to(data.toUserId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
       io.to(userId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
-      if (data.roomId) io.to(data.roomId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
-      endGroupCallTracking(data.roomId);
+      if (data.roomId && broadcastToRoom) {
+        io.to(data.roomId).emit('call_ended', { byUserId: userId, roomId: data.roomId });
+        endGroupCallTracking(data.roomId);
+      }
 
       logActivity({
         actor: userId,
@@ -433,6 +497,16 @@ export const initSocket = (server: HttpServer) => {
         entityType: 'Call',
         metadata: { roomId: data.roomId, to: data.toUserId },
       });
+    });
+
+    // 'disconnecting' fires BEFORE socket.io removes the socket from its rooms
+    // (unlike 'disconnect', where socket.rooms is already emptied), so this is the
+    // only place we can see which meeting rooms a network drop is about to vacate.
+    socket.on('disconnecting', () => {
+      for (const roomId of socket.rooms) {
+        if (roomId === socket.id || roomId === userId) continue;
+        scheduleEmptyRoomCheck(roomId);
+      }
     });
 
     socket.on('disconnect', async () => {

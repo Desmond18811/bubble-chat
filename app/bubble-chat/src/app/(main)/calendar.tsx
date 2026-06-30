@@ -49,13 +49,13 @@ interface DigestData {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // Indicator palette — shared spec across web + mobile:
-//   green = meetings · yellow = recurring · blue = events · purple = tasks · red = holidays
+//   green = meetings · yellow = recurring · blue = events · purple = tasks · orange = holidays
 const CATEGORY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   meeting:   { bg: '#dcfce7', border: '#22c55e', text: '#16a34a' }, // green
   recurring: { bg: '#fef9c3', border: '#eab308', text: '#ca8a04' }, // yellow
   event:     { bg: '#dbeafe', border: '#3b82f6', text: '#2563eb' }, // blue
   task:      { bg: '#ede9fe', border: '#6c5ce7', text: '#6c5ce7' }, // purple
-  holiday:   { bg: '#fee2e2', border: '#ef4444', text: '#dc2626' }, // red
+  holiday:   { bg: '#fde4dc', border: '#f4663b', text: '#d8492a' }, // orange
 };
 
 // Map a calendar item to one of the five indicator categories. Recurrence wins
@@ -105,7 +105,7 @@ const EVENT_ICONS: Record<string, React.ReactNode> = {
   meeting_video: <Video size={13} color="#16a34a" />,
   meeting_audio: <Mic size={13} color="#16a34a" />,
   company:       <Globe size={13} color="#2563eb" />,
-  holiday:       <CheckCircle size={13} color="#dc2626" />,
+  holiday:       <CheckCircle size={13} color="#d8492a" />,
   all_day:       <Clock size={13} color="#2563eb" />,
 };
 
@@ -215,7 +215,7 @@ const EVENT_TYPES = [
   { key: 'meeting_audio', label: 'Audio Meeting', icon: <Mic size={16} color="#16a34a" /> },
   { key: 'company',       label: 'Company Event', icon: <Globe size={16} color="#2563eb" /> },
   { key: 'all_day',       label: 'All Day',        icon: <Clock size={16} color="#2563eb" /> },
-  { key: 'holiday',       label: 'Holiday',        icon: <CheckCircle size={16} color="#dc2626" /> },
+  { key: 'holiday',       label: 'Holiday',        icon: <CheckCircle size={16} color="#d8492a" /> },
 ];
 
 const QUICK_TEMPLATES = [
