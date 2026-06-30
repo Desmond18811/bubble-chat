@@ -41,12 +41,14 @@ import {
   getSecureMediaUrl,
   uploadGroupOrOrgImage,
   accessOrCreateChat,
+  getChatById,
 } from '../../../lib/api';
 import { startOutgoingCall, startGroupCall } from '../../../lib/callManager';
 import { useTheme } from '../../../lib/theme';
 import { useIsOnline } from '../../../lib/presence';
 import { authStorage } from '../../../lib/authStorage';
 import { useNicknames } from '../../../lib/nicknames';
+import { setActiveChatId } from '../../../lib/activeChatRef';
 import { Avatar } from '../../../components/Avatar';
 
 const PURPLE = '#6c5ce7';
@@ -141,6 +143,30 @@ export default function ChatScreen() {
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameDraft, setNicknameDraft] = useState('');
   useEffect(() => { setEditingNickname(false); setNicknameDraft(''); }, [selectedMember?.id || selectedMember?._id, isInfoOpen]);
+
+  // Refresh the full, authoritative member list from the server whenever the
+  // info panel opens for a group — the chat-list object can carry a partial
+  // `users` array (stale cache / trimmed socket payload), so we re-fetch here,
+  // same as the web GroupInfo component does via getChatById.
+  useEffect(() => {
+    if (!isInfoOpen || !chat?.isGroupChat) return;
+    const cid = chat?.id || chat?._id;
+    if (!cid) return;
+    let cancelled = false;
+    getChatById(String(cid))
+      .then((res: any) => {
+        const fresh = res?.conversation || res?.data || res;
+        if (cancelled || !fresh) return;
+        setChat((prev: any) => {
+          if (!prev) return prev;
+          const freshUsers = Array.isArray(fresh.users) && fresh.users.length > 0 ? fresh.users : prev.users;
+          const freshMembers = Array.isArray(fresh.members) && fresh.members.length > 0 ? fresh.members : prev.members;
+          return { ...prev, users: freshUsers, members: freshMembers };
+        });
+      })
+      .catch(() => { /* keep existing data */ });
+    return () => { cancelled = true; };
+  }, [isInfoOpen, chat?.id, chat?._id]);
 
   const handleStartEditGroup = () => {
     setGroupFormData({
@@ -707,6 +733,15 @@ export default function ChatScreen() {
     const interval = setInterval(syncChatAndMessages, 5000);
     return () => clearInterval(interval);
   }, [id]);
+
+  // Register this chat as the focused one so messages.tsx suppresses in-app
+  // notifications while the user is actively reading it.
+  useEffect(() => {
+    const chatId = chat?.id;
+    if (!chatId) return;
+    setActiveChatId(String(chatId));
+    return () => setActiveChatId(null);
+  }, [chat?.id]);
 
   // Clear the unread badge on open (and whenever new messages land while the chat is open).
   // Tells the backend (which emits `messages_read` so the list zeros the badge) and updates

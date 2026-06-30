@@ -515,6 +515,11 @@ export const fetchAllUserChats = async () => {
     return handleResponse(res);
 };
 
+export const getChatById = async (chatId: string) => {
+    const res = await fetch(`${BASE_URL}/chat/${chatId}`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
 export const createGroupChat = async (name: string, users: string[], attachToOrg = true) => {
     const res = await fetch(`${BASE_URL}/chat/group`, {
         method: 'POST',

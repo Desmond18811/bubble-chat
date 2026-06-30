@@ -72,6 +72,107 @@ function getGroupInitials(name: string) {
   return clean.slice(0, 2).toUpperCase();
 }
 
+/* ── Tabbed meeting-detail bottom sheet ──────────────────────────── */
+function MeetingDetailModal({ meeting, loading, onClose }: { meeting: any; loading: boolean; onClose: () => void }) {
+  const [tab, setTab] = useState<'summary' | 'actions' | 'transcript'>('summary');
+
+  if (!meeting) return null;
+
+  const hasActions = Array.isArray(meeting.actionItems) && meeting.actionItems.length > 0;
+  const hasTranscript = !!(meeting.transcriptRaw || (Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0));
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.5)', justifyContent: 'flex-end' }}>
+        <View style={{ backgroundColor: '#ffffff', borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '88%' }}>
+          {/* Handle */}
+          <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.12)' }} />
+          </View>
+
+          {/* Title row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 12 }}>
+            <Text style={{ fontSize: 17, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030', flex: 1 }} numberOfLines={1}>
+              {meeting.title || 'Meeting'}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={{ padding: 6 }}>
+              <X size={20} color="#1f2030" />
+            </TouchableOpacity>
+          </View>
+
+          {loading && (
+            <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular', paddingHorizontal: 22, marginBottom: 6 }}>Loading…</Text>
+          )}
+
+          {/* Tab bar */}
+          <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)', paddingHorizontal: 22 }}>
+            {(['summary', 'actions', 'transcript'] as const).map((t) => {
+              const label = t === 'summary' ? 'Summary' : t === 'actions' ? `Action Items${hasActions ? ` (${meeting.actionItems.length})` : ''}` : 'Transcript';
+              const active = tab === t;
+              return (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => setTab(t)}
+                  style={{ marginRight: 20, paddingBottom: 10, paddingTop: 4, borderBottomWidth: 2, borderBottomColor: active ? '#6c5ce7' : 'transparent' }}
+                >
+                  <Text style={{ fontSize: 12, fontFamily: active ? 'Poppins_700Bold' : 'Poppins_600SemiBold', color: active ? '#6c5ce7' : '#9a9aab' }}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <ScrollView style={{ padding: 22 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+            {tab === 'summary' && (
+              <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>
+                {meeting.summary || 'AI summary is generating or unavailable for this meeting.'}
+              </Text>
+            )}
+
+            {tab === 'actions' && (
+              hasActions ? meeting.actionItems.map((ai: any, i: number) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10, padding: 12, backgroundColor: '#f8f8fb', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}>
+                  <Check size={14} color={ai.status === 'done' ? '#10b981' : '#9a9aab'} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#1f2030' }}>{ai.text || ai.title || String(ai)}</Text>
+                    {(ai.assignedToName || ai.assignedTo?.full_name) && (
+                      <Text style={{ fontSize: 10, color: '#6c5ce7', fontFamily: 'Poppins_700Bold', marginTop: 2 }}>
+                        Assigned: {ai.assignedToName || ai.assignedTo?.full_name}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )) : (
+                <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 24 }}>
+                  No action items captured for this meeting.
+                </Text>
+              )
+            )}
+
+            {tab === 'transcript' && (
+              hasTranscript ? (
+                Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0
+                  ? meeting.transcriptChunks.map((c: any, i: number) => (
+                      <View key={i} style={{ marginBottom: 8 }}>
+                        {c.speaker ? <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>{c.speaker}</Text> : null}
+                        <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{c.text}</Text>
+                      </View>
+                    ))
+                  : <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{meeting.transcriptRaw}</Text>
+              ) : (
+                <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 24 }}>
+                  No transcript captured for this meeting.
+                </Text>
+              )
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function CallsScreen() {
   const [callsTab, setCallsTab] = useState<'meet' | 'calendar' | 'logs'>('meet');
   const [callLogs, setCallLogs] = useState<any[]>([]);
@@ -1019,84 +1120,12 @@ export default function CallsScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* ── Meeting detail (transcript / summary / action items / files) ── */}
-      <Modal visible={selectedMeeting !== null} transparent animationType="slide" onRequestClose={() => setSelectedMeeting(null)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.5)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#ffffff', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, maxHeight: '85%' }}>
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-[18px] font-bold text-ink font-sans flex-1" numberOfLines={1}>
-                {selectedMeeting?.title || 'Meeting'}
-              </Text>
-              <TouchableOpacity onPress={() => setSelectedMeeting(null)} className="p-1.5">
-                <X size={20} color="#1f2030" />
-              </TouchableOpacity>
-            </View>
-
-            {meetingDetailLoading && (
-              <Text className="text-xs text-ink-soft font-sans mb-3">Loading…</Text>
-            )}
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-              {/* Summary */}
-              {selectedMeeting?.summary ? (
-                <View className="mb-5">
-                  <View className="flex-row items-center mb-2">
-                    <Sparkles size={14} color="#6c5ce7" />
-                    <Text className="text-xs font-bold uppercase tracking-wider text-purple ml-1.5 font-sans">Summary</Text>
-                  </View>
-                  <Text className="text-[13px] text-ink leading-5 font-sans">{selectedMeeting.summary}</Text>
-                </View>
-              ) : null}
-
-              {/* Action items */}
-              {Array.isArray(selectedMeeting?.actionItems) && selectedMeeting.actionItems.length > 0 ? (
-                <View className="mb-5">
-                  <Text className="text-xs font-bold uppercase tracking-wider text-black/30 mb-2 font-sans">Action Items</Text>
-                  {selectedMeeting.actionItems.map((ai: any, i: number) => (
-                    <View key={i} className="flex-row items-start mb-2">
-                      <Check size={14} color={ai.status === 'done' ? '#10b981' : '#9a9aab'} style={{ marginTop: 2 }} />
-                      <Text className="text-[13px] text-ink ml-2 flex-1 font-sans">{ai.text || ai.title || String(ai)}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-
-              {/* Files shared */}
-              {Array.isArray(selectedMeeting?.filesShared) && selectedMeeting.filesShared.length > 0 ? (
-                <View className="mb-5">
-                  <Text className="text-xs font-bold uppercase tracking-wider text-black/30 mb-2 font-sans">Files Shared</Text>
-                  {selectedMeeting.filesShared.map((f: any, i: number) => (
-                    <View key={i} className="flex-row items-center mb-2">
-                      <FileText size={14} color="#6c5ce7" />
-                      <Text className="text-[13px] text-ink ml-2 flex-1 font-sans" numberOfLines={1}>{f.label || f.name || f.url}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-
-              {/* Transcript */}
-              <View className="mb-2">
-                <View className="flex-row items-center mb-2">
-                  <FileText size={14} color="#6c5ce7" />
-                  <Text className="text-xs font-bold uppercase tracking-wider text-purple ml-1.5 font-sans">Transcript</Text>
-                </View>
-                {Array.isArray(selectedMeeting?.transcriptChunks) && selectedMeeting.transcriptChunks.length > 0 ? (
-                  selectedMeeting.transcriptChunks.map((c: any, i: number) => (
-                    <View key={i} className="mb-2">
-                      {c.speaker ? <Text className="text-[11px] font-bold text-purple font-sans">{c.speaker}</Text> : null}
-                      <Text className="text-[13px] text-ink leading-5 font-sans">{c.text}</Text>
-                    </View>
-                  ))
-                ) : selectedMeeting?.transcriptRaw ? (
-                  <Text className="text-[13px] text-ink leading-5 font-sans">{selectedMeeting.transcriptRaw}</Text>
-                ) : (
-                  <Text className="text-[12px] text-ink-soft italic font-sans">No transcript captured for this meeting.</Text>
-                )}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {/* ── Meeting detail (tabbed: Summary | Action Items | Transcript) ── */}
+      <MeetingDetailModal
+        meeting={selectedMeeting}
+        loading={meetingDetailLoading}
+        onClose={() => setSelectedMeeting(null)}
+      />
 
       {/* ── Call-log detail: revisit + agenda + activity notes ── */}
       <Modal visible={selectedLog !== null} transparent animationType="slide" onRequestClose={() => setSelectedLog(null)}>
