@@ -4,14 +4,114 @@
   "graph": {},
   "nodes": [
     {
+      "label": "[id].tsx",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "chat_id",
+      "community": 35,
+      "norm_label": "[id].tsx"
+    },
+    {
+      "label": "AVATARS",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "chat_id_avatars",
+      "community": 35,
+      "norm_label": "avatars"
+    },
+    {
+      "label": "EMOJI_CATEGORIES",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L67",
+      "_origin": "ast",
+      "id": "chat_id_emoji_categories",
+      "community": 35,
+      "norm_label": "emoji_categories"
+    },
+    {
+      "label": "ChatScreen()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L75",
+      "_origin": "ast",
+      "id": "chat_id_chatscreen",
+      "community": 146,
+      "norm_label": "chatscreen()"
+    },
+    {
+      "label": "IconBtn()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3421",
+      "_origin": "ast",
+      "id": "chat_id_iconbtn",
+      "community": 35,
+      "norm_label": "iconbtn()"
+    },
+    {
+      "label": "InfoCard()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3429",
+      "_origin": "ast",
+      "id": "chat_id_infocard",
+      "community": 35,
+      "norm_label": "infocard()"
+    },
+    {
+      "label": "DropdownItem()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3442",
+      "_origin": "ast",
+      "id": "chat_id_dropdownitem",
+      "community": 35,
+      "norm_label": "dropdownitem()"
+    },
+    {
+      "label": "ContextMenuItem()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3471",
+      "_origin": "ast",
+      "id": "chat_id_contextmenuitem",
+      "community": 35,
+      "norm_label": "contextmenuitem()"
+    },
+    {
+      "label": "countMedia()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3500",
+      "_origin": "ast",
+      "id": "chat_id_countmedia",
+      "community": 35,
+      "norm_label": "countmedia()"
+    },
+    {
+      "label": "VoiceMessagePlayer()",
+      "file_type": "code",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3574",
+      "_origin": "ast",
+      "id": "chat_id_voicemessageplayer",
+      "community": 35,
+      "norm_label": "voicemessageplayer()"
+    },
+    {
       "label": "messageController.ts",
       "file_type": "code",
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "controllers_messagecontroller",
       "community": 74,
-      "norm_label": "messagecontroller.ts"
+      "norm_label": "messagecontroller.ts",
+      "id": "controllers_messagecontroller"
     },
     {
       "label": "AuthRequest",
@@ -19,9 +119,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L16",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_authrequest",
       "community": 74,
-      "norm_label": "authrequest"
+      "norm_label": "authrequest",
+      "id": "controllers_messagecontroller_authrequest"
     },
     {
       "label": "formatSender()",
@@ -29,9 +129,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L23",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_formatsender",
       "community": 74,
-      "norm_label": "formatsender()"
+      "norm_label": "formatsender()",
+      "id": "controllers_messagecontroller_formatsender"
     },
     {
       "label": "formatMessage()",
@@ -39,9 +139,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L41",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_formatmessage",
       "community": 74,
-      "norm_label": "formatmessage()"
+      "norm_label": "formatmessage()",
+      "id": "controllers_messagecontroller_formatmessage"
     },
     {
       "label": "emitToConversation()",
@@ -49,9 +149,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L103",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_emittoconversation",
       "community": 74,
-      "norm_label": "emittoconversation()"
+      "norm_label": "emittoconversation()",
+      "id": "controllers_messagecontroller_emittoconversation"
     },
     {
       "label": "transcribeVoiceNoteAsync()",
@@ -59,9 +159,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L137",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_transcribevoicenoteasync",
       "community": 74,
-      "norm_label": "transcribevoicenoteasync()"
+      "norm_label": "transcribevoicenoteasync()",
+      "id": "controllers_messagecontroller_transcribevoicenoteasync"
     },
     {
       "label": "sendMessage()",
@@ -69,9 +169,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L162",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_sendmessage",
       "community": 74,
-      "norm_label": "sendmessage()"
+      "norm_label": "sendmessage()",
+      "id": "controllers_messagecontroller_sendmessage"
     },
     {
       "label": "allMessages()",
@@ -79,9 +179,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L471",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_allmessages",
       "community": 74,
-      "norm_label": "allmessages()"
+      "norm_label": "allmessages()",
+      "id": "controllers_messagecontroller_allmessages"
     },
     {
       "label": "uploadMedia()",
@@ -89,9 +189,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L508",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_uploadmedia",
       "community": 30,
-      "norm_label": "uploadmedia()"
+      "norm_label": "uploadmedia()",
+      "id": "controllers_messagecontroller_uploadmedia"
     },
     {
       "label": "editMessage()",
@@ -99,9 +199,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L534",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_editmessage",
       "community": 74,
-      "norm_label": "editmessage()"
+      "norm_label": "editmessage()",
+      "id": "controllers_messagecontroller_editmessage"
     },
     {
       "label": "reactToMessage()",
@@ -109,9 +209,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L581",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_reacttomessage",
       "community": 74,
-      "norm_label": "reacttomessage()"
+      "norm_label": "reacttomessage()",
+      "id": "controllers_messagecontroller_reacttomessage"
     },
     {
       "label": "deleteMessage()",
@@ -119,9 +219,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L625",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_deletemessage",
       "community": 74,
-      "norm_label": "deletemessage()"
+      "norm_label": "deletemessage()",
+      "id": "controllers_messagecontroller_deletemessage"
     },
     {
       "label": "markAsRead()",
@@ -129,9 +229,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L676",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_markasread",
       "community": 74,
-      "norm_label": "markasread()"
+      "norm_label": "markasread()",
+      "id": "controllers_messagecontroller_markasread"
     },
     {
       "label": "deleteForMe()",
@@ -139,9 +239,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L716",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_deleteforme",
       "community": 74,
-      "norm_label": "deleteforme()"
+      "norm_label": "deleteforme()",
+      "id": "controllers_messagecontroller_deleteforme"
     },
     {
       "label": "deleteForEveryone()",
@@ -149,9 +249,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L724",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_deleteforeveryone",
       "community": 74,
-      "norm_label": "deleteforeveryone()"
+      "norm_label": "deleteforeveryone()",
+      "id": "controllers_messagecontroller_deleteforeveryone"
     },
     {
       "label": "proxyMedia()",
@@ -159,9 +259,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L732",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_proxymedia",
       "community": 74,
-      "norm_label": "proxymedia()"
+      "norm_label": "proxymedia()",
+      "id": "controllers_messagecontroller_proxymedia"
     },
     {
       "label": "toggleMessagePin()",
@@ -169,9 +269,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L748",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_togglemessagepin",
       "community": 74,
-      "norm_label": "togglemessagepin()"
+      "norm_label": "togglemessagepin()",
+      "id": "controllers_messagecontroller_togglemessagepin"
     },
     {
       "label": "shareWorkspaceFile()",
@@ -179,9 +279,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L770",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_shareworkspacefile",
       "community": 74,
-      "norm_label": "shareworkspacefile()"
+      "norm_label": "shareworkspacefile()",
+      "id": "controllers_messagecontroller_shareworkspacefile"
     },
     {
       "label": "updateMessage",
@@ -189,9 +289,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L710",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_updatemessage",
       "community": 74,
-      "norm_label": "updatemessage"
+      "norm_label": "updatemessage",
+      "id": "controllers_messagecontroller_updatemessage"
     },
     {
       "label": "markMessagesRead",
@@ -199,9 +299,9 @@
       "source_file": "Backend/controllers/messageController.ts",
       "source_location": "L711",
       "_origin": "ast",
-      "id": "controllers_messagecontroller_markmessagesread",
       "community": 74,
-      "norm_label": "markmessagesread"
+      "norm_label": "markmessagesread",
+      "id": "controllers_messagecontroller_markmessagesread"
     },
     {
       "label": "meetingController.ts",
@@ -1152,106 +1252,6 @@
       "community": 131,
       "norm_label": "callsscreen()",
       "id": "main_calls_callsscreen"
-    },
-    {
-      "label": "[id].tsx",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "[id].tsx",
-      "id": "chat_id"
-    },
-    {
-      "label": "AVATARS",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L57",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "avatars",
-      "id": "chat_id_avatars"
-    },
-    {
-      "label": "EMOJI_CATEGORIES",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L66",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "emoji_categories",
-      "id": "chat_id_emoji_categories"
-    },
-    {
-      "label": "ChatScreen()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L74",
-      "_origin": "ast",
-      "community": 146,
-      "norm_label": "chatscreen()",
-      "id": "chat_id_chatscreen"
-    },
-    {
-      "label": "IconBtn()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3309",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "iconbtn()",
-      "id": "chat_id_iconbtn"
-    },
-    {
-      "label": "InfoCard()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3317",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "infocard()",
-      "id": "chat_id_infocard"
-    },
-    {
-      "label": "DropdownItem()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3330",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "dropdownitem()",
-      "id": "chat_id_dropdownitem"
-    },
-    {
-      "label": "ContextMenuItem()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3359",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "contextmenuitem()",
-      "id": "chat_id_contextmenuitem"
-    },
-    {
-      "label": "countMedia()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3388",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "countmedia()",
-      "id": "chat_id_countmedia"
-    },
-    {
-      "label": "VoiceMessagePlayer()",
-      "file_type": "code",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3462",
-      "_origin": "ast",
-      "community": 35,
-      "norm_label": "voicemessageplayer()",
-      "id": "chat_id_voicemessageplayer"
     },
     {
       "label": "messages.tsx",
@@ -28059,6 +28059,437 @@
   ],
   "links": [
     {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L45",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_avatars"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_chatscreen"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L1124",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_contextmenuitem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L1536",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_countmedia"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L1095",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_dropdownitem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L59",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_emoji_categories"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L302",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_iconbtn"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L310",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_infocard"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L1812",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "chat_id_voicemessageplayer"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L37",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "components_avatar"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L37",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "components_avatar_avatar"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_api_getsecuremediaurl"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_authstorage"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L36",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_authstorage_authstorage"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L35",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_callmanager"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L44",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_callmanager_startgroupcall"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L35",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_callmanager_startoutgoingcall"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_chatcache"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_chatcache_chatcache"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_mockdata"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_mockdata_getchatbyid"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_mockdata_message"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_mockdata_sendmessage"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_mockdata_subscribetochats"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_nicknames"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L43",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_nicknames_usenicknames"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_presence"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_presence_useisonline"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_theme"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L40",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "lib_theme_usetheme"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "chat_id",
+      "target": "react"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L2449",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "lib_api_getsecuremediaurl"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "lib_mockdata_getchatbyid"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "lib_nicknames_usenicknames"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "lib_presence_useisonline"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "lib_theme_usetheme"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L417",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "main_people_getgroupinitials"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "chat_id_chatscreen",
+      "target": "main_people_getinitials"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3275",
+      "weight": 1.0,
+      "source": "chat_id_infocard",
+      "target": "lib_theme_usetheme"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
+      "source_location": "L3453",
+      "weight": 1.0,
+      "source": "chat_id_voicemessageplayer",
+      "target": "lib_api_getsecuremediaurl"
+    },
+    {
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -31151,437 +31582,6 @@
       "weight": 1.0,
       "source": "app_layout_globalcalloverlay",
       "target": "main_calls_getgroupinitials"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L45",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_avatars"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_chatscreen"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1124",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_contextmenuitem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1536",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_countmedia"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1095",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_dropdownitem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L59",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_emoji_categories"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L302",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_iconbtn"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L310",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_infocard"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1812",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "chat_id_voicemessageplayer"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L37",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "components_avatar"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L37",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "components_avatar_avatar"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L20",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_api_getsecuremediaurl"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L36",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_authstorage"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L36",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_authstorage_authstorage"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L35",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_callmanager"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L44",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_callmanager_startgroupcall"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L35",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_callmanager_startoutgoingcall"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_chatcache"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_chatcache_chatcache"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_mockdata"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_mockdata_getchatbyid"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_mockdata_message"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_mockdata_sendmessage"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L7",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_mockdata_subscribetochats"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L43",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_nicknames"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L43",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_nicknames_usenicknames"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L40",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_presence"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L40",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_presence_useisonline"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L40",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_theme"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L40",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "lib_theme_usetheme"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "chat_id",
-      "target": "react"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L2449",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "lib_api_getsecuremediaurl"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L17",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "lib_mockdata_getchatbyid"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L95",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "lib_nicknames_usenicknames"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L77",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "lib_presence_useisonline"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L69",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "lib_theme_usetheme"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L417",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "main_people_getgroupinitials"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L99",
-      "weight": 1.0,
-      "source": "chat_id_chatscreen",
-      "target": "main_people_getinitials"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3275",
-      "weight": 1.0,
-      "source": "chat_id_infocard",
-      "target": "lib_theme_usetheme"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/bubble-chat/src/app/(main)/chat/[id].tsx",
-      "source_location": "L3453",
-      "weight": 1.0,
-      "source": "chat_id_voicemessageplayer",
-      "target": "lib_api_getsecuremediaurl"
     },
     {
       "relation": "imports_from",
@@ -84536,5 +84536,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "bce254e0580ef744aa784043343b9b6e271d14b5"
+  "built_at_commit": "db2302dc31870da9dffdf5e4b07d945c8c9dba4a"
 }

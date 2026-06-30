@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `bce254e0`
+- Built from commit: `db2302dc`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -738,7 +738,7 @@ Cohesion: 0.18
 Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREEN_W }
 
 ## Knowledge Gaps
-- **836 isolated node(s):** `AuthRequest`, `updateMessage`, `markMessagesRead`, `deepseekClient`, `onlineSockets` (+831 more)
+- **836 isolated node(s):** `AVATARS`, `EMOJI_CATEGORIES`, `AuthRequest`, `updateMessage`, `markMessagesRead` (+831 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -746,14 +746,14 @@ Nodes (6): digestStyles, IngestionJob, SearchResult, styles, Tab, { width: SCREE
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `React` connect `Community 88` to `Community 2`, `Community 3`, `Community 132`, `Community 131`, `Community 6`, `Community 130`, `Community 5`, `Community 9`, `Community 139`, `Community 140`, `Community 141`, `Community 142`, `Community 16`, `Community 146`, `Community 23`, `Community 56`, `Community 29`, `Community 159`, `Community 32`, `Community 161`, `Community 33`, `Community 35`, `Community 163`, `Community 34`, `Community 38`, `Community 167`, `Community 168`, `Community 37`, `Community 42`, `Community 171`, `Community 39`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 62`, `Community 57`, `Community 58`, `Community 186`, `Community 188`, `Community 189`, `Community 187`, `Community 191`, `Community 64`, `Community 65`, `Community 190`, `Community 193`, `Community 59`, `Community 192`, `Community 70`, `Community 194`, `Community 63`, `Community 73`, `Community 81`, `Community 213`, `Community 87`, `Community 91`, `Community 94`, `Community 96`, `Community 99`, `Community 100`, `Community 101`, `Community 110`, `Community 114`, `Community 117`, `Community 118`, `Community 126`, `Community 127`?**
-  _High betweenness centrality (0.196) - this node is a cross-community bridge._
+  _High betweenness centrality (0.197) - this node is a cross-community bridge._
 - **Why does `cn()` connect `Community 5` to `Community 3`, `Community 9`, `Community 140`, `Community 16`, `Community 32`, `Community 33`, `Community 34`, `Community 37`, `Community 42`, `Community 45`, `Community 47`, `Community 50`, `Community 52`, `Community 53`, `Community 54`, `Community 55`, `Community 56`, `Community 188`, `Community 62`, `Community 64`, `Community 65`, `Community 68`, `Community 70`, `Community 73`, `Community 77`, `Community 81`, `Community 82`, `Community 88`, `Community 91`, `Community 96`, `Community 97`, `Community 99`, `Community 101`, `Community 110`, `Community 118`, `Community 124`, `Community 126`?**
   _High betweenness centrality (0.027) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `Community 6` to `Community 185`, `Community 142`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
 - **Are the 247 inferred relationships involving `cn()` (e.g. with `ChatAvatar()` and `ChatList()`) actually correct?**
   _`cn()` has 247 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `AuthRequest`, `updateMessage`, `markMessagesRead` to the rest of the system?**
+- **What connects `AVATARS`, `EMOJI_CATEGORIES`, `AuthRequest` to the rest of the system?**
   _836 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 1` be split into smaller, more focused modules?**
   _Cohesion score 0.1282051282051282 - nodes in this community are weakly interconnected._
