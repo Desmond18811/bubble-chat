@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
   TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch, Keyboard, ActivityIndicator,
+  Animated, PanResponder,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -118,7 +119,7 @@ export default function ChatScreen() {
 
   // @mention state
   const [mentionQuery, setMentionQuery] = useState<string | null>(null); // null = not in mention mode
-  const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; username: string; avatar?: string }[]>([]);
+  const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; name: string; username: string; avatar?: string; isMentionAll?: boolean }[]>([]);
   const mentionStartIndexRef = useRef<number>(-1);
 
   const [isEditingGroup, setIsEditingGroup] = useState(false);
@@ -352,7 +353,12 @@ export default function ChatScreen() {
               u.name.toLowerCase().includes(query) || u.username.toLowerCase().includes(query)
             )
             : allMembers;
-          setMentionSuggestions(filtered.slice(0, 8));
+          // "@all" pseudo-member — notifies every member of the group.
+          const showAll = 'all'.startsWith(query);
+          const results: { id: string; name: string; username: string; avatar?: string; isMentionAll?: boolean }[] = showAll
+            ? [{ id: 'all', name: 'All members', username: 'all', isMentionAll: true }, ...filtered]
+            : filtered;
+          setMentionSuggestions(results.slice(0, 8));
         } else {
           setMentionQuery(null);
           setMentionSuggestions([]);
@@ -572,9 +578,55 @@ export default function ChatScreen() {
   // Reply (quote) target — set via long-press "Reply" or swipe-to-reply.
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
+  // Swipe-to-reply: one Animated.Value + PanResponder per visible message row, cached by id so
+  // a mid-swipe gesture survives re-renders (e.g. while the message list updates from a socket event).
+  const swipeAnimsRef = useRef<Map<string, Animated.Value>>(new Map());
+  const swipeRespondersRef = useRef<Map<string, ReturnType<typeof PanResponder.create>>>(new Map());
+  const swipeMsgRef = useRef<Map<string, any>>(new Map());
+  const isSelectionModeRef = useRef(false);
+
+  const getSwipeAnim = (id: string) => {
+    let anim = swipeAnimsRef.current.get(id);
+    if (!anim) {
+      anim = new Animated.Value(0);
+      swipeAnimsRef.current.set(id, anim);
+    }
+    return anim;
+  };
+
+  const getSwipeResponder = (msg: any) => {
+    const id = msg.id;
+    swipeMsgRef.current.set(id, msg);
+    let responder = swipeRespondersRef.current.get(id);
+    if (responder) return responder;
+    const anim = getSwipeAnim(id);
+    responder = PanResponder.create({
+      onMoveShouldSetPanResponder: (_evt, gesture) => {
+        if (isSelectionModeRef.current) return false;
+        return gesture.dx > 8 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5;
+      },
+      onPanResponderMove: (_evt, gesture) => {
+        anim!.setValue(Math.max(0, Math.min(gesture.dx, 80)));
+      },
+      onPanResponderRelease: (_evt, gesture) => {
+        Animated.spring(anim!, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+        if (gesture.dx > 60) {
+          const latest = swipeMsgRef.current.get(id);
+          if (latest) handleReplyTo(latest);
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(anim!, { toValue: 0, useNativeDriver: true, friction: 7 }).start();
+      },
+    });
+    swipeRespondersRef.current.set(id, responder);
+    return responder;
+  };
+
   // Selection mode
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+  isSelectionModeRef.current = isSelectionMode;
 
   // Editing message ID
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -1988,7 +2040,31 @@ export default function ChatScreen() {
               }
 
               return (
-                <View key={msg.id} style={{ marginBottom: 14, flexDirection: 'row', justifyContent: isMe ? 'flex-end' : 'flex-start', alignItems: 'flex-end' }}>
+                <View key={msg.id} style={{ marginBottom: 14, position: 'relative' }}>
+                  {/* Swipe-to-reply hint icon, revealed behind the row as it's dragged right */}
+                  <Animated.View
+                    pointerEvents="none"
+                    style={{
+                      position: 'absolute',
+                      left: 4,
+                      top: 0,
+                      bottom: 0,
+                      justifyContent: 'center',
+                      opacity: getSwipeAnim(msg.id).interpolate({ inputRange: [0, 60], outputRange: [0, 1], extrapolate: 'clamp' }),
+                    }}
+                  >
+                    <Reply size={18} color={PURPLE} />
+                  </Animated.View>
+
+                  <Animated.View
+                    {...getSwipeResponder(msg).panHandlers}
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: isMe ? 'flex-end' : 'flex-start',
+                      alignItems: 'flex-end',
+                      transform: [{ translateX: getSwipeAnim(msg.id) }],
+                    }}
+                  >
                   {/* Checkbox for selection mode */}
                   {isSelectionMode && (
                     <TouchableOpacity
@@ -2203,6 +2279,7 @@ export default function ChatScreen() {
                       />
                     </View>
                   )}
+                  </Animated.View>
                 </View>
               );
             })
@@ -2501,6 +2578,41 @@ export default function ChatScreen() {
                   <Text style={{ fontSize: 11, fontFamily: 'Poppins_500Medium', color: 'rgba(31,32,48,0.45)' }}>
                     Aida suggestions are unavailable on this workspace
                   </Text>
+                </View>
+              )}
+
+              {/* ── @mention autocomplete dropdown ── */}
+              {mentionQuery !== null && mentionSuggestions.length > 0 && (
+                <View style={{
+                  backgroundColor: colors.surface,
+                  borderRadius: 16,
+                  marginHorizontal: 4,
+                  marginBottom: 8,
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: 'rgba(108,92,231,0.1)',
+                }}>
+                  {mentionSuggestions.map(member => (
+                    <TouchableOpacity
+                      key={member.id}
+                      onPress={() => insertMention(member)}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 9 }}
+                    >
+                      {member.isMentionAll ? (
+                        <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(108,92,231,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: PURPLE }}>@</Text>
+                        </View>
+                      ) : (
+                        <Avatar url={member.avatar} userId={member.id} name={member.name} size={28} isGroup={false} />
+                      )}
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: INK }}>{member.name}</Text>
+                        {member.isMentionAll && (
+                          <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: INK_SOFT }}>Notify everyone in this group</Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               )}
 

@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/chat-window.tsx": {
-    "mtime": 1782849541.972728,
-    "ast_hash": "12d097593e265c23f4b5001d16d368f9",
+    "mtime": 1782850094.065142,
+    "ast_hash": "686247cd5ff76cc14b2527b83c9bfc8c",
     "semantic_hash": ""
   },
   "BUBBLESPACE/frontend/src/components/chat/create-group-modal.tsx": {
@@ -675,8 +675,8 @@
     "semantic_hash": ""
   },
   "Backend/controllers/messageController.ts": {
-    "mtime": 1782755651.999603,
-    "ast_hash": "deb76e0d4f8b44da0685b0cc833598f1",
+    "mtime": 1782850231.5166712,
+    "ast_hash": "b2cdbd611b6c06776f1a5dc4351f533b",
     "semantic_hash": ""
   },
   "Backend/controllers/messageRequestController.ts": {
@@ -1700,8 +1700,8 @@
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/chat/[id].tsx": {
-    "mtime": 1782849268.1600626,
-    "ast_hash": "2e9555b42ce8b4e56075d90db60d0918",
+    "mtime": 1782850192.5717497,
+    "ast_hash": "601e2e931c9498f9efa3404b6d50a0af",
     "semantic_hash": ""
   },
   "app/bubble-chat/src/app/(main)/updates.tsx": {
