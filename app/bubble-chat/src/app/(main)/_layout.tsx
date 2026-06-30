@@ -1,15 +1,44 @@
 import { Tabs } from "expo-router";
 import { MessageSquare, User, Users, Plus, Share2 } from "lucide-react-native";
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { BlurView } from "expo-blur";
 import { triggerPlusButton } from "../../lib/mockData";
 import { useTheme } from "../../lib/theme";
 import { NicknameProvider } from "../../lib/nicknames";
+import { fetchActiveMeetings } from "../../lib/api";
+import { getSocket } from "../../lib/socket";
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { colors, isDark } = useTheme();
   const currentRouteName = state.routes[state.index].name;
+  const [activeRoomCount, setActiveRoomCount] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await fetchActiveMeetings();
+        if (!cancelled) setActiveRoomCount((res?.rooms || []).length);
+      } catch { /* best-effort */ }
+    };
+    poll();
+    intervalRef.current = setInterval(poll, 30_000);
+
+    const socket = getSocket();
+    const refresh = () => poll();
+    socket?.on('meeting_room_update', refresh);
+    socket?.on('meeting_ended', refresh);
+
+    return () => {
+      cancelled = true;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      socket?.off('meeting_room_update', refresh);
+      socket?.off('meeting_ended', refresh);
+    };
+  }, []);
+
   if (currentRouteName === "chat/[id]") {
     return null;
   }
@@ -62,7 +91,19 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               iconComponent = <MessageSquare color={color} size={iconSize} />;
             } else if (route.name === "people") {
               displayName = "People";
-              iconComponent = <Users color={color} size={iconSize} />;
+              iconComponent = (
+                <View style={{ position: 'relative' }}>
+                  <Users color={color} size={iconSize} />
+                  {activeRoomCount > 0 && (
+                    <View style={{
+                      position: 'absolute', top: -3, right: -5,
+                      width: 8, height: 8, borderRadius: 4,
+                      backgroundColor: '#10b981',
+                      borderWidth: 1.5, borderColor: isDark ? 'rgba(15,16,24,0.82)' : 'rgba(248,247,255,0.78)',
+                    }} />
+                  )}
+                </View>
+              );
             } else if (route.name === "updates") {
               displayName = "Updates";
               iconComponent = <Share2 color={color} size={iconSize} />;

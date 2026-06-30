@@ -186,11 +186,93 @@ export const createMeeting = async (
       entityLabel: meeting.title,
     });
 
+    // Broadcast to all org members so their "Active Rooms" list refreshes instantly.
+    try {
+      const hostUser = await User.findById(userId).select('full_name username avatar organization').lean();
+      const orgId = (hostUser as any)?.organization;
+      const { getIO } = await import('../utils/socket');
+      const io = getIO();
+      const roomCard = {
+        id: String(meeting._id),
+        roomId: meeting.roomId,
+        title: meeting.title,
+        type: meeting.type,
+        members: 1,
+        host: hostUser,
+        attendees: [],
+        startedAt: meeting.startedAt,
+      };
+      if (orgId) {
+        const orgMembers = await User.find({ organization: orgId }).select('_id').lean();
+        for (const m of orgMembers) {
+          io.to(String(m._id)).emit('meeting_room_update', { action: 'started', room: roomCard });
+        }
+      }
+      // Also notify invited attendees regardless of org membership.
+      for (const aid of (attendees || [])) {
+        io.to(String(aid)).emit('meeting_room_update', { action: 'started', room: roomCard });
+      }
+    } catch { /* best-effort socket broadcast */ }
+
     res.status(201).json({ message: 'Meeting created', meeting });
   } catch (err: any) {
     res
       .status(500)
       .json({ message: 'Failed to create meeting', error: err.message });
+  }
+};
+
+// ─── GET /api/v1/meetings/active ── Live rooms in the org ────────────────────
+// Returns all meetings with status='live' that are in the same org as the
+// requesting user. This powers the "Active Rooms" section in CallsView.
+
+export const getActiveMeetings = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
+  try {
+    const userId = (req as any).user?._id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    // Find the requesting user's org so we can scope rooms to their workspace.
+    const user = await User.findById(userId).select('organization').lean();
+    const orgId = (user as any)?.organization;
+
+    let query: any = { status: 'live' };
+    if (orgId) {
+      // Find all members of this org so we can filter meetings to org-scoped rooms.
+      const orgMembers = await User.find({ organization: orgId }).select('_id').lean();
+      const memberIds = orgMembers.map((m: any) => m._id);
+      query = {
+        status: 'live',
+        $or: [
+          { host: { $in: memberIds } },
+          { attendees: { $in: memberIds } },
+        ],
+      };
+    }
+
+    const meetings = await Meeting.find(query)
+      .populate('host', 'full_name username avatar')
+      .populate('attendees', 'full_name username avatar')
+      .sort({ startedAt: -1 })
+      .lean();
+
+    // Shape into the "room card" format the frontend expects.
+    const rooms = meetings.map((m: any) => ({
+      id: String(m._id),
+      roomId: m.roomId,
+      title: m.title || 'Untitled Meeting',
+      type: m.type || 'video',
+      members: (m.attendees?.length || 0) + 1, // +1 for host
+      host: m.host,
+      attendees: m.attendees || [],
+      startedAt: m.startedAt,
+    }));
+
+    res.status(200).json({ rooms });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to fetch active meetings', error: err.message });
   }
 };
 

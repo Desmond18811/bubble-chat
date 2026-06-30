@@ -2,6 +2,7 @@ import express from 'express';
 import {
   createMeeting,
   getMeetings,
+  getActiveMeetings,
   getMeetingById,
   addTranscriptChunk,
   endMeeting,
@@ -25,6 +26,7 @@ router.use(requireAuth);
 // ── Core meeting CRUD ────────────────────────────────────────────────────────
 router.post('/', createMeeting);
 router.get('/', getMeetings);
+router.get('/active', getActiveMeetings);
 router.get('/stats/:withUserId', getMeetingStatsWithUser);
 router.get('/:id', getMeetingById);
 

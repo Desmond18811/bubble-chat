@@ -1514,6 +1514,11 @@ export const createMeeting = async (data: {
     return handleResponse(res);
 };
 
+export const fetchActiveMeetings = async () => {
+    const res = await fetch(`${BASE_URL}/meetings/active`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
 export const fetchMeetings = async (page = 1, limit = 20) => {
     const res = await fetch(
         `${BASE_URL}/meetings?page=${page}&limit=${limit}`,
