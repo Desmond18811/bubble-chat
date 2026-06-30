@@ -230,6 +230,13 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    // "@all" in a group message notifies every member, regardless of what the
+    // client sent in `mentions` — keeps behavior correct even if a client's
+    // mention-picker logic falls out of sync with this rule.
+    if (convo.isGroupChat && content && /(^|\s)@all\b/i.test(content)) {
+      mentions = convo.users.filter((u: any) => String(u) !== String(req.user._id));
+    }
+
     // Idempotency: if the client retried (double-click, reconnect, network retry)
     // with the same clientId, return the already-created message instead of
     // persisting a duplicate. This is the authoritative guard behind "send once".
