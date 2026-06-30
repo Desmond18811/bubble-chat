@@ -83,6 +83,7 @@ export interface IUser extends Document {
   privateKey?: string;
 
   // Settings
+  actionItemEmailMode?: 'each' | 'summary' | 'off';
   notification_settings?: {
     muted?: boolean;
     preview?: boolean;
@@ -164,6 +165,11 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     custom_background: { type: String, default: '' },
 
+    actionItemEmailMode: {
+      type: String,
+      enum: ['each', 'summary', 'off'],
+      default: 'each',
+    },
     notification_settings: {
       muted: { type: Boolean, default: false },
       preview: { type: Boolean, default: true },

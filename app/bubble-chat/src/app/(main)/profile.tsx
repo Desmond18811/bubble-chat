@@ -597,6 +597,7 @@ export default function ProfileScreen() {
         bio: formData.bio.trim(),
         email: formData.email.trim().toLowerCase(),
         phone_number: formData.phone_number.trim(),
+        actionItemEmailMode: (formData as any).actionItemEmailMode || 'each',
       });
       if (res?.data) {
         const u = res.data;
@@ -1319,6 +1320,38 @@ export default function ProfileScreen() {
                 />
               </View>
               
+              {/* Action-Item Email Mode */}
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Action-Item Emails</Text>
+                <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mb-2 leading-tight">How BubbleSpace emails you about meeting action items.</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {([
+                    { value: 'each', label: 'Each item' },
+                    { value: 'summary', label: 'Daily digest' },
+                    { value: 'off', label: 'Off' },
+                  ] as const).map(opt => {
+                    const active = ((formData as any).actionItemEmailMode || 'each') === opt.value;
+                    return (
+                      <TouchableOpacity
+                        key={opt.value}
+                        onPress={() => setFormData({ ...formData, actionItemEmailMode: opt.value } as any)}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 10,
+                          borderRadius: 14,
+                          alignItems: 'center',
+                          backgroundColor: active ? '#6c5ce7' : 'rgba(108,92,231,0.07)',
+                          borderWidth: active ? 0 : 1,
+                          borderColor: 'rgba(108,92,231,0.15)',
+                        }}
+                      >
+                        <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: active ? '#fff' : '#6c5ce7' }}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
               <TouchableOpacity
                 onPress={handleSave}
                 className="bg-purple py-4 rounded-xl items-center flex-row justify-center mt-2"

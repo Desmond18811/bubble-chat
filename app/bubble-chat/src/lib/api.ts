@@ -160,6 +160,11 @@ export const startGoogleAuth = async (inviteCode?: string): Promise<{ accessToke
             // 2. Perform native Google Sign-In
             const userInfo = await GoogleSignin.signIn();
 
+            // v16 returns { type: 'success', data: ... } or { type: 'cancelled' }
+            if (userInfo?.type === 'cancelled' || userInfo?.data === null) {
+                return null;
+            }
+
             // 3. Extract the ID token (handle both userInfo.data?.idToken and userInfo.idToken)
             const idToken = userInfo.data?.idToken || (userInfo as any).idToken;
             if (!idToken) {
@@ -191,9 +196,14 @@ export const startGoogleAuth = async (inviteCode?: string): Promise<{ accessToke
 
             throw new Error(data?.message || "Verification response from backend did not contain access and refresh tokens.");
         } catch (err: any) {
-            // If the error is due to missing native module, fall back to WebBrowser
-            if (err.message && (err.message.includes('RNGoogleSignin') || err.message.includes('TurboModuleRegistry') || err.message.includes('enforcing'))) {
+            const msg: string = err?.message || '';
+            // Native module not linked in this binary → fall back to WebBrowser
+            if (msg.includes('RNGoogleSignin') || msg.includes('TurboModuleRegistry') || msg.includes('enforcing')) {
                 console.log("RNGoogleSignin native module missing in binary at runtime. Falling back to WebBrowser OAuth.");
+                useNativeGoogle = false;
+            } else if (err?.code === 'PLAY_SERVICES_NOT_AVAILABLE' || msg.includes('PLAY_SERVICES_NOT_AVAILABLE')) {
+                // Device has no/outdated Google Play Services (emulator without gapps, Huawei) → fall back
+                console.log("Google Play Services unavailable. Falling back to WebBrowser OAuth.");
                 useNativeGoogle = false;
             } else {
                 console.error('Google Native Auth Error:', err);
@@ -1526,7 +1536,7 @@ export const fetchMeetingById = async (id: string) => {
  */
 export const addMeetingTranscriptChunk = async (
     meetingId: string,
-    chunk: { speaker?: string; text: string; timestamp?: number }
+    chunk: { speaker?: string; speakerId?: string; text: string; timestamp?: number }
 ) => {
     const res = await fetch(`${BASE_URL}/meetings/${meetingId}/transcript`, {
         method: 'POST',

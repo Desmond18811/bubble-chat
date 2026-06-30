@@ -35,6 +35,8 @@ import { authStorage } from "../../lib/authStorage";
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useTheme } from "../../lib/theme";
 import { getCachedNickname } from "../../lib/nicknames";
+import * as Notifications from 'expo-notifications';
+import { getActiveChatId } from "../../lib/activeChatRef";
 
 export default function Messages() {
   const router = useRouter();
@@ -266,6 +268,20 @@ export default function Messages() {
           unreadCount: (c.unreadCount || 0) + 1,
         };
       }));
+
+      // In-app foreground banner: fire a local notification when the user is in the
+      // app but NOT inside this specific chat screen.
+      if (String(chatId) !== String(getActiveChatId())) {
+        const senderName = data.sender?.full_name || data.sender?.username || 'Someone';
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: senderName,
+            body: previewText,
+            data: { chatId, type: 'new_message' },
+          },
+          trigger: null,
+        }).catch(() => {});
+      }
     };
 
     // ── Real-time read receipts ─ clear badge when other user reads ───────────

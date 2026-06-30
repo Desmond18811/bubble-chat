@@ -46,6 +46,7 @@ const formatUser = (u: any) => ({
   verified_badge: u.verified_badge ?? false,
   publicKey: u.publicKey || null,
   role: u.role || 'employee',
+  actionItemEmailMode: (u as any).actionItemEmailMode || 'each',
   notification_settings: u.notification_settings || null,
   privacy_settings: u.privacy_settings || null,
   contacts: u.contacts || [],

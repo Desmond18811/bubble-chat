@@ -106,6 +106,7 @@ const formatUser = async (u: any, includePrivate = false) => {
     signupKind: u.signupKind || 'individual',
     isSocialAccount: !!u.googleId,
     publicKey: u.publicKey || null,
+    actionItemEmailMode: includePrivate ? ((u as any).actionItemEmailMode || 'each') : undefined,
     notification_settings: includePrivate ? (u.notification_settings || null) : undefined,
     privacy_settings: includePrivate ? (u.privacy_settings || null) : undefined,
     contacts: includePrivate ? (u.contacts || []) : undefined,
@@ -289,7 +290,8 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     'full_name', 'bio', 'blog', 'links', 'status_message', 'mood_emoji',
     'gender', 'date_of_birth', 'hobbies', 'location',
     'notification_settings', 'privacy_settings', 'username',
-    'phone_number', 'organization', 'org_role', 'app_background', 'custom_background'
+    'phone_number', 'organization', 'org_role', 'app_background', 'custom_background',
+    'actionItemEmailMode'
   ];
 
   // Check username uniqueness if being updated

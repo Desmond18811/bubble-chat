@@ -231,7 +231,8 @@ export const processTaskReminders = async () => {
         const assignedUserId = task.assignedTo || task.user_id;
         const user = await User.findById(assignedUserId);
 
-        if (user && user.email) {
+        const emailMode: string = (user as any)?.actionItemEmailMode ?? 'each';
+        if (user && user.email && emailMode === 'each') {
           const daysText = newLevel === '5d' ? '5 days' : newLevel === '2d' ? '2 days' : '1 day';
           await sendTaskReminderEmail(
             user.email,
@@ -337,10 +338,11 @@ export const processActionItemFollowUps = async () => {
           entityType: 'Task',
         });
 
-        // Best-effort email nudge.
+        // Best-effort email nudge — only when user has opted for per-item emails.
         try {
-          const user = await User.findById(assigneeId).select('email full_name username');
-          if (user?.email) {
+          const user = await User.findById(assigneeId).select('email full_name username actionItemEmailMode');
+          const emailMode: string = (user as any)?.actionItemEmailMode ?? 'each';
+          if (user?.email && emailMode === 'each') {
             const { sendTaskReminderEmail } = await import('./mailer');
             await sendTaskReminderEmail(
               user.email,
@@ -394,7 +396,7 @@ export const runDailyDigestJob = async () => {
         { 'digestPreferences.enabled': true },
         { 'digestPreferences.enabled': { $exists: false } }, // default on
       ],
-    }).select('_id full_name username email digestPreferences').limit(500);
+    }).select('_id full_name username email digestPreferences actionItemEmailMode').limit(500);
 
     console.log(`📅 [DailyDigest] Generating briefs for ${users.length} users...`);
 
@@ -421,11 +423,29 @@ export const runDailyDigestJob = async () => {
           if ((user as any).email) {
             try {
               const { sendDigestEmail } = await import('./mailer');
+              let emailBody = digest.morningBrief;
+
+              // 'summary' mode: append pending action items so per-task emails are skipped
+              // but users still see everything once a day in their digest.
+              const emailMode: string = (user as any).actionItemEmailMode ?? 'each';
+              if (emailMode === 'summary') {
+                const { Task } = await import('../models/task');
+                const pending = await Task.find({
+                  $or: [{ assignedTo: user._id }, { user_id: user._id }],
+                  source: 'meeting',
+                  status: { $in: ['todo', 'in-progress'] },
+                }).select('title end_time').limit(20);
+                if (pending.length > 0) {
+                  const lines = pending.map(t => `• ${t.title}${t.end_time ? ` (due ${t.end_time.toLocaleDateString()})` : ''}`).join('\n');
+                  emailBody += `\n\n──────────────────────\n📋 Pending Action Items\n${lines}`;
+                }
+              }
+
               await sendDigestEmail(
                 (user as any).email,
                 user.full_name || user.username || 'there',
                 '🌅 Your Daily Brief',
-                digest.morningBrief
+                emailBody
               );
             } catch (mailErr) {
               console.error(`[DailyDigest] Email failed for ${user._id}:`, mailErr);
