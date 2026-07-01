@@ -26,6 +26,9 @@ export type ActivityAction =
   | 'call_rejected'
   | 'call_missed'
   | 'call_ended'
+  | 'room_knock'
+  | 'room_knock_accepted'
+  | 'room_knock_denied'
   // Messaging
   | 'message_sent'
   // Brain / Knowledge

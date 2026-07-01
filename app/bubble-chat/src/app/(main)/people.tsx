@@ -40,7 +40,7 @@ import {
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
 import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers, fetchMeetings, fetchCallLogs, fetchMeetingById, deleteCallLog, fetchActiveMeetings } from '../../lib/api';
-import { startOutgoingCall, joinRoomByLink } from '../../lib/callManager';
+import { startOutgoingCall, joinRoomByLink, knockToJoinRoom } from '../../lib/callManager';
 import { useIsOnline, useIsInMeeting } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
@@ -1134,9 +1134,21 @@ export default function PeopleScreen() {
                     )}
                   </View>
 
-                  {/* Join button */}
+                  {/* Join button — host/attendee re-enters directly; others knock. */}
                   <TouchableOpacity
-                    onPress={() => joinRoomByLink({ roomId: room.roomId || room.id, type: isVideo ? 'video' : 'voice' })}
+                    onPress={async () => {
+                      const roomId = room.roomId || room.id;
+                      const type = isVideo ? 'video' : 'voice';
+                      const me = await authStorage.getUser();
+                      const myId = String(me?._id || me?.id || '');
+                      const hostId = String(host?._id || host?.id || room?.host || '');
+                      const attendeeIds = (room?.attendees || []).map((a: any) => String(a?._id || a?.id || a));
+                      if (myId && (myId === hostId || attendeeIds.includes(myId))) {
+                        joinRoomByLink({ roomId, type });
+                      } else {
+                        knockToJoinRoom({ roomId, hostId: hostId || undefined, type });
+                      }
+                    }}
                     style={{ backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 7, alignItems: 'center' }}
                     activeOpacity={0.8}
                   >
