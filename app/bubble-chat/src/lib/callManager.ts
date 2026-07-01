@@ -28,7 +28,21 @@ export type CallState =
   | { status: 'idle' }
   | { status: 'calling_out'; user: any; type: 'voice' | 'video'; roomId: string }
   | { status: 'calling_in'; callerId: string; callerName: string; callerAvatar?: string; type: 'voice' | 'video'; roomId: string }
-  | { status: 'in_call'; user: any; type: 'voice' | 'video'; roomId: string; duration: number; meetingDbId: string | null };
+  | { status: 'in_call'; user: any; type: 'voice' | 'video'; roomId: string; duration: number; meetingDbId: string | null; hostId?: string | null; isHost?: boolean };
+
+// The authoritative meeting host is whoever the backend recorded as `host` (the first
+// client to create the Meeting record). We compare it against the local user id so the
+// overlay can offer the end-call "save/email transcript" options only to the host.
+const resolveHost = async (createMeetingRes: any): Promise<{ hostId: string | null; isHost: boolean }> => {
+  const hostId = createMeetingRes?.meeting?.host ? String(createMeetingRes.meeting.host) : null;
+  try {
+    const me = await authStorage.getUser();
+    const myId = String(me?._id || me?.id || '');
+    return { hostId, isHost: hostId ? hostId === myId : true };
+  } catch {
+    return { hostId, isHost: true };
+  }
+};
 
 let currentCallState: CallState = { status: 'idle' };
 let listeners: ((state: CallState) => void)[] = [];
@@ -139,6 +153,7 @@ export const acceptIncomingCall = async () => {
 
   // Create meeting in database
   let dbId: string | null = null;
+  let host: { hostId: string | null; isHost: boolean } = { hostId: null, isHost: true };
   try {
     const res = await createMeeting({
       roomId: state.roomId,
@@ -146,6 +161,7 @@ export const acceptIncomingCall = async () => {
       type: state.type
     });
     dbId = res?.meeting?._id || res?._id || null;
+    host = await resolveHost(res);
     if (dbId) {
       socket.emit('meeting_started', { roomId: state.roomId, meetingId: dbId });
     }
@@ -159,7 +175,9 @@ export const acceptIncomingCall = async () => {
     type: state.type,
     roomId: state.roomId,
     duration: 0,
-    meetingDbId: dbId
+    meetingDbId: dbId,
+    hostId: host.hostId,
+    isHost: host.isHost,
   });
 
   startDurationTimer();
@@ -177,7 +195,10 @@ export const declineIncomingCall = () => {
   setCallState({ status: 'idle' });
 };
 
-export const hangUpCall = async () => {
+// End/leave the current call. For an in-call host, `opts` carries the transcript
+// preferences chosen in the end-call sheet (save to storage / email attendees). The
+// backend gates `meeting_ended` + endMeeting by host, so a non-host simply leaves.
+export const hangUpCall = async (opts?: { saveToStorage?: boolean; sendEmail?: boolean }) => {
   const socket = getSocket();
   const state = currentCallState;
   if (callTimeout) clearTimeout(callTimeout);
@@ -202,10 +223,14 @@ export const hangUpCall = async () => {
       socket.emit('meeting_ended', { roomId: state.roomId });
     }
 
-    // Call endMeeting API
+    // Persist + close out the meeting on the server with the chosen transcript options.
+    // Defaults preserve the prior behaviour for non-prompt exits (peer hangup, timeout).
     if (state.meetingDbId) {
       try {
-        await endMeeting(state.meetingDbId, { saveToStorage: true, sendEmail: true });
+        await endMeeting(state.meetingDbId, {
+          saveToStorage: opts?.saveToStorage ?? true,
+          sendEmail: opts?.sendEmail ?? true,
+        });
       } catch (err) {
         console.warn('Failed to end meeting on server:', err);
       }
@@ -245,6 +270,7 @@ export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: stri
   linkJoinToken = joinToken || null;
 
   let dbId: string | null = null;
+  let host: { hostId: string | null; isHost: boolean } = { hostId: null, isHost: false };
   try {
     const res = await createMeeting({
       roomId,
@@ -252,6 +278,7 @@ export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: stri
       type,
     });
     dbId = res?.meeting?._id || res?._id || null;
+    host = await resolveHost(res);
   } catch (err) {
     console.warn('Failed to create meeting record for link join:', err);
   }
@@ -263,6 +290,8 @@ export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: stri
     roomId,
     duration: 0,
     meetingDbId: dbId,
+    hostId: host.hostId,
+    isHost: host.isHost,
   });
 
   startDurationTimer();
@@ -323,6 +352,7 @@ export const startGroupCall = async (members: any[], type: 'voice' | 'video', gr
   }
 
   let dbId: string | null = null;
+  let host: { hostId: string | null; isHost: boolean } = { hostId: null, isHost: true };
   try {
     const res = await createMeeting({
       roomId,
@@ -330,6 +360,7 @@ export const startGroupCall = async (members: any[], type: 'voice' | 'video', gr
       type,
     });
     dbId = res?.meeting?._id || res?._id || null;
+    host = await resolveHost(res);
     if (dbId && socket) socket.emit('meeting_started', { roomId, meetingId: dbId });
   } catch (err) {
     console.warn('Failed to create group meeting record:', err);
@@ -342,6 +373,8 @@ export const startGroupCall = async (members: any[], type: 'voice' | 'video', gr
     roomId,
     duration: 0,
     meetingDbId: dbId,
+    hostId: host.hostId,
+    isHost: host.isHost,
   });
   startDurationTimer();
 };
@@ -407,6 +440,7 @@ export const setupCallSocketListeners = (socket: any) => {
 
     // Host also creates/updates meeting DB record on accept
     let dbId: string | null = null;
+    let host: { hostId: string | null; isHost: boolean } = { hostId: null, isHost: true };
     try {
       const user = currentCallState.user || {};
       const chatId = user.chatId || user.id || user._id || user.otherChatId;
@@ -419,6 +453,7 @@ export const setupCallSocketListeners = (socket: any) => {
         attendees: otherUserId ? [otherUserId] : [],
       });
       dbId = res?.meeting?._id || res?._id || null;
+      host = await resolveHost(res);
       if (dbId) {
         socket.emit('meeting_started', { roomId: data.roomId, meetingId: dbId });
       }
@@ -426,13 +461,17 @@ export const setupCallSocketListeners = (socket: any) => {
       console.warn('Failed to create meeting record:', err);
     }
 
+    // currentCallState may have changed while awaiting; re-check we're still calling out.
+    if (currentCallState.status !== 'calling_out') return;
     setCallState({
       status: 'in_call',
       user: currentCallState.user,
       type: currentCallState.type,
       roomId: data.roomId,
       duration: 0,
-      meetingDbId: dbId
+      meetingDbId: dbId,
+      hostId: host.hostId,
+      isHost: host.isHost,
     });
 
     startDurationTimer();

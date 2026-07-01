@@ -28,6 +28,7 @@ import { Image } from "expo-image";
 import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2, UserPlus, Link2, X, Monitor, MonitorOff } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
 import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, inviteToCall, getLinkJoinToken, CallState, getPersistedCall, clearPersistedCall, rejoinPersistedCall } from "../lib/callManager";
+import { authStorage } from "../lib/authStorage";
 import { fetchActiveMeetings } from "../lib/api";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
 import { ThemeProvider } from "../lib/theme";
@@ -73,6 +74,15 @@ function GlobalCallOverlay() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  // Host end-call sheet (Save / Email / Both / Neither) — mirrors the web modal.
+  const [showEndSheet, setShowEndSheet] = useState(false);
+  // Local user's display name — stamped on this client's in-call chat + reactions.
+  const [myName, setMyName] = useState('You');
+  useEffect(() => {
+    authStorage.getUser().then((u) => {
+      if (u) setMyName(u.full_name || u.username || 'You');
+    }).catch(() => {});
+  }, []);
 
   const handleScreenShareError = (err: Error) => {
     setIsScreenSharing(false);
@@ -207,18 +217,29 @@ function GlobalCallOverlay() {
   const isVideo = callState.type === 'video';
 
   const confirmHangUp = () => {
-    if (callState.status === 'in_call') {
-      Alert.alert(
-        'End Call',
-        'Are you sure you want to end this call?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'End Call', style: 'destructive', onPress: hangUpCall },
-        ]
-      );
-    } else {
+    if (callState.status !== 'in_call') {
       hangUpCall();
+      return;
     }
+    // Host with a saved meeting record → offer the transcript save/email options.
+    if (callState.meetingDbId && callState.isHost) {
+      setShowEndSheet(true);
+      return;
+    }
+    // Non-host / no record → plain leave.
+    Alert.alert(
+      'End Call',
+      'Are you sure you want to end this call?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'End Call', style: 'destructive', onPress: () => hangUpCall() },
+      ]
+    );
+  };
+
+  const endWith = (saveToStorage: boolean, sendEmail: boolean) => {
+    setShowEndSheet(false);
+    hangUpCall({ saveToStorage, sendEmail });
   };
 
   const formatDuration = (sec: number) => {
@@ -346,6 +367,7 @@ function GlobalCallOverlay() {
               screenShareEnabled={isScreenSharing}
               onScreenShareError={handleScreenShareError}
               roomId={(callState as any).roomId}
+              userName={myName}
               fallback={renderAvatar(isMinimized ? 46 : 156)}
               onError={(err) => console.warn('[LiveKit] room error:', err)}
               onDisconnected={() => {
@@ -442,6 +464,36 @@ function GlobalCallOverlay() {
                   })
                 )}
               </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Host end-call sheet — save transcript to storage and/or email attendees */}
+      {!isMinimized && (
+        <Modal visible={showEndSheet} transparent animationType="fade" onRequestClose={() => setShowEndSheet(false)}>
+          <View style={styles.endBackdrop}>
+            <View style={styles.endCard}>
+              <Text style={styles.endTitle}>Save meeting transcript?</Text>
+              <Text style={styles.endSubtitle}>
+                Keep the transcript in your Storage Center, email it to attendees, or both.
+              </Text>
+
+              <TouchableOpacity style={[styles.endBtn, styles.endBtnPrimary]} onPress={() => endWith(true, false)}>
+                <Text style={styles.endBtnPrimaryText}>Save in Storage Center</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.endBtn, styles.endBtnSoft]} onPress={() => endWith(false, true)}>
+                <Text style={styles.endBtnSoftText}>Send via Email Only</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.endBtn, styles.endBtnGreen]} onPress={() => endWith(true, true)}>
+                <Text style={styles.endBtnPrimaryText}>Save & Email Attendees</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.endBtn, styles.endBtnGhost]} onPress={() => endWith(false, false)}>
+                <Text style={styles.endBtnGhostText}>Neither (Discard transcript)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.endCancel} onPress={() => setShowEndSheet(false)}>
+                <Text style={styles.endCancelText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -1118,4 +1170,51 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: PURPLE,
   },
+
+  // End-call sheet
+  endBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  endCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: WHITE,
+    borderRadius: 28,
+    padding: 24,
+    alignItems: 'stretch',
+  },
+  endTitle: {
+    fontSize: 19,
+    fontFamily: 'Poppins_700Bold',
+    color: INK,
+    textAlign: 'center',
+  },
+  endSubtitle: {
+    fontSize: 13,
+    fontFamily: 'Poppins_400Regular',
+    color: INK_SOFT,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 18,
+    lineHeight: 19,
+  },
+  endBtn: {
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  endBtnPrimary: { backgroundColor: PURPLE },
+  endBtnPrimaryText: { color: WHITE, fontFamily: 'Poppins_700Bold', fontSize: 14 },
+  endBtnSoft: { backgroundColor: PURPLE_SOFT },
+  endBtnSoftText: { color: PURPLE, fontFamily: 'Poppins_700Bold', fontSize: 14 },
+  endBtnGreen: { backgroundColor: GREEN },
+  endBtnGhost: { backgroundColor: SURFACE },
+  endBtnGhostText: { color: INK_SOFT, fontFamily: 'Poppins_700Bold', fontSize: 14 },
+  endCancel: { alignItems: 'center', paddingVertical: 8, marginTop: 2 },
+  endCancelText: { color: INK_SOFT, fontFamily: 'Poppins_600SemiBold', fontSize: 13 },
 });

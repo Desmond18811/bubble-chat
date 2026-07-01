@@ -1118,20 +1118,28 @@ export default function PeopleScreen() {
                     </Text>
                   </View>
 
-                  {/* Participant @username chips */}
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
-                    {visibleChips.map((p: any, i: number) => (
-                      <View key={i} style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(108,92,231,0.07)', borderRadius: 20, paddingHorizontal: 7, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', color: colors.textSoft }}>
-                          @{p?.username || p?.full_name?.split(' ')[0] || 'user'}
-                        </Text>
-                      </View>
-                    ))}
-                    {overflow > 0 && (
-                      <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(108,92,231,0.07)', borderRadius: 20, paddingHorizontal: 7, paddingVertical: 2 }}>
-                        <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', color: colors.textSoft }}>+{overflow}</Text>
-                      </View>
-                    )}
+                  {/* Stacked participant avatars + overflow badge (matches web live-room card) */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {visibleChips.map((p: any, i: number) => (
+                        <View key={i} style={{ marginLeft: i === 0 ? 0 : -8, borderRadius: 13, borderWidth: 1.5, borderColor: colors.card }}>
+                          <SharedAvatar
+                            avatar={p?.avatar}
+                            name={p?.full_name || p?.username || 'User'}
+                            userId={p?._id || p?.id}
+                            size={24}
+                          />
+                        </View>
+                      ))}
+                      {overflow > 0 && (
+                        <View style={{ marginLeft: -8, width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: colors.card, backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(108,92,231,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontSize: 9, fontFamily: 'Poppins_700Bold', color: colors.textSoft }}>+{overflow}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', color: colors.textSoft, marginLeft: 8 }}>
+                      {allParticipants.length} in call
+                    </Text>
                   </View>
 
                   {/* Join button — host/attendee re-enters directly; others knock. */}

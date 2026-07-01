@@ -1,16 +1,24 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Animated, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { LiveKitRoom, VideoTrack, AudioSession } from '@livekit/react-native';
 import {
   useTracks,
   useLocalParticipant,
   useParticipants,
-  useChat,
   isTrackReference,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { MessageSquare, Users, FileText, X, Send } from 'lucide-react-native';
+import { MessageSquare, Users, FileText, X, Send, Smile, Paperclip } from 'lucide-react-native';
 import { getSocket } from '../lib/socket';
+import { uploadGroupOrOrgImage, getSecureMediaUrl } from '../lib/api';
+
+// In-call chat message — mirrors web LiveKitMeetingModal's ChatMessageEntry so a
+// web↔mobile call shares the same `meeting_chat_message` socket shape.
+interface ChatMsg { speaker: string; text: string; imageUrl?: string; time: string; mine?: boolean }
+
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '🎉', '👏', '🔥'];
+const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
 /**
  * Headless bridge: keeps the LiveKit local participant's mic/camera/screen-share in
@@ -56,23 +64,79 @@ function LocalDeviceBridge({
   return null;
 }
 
+const initialsOf = (n?: string) => {
+  const clean = (n || 'BC').trim().replace(/\s+/g, ' ');
+  const parts = clean.split(' ');
+  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : clean.slice(0, 2)).toUpperCase();
+};
+
+/** Small avatar/initials placeholder for a participant in a video tile. */
+function ParticipantAvatar({ name, avatar, size }: { name?: string; avatar?: string; size: number }) {
+  const uri = getSecureMediaUrl(avatar);
+  if (uri) return <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: '#6c5ce7', alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: '#fff', fontSize: size * 0.36, fontFamily: 'Poppins_700Bold' }}>{initialsOf(name)}</Text>
+    </View>
+  );
+}
+
+/** Pull a participant's avatar out of their LiveKit metadata (set at token time). */
+const participantAvatar = (p: any): string | undefined => {
+  try {
+    if (p?.metadata) {
+      const meta = JSON.parse(p.metadata);
+      if (meta?.avatar) return meta.avatar;
+    }
+  } catch { /* metadata is not JSON */ }
+  return undefined;
+};
+
 /**
- * Renders the remote participant's camera full-bleed, with the local camera as a
- * picture-in-picture tile. Falls back to `fallback` (avatar) until a remote video
- * track arrives or for voice-only calls. A screen-share track (local or remote) takes
- * over the main stage whenever one is live, matching the web meeting modal.
+ * Renders the main video stage (screen-share, else the first remote, else local) with
+ * the local camera as a picture-in-picture tile, plus a horizontally-scrolling row of
+ * thumbnails for every other participant — matching the web meeting modal's main-stage
+ * + thumbnail-row layout so group video shows everyone. Active speakers are highlighted.
  */
 function VideoArea({ isVideo, fallback }: { isVideo: boolean; fallback: React.ReactNode }) {
-  const cameraTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
-  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false });
+  const cameraTracks = useTracks([Track.Source.Camera], { onlySubscribed: false }).filter((t) => isTrackReference(t));
+  const screenTracks = useTracks([Track.Source.ScreenShare], { onlySubscribed: false }).filter((t) => isTrackReference(t));
 
-  const screenShare = screenTracks.find((t) => isTrackReference(t));
-  const remote = cameraTracks.find(
-    (t) => isTrackReference(t) && t.participant && !t.participant.isLocal
-  );
-  const local = cameraTracks.find(
-    (t) => isTrackReference(t) && t.participant?.isLocal
-  );
+  const screenShare = screenTracks[0];
+  const firstRemote = cameraTracks.find((t) => t.participant && !t.participant.isLocal);
+  const local = cameraTracks.find((t) => t.participant?.isLocal);
+
+  // Main stage: a screen-share wins, then the first remote camera, then local.
+  const main = screenShare || firstRemote || local;
+  // Thumbnails: every other participant camera track except the one on the main stage
+  // and the local PiP (local is always shown as PiP, never a thumbnail).
+  const thumbs = cameraTracks.filter((t) => t !== main && !t.participant?.isLocal);
+
+  const Thumbnails = thumbs.length > 0 ? (
+    <View style={styles.thumbRowWrap} pointerEvents="none">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
+        {thumbs.map((t, i) => {
+          const p = t.participant;
+          const speaking = p?.isSpeaking;
+          const camOn = p?.isCameraEnabled;
+          return (
+            <View key={p?.sid || p?.identity || i} style={[styles.thumbTile, speaking && styles.thumbTileSpeaking]}>
+              {camOn ? (
+                <VideoTrack trackRef={t as any} style={styles.fill} objectFit="cover" zOrder={1} />
+              ) : (
+                <View style={styles.thumbFallback}>
+                  <ParticipantAvatar name={p?.name} avatar={participantAvatar(p)} size={30} />
+                </View>
+              )}
+              <View style={styles.thumbLabel} pointerEvents="none">
+                <Text numberOfLines={1} style={styles.thumbLabelText}>{p?.name || 'Guest'}</Text>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+    </View>
+  ) : null;
 
   if (screenShare) {
     const sharerIsLocal = screenShare.participant?.isLocal;
@@ -84,6 +148,12 @@ function VideoArea({ isVideo, fallback }: { isVideo: boolean; fallback: React.Re
             {sharerIsLocal ? "You're presenting" : `${screenShare.participant?.name || 'Someone'} is presenting`}
           </Text>
         </View>
+        {local && (
+          <View style={styles.pip} pointerEvents="none">
+            <VideoTrack trackRef={local as any} style={styles.fill} objectFit="cover" mirror zOrder={1} />
+          </View>
+        )}
+        {Thumbnails}
       </View>
     );
   }
@@ -92,18 +162,78 @@ function VideoArea({ isVideo, fallback }: { isVideo: boolean; fallback: React.Re
     return <>{fallback}</>;
   }
 
+  const mainIsLocal = main?.participant?.isLocal;
   return (
     <View style={styles.fill}>
-      {remote ? (
-        <VideoTrack trackRef={remote as any} style={styles.fill} objectFit="cover" zOrder={0} />
+      {main ? (
+        <VideoTrack trackRef={main as any} style={styles.fill} objectFit="cover" mirror={mainIsLocal} zOrder={0} />
       ) : (
         <View style={styles.fillCenter}>{fallback}</View>
       )}
-      {local && (
+      {/* Local PiP only when the local camera isn't already the main stage. */}
+      {local && !mainIsLocal && (
         <View style={styles.pip} pointerEvents="none">
           <VideoTrack trackRef={local as any} style={styles.fill} objectFit="cover" mirror zOrder={1} />
         </View>
       )}
+      {Thumbnails}
+    </View>
+  );
+}
+
+/**
+ * A single reaction emoji that floats up and fades out, then removes itself.
+ * Mirrors the web meeting modal's floating-emoji animation.
+ */
+function FloatingEmoji({ emoji, left, onDone }: { emoji: string; left: number; onDone: () => void }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, { toValue: 1, duration: 2000, useNativeDriver: true }).start(() => onDone());
+  }, [anim, onDone]);
+  return (
+    <Animated.Text
+      pointerEvents="none"
+      style={{
+        position: 'absolute', bottom: 24, left, fontSize: 34,
+        opacity: anim.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0] }),
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [0, -160] }) }, { scale: anim.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0.5, 1.2, 0.8] }) }],
+      }}
+    >
+      {emoji}
+    </Animated.Text>
+  );
+}
+
+/**
+ * Floating-reaction layer over the video. Listens for `meeting_reaction` from peers
+ * (same event the web modal uses) and renders each as an upward-floating emoji.
+ */
+function ReactionsLayer({ roomId, register }: { roomId?: string; register: (fn: (emoji: string) => void) => void }) {
+  const [items, setItems] = useState<{ id: string; emoji: string; left: number }[]>([]);
+  const spawn = React.useCallback((emoji: string) => {
+    const id = Math.random().toString(36).slice(2);
+    const left = 20 + Math.random() * 140;
+    setItems((prev) => [...prev, { id, emoji, left }]);
+  }, []);
+
+  useEffect(() => { register(spawn); }, [register, spawn]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const onReaction = (data: any) => {
+      if (roomId && data?.roomId && String(data.roomId) !== String(roomId)) return;
+      spawn(data?.emoji || '👍');
+    };
+    socket.on('meeting_reaction', onReaction);
+    return () => { socket.off('meeting_reaction', onReaction); };
+  }, [roomId, spawn]);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {items.map((it) => (
+        <FloatingEmoji key={it.id} emoji={it.emoji} left={it.left} onDone={() => setItems((prev) => prev.filter((x) => x.id !== it.id))} />
+      ))}
     </View>
   );
 }
@@ -113,45 +243,115 @@ type PanelTab = 'people' | 'chat' | 'transcript';
 /**
  * In-call panel matching web: a People / Chat / Transcript popup opened from a
  * floating button over the video. Lives inside <LiveKitRoom> so it can use the
- * participant + chat (data-channel) hooks; transcript rides the same
- * `meeting_transcript_chunk` socket the web meeting modal uses.
+ * participant hooks. Chat + transcript + reactions all ride the same Socket.io
+ * events the web meeting modal uses (`meeting_chat_message`,
+ * `meeting_transcript_chunk`, `meeting_reaction`) so web↔mobile calls interoperate.
  */
-function CallPanel({ roomId }: { roomId?: string }) {
+function CallPanel({ roomId, userName, onReact }: { roomId?: string; userName: string; onReact: (emoji: string) => void }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<PanelTab>('chat');
   const [draft, setDraft] = useState('');
-  const [transcript, setTranscript] = useState<{ speaker?: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [transcript, setTranscript] = useState<{ speaker?: string; text: string; time: string }[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const participants = useParticipants();
-  const { chatMessages, send, isSending } = useChat();
-  const { localParticipant } = useLocalParticipant();
   const scrollRef = useRef<ScrollView>(null);
+  const openRef = useRef(open);
+  openRef.current = open;
 
-  // Live captions over socket (same event the web modal consumes).
+  const scrollSoon = () => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+
+  // Incoming chat messages (text + shared images) from peers over the socket.
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const onMessage = (data: any) => {
+      if (roomId && data?.roomId && String(data.roomId) !== String(roomId)) return;
+      // Ignore the echo of our own message — we already appended it locally on send.
+      if (data?.speaker && data.speaker === userName) return;
+      setMessages(prev => [...prev, { speaker: data?.speaker || 'Guest', text: data?.text || '', imageUrl: data?.imageUrl, time: nowTime() }]);
+      if (!openRef.current) setUnread(u => u + 1);
+      scrollSoon();
+    };
+    socket.on('meeting_chat_message', onMessage);
+    return () => { socket.off('meeting_chat_message', onMessage); };
+  }, [roomId, userName]);
+
+  // Live captions over socket (same event the web modal consumes). Receive-only on
+  // mobile — the local speaker's words are captured post-call via audio upload.
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
     const onChunk = (data: any) => {
       if (roomId && data?.roomId && String(data.roomId) !== String(roomId)) return;
-      setTranscript(prev => [...prev, { speaker: data?.speaker, text: data?.text }]);
+      setTranscript(prev => [...prev, { speaker: data?.speaker, text: data?.text, time: nowTime() }]);
     };
     socket.on('meeting_transcript_chunk', onChunk);
     return () => { socket.off('meeting_transcript_chunk', onChunk); };
   }, [roomId]);
 
-  const handleSend = async () => {
+  const openPanel = (t: PanelTab) => { setTab(t); setOpen(true); setUnread(0); };
+
+  const handleSend = () => {
     const text = draft.trim();
-    if (!text || isSending) return;
+    if (!text) return;
     setDraft('');
-    try { await send(text); } catch { /* ignore */ }
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+    const socket = getSocket();
+    setMessages(prev => [...prev, { speaker: userName, text, time: nowTime(), mine: true }]);
+    socket?.emit('meeting_chat_message', { roomId, speaker: userName, text });
+    scrollSoon();
+  };
+
+  // Pick + upload an image, then share its URL in the meeting chat over the socket.
+  const handleAttach = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+      if (result.canceled || !result.assets?.length) return;
+      setUploading(true);
+      const uri = result.assets[0].uri;
+      const url = await uploadGroupOrOrgImage(uri);
+      const text = 'Shared an image';
+      setMessages(prev => [...prev, { speaker: userName, text, imageUrl: url, time: nowTime(), mine: true }]);
+      getSocket()?.emit('meeting_chat_message', { roomId, speaker: userName, text, imageUrl: url });
+      scrollSoon();
+    } catch (e) {
+      console.warn('[LiveKit] image share failed:', e);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const react = (emoji: string) => {
+    setShowEmoji(false);
+    onReact(emoji); // spawn locally + emit to peers
   };
 
   return (
     <>
+      {/* Floating reaction picker toggle */}
+      <View style={styles.reactWrap} pointerEvents="box-none">
+        {showEmoji && (
+          <View style={styles.emojiBar}>
+            {REACTION_EMOJIS.map(e => (
+              <TouchableOpacity key={e} onPress={() => react(e)} style={styles.emojiBtn}>
+                <Text style={{ fontSize: 22 }}>{e}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        <TouchableOpacity onPress={() => setShowEmoji(s => !s)} style={styles.reactFab} activeOpacity={0.85}>
+          <Smile color="#fff" size={20} />
+        </TouchableOpacity>
+      </View>
+
       {/* Floating open button (chat-as-popup) */}
-      <TouchableOpacity onPress={() => { setTab('chat'); setOpen(true); }} style={styles.panelFab} activeOpacity={0.85}>
+      <TouchableOpacity onPress={() => openPanel('chat')} style={styles.panelFab} activeOpacity={0.85}>
         <MessageSquare color="#fff" size={20} />
-        {chatMessages.length > 0 && <View style={styles.panelFabDot} />}
+        {unread > 0 && <View style={styles.panelFabDot} />}
       </TouchableOpacity>
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
@@ -176,7 +376,7 @@ function CallPanel({ roomId }: { roomId?: string }) {
               <ScrollView style={styles.panelBody}>
                 {participants.map((p, i) => (
                   <View key={p.identity || i} style={styles.personRow}>
-                    <View style={styles.personDot} />
+                    <View style={[styles.personDot, p.isSpeaking && { backgroundColor: '#6c5ce7' }]} />
                     <Text style={styles.personName}>{p.name || p.identity || 'Participant'}{p.isLocal ? ' (You)' : ''}</Text>
                   </View>
                 ))}
@@ -186,31 +386,38 @@ function CallPanel({ roomId }: { roomId?: string }) {
             {tab === 'chat' && (
               <View style={{ flex: 1 }}>
                 <ScrollView ref={scrollRef} style={styles.panelBody} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
-                  {chatMessages.length === 0 ? (
+                  {messages.length === 0 ? (
                     <Text style={styles.panelEmpty}>No messages yet. Say hello 👋</Text>
-                  ) : chatMessages.map((m: any, i: number) => {
-                    const mine = m.from?.identity === localParticipant?.identity;
+                  ) : messages.map((m, i) => {
+                    const mine = m.mine || m.speaker === userName;
                     return (
                       <View key={i} style={[styles.chatBubbleRow, mine && { alignItems: 'flex-end' }]}>
-                        {!mine && <Text style={styles.chatFrom}>{m.from?.name || m.from?.identity || 'Guest'}</Text>}
+                        {!mine && <Text style={styles.chatFrom}>{m.speaker}</Text>}
                         <View style={[styles.chatBubble, mine ? styles.chatBubbleMine : styles.chatBubbleTheirs]}>
-                          <Text style={[styles.chatText, mine && { color: '#fff' }]}>{m.message}</Text>
+                          {m.imageUrl ? (
+                            <Image source={{ uri: getSecureMediaUrl(m.imageUrl) || m.imageUrl }} style={styles.chatImage} />
+                          ) : null}
+                          {m.text ? <Text style={[styles.chatText, mine && { color: '#fff' }]}>{m.text}</Text> : null}
+                          <Text style={[styles.chatTime, mine && { color: 'rgba(255,255,255,0.7)' }]}>{m.time}</Text>
                         </View>
                       </View>
                     );
                   })}
                 </ScrollView>
                 <View style={styles.chatComposer}>
+                  <TouchableOpacity onPress={handleAttach} disabled={uploading} style={styles.chatAttach}>
+                    <Paperclip size={18} color={uploading ? '#c4c4d0' : '#6c5ce7'} />
+                  </TouchableOpacity>
                   <TextInput
                     value={draft}
                     onChangeText={setDraft}
-                    placeholder="Message…"
+                    placeholder={uploading ? 'Uploading image…' : 'Message…'}
                     placeholderTextColor="#9a9aab"
                     style={styles.chatInput}
                     onSubmitEditing={handleSend}
                     returnKeyType="send"
                   />
-                  <TouchableOpacity onPress={handleSend} disabled={!draft.trim() || isSending} style={styles.chatSend}>
+                  <TouchableOpacity onPress={handleSend} disabled={!draft.trim()} style={styles.chatSend}>
                     <Send size={16} color="#fff" />
                   </TouchableOpacity>
                 </View>
@@ -247,8 +454,10 @@ export interface LiveKitCallRoomProps {
    *  build; failures are reported via onScreenShareError instead of throwing. */
   screenShareEnabled?: boolean;
   onScreenShareError?: (err: Error) => void;
-  /** LiveKit room id — used to scope the in-call transcript socket. */
+  /** LiveKit room id — used to scope the in-call chat/transcript/reaction sockets. */
   roomId?: string;
+  /** Local user's display name — stamped on outgoing chat messages + reactions. */
+  userName?: string;
   /** Avatar/placeholder shown before remote video or on voice calls. */
   fallback: React.ReactNode;
   onConnected?: () => void;
@@ -270,11 +479,19 @@ export default function LiveKitCallRoom({
   screenShareEnabled,
   onScreenShareError,
   roomId,
+  userName,
   fallback,
   onConnected,
   onDisconnected,
   onError,
 }: LiveKitCallRoomProps) {
+  // Bridge: CallPanel's emoji button spawns a reaction locally (via this ref, set by
+  // ReactionsLayer) and emits `meeting_reaction` so peers see it float too.
+  const spawnReactionRef = useRef<((emoji: string) => void) | null>(null);
+  const handleReact = React.useCallback((emoji: string) => {
+    spawnReactionRef.current?.(emoji);
+    getSocket()?.emit('meeting_reaction', { roomId, emoji });
+  }, [roomId]);
   // Start the platform audio session for the lifetime of the room.
   useEffect(() => {
     let active = true;
@@ -312,7 +529,8 @@ export default function LiveKitCallRoom({
         onScreenShareError={onScreenShareError}
       />
       <VideoArea isVideo={isVideo} fallback={fallback} />
-      <CallPanel roomId={roomId} />
+      <ReactionsLayer roomId={roomId} register={(fn) => { spawnReactionRef.current = fn; }} />
+      <CallPanel roomId={roomId} userName={userName || 'You'} onReact={handleReact} />
     </LiveKitRoom>
   );
 }
@@ -338,6 +556,29 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.25)',
   },
+  // ── Multi-participant thumbnail row ──
+  thumbRowWrap: { position: 'absolute', left: 0, right: 0, bottom: 84 },
+  thumbRow: { paddingHorizontal: 10, gap: 8, flexDirection: 'row' },
+  thumbTile: {
+    width: 60, height: 78, borderRadius: 12, overflow: 'hidden', backgroundColor: '#0b0b12',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)',
+  },
+  thumbTileSpeaking: { borderColor: '#6c5ce7', borderWidth: 2 },
+  thumbFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(108,92,231,0.18)' },
+  thumbLabel: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 4, paddingVertical: 2 },
+  thumbLabelText: { color: '#fff', fontSize: 8, fontFamily: 'Poppins_600SemiBold' },
+  // ── Reaction picker ──
+  reactWrap: { position: 'absolute', bottom: 24, right: 16, alignItems: 'flex-end' },
+  reactFab: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(108,92,231,0.92)',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4,
+  },
+  emojiBar: {
+    flexDirection: 'row', backgroundColor: '#fff', borderRadius: 24, paddingHorizontal: 8, paddingVertical: 6, marginBottom: 8, gap: 2,
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6,
+  },
+  emojiBtn: { paddingHorizontal: 5, paddingVertical: 2 },
   // ── In-call panel (People / Chat / Transcript) ──
   panelFab: {
     position: 'absolute', bottom: 24, left: 16,
@@ -366,7 +607,10 @@ const styles = StyleSheet.create({
   chatBubbleMine: { backgroundColor: '#6c5ce7', borderBottomRightRadius: 4 },
   chatBubbleTheirs: { backgroundColor: '#f1f5f9', borderBottomLeftRadius: 4 },
   chatText: { fontSize: 13.5, color: '#1f2030', fontFamily: 'Poppins_400Regular' },
+  chatTime: { fontSize: 9, color: '#9a9aab', fontFamily: 'Poppins_400Regular', marginTop: 3, alignSelf: 'flex-end' },
+  chatImage: { width: 180, height: 135, borderRadius: 10, marginBottom: 4, backgroundColor: '#e5e7eb' },
   chatComposer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)' },
+  chatAttach: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1eefe' },
   chatInput: { flex: 1, backgroundColor: '#f1f5f9', borderRadius: 20, paddingHorizontal: 14, paddingVertical: Platform.OS === 'ios' ? 10 : 6, fontSize: 14, fontFamily: 'Poppins_400Regular', color: '#1f2030' },
   chatSend: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#6c5ce7', alignItems: 'center', justifyContent: 'center' },
   transcriptText: { fontSize: 13.5, color: '#1f2030', lineHeight: 19, fontFamily: 'Poppins_400Regular' },

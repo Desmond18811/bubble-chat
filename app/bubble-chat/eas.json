@@ -9,7 +9,8 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://bubble-backend-production-96a0.up.railway.app/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://bubble-backend-production-96a0.up.railway.app/api/v1",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_your_clerk_publishable_key"
       },
       "ios": {
         "simulator": true
@@ -19,7 +20,8 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://bubble-backend-production-96a0.up.railway.app/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://bubble-backend-production-96a0.up.railway.app/api/v1",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_your_clerk_publishable_key"
       },
       "android": {
         "buildType": "apk"
@@ -29,7 +31,8 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://bubble-backend-production-96a0.up.railway.app/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://bubble-backend-production-96a0.up.railway.app/api/v1",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_your_clerk_publishable_key"
       }
     }
   },
