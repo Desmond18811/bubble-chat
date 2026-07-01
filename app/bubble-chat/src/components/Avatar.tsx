@@ -64,9 +64,15 @@ export const Avatar: React.FC<AvatarProps> = ({
   // Prefer the locally cached base64 (keyed by userId, then by URL) so avatars
   // render instantly and keep working with no network. Fall back to the secure
   // (proxied/signed) URL only when nothing is cached.
-  const cachedBase64 =
-    chatCache.getCachedAvatar(userId) || chatCache.getCachedAvatar(url || avatar);
-  const resolvedUrl = cachedBase64 || getSecureMediaUrl(url || avatar);
+  const rawSrc = url || avatar;
+  // 'black' / '#000000' are placeholder sentinels (e.g. a group with no uploaded
+  // icon); treat them as "no image" so we render the initials tile directly
+  // instead of firing a doomed image request.
+  const isPlaceholderSrc = rawSrc === 'black' || rawSrc === '#000000';
+  const cachedBase64 = isPlaceholderSrc
+    ? null
+    : chatCache.getCachedAvatar(userId) || chatCache.getCachedAvatar(rawSrc);
+  const resolvedUrl = isPlaceholderSrc ? null : (cachedBase64 || getSecureMediaUrl(rawSrc));
 
   // Reset error state if the source changes
   useEffect(() => {

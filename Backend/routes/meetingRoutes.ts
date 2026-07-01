@@ -14,6 +14,7 @@ import {
   getMeetingStatsWithUser,
   transcribeUpload,
   downloadTranscriptMarkdown,
+  emailTranscriptOnDemand,
 } from '../controllers/meetingController';
 import passport from 'passport';
 import { handleUpload } from '../middleware/upload';
@@ -34,6 +35,7 @@ router.get('/:id', getMeetingById);
 router.post('/:id/transcript', addTranscriptChunk);
 router.post('/:id/transcribe-upload', handleUpload.single('audio'), transcribeUpload);
 router.get('/:id/transcript.md', downloadTranscriptMarkdown);
+router.post('/:id/email-transcript', emailTranscriptOnDemand);
 
 // ── Meeting lifecycle ────────────────────────────────────────────────────────
 router.post('/:id/end', endMeeting);

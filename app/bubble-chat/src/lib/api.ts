@@ -1641,6 +1641,14 @@ export const fetchMeetingFiles = async (meetingId: string) => {
     return handleResponse(res);
 };
 
+export const emailMeetingTranscript = async (meetingId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${BASE_URL}/meetings/${meetingId}/email-transcript`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
 // ── NEW: Screen / tab share session tracking ──────────────────────────────────
 
 /**

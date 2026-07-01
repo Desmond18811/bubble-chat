@@ -499,6 +499,74 @@ export const initSocket = (server: HttpServer) => {
       });
     });
 
+    // ─── Knock-to-join (request access to a LIVE room) ────────────────────────
+    // Tapping a room in the Live Rooms list "knocks" instead of barging in: the
+    // request is relayed to everyone already in the room (their sockets joined the
+    // roomId room) plus the named host, so any participant can admit them. The
+    // requester only enters once someone accepts (room_knock_response) — this is
+    // the "ring the host to let me in" UX rather than an uninvited direct join.
+    socket.on('room_knock', async (data: { roomId: string; hostId?: string; requesterAvatar?: string; type?: 'voice' | 'video' }) => {
+      const requesterName = (socket as any).fullName || (socket as any).username || 'A colleague';
+      const payload = {
+        roomId: data.roomId,
+        requesterId: String(userId),
+        requesterName,
+        requesterAvatar: data.requesterAvatar || null,
+        type: data.type || 'video',
+      };
+
+      // Notify in-room participants…
+      socket.to(data.roomId).emit('room_knock', payload);
+      // …and the host explicitly, in case their socket hasn't joined the room.
+      if (data.hostId && String(data.hostId) !== String(userId)) {
+        io.to(String(data.hostId)).emit('room_knock', payload);
+      }
+
+      logActivity({
+        actor: userId,
+        action: 'room_knock',
+        entityId: data.hostId || data.roomId,
+        entityType: 'Call',
+        entityLabel: requesterName,
+        metadata: { roomId: data.roomId, type: data.type || 'video' },
+      });
+
+      if (data.hostId) {
+        sendPushNotification(
+          [String(data.hostId)],
+          `${requesterName} wants to join`,
+          `${requesterName} is asking to join your live room`,
+          { roomId: data.roomId, type: 'room_knock', requesterId: String(userId) }
+        ).catch(err => console.error('[Push] Knock push failed:', err));
+      }
+    });
+
+    // A host/participant answers a knock. On accept we pre-add the requester as a
+    // meeting attendee so transcript access + action-item attribution count them,
+    // then tell the requester's client to enter the room (or that they were denied).
+    socket.on('room_knock_response', async (data: { roomId: string; requesterId: string; accepted: boolean; type?: 'voice' | 'video' }) => {
+      if (data.accepted) {
+        Meeting.updateOne(
+          { roomId: data.roomId, host: { $ne: data.requesterId } },
+          { $addToSet: { attendees: data.requesterId } }
+        ).catch(err => console.error('[Meeting] Failed to add attendee on knock accept:', err));
+      }
+
+      io.to(String(data.requesterId)).emit('room_knock_response', {
+        roomId: data.roomId,
+        accepted: !!data.accepted,
+        type: data.type || 'video',
+      });
+
+      logActivity({
+        actor: userId,
+        action: data.accepted ? 'room_knock_accepted' : 'room_knock_denied',
+        entityId: data.requesterId,
+        entityType: 'Call',
+        metadata: { roomId: data.roomId },
+      });
+    });
+
     // 'disconnecting' fires BEFORE socket.io removes the socket from its rooms
     // (unlike 'disconnect', where socket.rooms is already emptied), so this is the
     // only place we can see which meeting rooms a network drop is about to vacate.

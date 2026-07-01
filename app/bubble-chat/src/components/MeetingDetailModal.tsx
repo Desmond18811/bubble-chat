@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
-import { Calendar, Clock, X, Check } from 'lucide-react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
+import { Calendar, Clock, X, Check, Mail } from 'lucide-react-native';
 import { Image } from 'expo-image';
+import { emailMeetingTranscript } from '../lib/api';
 
 function getInitials(name: string) {
   if (!name) return 'UC';
@@ -20,8 +21,21 @@ function getInitials(name: string) {
  */
 export function MeetingDetailModal({ meeting, loading, onClose }: { meeting: any; loading: boolean; onClose: () => void }) {
   const [tab, setTab] = useState<'summary' | 'actions' | 'transcript'>('summary');
+  const [emailLoading, setEmailLoading] = useState(false);
 
   if (!meeting) return null;
+
+  const handleEmailTranscript = async () => {
+    setEmailLoading(true);
+    try {
+      const res = await emailMeetingTranscript(meeting._id || meeting.id);
+      Alert.alert('Sent!', res.message || 'Transcript emailed to you.');
+    } catch (err: any) {
+      Alert.alert('Failed', err.message || 'Could not send the email. Try again later.');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
 
   const hasActions = Array.isArray(meeting.actionItems) && meeting.actionItems.length > 0;
   const hasTranscript = !!(meeting.transcriptRaw || (Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0));
@@ -142,20 +156,39 @@ export function MeetingDetailModal({ meeting, loading, onClose }: { meeting: any
             )}
 
             {tab === 'transcript' && (
-              hasTranscript ? (
-                Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0
-                  ? meeting.transcriptChunks.map((c: any, i: number) => (
-                      <View key={i} style={{ marginBottom: 8 }}>
-                        {c.speaker ? <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>{c.speaker}</Text> : null}
-                        <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{c.text}</Text>
-                      </View>
-                    ))
-                  : <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{meeting.transcriptRaw}</Text>
-              ) : (
-                <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 24 }}>
-                  No transcript captured for this meeting.
-                </Text>
-              )
+              <>
+                <TouchableOpacity
+                  onPress={handleEmailTranscript}
+                  disabled={emailLoading}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    backgroundColor: emailLoading ? '#ede9fe' : '#6c5ce7',
+                    borderRadius: 12, paddingVertical: 10, paddingHorizontal: 18, marginBottom: 16,
+                    opacity: emailLoading ? 0.7 : 1,
+                  }}
+                >
+                  {emailLoading
+                    ? <ActivityIndicator size="small" color="#6c5ce7" />
+                    : <Mail size={14} color="#ffffff" />}
+                  <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: emailLoading ? '#6c5ce7' : '#ffffff' }}>
+                    {emailLoading ? 'Sending…' : 'Email me this transcript'}
+                  </Text>
+                </TouchableOpacity>
+                {hasTranscript ? (
+                  Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0
+                    ? meeting.transcriptChunks.map((c: any, i: number) => (
+                        <View key={i} style={{ marginBottom: 8 }}>
+                          {c.speaker ? <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>{c.speaker}</Text> : null}
+                          <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{c.text}</Text>
+                        </View>
+                      ))
+                    : <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{meeting.transcriptRaw}</Text>
+                ) : (
+                  <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 24 }}>
+                    No transcript captured for this meeting.
+                  </Text>
+                )}
+              </>
             )}
           </ScrollView>
         </View>

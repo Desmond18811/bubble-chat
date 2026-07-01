@@ -626,6 +626,52 @@ export const endScreenShare = async (
   }
 };
 
+// ─── POST /api/v1/meetings/:id/email-transcript ── On-demand transcript email ──
+export const emailTranscriptOnDemand = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?._id;
+    const meeting = await Meeting.findById(req.params.id);
+    if (!meeting) {
+      res.status(404).json({ success: false, message: 'Meeting not found' });
+      return;
+    }
+
+    const user = await User.findById(userId).select('email full_name username');
+    if (!user?.email) {
+      res.status(400).json({ success: false, message: 'Your account has no email address' });
+      return;
+    }
+
+    const rawTranscript = (meeting as any).transcriptRaw ||
+      ((meeting as any).transcriptChunks || [])
+        .map((c: any) => `${c.speaker ? c.speaker + ': ' : ''}${c.text}`)
+        .join('\n');
+
+    if (!rawTranscript && !(meeting as any).summary) {
+      res.status(400).json({ success: false, message: 'No transcript or summary available for this meeting' });
+      return;
+    }
+
+    const { sendMeetingTranscriptEmail } = await import('../utils/mailer');
+    await sendMeetingTranscriptEmail(
+      user.email,
+      user.full_name || user.username || 'Attendee',
+      (meeting as any).title || 'Meeting',
+      rawTranscript || '',
+      (meeting as any).summary || '',
+      ((meeting as any).actionItems || []).map((ai: any) => ({
+        text: ai.text || String(ai),
+        assignedToName: ai.assignedToName || undefined,
+      }))
+    );
+
+    res.json({ success: true, message: 'Transcript emailed to ' + user.email });
+  } catch (err: any) {
+    console.error('[Meeting] email-transcript on-demand error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Failed to send email' });
+  }
+};
+
 // ─── POST /api/v1/meetings/:id/end ── End meeting + AI background extraction ──
 
 export const endMeeting = async (

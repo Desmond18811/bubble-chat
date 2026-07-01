@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSocket } from './socket';
 import { RingtonePlayer } from './ringtone';
@@ -267,6 +268,33 @@ export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: stri
   startDurationTimer();
 };
 
+// Knock to join a LIVE room: instead of barging in, ask the host/participants to
+// admit you. Emits `room_knock`; the server relays it to whoever is in the room.
+// The requester enters only when a `room_knock_response` accept arrives (handled
+// in setupCallSocketListeners → joinRoomByLink). No-op if already in a call.
+export const knockToJoinRoom = async ({ roomId, hostId, type }: { roomId: string; hostId?: string; type: 'voice' | 'video' }) => {
+  if (currentCallState.status !== 'idle') return;
+  const socket = getSocket();
+  if (!socket) {
+    Alert.alert('Not connected', 'Could not reach the server to request access.');
+    return;
+  }
+  const currentUser = await authStorage.getUser();
+  socket.emit('room_knock', {
+    roomId,
+    hostId,
+    requesterAvatar: currentUser?.avatar || null,
+    type,
+  });
+  // Stash the type so the accept handler joins with the right modality.
+  pendingKnockType[roomId] = type;
+  Alert.alert('Request sent', 'Waiting for the host to let you in…');
+};
+
+// Remembers the modality of each outstanding knock so we join with voice/video
+// correctly when the accept comes back (the response echoes type too, as a fallback).
+const pendingKnockType: Record<string, 'voice' | 'video'> = {};
+
 // Rejoin an ongoing meeting after an app cold-start. Reuses the link-join path
 // (createMeeting de-dups to the existing live record). No-op if already in a call.
 export const rejoinPersistedCall = async ({ roomId, type }: { roomId: string; type: 'voice' | 'video' }) => {
@@ -345,6 +373,8 @@ export const setupCallSocketListeners = (socket: any) => {
   socket.off('call_rejected');
   socket.off('call_ended');
   socket.off('meeting_ended');
+  socket.off('room_knock');
+  socket.off('room_knock_response');
 
   socket.on('incoming_call', (data: { fromUserId: string; roomId: string; callerName?: string; callerAvatar?: string; type?: 'voice' | 'video' }) => {
     if (currentCallState.status !== 'idle') {
@@ -434,6 +464,37 @@ export const setupCallSocketListeners = (socket: any) => {
     // Match by room when present; otherwise fall back to "any active call".
     if (!data?.roomId || data.roomId === currentCallState.roomId) {
       hangUpCall();
+    }
+  });
+
+  // Someone is knocking to join a live room we host / are in. Prompt to admit.
+  socket.on('room_knock', (data: { roomId: string; requesterId: string; requesterName?: string; type?: 'voice' | 'video' }) => {
+    const name = data.requesterName || 'A colleague';
+    Alert.alert(
+      'Join request',
+      `${name} wants to join this room.`,
+      [
+        {
+          text: 'Deny',
+          style: 'cancel',
+          onPress: () => socket.emit('room_knock_response', { roomId: data.roomId, requesterId: data.requesterId, accepted: false, type: data.type }),
+        },
+        {
+          text: 'Admit',
+          onPress: () => socket.emit('room_knock_response', { roomId: data.roomId, requesterId: data.requesterId, accepted: true, type: data.type }),
+        },
+      ],
+    );
+  });
+
+  // Our knock was answered. On accept, enter the room; on deny, tell the user.
+  socket.on('room_knock_response', (data: { roomId: string; accepted: boolean; type?: 'voice' | 'video' }) => {
+    const type = pendingKnockType[data.roomId] || data.type || 'video';
+    delete pendingKnockType[data.roomId];
+    if (data.accepted) {
+      joinRoomByLink({ roomId: data.roomId, type });
+    } else {
+      Alert.alert('Request declined', 'The host declined your request to join.');
     }
   });
 };

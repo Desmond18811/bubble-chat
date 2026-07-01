@@ -206,6 +206,21 @@ function GlobalCallOverlay() {
   const isOutgoing = callState.status === 'calling_out';
   const isVideo = callState.type === 'video';
 
+  const confirmHangUp = () => {
+    if (callState.status === 'in_call') {
+      Alert.alert(
+        'End Call',
+        'Are you sure you want to end this call?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'End Call', style: 'destructive', onPress: hangUpCall },
+        ]
+      );
+    } else {
+      hangUpCall();
+    }
+  };
+
   const formatDuration = (sec: number) => {
     const mins = Math.floor(sec / 60);
     const secs = sec % 60;
@@ -443,7 +458,7 @@ function GlobalCallOverlay() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => hangUpCall()}
+            onPress={confirmHangUp}
             style={[styles.miniOptionsButton, { backgroundColor: RED }]}
           >
             <PhoneOff color="#ffffff" size={14} />
@@ -488,7 +503,7 @@ function GlobalCallOverlay() {
 
                 {/* End Call */}
                 <TouchableOpacity
-                  onPress={() => hangUpCall()}
+                  onPress={confirmHangUp}
                   style={[styles.actionButton, styles.declineButton]}
                 >
                   <PhoneOff color="#ffffff" size={24} />
@@ -696,18 +711,19 @@ export default function RootLayout() {
     return null;
   }
 
-  return (
-    <ClerkProvider
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
-      tokenCache={clerkTokenCache}
-    >
-      <ThemeProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-        <RejoinBanner />
-        <GlobalCallOverlay />
-      </ThemeProvider>
-    </ClerkProvider>
+  const clerkKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const inner = (
+    <ThemeProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+      <RejoinBanner />
+      <GlobalCallOverlay />
+    </ThemeProvider>
   );
+  return clerkKey ? (
+    <ClerkProvider publishableKey={clerkKey} tokenCache={clerkTokenCache}>
+      {inner}
+    </ClerkProvider>
+  ) : inner;
 }
 
 const styles = StyleSheet.create({
