@@ -2,6 +2,20 @@ import React, { useEffect, useState, useRef } from "react";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ClerkProvider } from "@clerk/clerk-expo";
+import * as SecureStore from "expo-secure-store";
+
+const clerkTokenCache = {
+  async getToken(key: string) {
+    try { return await SecureStore.getItemAsync(key); } catch { return null; }
+  },
+  async saveToken(key: string, value: string) {
+    try { await SecureStore.setItemAsync(key, value); } catch {}
+  },
+  async clearToken(key: string) {
+    try { await SecureStore.deleteItemAsync(key); } catch {}
+  },
+};
 import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk";
 import * as SplashScreen from "expo-splash-screen";
@@ -9,7 +23,7 @@ import Constants from 'expo-constants';
 import { verifyInstallation } from "nativewind";
 import "../global.css";
 import { initApiFromStorage, getSecureMediaUrl } from "../lib/api";
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Share, PanResponder, Dimensions, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Share, PanResponder, Dimensions, Alert, Animated } from "react-native";
 import { Image } from "expo-image";
 import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2, UserPlus, Link2, X, Monitor, MonitorOff } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
@@ -65,6 +79,23 @@ function GlobalCallOverlay() {
     Alert.alert('Screen share unavailable', "This build doesn't support screen sharing yet. Try a video call instead.");
     console.warn('[LiveKit] screen share failed:', err);
   };
+
+  // Pulsing ring animation around the avatar during incoming and outgoing calls.
+  const ringPulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const isRinging = callState.status === 'calling_in' || callState.status === 'calling_out';
+    if (isRinging) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(ringPulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+          Animated.timing(ringPulse, { toValue: 0, duration: 900, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+    ringPulse.setValue(0);
+  }, [callState.status, ringPulse]);
   const [lkToken, setLkToken] = useState<string | null>(null);
   const [lkUrl, setLkUrl] = useState<string | null>(null);
 
@@ -260,7 +291,7 @@ function GlobalCallOverlay() {
           </View>
         ) : (
           <TouchableOpacity onPress={() => setIsMinimized(true)} style={styles.minimizeButton}>
-            <Minimize2 color={INK_SOFT} size={18} />
+            <Minimize2 color="rgba(255,255,255,0.55)" size={18} />
           </TouchableOpacity>
         )
       )}
@@ -328,10 +359,25 @@ function GlobalCallOverlay() {
         ) : isMinimized ? (
           renderAvatar(46)
         ) : (
-          <View style={[styles.avatarOuterRing, isIncoming && styles.avatarOuterRingIncoming]}>
-            <View style={styles.avatarInnerRing}>
-              <View style={styles.avatarPlaceholderContainer}>
-                {renderAvatar(156)}
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            {/* Pulsing outer glow ring — visible when ringing */}
+            {(isIncoming || isOutgoing) && (
+              <Animated.View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  width: 260, height: 260, borderRadius: 130,
+                  backgroundColor: isIncoming ? 'rgba(16,185,129,0.12)' : 'rgba(108,92,231,0.12)',
+                  opacity: ringPulse.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] }),
+                  transform: [{ scale: ringPulse.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1.1] }) }],
+                }}
+              />
+            )}
+            <View style={[styles.avatarOuterRing, isIncoming && styles.avatarOuterRingIncoming]}>
+              <View style={styles.avatarInnerRing}>
+                <View style={styles.avatarPlaceholderContainer}>
+                  {renderAvatar(156)}
+                </View>
               </View>
             </View>
           </View>
@@ -437,7 +483,7 @@ function GlobalCallOverlay() {
                   onPress={() => setIsMuted(!isMuted)}
                   style={[styles.optionsButton, isMuted && styles.activeOptionsButton]}
                 >
-                  {isMuted ? <MicOff color="#ffffff" size={20} /> : <Mic color={INK} size={20} />}
+                  {isMuted ? <MicOff color="#ffffff" size={20} /> : <Mic color="rgba(255,255,255,0.8)" size={20} />}
                 </TouchableOpacity>
 
                 {/* End Call */}
@@ -453,7 +499,7 @@ function GlobalCallOverlay() {
                   onPress={() => setIsSpeaker(!isSpeaker)}
                   style={[styles.optionsButton, isSpeaker && styles.activeOptionsButton]}
                 >
-                  <Volume2 color={isSpeaker ? '#ffffff' : INK} size={20} />
+                  <Volume2 color="#ffffff" size={20} />
                 </TouchableOpacity>
 
                 {/* Video Toggle (only in active calls) */}
@@ -462,7 +508,7 @@ function GlobalCallOverlay() {
                     onPress={() => setIsCameraActive(!isCameraActive)}
                     style={[styles.optionsButton, isCameraActive && styles.activeOptionsButton]}
                   >
-                    {isCameraActive ? <Video color="#ffffff" size={20} /> : <VideoOff color={INK} size={20} />}
+                    {isCameraActive ? <Video color="#ffffff" size={20} /> : <VideoOff color="rgba(255,255,255,0.8)" size={20} />}
                   </TouchableOpacity>
                 )}
 
@@ -473,7 +519,7 @@ function GlobalCallOverlay() {
                     onPress={() => setIsScreenSharing(!isScreenSharing)}
                     style={[styles.optionsButton, isScreenSharing && styles.activeOptionsButton]}
                   >
-                    {isScreenSharing ? <Monitor color="#ffffff" size={20} /> : <MonitorOff color={INK} size={20} />}
+                    {isScreenSharing ? <Monitor color="#ffffff" size={20} /> : <MonitorOff color="rgba(255,255,255,0.8)" size={20} />}
                   </TouchableOpacity>
                 )}
 
@@ -483,7 +529,7 @@ function GlobalCallOverlay() {
                     onPress={openAddPeople}
                     style={styles.optionsButton}
                   >
-                    <UserPlus color={INK} size={20} />
+                    <UserPlus color="rgba(255,255,255,0.8)" size={20} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -651,11 +697,16 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-      <RejoinBanner />
-      <GlobalCallOverlay />
-    </ThemeProvider>
+    <ClerkProvider
+      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+      tokenCache={clerkTokenCache}
+    >
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+        <RejoinBanner />
+        <GlobalCallOverlay />
+      </ThemeProvider>
+    </ClerkProvider>
   );
 }
 
@@ -750,7 +801,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 9999,
     elevation: 24,
-    backgroundColor: WHITE,
+    backgroundColor: '#0f1018',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 72,
@@ -763,9 +814,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: SURFACE,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
@@ -775,7 +826,7 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   callTypeTitle: {
-    color: PURPLE,
+    color: 'rgba(108,92,231,0.85)',
     fontSize: 11,
     fontFamily: 'Poppins_700Bold',
     letterSpacing: 2,
@@ -783,14 +834,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   callerNameText: {
-    color: INK,
+    color: WHITE,
     fontSize: 30,
     fontFamily: 'SpaceGrotesk_700Bold',
     marginTop: 4,
     textAlign: 'center',
   },
   statusText: {
-    color: INK_SOFT,
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 14,
     fontFamily: 'Poppins_600SemiBold',
     marginTop: 8,
@@ -805,23 +856,23 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: 'rgba(108, 92, 231, 0.05)',
+    backgroundColor: 'rgba(108, 92, 231, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(108, 92, 231, 0.12)',
+    borderColor: 'rgba(108, 92, 231, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarOuterRingIncoming: {
-    backgroundColor: 'rgba(16, 185, 129, 0.06)',
-    borderColor: 'rgba(16, 185, 129, 0.18)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.28)',
   },
   avatarInnerRing: {
     width: 190,
     height: 190,
     borderRadius: 95,
-    backgroundColor: 'rgba(108, 92, 231, 0.08)',
+    backgroundColor: 'rgba(108, 92, 231, 0.14)',
     borderWidth: 1,
-    borderColor: 'rgba(108, 92, 231, 0.18)',
+    borderColor: 'rgba(108, 92, 231, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -829,15 +880,15 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: WHITE,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 2,
-    borderColor: BORDER,
+    borderColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#6c5ce7',
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-    elevation: 6,
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 8,
   },
   videoPreviewFrame: {
     width: 280,
@@ -911,12 +962,12 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: 13,
     fontFamily: 'Poppins_600SemiBold',
-    color: INK_SOFT,
+    color: 'rgba(255,255,255,0.6)',
   },
   glassActionPanel: {
-    backgroundColor: SURFACE,
+    backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: 'rgba(255,255,255,0.12)',
     borderRadius: 32,
     paddingVertical: 14,
     paddingHorizontal: 24,
@@ -952,9 +1003,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: WHITE,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },

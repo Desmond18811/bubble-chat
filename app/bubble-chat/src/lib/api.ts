@@ -375,6 +375,16 @@ export const login = async (data: any) => {
     return handleResponse(res);
 };
 
+export const clerkSyncApi = async (sessionToken: string): Promise<{ accessToken: string; refreshToken: string; user: any }> => {
+    const res = await fetch(`${BASE_URL}/auth/clerk-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionToken }),
+    });
+    const data = await handleResponse(res);
+    return data?.data ?? data;
+};
+
 export const logoutUser = async () => {
     const res = await fetch(`${BASE_URL}/auth/logout`, {
         method: 'POST',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Share, ActivityIndicator, Platform, Switch } from 'react-native';
-import { Calendar, ChevronLeft, ChevronRight, ChevronDown, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper, Mail } from 'lucide-react-native';
+import { Calendar, ChevronLeft, ChevronRight, ChevronDown, Clock, Plus, X, Check, MicOff, PhoneOff, Volume2, Video, FileText, Users, Share2, Sparkles, Repeat, PartyPopper, Mail, Phone, Pencil } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
 import { useNavigation } from 'expo-router';
@@ -8,7 +8,7 @@ import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { fetchTasks, createTaskFull, updateTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence, detectPatterns, getPendingPatterns, confirmPattern, dismissPattern } from '../../lib/api';
+import { fetchTasks, createTaskFull, updateTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence, detectPatterns, getPendingPatterns, confirmPattern, dismissPattern, fetchMeetings } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import { authStorage } from '../../lib/authStorage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -69,8 +69,8 @@ const COLOR_TASK = '#6c5ce7';      // purple — tasks
 const getDotColor = (item: any): string => {
   if (item?.eventType === 'holiday' || item?.type === 'holiday') return COLOR_HOLIDAY;
   if (item?.isRecurring) return COLOR_RECURRING;
-  if (item?.type === 'meeting') return COLOR_MEETING;
-  if (item?.type === 'event') return COLOR_EVENT;
+  if (item?.type === 'meeting' || item?.eventType === 'meeting_video' || item?.eventType === 'meeting_audio') return COLOR_MEETING;
+  if (item?.type === 'event' || item?.eventType === 'company' || item?.eventType === 'all_day') return COLOR_EVENT;
   return COLOR_TASK;
 };
 
@@ -128,6 +128,21 @@ export default function UpdatesScreen() {
   const [holidayEvents, setHolidayEvents] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [recSuggestion, setRecSuggestion] = useState<{ recurrence: 'daily' | 'weekly' | 'monthly'; message: string } | null>(null);
+
+  // Sub-tabs: Agenda (calendar + day items) vs Action Items (meeting-sourced tasks).
+  const [subTab, setSubTab] = useState<'agenda' | 'actions'>('agenda');
+
+  // Real org calendar events (holidays, company events, scheduled meetings) for the
+  // visible month + past/live meetings — mirrors the web Events & Meet data flow so the
+  // agenda shows the same unified dataset, not just personal tasks.
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<any[]>([]);
+
+  // Inline edit state for an action item (title + assignee).
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemTitle, setEditingItemTitle] = useState('');
+  const [editingItemAssignee, setEditingItemAssignee] = useState<string | null>(null);
+  const [savingItem, setSavingItem] = useState(false);
 
   // Recurring-pattern prompts: events the backend saw ≥3 times and asks to make recurring.
   const [pendingPatterns, setPendingPatterns] = useState<any[]>([]);
@@ -239,7 +254,6 @@ export default function UpdatesScreen() {
 
   // Tasks state
   const [tasks, setTasks] = useState<any[]>([]);
-  const [actionItemsOpen, setActionItemsOpen] = useState(false);
 
   const handleToggleActionItem = async (task: any) => {
     const id = String(task._id || task.id);
@@ -249,6 +263,42 @@ export default function UpdatesScreen() {
       await updateTaskFull(id, { status: next });
     } catch (_) {
       Alert.alert('Error', 'Could not update action item.');
+    }
+  };
+
+  // Open the inline editor for an action item (edit title + reassign).
+  const startEditItem = (item: any) => {
+    setEditingItemId(String(item._id || item.id));
+    setEditingItemTitle(item.title || '');
+    setEditingItemAssignee(item.assignedTo ? String(item.assignedTo?._id || item.assignedTo?.id || item.assignedTo) : null);
+  };
+
+  const cancelEditItem = () => {
+    setEditingItemId(null);
+    setEditingItemTitle('');
+    setEditingItemAssignee(null);
+  };
+
+  // Persist an edited action item (title + optional assignee) via the tasks endpoint.
+  const saveEditItem = async () => {
+    if (!editingItemId) return;
+    const title = editingItemTitle.trim();
+    if (!title) { Alert.alert('Add a title', 'Action item needs a title.'); return; }
+    setSavingItem(true);
+    const assignee = orgMembers.find((m: any) => String(m.id || m._id) === String(editingItemAssignee));
+    const assignedToName = assignee ? (assignee.full_name || assignee.username) : undefined;
+    // Optimistic update so the edit feels instant.
+    setTasks(prev => prev.map(t => (String(t._id || t.id) === editingItemId
+      ? { ...t, title, assignedTo: editingItemAssignee || t.assignedTo, ...(assignedToName ? { assignedToName } : {}) }
+      : t)));
+    try {
+      await updateTaskFull(editingItemId, { title, ...(editingItemAssignee ? { assignedTo: editingItemAssignee } : {}) });
+      cancelEditItem();
+    } catch (_) {
+      Alert.alert('Error', 'Could not save the action item.');
+      syncTasks();
+    } finally {
+      setSavingItem(false);
     }
   };
 
@@ -300,6 +350,27 @@ export default function UpdatesScreen() {
       console.warn("Failed to load groups/contacts in updates.tsx:", err);
     }
   };
+
+  // Real org calendar events for the visible month + meetings — mirrors the web
+  // Events & Meet queries (getCalendarEvents({start,end}) + fetchMeetings) so the
+  // agenda and calendar dots reflect the same unified dataset across clients.
+  const syncCalendar = React.useCallback(async () => {
+    try {
+      const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
+      const evRes: any = await getCalendarEvents({ start: start.toISOString(), end: end.toISOString() });
+      const evList = evRes?.events || evRes?.data || (Array.isArray(evRes) ? evRes : []);
+      setCalendarEvents(Array.isArray(evList) ? evList : []);
+    } catch (err) {
+      console.warn('Failed to fetch calendar events in updates.tsx:', err);
+    }
+    try {
+      const mRes: any = await fetchMeetings(1, 50);
+      setMeetings(Array.isArray(mRes?.meetings) ? mRes.meetings : (Array.isArray(mRes) ? mRes : []));
+    } catch (err) {
+      console.warn('Failed to fetch meetings in updates.tsx:', err);
+    }
+  }, [currentDate]);
 
   // Combined people you can notify directly: org teammates + saved contacts (deduped by id).
   const peopleToNotify = (() => {
@@ -396,6 +467,9 @@ export default function UpdatesScreen() {
     syncPatterns();
   }, []);
 
+  // Re-pull org events + meetings whenever the visible month changes (and on mount).
+  useEffect(() => { syncCalendar(); }, [syncCalendar]);
+
   useEffect(() => {
     if (!isFocused) return;
     const interval = setInterval(syncTasks, 7000);
@@ -454,8 +528,9 @@ export default function UpdatesScreen() {
         ]
       );
 
-      // Refresh tasks since new ones may have been created from action items
+      // Refresh tasks + meetings since new ones may have been created from action items
       await syncTasks();
+      await syncCalendar();
     };
 
     socket.on('meeting_ended', onMeetingEnded);
@@ -493,6 +568,44 @@ export default function UpdatesScreen() {
 
   const selectedDayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === selectedDate.toDateString());
   const selectedDayHolidays = holidayEvents.filter(h => itemDate(h).toDateString() === selectedDate.toDateString());
+
+  // Merge month org events with the holiday set, de-duped by _id (mirrors web allCalEvents).
+  const allCalEvents = React.useMemo(() => {
+    const ids = new Set(calendarEvents.map((e: any) => String(e._id)));
+    const extraHolidays = holidayEvents.filter((h: any) => !ids.has(String(h._id)));
+    return [...calendarEvents, ...extraHolidays];
+  }, [calendarEvents, holidayEvents]);
+
+  // Org calendar events for the selected day, normalized to task shape so the agenda
+  // renders tasks + org events in one merged list (web selectedDayCalEvents parity).
+  // These aren't Task records, so they're read-only (isOrgEvent: true).
+  const selectedDayCalEvents = allCalEvents
+    .filter((ev: any) => ev?.eventType !== 'holiday' && new Date(ev.startTime).toDateString() === selectedDate.toDateString())
+    .map((ev: any) => ({
+      _id: ev._id,
+      title: ev.title,
+      description: ev.summary || ev.description || ev.agenda || '',
+      start_time: ev.startTime,
+      end_time: ev.endTime,
+      eventType: ev.eventType,
+      status: ev.status,
+      recipients: ev.attendees,
+      isOrgEvent: true,
+    }));
+
+  // Unified agenda list: personal tasks + org events, sorted by start time.
+  const selectedDayItems = [...selectedDayTasks, ...selectedDayCalEvents].sort(
+    (a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+  );
+
+  // Past/live meetings that occurred on the selected day (web dayMeetings parity).
+  const selectedDayMeetings = meetings.filter((m: any) => {
+    const d = new Date(m.startedAt || m.createdAt);
+    return d.toDateString() === selectedDate.toDateString();
+  });
+
+  // Meeting-sourced action items — the Action Items tab dataset.
+  const meetingActionItems = tasks.filter((t: any) => t.source === 'meeting');
 
   // Upcoming holidays (next 90 days) — used as one-tap "pre-made" templates.
   const upcomingHolidays = holidayEvents
@@ -780,7 +893,8 @@ export default function UpdatesScreen() {
               const today = isToday(cell.date);
               const dayTasks = tasks.filter(t => new Date(t.start_time).toDateString() === cell.date.toDateString());
               const dayHolidays = holidayEvents.filter(h => itemDate(h).toDateString() === cell.date.toDateString());
-              const dayItems = [...dayTasks, ...dayHolidays];
+              const dayCalEvents = calendarEvents.filter((e: any) => e?.eventType !== 'holiday' && new Date(e.startTime).toDateString() === cell.date.toDateString());
+              const dayItems = [...dayTasks, ...dayHolidays, ...dayCalEvents];
               const hasMeeting = dayItems.length > 0;
 
               return (
@@ -811,6 +925,22 @@ export default function UpdatesScreen() {
           </View>
         </View>
 
+        {/* Sub-tabs: Agenda | Action Items (mirrors the web Events & Meet surface). */}
+        <View className="flex-row px-6 pt-4 gap-6 border-b border-black/5 dark:border-white/10">
+          {([
+            { key: 'agenda', label: 'Agenda' },
+            { key: 'actions', label: `Action Items${meetingActionItems.length ? ` (${meetingActionItems.length})` : ''}` },
+          ] as const).map(t => {
+            const active = subTab === t.key;
+            return (
+              <TouchableOpacity key={t.key} onPress={() => setSubTab(t.key)} className={`pb-3 border-b-2 ${active ? 'border-purple' : 'border-transparent'}`}>
+                <Text className={`text-sm font-bold font-sans ${active ? 'text-purple' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>{t.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {subTab === 'agenda' ? (
         <View className="p-6">
           <Text className="text-xs font-bold uppercase tracking-wider text-black/30 dark:text-white/40 italic mb-1 font-sans">Agenda for</Text>
           <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] mb-3 font-sans">{selectedDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}</Text>
@@ -843,24 +973,32 @@ export default function UpdatesScreen() {
             </View>
           ))}
 
-          {selectedDayTasks.length === 0 && selectedDayHolidays.length === 0 ? (
+          {selectedDayItems.length === 0 && selectedDayHolidays.length === 0 && selectedDayMeetings.length === 0 ? (
             <View className="py-10 border-2 border-dashed border-black/5 dark:border-white/10 rounded-[24px] bg-white/50 dark:bg-white/[0.04] items-center justify-center">
               <Calendar color="#6c5ce7" size={20} opacity={0.3} className="mb-2" />
               <Text className="text-sm text-ink-soft dark:text-[#9a9bb6] font-medium font-sans">No events scheduled.</Text>
             </View>
           ) : (
-            selectedDayTasks.map(task => {
-              const typeLabel = task.type === 'meeting' ? { bg: '#eff6ff', text: '#3b82f6' } : task.type === 'event' ? { bg: '#f0fdf4', text: '#22c55e' } : { bg: '#fefce8', text: '#ca8a04' };
+            selectedDayItems.map((task: any) => {
+              const isOrg = !!task.isOrgEvent;
+              const orgLabel = task.eventType === 'meeting_video' ? 'Meeting · Video'
+                : task.eventType === 'meeting_audio' ? 'Meeting · Audio'
+                : task.eventType === 'company' ? 'Company'
+                : task.eventType === 'all_day' ? 'All Day' : (task.eventType || 'event');
+              const typeLabel = (task.type === 'meeting' || task.eventType?.startsWith('meeting')) ? { bg: '#eff6ff', text: '#3b82f6' } : (task.type === 'event' || isOrg) ? { bg: '#f0fdf4', text: '#22c55e' } : { bg: '#fefce8', text: '#ca8a04' };
               const pColor = task.priority === 'urgent' || task.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-yellow-50 text-yellow-600';
               return (
                 <View key={task._id} style={{ borderLeftWidth: 3, borderLeftColor: getDotColor(task) }} className="p-4 rounded-2xl bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 mb-3 shadow-sm">
                   <View className="flex-row items-center gap-2 mb-2">
                     <Text style={{ backgroundColor: typeLabel.bg, color: typeLabel.text }} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase font-sans">
-                      {task.type || 'task'}
+                      {isOrg ? orgLabel : (task.type || 'task')}
                     </Text>
-                    <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${pColor}`}>
-                      {task.priority || 'medium'}
-                    </Text>
+                    {!isOrg && (
+                      <Text className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans ${pColor}`}>
+                        {task.priority || 'medium'}
+                      </Text>
+                    )}
+                    {isOrg && <Text className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase font-sans bg-slate-100 text-slate-500">Org</Text>}
                     {task.isRecurring && (
                       <View className="flex-row items-center gap-1 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(234,179,8,0.14)' }}>
                         <Repeat size={9} color="#a16207" />
@@ -879,8 +1017,8 @@ export default function UpdatesScreen() {
                         {new Date(task.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(task.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                       </Text>
                     </View>
-                    {(task.type === 'meeting' || task.priority === 'high' || task.priority === 'urgent') && (
-                      <TouchableOpacity 
+                    {!isOrg && (task.type === 'meeting' || task.priority === 'high' || task.priority === 'urgent') && (
+                      <TouchableOpacity
                         onPress={() => {
                           setActiveCall({ user: { name: task.title, avatar: null }, type: 'voice' });
                         }}
@@ -889,8 +1027,8 @@ export default function UpdatesScreen() {
                         <Text className="text-[10px] font-bold text-purple font-sans">Call room</Text>
                       </TouchableOpacity>
                     )}
-                    {task.type === 'meeting' && (
-                      <TouchableOpacity 
+                    {!isOrg && task.type === 'meeting' && (
+                      <TouchableOpacity
                         onPress={() => handleUploadRecording(task)}
                         className="bg-purple-soft/80 px-2.5 py-1 rounded-lg flex-row items-center"
                         style={{ gap: 4 }}
@@ -905,66 +1043,152 @@ export default function UpdatesScreen() {
             })
           )}
 
-          {/* Action Items from meeting transcripts — collapsible accordion below agenda */}
-          {(() => {
-            const actionItems = tasks.filter((t: any) => t.source === 'meeting');
-            if (actionItems.length === 0) return null;
-            const now = Date.now();
-            const pendingCount = actionItems.filter((item: any) => item.status !== 'done').length;
-            return (
-              <View style={{ marginTop: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', backgroundColor: '#ffffff', overflow: 'hidden' }}>
-                <TouchableOpacity
-                  onPress={() => setActionItemsOpen(v => !v)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}
-                  activeOpacity={0.7}
-                >
-                  <Check size={14} color="#6c5ce7" />
-                  <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', letterSpacing: 0.6, textTransform: 'uppercase', color: '#6c5ce7' }}>Action Items</Text>
-                  {pendingCount > 0 && (
-                    <View style={{ backgroundColor: 'rgba(108,92,231,0.1)', borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 }}>
-                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>{pendingCount}</Text>
+          {/* Meetings that happened / are live on this day — tap to view minutes. */}
+          {selectedDayMeetings.length > 0 && (
+            <View className="mt-2">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-black/30 dark:text-white/40 mb-2 font-sans">Meetings this day</Text>
+              {selectedDayMeetings.map((m: any) => {
+                const isLive = m.status === 'live';
+                const aiCount = Array.isArray(m.actionItems) ? m.actionItems.length : 0;
+                return (
+                  <TouchableOpacity
+                    key={String(m._id || m.id)}
+                    onPress={() => setTranscriptModal({
+                      visible: true,
+                      title: m.title || 'Meeting',
+                      summary: m.summary || '',
+                      actionItems: Array.isArray(m.actionItems) ? m.actionItems.map((ai: any) => ({ text: ai.text || ai.title || String(ai), assignedToName: ai.assignedToName || ai.assignedTo?.full_name })) : [],
+                      rawTranscript: m.transcriptRaw || '',
+                      meetingId: String(m._id || m.id),
+                    })}
+                    style={{ borderLeftWidth: 3, borderLeftColor: COLOR_MEETING }}
+                    className="p-4 rounded-2xl bg-white dark:bg-[#1a1b28] border border-black/5 dark:border-white/10 mb-3 shadow-sm"
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <Text className="font-bold text-ink dark:text-[#f4f5fb] text-sm font-sans flex-1" numberOfLines={1}>{m.title || 'Untitled Meeting'}</Text>
+                      {isLive && (
+                        <View className="flex-row items-center bg-emerald-500/10 px-2 py-0.5 rounded-full ml-2">
+                          <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5" />
+                          <Text className="text-[9px] font-bold text-emerald-600 font-sans">LIVE</Text>
+                        </View>
+                      )}
+                    </View>
+                    {m.summary ? (
+                      <Text className="text-[12px] text-ink-soft dark:text-[#9a9bb6] mt-1 font-sans" numberOfLines={2}>{m.summary}</Text>
+                    ) : null}
+                    <View className="flex-row items-center gap-3 mt-2">
+                      {m.startedAt ? (
+                        <Text className="text-[10px] text-ink-soft dark:text-[#9a9bb6] font-sans">{new Date(m.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                      ) : null}
+                      {aiCount > 0 && (
+                        <View className="bg-purple/10 px-2 py-0.5 rounded-full">
+                          <Text className="text-[9px] font-bold text-purple font-sans">{aiCount} ACTION ITEMS</Text>
+                        </View>
+                      )}
+                      <View className="flex-row items-center gap-1">
+                        <FileText size={11} color="#6c5ce7" />
+                        <Text className="text-[10px] font-bold text-purple font-sans">View minutes</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+        ) : (
+        /* ── Action Items tab: meeting-sourced items, editable ── */
+        <View className="p-6">
+          <Text className="text-xs font-bold uppercase tracking-wider text-black/30 dark:text-white/40 italic mb-1 font-sans">Action Items</Text>
+          <Text className="text-lg font-bold text-ink dark:text-[#f4f5fb] mb-3 font-sans">From your meetings</Text>
+
+          {meetingActionItems.length === 0 ? (
+            <View className="py-10 border-2 border-dashed border-black/5 dark:border-white/10 rounded-[24px] bg-white/50 dark:bg-white/[0.04] items-center justify-center">
+              <Check color="#6c5ce7" size={20} opacity={0.3} />
+              <Text className="text-sm text-ink-soft dark:text-[#9a9bb6] font-medium font-sans mt-2">No action items from meetings yet.</Text>
+            </View>
+          ) : (
+            meetingActionItems.map((item: any) => {
+              const id = String(item._id || item.id);
+              const done = item.status === 'done';
+              const now = Date.now();
+              const overdue = !done && item.end_time && new Date(item.end_time).getTime() < now;
+              const meetingName = item.meetingRef?.title || (item.description || '').replace(/^From meeting:\s*/, '');
+              const chipBg = done ? '#ecfdf5' : overdue ? '#fef2f2' : '#fefce8';
+              const chipFg = done ? '#059669' : overdue ? '#ef4444' : '#ca8a04';
+              const isEditing = editingItemId === id;
+              return (
+                <View key={id} style={{ padding: 14, borderRadius: 16, backgroundColor: 'rgba(248,248,252,0.8)', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 8 }}>
+                  {isEditing ? (
+                    <View style={{ gap: 10 }}>
+                      <TextInput
+                        value={editingItemTitle}
+                        onChangeText={setEditingItemTitle}
+                        placeholder="Action item"
+                        placeholderTextColor="#9ca3af"
+                        multiline
+                        style={{ backgroundColor: '#fff', borderRadius: 12, padding: 12, fontSize: 13, color: '#1f2030', borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)', fontFamily: 'Poppins_400Regular' }}
+                      />
+                      <Text style={{ fontSize: 10, fontFamily: 'Poppins_700Bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.4 }}>Assign to</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                        <TouchableOpacity
+                          onPress={() => setEditingItemAssignee(null)}
+                          style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: editingItemAssignee ? 'rgba(108,92,231,0.08)' : '#6c5ce7' }}
+                        >
+                          <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: editingItemAssignee ? '#6c5ce7' : '#fff' }}>Unassigned</Text>
+                        </TouchableOpacity>
+                        {orgMembers.map((mem: any) => {
+                          const mid = String(mem.id || mem._id);
+                          const active = String(editingItemAssignee) === mid;
+                          return (
+                            <TouchableOpacity
+                              key={mid}
+                              onPress={() => setEditingItemAssignee(mid)}
+                              style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: active ? '#6c5ce7' : 'rgba(108,92,231,0.08)' }}
+                            >
+                              <Text style={{ fontSize: 11, fontFamily: 'Poppins_600SemiBold', color: active ? '#fff' : '#6c5ce7' }} numberOfLines={1}>{mem.full_name || mem.username}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity onPress={cancelEditItem} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)' }}>
+                          <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#9ca3af' }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={saveEditItem} disabled={savingItem} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: '#6c5ce7', opacity: savingItem ? 0.6 : 1 }}>
+                          <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#fff' }}>{savingItem ? 'Saving…' : 'Save'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                      <TouchableOpacity
+                        onPress={() => handleToggleActionItem(item)}
+                        style={{ marginTop: 2, width: 18, height: 18, borderRadius: 6, borderWidth: 1, borderColor: done ? '#10b981' : '#d1d5db', backgroundColor: done ? '#10b981' : 'transparent', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        {done && <Check size={11} color="#fff" />}
+                      </TouchableOpacity>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontFamily: done ? 'Poppins_400Regular' : 'Poppins_600SemiBold', color: done ? '#9ca3af' : '#1f2030', textDecorationLine: done ? 'line-through' : 'none' }}>{item.title}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                          <Text style={{ backgroundColor: chipBg, color: chipFg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontSize: 9, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                            {done ? 'Done' : overdue ? 'Overdue' : 'Pending'}
+                          </Text>
+                          {item.assignedToName ? <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }}>· {item.assignedToName}</Text> : null}
+                          {meetingName ? <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>· {meetingName}</Text> : null}
+                        </View>
+                      </View>
+                      <TouchableOpacity onPress={() => startEditItem(item)} style={{ padding: 4 }}>
+                        <Pencil size={14} color="#6c5ce7" />
+                      </TouchableOpacity>
                     </View>
                   )}
-                  <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }}>from meetings</Text>
-                  <View style={{ marginLeft: 'auto', transform: [{ rotate: actionItemsOpen ? '180deg' : '0deg' }] }}>
-                    <ChevronDown size={14} color="#9ca3af" />
-                  </View>
-                </TouchableOpacity>
-                {actionItemsOpen && (
-                  <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                    {actionItems.map((item: any) => {
-                      const done = item.status === 'done';
-                      const overdue = !done && item.end_time && new Date(item.end_time).getTime() < now;
-                      const meetingName = item.meetingRef?.title || (item.description || '').replace(/^From meeting:\s*/, '');
-                      const chipBg = done ? '#ecfdf5' : overdue ? '#fef2f2' : '#fefce8';
-                      const chipFg = done ? '#059669' : overdue ? '#ef4444' : '#ca8a04';
-                      return (
-                        <View key={item._id || item.id} style={{ padding: 14, borderRadius: 16, backgroundColor: 'rgba(248,248,252,0.8)', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)', marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                          <TouchableOpacity
-                            onPress={() => handleToggleActionItem(item)}
-                            style={{ marginTop: 2, width: 18, height: 18, borderRadius: 6, borderWidth: 1, borderColor: done ? '#10b981' : '#d1d5db', backgroundColor: done ? '#10b981' : 'transparent', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            {done && <Check size={11} color="#fff" />}
-                          </TouchableOpacity>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 13, fontFamily: done ? 'Poppins_400Regular' : 'Poppins_600SemiBold', color: done ? '#9ca3af' : '#1f2030', textDecorationLine: done ? 'line-through' : 'none' }}>{item.title}</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                              <Text style={{ backgroundColor: chipBg, color: chipFg, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, fontSize: 9, fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                                {done ? 'Done' : overdue ? 'Overdue' : 'Pending'}
-                              </Text>
-                              {item.assignedToName ? <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }}>· {item.assignedToName}</Text> : null}
-                              {meetingName ? <Text style={{ fontSize: 10, color: '#9ca3af', fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>· {meetingName}</Text> : null}
-                            </View>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            );
-          })()}
+                </View>
+              );
+            })
+          )}
         </View>
+        )}
       </ScrollView>
 
       {/* ── Transcript Viewer Modal ── */}

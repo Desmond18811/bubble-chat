@@ -16,7 +16,8 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import Svg, { Path, Rect, Ellipse, Circle, Text as SvgText } from "react-native-svg";
-import { login as apiLogin, startGoogleAuth } from "../lib/api";
+import { login as apiLogin, clerkSyncApi } from "../lib/api";
+import { useOAuth } from "@clerk/clerk-expo";
 import { authStorage } from "../lib/authStorage";
 
 const BubbleLogo = ({ size = 40 }: { size?: number }) => (
@@ -147,31 +148,36 @@ export default function Login() {
     }
   };
 
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+
   const handleGoogleLogin = async () => {
     setError("");
     setGoogleLoading(true);
     try {
-      const session = await startGoogleAuth();
-      if (session) {
-        await authStorage.setSession(session.accessToken, session.refreshToken, session.user);
+      const { createdSessionId, setActive } = await startOAuthFlow();
+      if (!createdSessionId) {
+        // User cancelled or OAuth flow didn't complete
+        return;
+      }
+      if (setActive) await setActive({ session: createdSessionId });
 
-        // Silent restore E2E cloud backup if exists
-        try {
-          const { chatCache } = await import("../lib/chatCache");
-          await chatCache.restoreCloudBackup();
-        } catch (restoreErr) {
-          console.warn("Failed silent restore on Google login:", restoreErr);
-        }
+      // Send the Clerk session ID to our backend, which verifies it against Clerk's API
+      // and returns our own app JWT tied to this user's DB record.
+      const data = await clerkSyncApi(createdSessionId);
+      await authStorage.setSession(data.accessToken, data.refreshToken, data.user);
 
-        // Dynamic redirection based on completeness of onboarding
-        if (session.user?.onboardingComplete) {
-          router.replace("/(main)/messages" as any);
-        } else {
-          router.replace("/profile-setup" as any);
-        }
+      try {
+        const { chatCache } = await import("../lib/chatCache");
+        await chatCache.restoreCloudBackup();
+      } catch { /* best-effort */ }
+
+      if (data.user?.onboardingComplete) {
+        router.replace("/(main)/messages" as any);
+      } else {
+        router.replace("/profile-setup" as any);
       }
     } catch (err: any) {
-      setError(err.message || "Google Authentication was cancelled or failed.");
+      setError(err.message || "Google sign-in was cancelled or failed.");
     } finally {
       setGoogleLoading(false);
     }

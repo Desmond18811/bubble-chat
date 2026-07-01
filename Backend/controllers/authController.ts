@@ -1132,6 +1132,90 @@ export const savePushToken = async (req: any, res: Response): Promise<void> => {
   }
 };
 
+// ─── CLERK AUTH SYNC ──────────────────────────────────────────────────────────
+// Verifies a Clerk session token (issued by @clerk/clerk-expo on mobile) and
+// exchanges it for our own app JWT.  Finds or creates the user by email so IDs
+// stay consistent between web and mobile regardless of auth provider.
+export const clerkSync = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { sessionToken } = req.body;
+    if (!sessionToken) {
+      res.status(400).json({ message: 'sessionToken is required.' });
+      return;
+    }
+
+    // Lazy-import so the app starts even before CLERK_SECRET_KEY is set.
+    const { createClerkClient, verifyToken: clerkVerifyToken } = await import('@clerk/backend');
+    const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+
+    // Resolve the Clerk user from either a session ID (from OAuth flow) or a JWT.
+    let clerkUserId: string;
+    if (sessionToken.startsWith('sess_')) {
+      // `sessionToken` is actually a Clerk session ID from useOAuth's createdSessionId.
+      const session = await clerk.sessions.getSession(sessionToken);
+      if (!session || session.status !== 'active') {
+        res.status(401).json({ message: 'Clerk session is invalid or expired.' });
+        return;
+      }
+      clerkUserId = session.userId;
+    } else {
+      // Treat as a Clerk JWT for email/password sign-in.
+      try {
+        const payload = await clerkVerifyToken(sessionToken, { secretKey: process.env.CLERK_SECRET_KEY });
+        clerkUserId = payload.sub;
+      } catch {
+        res.status(401).json({ message: 'Invalid or expired Clerk session token.' });
+        return;
+      }
+    }
+
+    // Fetch the Clerk user to get their email and profile.
+    const clerkUser = await clerk.users.getUser(clerkUserId);
+    const email = clerkUser.emailAddresses?.[0]?.emailAddress;
+    if (!email) {
+      res.status(400).json({ message: 'Clerk account has no verified email address.' });
+      return;
+    }
+
+    // Find existing user or create a new one.
+    let user = await User.findOne({ email });
+    if (!user) {
+      const full_name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || clerkUser.username || email.split('@')[0];
+      const uniqueTag = await generateUniqueTag(full_name);
+      user = await User.create({
+        email,
+        full_name,
+        username: clerkUser.username || email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_'),
+        avatar: clerkUser.imageUrl || undefined,
+        clerkId: clerkUser.id,
+        isVerified: true,
+        signupKind: 'individual',
+        uniqueTag,
+        onboardingStep: 'awaiting_profile',
+      } as any);
+    } else {
+      // Sync Clerk metadata in case it changed.
+      const updates: Record<string, any> = { clerkId: clerkUser.id };
+      if (!user.avatar && clerkUser.imageUrl) updates.avatar = clerkUser.imageUrl;
+      if (!user.full_name && clerkUser.firstName) updates.full_name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ');
+      await User.findByIdAndUpdate(user._id, updates);
+      user = (await User.findById(user._id))!;
+    }
+
+    const accessToken = generateAccessToken(String(user._id));
+    const newRefreshToken = generateRefreshToken(String(user._id));
+    await User.findByIdAndUpdate(user._id, { refreshToken: newRefreshToken, isOnline: true, lastSeen: new Date() });
+
+    res.status(200).json({
+      message: 'Clerk sync successful.',
+      data: { accessToken, refreshToken: newRefreshToken, user: formatUser(user) },
+    });
+  } catch (error: any) {
+    console.error('[clerkSync] error:', error);
+    res.status(500).json({ message: 'Clerk sync failed.' });
+  }
+};
+
 
 
 

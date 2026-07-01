@@ -19,6 +19,7 @@ import {
   setup2FA,
   verify2FA,
   savePushToken,
+  clerkSync,
 } from '../controllers/authController';
 
 const router = express.Router();
@@ -202,6 +203,13 @@ router.post('/google/mobile', googleMobileLogin);
 
 /** POST /api/v1/auth/push-token */
 router.post('/push-token', jwtAuth, savePushToken);
+
+/**
+ * POST /api/v1/auth/clerk-sync
+ * Verifies a Clerk session token from the mobile app and exchanges it for our
+ * own app JWT.  Creates the user if they don't exist yet.
+ */
+router.post('/clerk-sync', clerkSync);
 
 export default router;
 

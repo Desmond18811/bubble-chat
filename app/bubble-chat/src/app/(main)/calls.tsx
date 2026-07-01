@@ -3,12 +3,14 @@ import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, Keyb
 import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Clock, Plus, X, Check, PhoneMissed, Trash2, FileText, Sparkles } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl, fetchCallLogs, deleteCallLog, clearCallLogs, updateCallLog, fetchMeetings, fetchMeetingById } from '../../lib/api';
+import { getOrgMembers, fetchTasks, createTaskFull, updateTaskFull, getSecureMediaUrl, fetchCallLogs, deleteCallLog, clearCallLogs, updateCallLog, fetchMeetings, fetchMeetingById, fetchActiveMeetings } from '../../lib/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { startOutgoingCall } from '../../lib/callManager';
+import { startOutgoingCall, joinRoomByLink } from '../../lib/callManager';
+import { getSocket } from '../../lib/socket';
 import { subscribeTasksChanged } from '../../lib/taskListeners';
 import { Image } from 'expo-image';
 import { Avatar } from '../../components/Avatar';
+import { MeetingDetailModal } from '../../components/MeetingDetailModal';
 import { useIsOnline, useIsInMeeting, getPresence, subscribePresence } from '../../lib/presence';
 
 // Live presence dot — rendered inside a list `.map`, so it owns its own hook subscription.
@@ -89,153 +91,6 @@ function getGroupInitials(name: string) {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
   return clean.slice(0, 2).toUpperCase();
-}
-
-/* ── Tabbed meeting-detail bottom sheet ──────────────────────────── */
-function MeetingDetailModal({ meeting, loading, onClose }: { meeting: any; loading: boolean; onClose: () => void }) {
-  const [tab, setTab] = useState<'summary' | 'actions' | 'transcript'>('summary');
-
-  if (!meeting) return null;
-
-  const hasActions = Array.isArray(meeting.actionItems) && meeting.actionItems.length > 0;
-  const hasTranscript = !!(meeting.transcriptRaw || (Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0));
-
-  return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(31,32,48,0.5)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#ffffff', borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '88%' }}>
-          {/* Handle */}
-          <View style={{ alignItems: 'center', paddingTop: 12, paddingBottom: 4 }}>
-            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.12)' }} />
-          </View>
-
-          {/* Title row */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 4 }}>
-            <Text style={{ fontSize: 17, fontFamily: 'SpaceGrotesk_700Bold', color: '#1f2030', flex: 1 }} numberOfLines={2}>
-              {meeting.title || 'Meeting'}
-            </Text>
-            <TouchableOpacity onPress={onClose} style={{ padding: 6 }}>
-              <X size={20} color="#1f2030" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Metadata: date + duration */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 22, paddingBottom: 10, gap: 12 }}>
-            {meeting.startedAt ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Calendar size={12} color="#9a9aab" />
-                <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
-                  {new Date(meeting.startedAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </View>
-            ) : null}
-            {meeting.duration ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Clock size={12} color="#9a9aab" />
-                <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular' }}>
-                  {Math.floor(meeting.duration / 60)}:{String(meeting.duration % 60).padStart(2, '0')}
-                </Text>
-              </View>
-            ) : null}
-            {loading && (
-              <Text style={{ fontSize: 11, color: '#9a9aab', fontFamily: 'Poppins_400Regular' }}>Loading…</Text>
-            )}
-          </View>
-
-          {/* Attendees */}
-          {Array.isArray(meeting.attendees) && meeting.attendees.length > 0 && (
-            <View style={{ paddingHorizontal: 22, paddingBottom: 10 }}>
-              <Text style={{ fontSize: 10, color: '#9a9aab', fontFamily: 'Poppins_700Bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Attendees</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {meeting.attendees.map((a: any, i: number) => {
-                  const name = a?.full_name || a?.username || (typeof a === 'string' ? a : 'User');
-                  const initials = getInitials(name);
-                  return (
-                    <View key={i} style={{ alignItems: 'center', marginRight: 12 }}>
-                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#ede9fe', alignItems: 'center', justifyContent: 'center', marginBottom: 3 }}>
-                        {a?.avatar ? (
-                          <Image source={{ uri: a.avatar }} style={{ width: 36, height: 36, borderRadius: 18 }} contentFit="cover" />
-                        ) : (
-                          <Text style={{ fontSize: 12, fontFamily: 'SpaceGrotesk_700Bold', color: '#6c5ce7' }}>{initials}</Text>
-                        )}
-                      </View>
-                      <Text style={{ fontSize: 9, color: '#1f2030', fontFamily: 'Poppins_600SemiBold', maxWidth: 50, textAlign: 'center' }} numberOfLines={1}>
-                        {name.split(' ')[0]}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* Tab bar */}
-          <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.06)', paddingHorizontal: 22 }}>
-            {(['summary', 'actions', 'transcript'] as const).map((t) => {
-              const label = t === 'summary' ? 'Summary' : t === 'actions' ? `Action Items${hasActions ? ` (${meeting.actionItems.length})` : ''}` : 'Transcript';
-              const active = tab === t;
-              return (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => setTab(t)}
-                  style={{ marginRight: 20, paddingBottom: 10, paddingTop: 4, borderBottomWidth: 2, borderBottomColor: active ? '#6c5ce7' : 'transparent' }}
-                >
-                  <Text style={{ fontSize: 12, fontFamily: active ? 'Poppins_700Bold' : 'Poppins_600SemiBold', color: active ? '#6c5ce7' : '#9a9aab' }}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <ScrollView style={{ padding: 22 }} contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-            {tab === 'summary' && (
-              <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>
-                {meeting.summary || 'AI summary is generating or unavailable for this meeting.'}
-              </Text>
-            )}
-
-            {tab === 'actions' && (
-              hasActions ? meeting.actionItems.map((ai: any, i: number) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10, padding: 12, backgroundColor: '#f8f8fb', borderRadius: 14, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' }}>
-                  <Check size={14} color={ai.status === 'done' ? '#10b981' : '#9a9aab'} style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1, marginLeft: 8 }}>
-                    <Text style={{ fontSize: 13, fontFamily: 'Poppins_600SemiBold', color: '#1f2030' }}>{ai.text || ai.title || String(ai)}</Text>
-                    {(ai.assignedToName || ai.assignedTo?.full_name) && (
-                      <Text style={{ fontSize: 10, color: '#6c5ce7', fontFamily: 'Poppins_700Bold', marginTop: 2 }}>
-                        Assigned: {ai.assignedToName || ai.assignedTo?.full_name}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              )) : (
-                <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 24 }}>
-                  No action items captured for this meeting.
-                </Text>
-              )
-            )}
-
-            {tab === 'transcript' && (
-              hasTranscript ? (
-                Array.isArray(meeting.transcriptChunks) && meeting.transcriptChunks.length > 0
-                  ? meeting.transcriptChunks.map((c: any, i: number) => (
-                      <View key={i} style={{ marginBottom: 8 }}>
-                        {c.speaker ? <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#6c5ce7' }}>{c.speaker}</Text> : null}
-                        <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{c.text}</Text>
-                      </View>
-                    ))
-                  : <Text style={{ fontSize: 13, color: '#1f2030', lineHeight: 20, fontFamily: 'Poppins_400Regular' }}>{meeting.transcriptRaw}</Text>
-              ) : (
-                <Text style={{ fontSize: 12, color: '#9a9aab', fontFamily: 'Poppins_400Regular', textAlign: 'center', marginTop: 24 }}>
-                  No transcript captured for this meeting.
-                </Text>
-              )
-            )}
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
 }
 
 export default function CallsScreen() {
@@ -323,6 +178,56 @@ export default function CallsScreen() {
   }, []);
 
   useEffect(() => { loadMeetings(); }, [loadMeetings]);
+
+  // ── Live Collaborative Spaces (active rooms) ──────────────────────────────
+  // Mirrors the web meet tab's "Live Collaborative Spaces": the rooms that are
+  // live right now, with a Join button. Backed by GET /api/v1/meetings/active,
+  // refreshed on the same socket events the web listens to + a 30s safety poll.
+  const [activeRooms, setActiveRooms] = useState<any[]>([]);
+  const [roomsLoading, setRoomsLoading] = useState(false);
+  const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
+
+  const loadActiveRooms = React.useCallback(async () => {
+    setRoomsLoading(true);
+    try {
+      const res: any = await fetchActiveMeetings();
+      setActiveRooms(Array.isArray(res?.rooms) ? res.rooms : []);
+    } catch (err) {
+      console.warn('Failed to load active rooms:', err);
+    } finally {
+      setRoomsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadActiveRooms();
+    const interval = setInterval(loadActiveRooms, 30_000);
+    const socket = getSocket();
+    const refresh = () => loadActiveRooms();
+    socket?.on('meeting_room_update', refresh);
+    socket?.on('meeting_ended', refresh);
+    return () => {
+      clearInterval(interval);
+      socket?.off('meeting_room_update', refresh);
+      socket?.off('meeting_ended', refresh);
+    };
+  }, [loadActiveRooms]);
+
+  // Join a live room: enter its LiveKit session directly (the overlay mounted in
+  // the root layout renders the call). joinRoomByLink de-dups to the existing
+  // meeting record, so the participant count stays accurate.
+  const handleJoinRoom = async (room: any) => {
+    const roomId = room?.roomId || room?.id;
+    if (!roomId) return;
+    setJoiningRoomId(String(roomId));
+    try {
+      await joinRoomByLink({ roomId: String(roomId), type: room?.type === 'video' ? 'video' : 'voice' });
+    } catch (err: any) {
+      Alert.alert('Could not join', err?.message || 'Failed to join the live room.');
+    } finally {
+      setJoiningRoomId(null);
+    }
+  };
 
   // Unified Call Logs tab data: the legacy CallLog collection is rarely populated
   // (no client ever calls saveCallLog), so on its own this tab looked empty even
@@ -628,6 +533,83 @@ export default function CallsScreen() {
 
       {callsTab === 'meet' ? (
         <ScrollView className="flex-1 px-4 pt-4 bg-purple-soft/5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
+          {/* Live Collaborative Spaces — rooms that are live right now (web parity). */}
+          <View className="mb-8">
+            <View className="flex-row items-center justify-between mb-4 px-1">
+              <Text className="text-xs font-bold uppercase tracking-wider text-black/30 italic font-sans">Live Collaborative Spaces</Text>
+              <View className="flex-row items-center bg-emerald-500/10 px-3 py-1 rounded-full">
+                <View className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
+                <Text className="text-[10px] font-bold text-emerald-600 font-sans">{activeRooms.length} ACTIVE ROOMS</Text>
+              </View>
+            </View>
+
+            {roomsLoading && activeRooms.length === 0 ? (
+              <View className="py-8 items-center justify-center">
+                <Text className="text-xs text-ink-soft font-sans">Checking for live rooms…</Text>
+              </View>
+            ) : activeRooms.length === 0 ? (
+              <View className="py-8 items-center justify-center border-2 border-dashed border-black/5 rounded-[28px] bg-black/[0.02]">
+                <Text className="text-xs text-ink-soft font-sans">No active live meetings. Start one to collaborate!</Text>
+              </View>
+            ) : (
+              <View className="space-y-3">
+                {activeRooms.map((room: any) => {
+                  const participants = [room.host, ...(room.attendees || [])].filter(Boolean);
+                  const whenStr = room.startedAt ? new Date(room.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  const roomKey = String(room.roomId || room.id);
+                  const joining = joiningRoomId === roomKey;
+                  return (
+                    <View key={roomKey} className="w-full bg-purple-soft/40 p-5 rounded-[28px] border border-purple/5 shadow-sm mb-3">
+                      <View className="flex-row items-start justify-between">
+                        <View className="flex-1 min-w-0 pr-2">
+                          <View className="flex-row items-center gap-1.5 mb-1">
+                            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <Text className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 font-sans">
+                              Live{whenStr ? ` · Started ${whenStr}` : ''}
+                            </Text>
+                          </View>
+                          <Text className="text-[16px] font-bold text-ink font-sans" numberOfLines={1}>{room.title || 'Live Meeting'}</Text>
+                          <Text className="text-[11px] text-ink-soft font-medium font-sans mt-0.5">
+                            {room.members || participants.length} {(room.members || participants.length) === 1 ? 'person' : 'people'} joined
+                          </Text>
+                        </View>
+                        <View className="px-2 py-0.5 rounded-full bg-white/60 border border-black/5">
+                          <Text className="text-[9px] font-bold uppercase text-ink-soft font-sans">{room.type === 'video' ? 'Video' : 'Audio'}</Text>
+                        </View>
+                      </View>
+
+                      <View className="flex-row items-end justify-between mt-5">
+                        <View className="flex-row -space-x-3">
+                          {participants.slice(0, 4).map((p: any, i: number) => (
+                            <View key={i} className="w-9 h-9 rounded-full border-2 border-white bg-purple items-center justify-center shadow-sm overflow-hidden">
+                              <Text className="text-white text-[11px] font-bold font-sans">
+                                {(p?.full_name || p?.username || '?').charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                          ))}
+                          {participants.length > 4 && (
+                            <View className="w-9 h-9 rounded-full border-2 border-white bg-purple/10 items-center justify-center shadow-sm">
+                              <Text className="text-[10px] font-bold text-purple font-sans">+{participants.length - 4}</Text>
+                            </View>
+                          )}
+                        </View>
+                        <TouchableOpacity
+                          onPress={() => handleJoinRoom(room)}
+                          disabled={joining}
+                          className="flex-row items-center gap-1.5 bg-purple px-4 py-2.5 rounded-2xl shadow-sm"
+                          style={{ opacity: joining ? 0.6 : 1 }}
+                        >
+                          <Video color="#fff" size={15} />
+                          <Text className="text-white text-sm font-bold font-sans">{joining ? 'Joining…' : 'Join'}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+
           {/* Meetings history (real data, mirrors the web meetings tab) */}
           <View className="mb-8">
             <View className="flex-row items-center justify-between mb-4 px-1">

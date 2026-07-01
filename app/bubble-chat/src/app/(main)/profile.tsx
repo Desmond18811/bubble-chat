@@ -1202,6 +1202,58 @@ export default function ProfileScreen() {
             </View>
           </View>
 
+          {/* Action-Item Email Notifications — visible card (also editable in Edit Profile). */}
+          <View className="w-full p-6 border-b mt-3" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
+            <View className="flex-row items-center border-b pb-3 mb-4" style={{ borderColor: colors.borderStrong }}>
+              <Mail color={colors.purple} size={18} />
+              <Text className="text-[15px] font-bold ml-2 font-sans" style={{ color: colors.text }}>Action-Item Emails</Text>
+            </View>
+            <Text className="text-[12px] mb-4 font-sans" style={{ color: colors.textSoft }}>
+              Choose how BubbleSpace emails you about meeting action items assigned to you.
+            </Text>
+            <View style={{ gap: 8 }}>
+              {([
+                { value: 'each', label: 'Each item', desc: 'One email per due / overdue item' },
+                { value: 'summary', label: 'Daily digest', desc: 'All items in your morning brief' },
+                { value: 'off', label: 'Off', desc: 'No action-item emails' },
+              ] as const).map((opt) => {
+                const active = ((user as any).actionItemEmailMode || 'each') === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={async () => {
+                      const prevMode = (user as any).actionItemEmailMode || 'each';
+                      // Optimistic — reflect the choice immediately.
+                      setUser(prev => ({ ...prev, actionItemEmailMode: opt.value } as any));
+                      setFormData(prev => ({ ...prev, actionItemEmailMode: opt.value } as any));
+                      try {
+                        const res = await updateProfile({ actionItemEmailMode: opt.value });
+                        if (res?.data) await authStorage.updateUser(res.data);
+                      } catch (err: any) {
+                        setUser(prev => ({ ...prev, actionItemEmailMode: prevMode } as any));
+                        Alert.alert('Error', err?.message || 'Could not update email setting.');
+                      }
+                    }}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                      paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, borderWidth: 1.5,
+                      backgroundColor: active ? colors.purpleSoft : colors.surface,
+                      borderColor: active ? colors.purple : colors.border,
+                    }}
+                  >
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Poppins_700Bold', color: colors.text }}>{opt.label}</Text>
+                      <Text style={{ fontSize: 11, fontFamily: 'Poppins_400Regular', color: colors.textSoft, marginTop: 1 }}>{opt.desc}</Text>
+                    </View>
+                    <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: active ? colors.purple : colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? colors.purple : 'transparent' }}>
+                      {active && <Check size={12} color="#fff" />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Appearance / Dark Mode */}
           <View className="w-full p-6 border-b mt-3" style={{ backgroundColor: colors.card, borderColor: colors.border }}>
             <Text className="text-[15px] font-bold border-b pb-3 mb-5 font-sans" style={{ color: colors.text, borderColor: colors.borderStrong }}>

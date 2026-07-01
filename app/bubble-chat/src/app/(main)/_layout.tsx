@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { MessageSquare, User, Users, Plus, Share2 } from "lucide-react-native";
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
 import { BlurView } from "expo-blur";
 import { triggerPlusButton } from "../../lib/mockData";
 import { useTheme } from "../../lib/theme";
@@ -9,6 +9,7 @@ import { NicknameProvider } from "../../lib/nicknames";
 import { fetchActiveMeetings } from "../../lib/api";
 import { getSocket } from "../../lib/socket";
 import { setInMeetingUsers } from "../../lib/presence";
+import { subscribeCallState, CallState } from "../../lib/callManager";
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { colors, isDark } = useTheme();
@@ -50,6 +51,30 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
       socket?.off('meeting_ended', refresh);
     };
   }, []);
+
+  // Glow the People icon while a call is ringing / in progress, so an active call
+  // reads at a glance from anywhere in the app.
+  const [callActive, setCallActive] = useState(false);
+  const callPulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const unsub = subscribeCallState((s: CallState) => {
+      setCallActive(s.status === 'calling_out' || s.status === 'calling_in' || s.status === 'in_call');
+    });
+    return unsub;
+  }, []);
+  useEffect(() => {
+    if (callActive) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(callPulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+          Animated.timing(callPulse, { toValue: 0, duration: 700, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+    callPulse.setValue(0);
+  }, [callActive, callPulse]);
 
   if (currentRouteName === "chat/[id]") {
     return null;
@@ -105,12 +130,24 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               displayName = "People";
               iconComponent = (
                 <View style={{ position: 'relative' }}>
-                  <Users color={color} size={iconSize} />
-                  {activeRoomCount > 0 && (
+                  {/* Pulsing glow ring behind the icon while a call is active. */}
+                  {callActive && (
+                    <Animated.View
+                      pointerEvents="none"
+                      style={{
+                        position: 'absolute', top: -6, left: -6, right: -6, bottom: -6,
+                        borderRadius: 999, backgroundColor: colors.purple,
+                        opacity: callPulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.4] }),
+                        transform: [{ scale: callPulse.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.25] }) }],
+                      }}
+                    />
+                  )}
+                  <Users color={callActive ? colors.purple : color} size={iconSize} />
+                  {(activeRoomCount > 0 || callActive) && (
                     <View style={{
                       position: 'absolute', top: -3, right: -5,
                       width: 8, height: 8, borderRadius: 4,
-                      backgroundColor: '#10b981',
+                      backgroundColor: callActive ? colors.purple : '#10b981',
                       borderWidth: 1.5, borderColor: isDark ? 'rgba(15,16,24,0.82)' : 'rgba(248,247,255,0.78)',
                     }} />
                   )}

@@ -29,6 +29,7 @@ import {
   Scan,
   History as HistoryIcon,
   PhoneMissed,
+  FileText,
 } from 'lucide-react-native';
 import { Link, useNavigation, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -38,8 +39,8 @@ import {
   subscribeToPlusButton,
 } from '../../lib/mockData';
 import { chatCache } from '../../lib/chatCache';
-import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers, fetchMeetings } from '../../lib/api';
-import { startOutgoingCall } from '../../lib/callManager';
+import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers, fetchMeetings, fetchCallLogs, fetchMeetingById, deleteCallLog, fetchActiveMeetings } from '../../lib/api';
+import { startOutgoingCall, joinRoomByLink } from '../../lib/callManager';
 import { useIsOnline, useIsInMeeting } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
@@ -48,6 +49,7 @@ import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-s
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { BlurView } from 'expo-blur';
 import { Avatar as SharedAvatar } from '../../components/Avatar';
+import { MeetingDetailModal } from '../../components/MeetingDetailModal';
 
 // ─────────────────────────────────────────────
 // Helper
@@ -720,95 +722,34 @@ function WorkroomTab({
 }
 
 // ─────────────────────────────────────────────
-// History Sub-Tab — per-person interaction log (recent calls + recent chats)
+// History Sub-Tab — unified call history (call logs + meetings), mirroring the
+// web Events & Calls "Call Logs" data flow: fetchCallLogs() + fetchMeetings()
+// merged and sorted, with voice/video/duration/timestamp and meeting minutes.
 // ─────────────────────────────────────────────
-type HistoryPerson = {
-  id: string;
-  name: string;
-  avatar?: string | null;
-  username?: string;
-  chatId?: string;
-  lastMessage?: string;
-  lastMessageAt?: number;
-  lastCallAt?: number;
-  lastCallType?: 'voice' | 'video';
-  lastCallDuration?: number;
-  callCount: number;
-};
-
 function HistoryTab({
   onStartCall,
 }: {
   onStartCall: (user: any, type: 'voice' | 'video') => void;
 }) {
   const { colors } = useTheme();
-  const router = useRouter();
   const [search, setSearch] = useState('');
-  const [people, setPeople] = useState<HistoryPerson[]>([]);
+  const [callLogs, setCallLogs] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionPerson, setActionPerson] = useState<HistoryPerson | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null);
+  const [meetingDetailLoading, setMeetingDetailLoading] = useState(false);
 
   const load = async () => {
     try {
-      const user = await authStorage.getUser();
-      const myId = user ? String((user as any).id || (user as any)._id) : null;
-
-      const [cachedChats, meetingsRes] = await Promise.all([
-        chatCache.getCachedChats(),
+      const [logsRes, meetingsRes] = await Promise.all([
+        fetchCallLogs().catch(() => ({ logs: [] })),
         fetchMeetings(1, 50).catch(() => ({ meetings: [] })),
       ]);
-
-      const byId = new Map<string, HistoryPerson>();
-
-      for (const c of cachedChats) {
-        if (c.isGroupChat || !c.otherUserId) continue;
-        const otherId = String(c.otherUserId);
-        const entry: HistoryPerson = byId.get(otherId) || { id: otherId, name: c.name || 'Unknown', callCount: 0 };
-        entry.name = c.name || entry.name;
-        entry.avatar = c.avatar || entry.avatar;
-        entry.username = c.username || entry.username;
-        entry.lastMessage = c.latestMessage || entry.lastMessage;
-        entry.lastMessageAt = c.updatedAt ? new Date(c.updatedAt).getTime() : entry.lastMessageAt;
-        entry.chatId = c.id;
-        byId.set(otherId, entry);
-      }
-
-      const meetings = meetingsRes?.meetings || [];
-      for (const m of meetings) {
-        const participants = [m.host, ...(m.attendees || [])].filter(Boolean);
-        for (const p of participants) {
-          const isPopulated = typeof p === 'object';
-          const pid = String(isPopulated ? (p._id || p.id) : p);
-          if (!myId || pid === myId) continue;
-          const startedAt = m.startedAt ? new Date(m.startedAt).getTime() : (m.createdAt ? new Date(m.createdAt).getTime() : 0);
-          const entry: HistoryPerson = byId.get(pid) || {
-            id: pid,
-            name: (isPopulated && (p.full_name || p.username)) || 'Unknown',
-            callCount: 0,
-          };
-          if (isPopulated) {
-            entry.name = p.full_name || p.username || entry.name;
-            entry.avatar = p.avatar || entry.avatar;
-            entry.username = p.username || entry.username;
-          }
-          entry.callCount += 1;
-          if (!entry.lastCallAt || startedAt > entry.lastCallAt) {
-            entry.lastCallAt = startedAt;
-            entry.lastCallType = m.type === 'voice' ? 'voice' : 'video';
-            entry.lastCallDuration = m.duration || 0;
-          }
-          byId.set(pid, entry);
-        }
-      }
-
-      const list = Array.from(byId.values()).sort((a, b) => {
-        const aT = Math.max(a.lastMessageAt || 0, a.lastCallAt || 0);
-        const bT = Math.max(b.lastMessageAt || 0, b.lastCallAt || 0);
-        return bT - aT;
-      });
-      setPeople(list);
+      const logs = (logsRes as any)?.logs || (logsRes as any)?.data || (Array.isArray(logsRes) ? logsRes : []);
+      setCallLogs(logs);
+      setMeetings(Array.isArray((meetingsRes as any)?.meetings) ? (meetingsRes as any).meetings : (Array.isArray(meetingsRes) ? (meetingsRes as any) : []));
     } catch (err) {
-      console.warn('Failed to load people history:', err);
+      console.warn('Failed to load call history:', err);
     } finally {
       setLoading(false);
     }
@@ -820,31 +761,52 @@ function HistoryTab({
     return () => clearInterval(interval);
   }, []);
 
-  const filtered = people.filter((p) =>
-    (p.name + (p.username || '')).toLowerCase().includes(search.toLowerCase())
-  );
+  // Merge call logs + meetings into one list, newest first (calls.tsx parity).
+  const unifiedLogs = React.useMemo(() => {
+    const rawLogs = callLogs.map((l) => ({
+      id: String(l._id || l.id),
+      isMeeting: false as const,
+      raw: l,
+      timestamp: l.timestamp || l.createdAt,
+      type: l.type,
+      duration: l.duration || 0,
+      missed: !!l.missed,
+      label: l.label || 'Call',
+    }));
+    const rawMeetings = meetings.map((m) => ({
+      id: String(m._id || m.id),
+      isMeeting: true as const,
+      raw: m,
+      timestamp: m.startedAt || m.createdAt,
+      type: m.type || 'video',
+      duration: m.duration || 0,
+      missed: false,
+      label: m.title || 'Untitled Meeting',
+    }));
+    return [...rawLogs, ...rawMeetings].sort(
+      (a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+    );
+  }, [callLogs, meetings]);
 
-  const formatDuration = (sec?: number) => {
-    if (!sec) return '';
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  const filtered = unifiedLogs.filter((l) => l.label.toLowerCase().includes(search.toLowerCase()));
+
+  const handleDeleteLog = async (id: string) => {
+    setCallLogs((prev) => prev.filter((l) => String(l._id || l.id) !== String(id)));
+    try { await deleteCallLog(id); } catch { /* best-effort */ }
   };
 
-  const formatRelative = (ts?: number) => {
-    if (!ts) return '';
-    const diff = Date.now() - ts;
-    const min = Math.floor(diff / 60000);
-    if (min < 1) return 'just now';
-    if (min < 60) return `${min}m ago`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr}h ago`;
-    return `${Math.floor(hr / 24)}d ago`;
-  };
-
-  const handleOpenChat = (person: HistoryPerson) => {
-    setActionPerson(null);
-    router.push(`/chat/${person.chatId || person.id}`);
+  const openMeetingDetail = async (meeting: any) => {
+    setSelectedMeeting(meeting);
+    setMeetingDetailLoading(true);
+    try {
+      const res: any = await fetchMeetingById(String(meeting._id || meeting.id));
+      const full = res?.meeting || res?.data || res;
+      if (full) setSelectedMeeting(full);
+    } catch (err) {
+      console.warn('Failed to load meeting detail:', err);
+    } finally {
+      setMeetingDetailLoading(false);
+    }
   };
 
   return (
@@ -853,7 +815,7 @@ function HistoryTab({
         <View className="flex-1 flex-row items-center bg-purple/10 rounded-3xl border border-purple/5 px-4 py-2.5 shadow-sm shadow-purple/5">
           <Search color="#6c5ce7" size={16} />
           <TextInput
-            placeholder="Search history..."
+            placeholder="Search call history..."
             value={search}
             onChangeText={setSearch}
             placeholderTextColor="rgba(108,92,231,0.4)"
@@ -870,12 +832,14 @@ function HistoryTab({
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         <View className="flex-row items-center mb-3 mt-1">
           <Text className="text-[10px] font-bold text-ink-soft dark:text-[#9a9bb6] uppercase tracking-widest font-sans">
-            Recent Interactions
+            Call History
           </Text>
           <View className="flex-1 h-[1px] bg-black/5 dark:bg-white/[0.06] ml-3" />
         </View>
 
-        {!loading && filtered.length === 0 ? (
+        {loading && filtered.length === 0 ? (
+          <Text className="text-center text-ink-soft text-sm mt-12 font-sans">Loading call history…</Text>
+        ) : filtered.length === 0 ? (
           <View
             className="py-16 items-center justify-center border-2 border-dashed rounded-3xl mt-2"
             style={{ backgroundColor: colors.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', borderColor: colors.border }}
@@ -883,124 +847,64 @@ function HistoryTab({
             <View className="w-16 h-16 rounded-3xl bg-purple-soft/50 items-center justify-center mb-4">
               <HistoryIcon color="#6c5ce7" size={28} />
             </View>
-            <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No history yet</Text>
+            <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans">No call history yet</Text>
             <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-1 text-center max-w-[220px] leading-relaxed font-sans">
-              Calls and chats with people will show up here.
+              Your voice and video calls will show up here.
             </Text>
           </View>
         ) : (
-          filtered.map((person) => {
-            const showCallFirst = (person.lastCallAt || 0) > (person.lastMessageAt || 0);
+          filtered.map((item) => {
+            const log = item.raw;
+            const isVideo = item.type === 'video';
+            const missed = item.missed;
+            const whenStr = item.timestamp ? new Date(item.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            const mins = Math.floor(item.duration / 60);
+            const secs = item.duration % 60;
+            const durStr = item.duration ? `${mins}:${secs.toString().padStart(2, '0')}` : '';
+            const Icon = missed ? PhoneMissed : isVideo ? Video : Phone;
             return (
               <TouchableOpacity
-                key={person.id}
-                activeOpacity={0.75}
-                onPress={() => setActionPerson(person)}
-                className="flex-row items-center rounded-2xl px-4 py-3.5 mb-3 shadow-sm shadow-purple/5"
+                key={item.id}
+                activeOpacity={0.8}
+                onPress={() => (item.isMeeting ? openMeetingDetail(log) : startOutgoingCall({ name: item.label, avatar: null }, isVideo ? 'video' : 'voice'))}
+                className="flex-row items-center rounded-2xl p-3.5 mb-2.5"
                 style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderStrong }}
               >
-                <Avatar name={person.name} avatar={person.avatar} size={50} userId={person.id} />
-                <View className="flex-1 min-w-0 ml-3">
-                  <Text className="text-[15px] font-bold text-ink dark:text-[#f4f5fb] leading-tight font-sans" numberOfLines={1}>
-                    {person.name}
-                  </Text>
-                  {showCallFirst ? (
-                    <View className="flex-row items-center mt-0.5">
-                      {person.lastCallType === 'voice' ? (
-                        <Phone color="#6c5ce7" size={11} />
-                      ) : (
-                        <Video color="#6c5ce7" size={11} />
-                      )}
-                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] ml-1.5 font-sans flex-1" numberOfLines={1}>
-                        {person.lastCallType === 'voice' ? 'Voice call' : 'Video call'}
-                        {person.lastCallDuration ? ` · ${formatDuration(person.lastCallDuration)}` : ''}
-                        {' · '}{formatRelative(person.lastCallAt)}
-                      </Text>
-                    </View>
-                  ) : person.lastMessage ? (
-                    <View className="flex-row items-center mt-0.5">
-                      <MessageSquare color="#6c5ce7" size={11} />
-                      <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] ml-1.5 font-sans flex-1" numberOfLines={1}>
-                        {person.lastMessage} · {formatRelative(person.lastMessageAt)}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {person.callCount > 0 && (
-                    <Text className="text-[10px] text-purple/70 mt-0.5 font-sans">
-                      {person.callCount} call{person.callCount > 1 ? 's' : ''} together
-                    </Text>
-                  )}
+                <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${missed ? 'bg-red-500/10' : item.isMeeting ? 'bg-emerald-500/10' : 'bg-purple-soft/40'}`}>
+                  <Icon color={missed ? '#ef4444' : item.isMeeting ? '#10b981' : '#6c5ce7'} size={18} />
                 </View>
+                <View className="flex-1">
+                  <Text className="text-ink dark:text-[#f4f5fb] font-bold text-sm font-sans" numberOfLines={1}>{item.label}</Text>
+                  <Text className={`text-xs mt-0.5 font-sans ${missed ? 'text-red-500' : 'text-ink-soft dark:text-[#9a9bb6]'}`}>
+                    {missed ? 'Missed' : isVideo ? 'Video' : 'Voice'}{item.isMeeting ? ' · Meeting' : ''}{durStr ? ` · ${durStr}` : ''}{whenStr ? ` · ${whenStr}` : ''}
+                  </Text>
+                </View>
+                {item.isMeeting ? (
+                  <TouchableOpacity onPress={() => openMeetingDetail(log)} className="p-2">
+                    <FileText color="#10b981" size={16} />
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity onPress={() => startOutgoingCall({ name: item.label, avatar: null }, isVideo ? 'video' : 'voice')} className="p-2">
+                      <Icon color="#6c5ce7" size={16} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDeleteLog(item.id)} className="p-2">
+                      <X color="#9a9aab" size={16} />
+                    </TouchableOpacity>
+                  </>
+                )}
               </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
 
-      {/* Quick Actions Sheet */}
-      <Modal visible={!!actionPerson} transparent animationType="slide">
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setActionPerson(null)}
-          className="flex-1 bg-black/60 justify-end"
-        >
-          <TouchableOpacity activeOpacity={1}>
-            <SafeAreaView className="bg-white dark:bg-[#1a1b28] rounded-t-3xl shadow-2xl" edges={['bottom']}>
-              {actionPerson && (
-                <View className="px-6 pt-6 pb-4">
-                  <View className="flex-row items-center mb-5">
-                    <Avatar name={actionPerson.name} avatar={actionPerson.avatar} size={48} userId={actionPerson.id} />
-                    <View className="flex-1 min-w-0 ml-3">
-                      <Text className="text-base font-bold text-ink dark:text-[#f4f5fb] font-sans" numberOfLines={1}>
-                        {actionPerson.name}
-                      </Text>
-                      {actionPerson.username ? (
-                        <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] font-sans">@{actionPerson.username}</Text>
-                      ) : null}
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => setActionPerson(null)}
-                      className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/[0.06] items-center justify-center"
-                    >
-                      <X color="#6c5ce7" size={16} />
-                    </TouchableOpacity>
-                  </View>
-
-                  <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      onPress={() => handleOpenChat(actionPerson)}
-                      className="flex-1 items-center bg-purple-soft/40 rounded-2xl py-4"
-                    >
-                      <MessageSquare color="#6c5ce7" size={20} />
-                      <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] mt-1.5 font-sans">Message</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        onStartCall(actionPerson, 'voice');
-                        setActionPerson(null);
-                      }}
-                      className="flex-1 items-center bg-purple-soft/40 rounded-2xl py-4"
-                    >
-                      <Phone color="#6c5ce7" size={20} />
-                      <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] mt-1.5 font-sans">Call</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        onStartCall(actionPerson, 'video');
-                        setActionPerson(null);
-                      }}
-                      className="flex-1 items-center bg-purple-soft/40 rounded-2xl py-4"
-                    >
-                      <Video color="#6c5ce7" size={20} />
-                      <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] mt-1.5 font-sans">Video</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </SafeAreaView>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* Meeting detail (Summary | Action Items | Transcript) */}
+      <MeetingDetailModal
+        meeting={selectedMeeting}
+        loading={meetingDetailLoading}
+        onClose={() => setSelectedMeeting(null)}
+      />
     </View>
   );
 }
@@ -1012,7 +916,7 @@ const TABS = ['Contacts', 'Workroom', 'History'] as const;
 type TabType = (typeof TABS)[number];
 
 export default function PeopleScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('Contacts');
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1020,6 +924,43 @@ export default function PeopleScreen() {
   const [newGroupName, setNewGroupName] = useState('');
   const [attachToOrg, setAttachToOrg] = useState(true);
   const [myOrg, setMyOrg] = useState<{ id?: string; name?: string }>({});
+
+  // Live Rooms — poll same as _layout.tsx but store full room objects for display
+  const [liveRooms, setLiveRooms] = useState<any[]>([]);
+  const liveDotPulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const res: any = await fetchActiveMeetings();
+        if (!cancelled) setLiveRooms(res?.rooms || []);
+      } catch { /* best-effort */ }
+    };
+    refresh();
+    const intervalId = setInterval(refresh, 30_000);
+    const socket = getSocket();
+    socket?.on('meeting_room_update', refresh);
+    socket?.on('meeting_ended', refresh);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      socket?.off('meeting_room_update', refresh);
+      socket?.off('meeting_ended', refresh);
+    };
+  }, []);
+  useEffect(() => {
+    if (liveRooms.length > 0) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(liveDotPulse, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(liveDotPulse, { toValue: 0, duration: 800, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+    liveDotPulse.setValue(1);
+  }, [liveRooms.length, liveDotPulse]);
 
   useEffect(() => {
     authStorage.getUser().then((user: any) => {
@@ -1126,6 +1067,87 @@ export default function PeopleScreen() {
           <Text className="text-xs text-ink-soft dark:text-[#9a9bb6] mt-0.5 font-sans">Contacts &amp; your organization</Text>
         </View>
       </View>
+
+      {/* Live Rooms — visible only when at least one meeting is active */}
+      {liveRooms.length > 0 && (
+        <View style={{ paddingHorizontal: 20, paddingBottom: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
+            <Animated.View style={{
+              width: 7, height: 7, borderRadius: 4,
+              backgroundColor: '#10b981',
+              opacity: liveDotPulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }),
+              transform: [{ scale: liveDotPulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1.15] }) }],
+            }} />
+            <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: '#10b981', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              Live Rooms
+            </Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            {liveRooms.map((room: any) => {
+              const host = room.host;
+              const hostUsername = host?.username || host?.full_name || 'Someone';
+              const roomTitle = room.title || `@${hostUsername}'s room`;
+              const allParticipants: any[] = [host, ...(room.attendees || [])].filter(Boolean);
+              const visibleChips = allParticipants.slice(0, 4);
+              const overflow = allParticipants.length - visibleChips.length;
+              const isVideo = room.type === 'video';
+              return (
+                <View
+                  key={room.id || room.roomId}
+                  style={{
+                    backgroundColor: colors.card,
+                    borderRadius: 18,
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: 'rgba(16,185,129,0.18)',
+                    minWidth: 200,
+                    maxWidth: 240,
+                    shadowColor: '#10b981',
+                    shadowOpacity: 0.06,
+                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: 2 },
+                  }}
+                >
+                  {/* Room title + type icon */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
+                    <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: 'rgba(16,185,129,0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                      {isVideo ? <Video color="#10b981" size={13} /> : <Phone color="#10b981" size={13} />}
+                    </View>
+                    <Text style={{ flex: 1, fontSize: 12, fontFamily: 'Poppins_600SemiBold', color: colors.text }} numberOfLines={1}>
+                      {roomTitle}
+                    </Text>
+                  </View>
+
+                  {/* Participant @username chips */}
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+                    {visibleChips.map((p: any, i: number) => (
+                      <View key={i} style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(108,92,231,0.07)', borderRadius: 20, paddingHorizontal: 7, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', color: colors.textSoft }}>
+                          @{p?.username || p?.full_name?.split(' ')[0] || 'user'}
+                        </Text>
+                      </View>
+                    ))}
+                    {overflow > 0 && (
+                      <View style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(108,92,231,0.07)', borderRadius: 20, paddingHorizontal: 7, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, fontFamily: 'Poppins_500Medium', color: colors.textSoft }}>+{overflow}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Join button */}
+                  <TouchableOpacity
+                    onPress={() => joinRoomByLink({ roomId: room.roomId || room.id, type: isVideo ? 'video' : 'voice' })}
+                    style={{ backgroundColor: '#10b981', borderRadius: 12, paddingVertical: 7, alignItems: 'center' }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={{ fontSize: 12, fontFamily: 'Poppins_700Bold', color: '#ffffff' }}>Join</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Tab Switcher */}
       <View className="flex-row px-6 pb-1 border-b border-black/5 dark:border-white/10">
