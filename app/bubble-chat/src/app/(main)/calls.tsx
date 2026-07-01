@@ -214,15 +214,24 @@ export default function CallsScreen() {
     };
   }, [loadActiveRooms]);
 
-  // Join a live room: enter its LiveKit session directly (the overlay mounted in
-  // the root layout renders the call). joinRoomByLink de-dups to the existing
-  // meeting record, so the participant count stays accurate.
+  // Join a live room. The host (or an already-admitted attendee) re-enters its
+  // LiveKit session directly; everyone else "knocks" and only enters once the host
+  // admits them (room_knock → room_knock_response, handled in callManager).
   const handleJoinRoom = async (room: any) => {
     const roomId = room?.roomId || room?.id;
     if (!roomId) return;
     setJoiningRoomId(String(roomId));
     try {
-      await joinRoomByLink({ roomId: String(roomId), type: room?.type === 'video' ? 'video' : 'voice' });
+      const me = await authStorage.getUser();
+      const myId = String(me?._id || me?.id || '');
+      const hostId = String(room?.host?._id || room?.host?.id || room?.host || '');
+      const attendeeIds = (room?.attendees || []).map((a: any) => String(a?._id || a?.id || a));
+      const type = room?.type === 'video' ? 'video' : 'voice';
+      if (myId && (myId === hostId || attendeeIds.includes(myId))) {
+        await joinRoomByLink({ roomId: String(roomId), type });
+      } else {
+        await knockToJoinRoom({ roomId: String(roomId), hostId: hostId || undefined, type });
+      }
     } catch (err: any) {
       Alert.alert('Could not join', err?.message || 'Failed to join the live room.');
     } finally {
