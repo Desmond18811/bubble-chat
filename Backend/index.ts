@@ -2,8 +2,6 @@ import dotenv from 'dotenv';
 // Load environment variables immediately before any other module imports
 dotenv.config();
 
-console.log(`[Startup] DeepSeek API Key loaded status: ${process.env.DEEPSEEK_API_KEY ? 'YES (Length: ' + process.env.DEEPSEEK_API_KEY.length + ')' : 'NO'}`);
-
 import { assertCriticalEnv } from './utils/envCheck';
 assertCriticalEnv();
 

@@ -148,4 +148,7 @@ const ConversationSchema: Schema<IConversation> = new Schema(
 // enforced as mandatory, which silently broke ALL group creation because the
 // create path never set organizationId.)
 
+// Chat-list fetches and membership checks filter by users on every request.
+ConversationSchema.index({ users: 1 });
+
 export const Conversation = mongoose.model<IConversation>('Conversation', ConversationSchema);

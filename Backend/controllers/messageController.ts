@@ -18,6 +18,34 @@ export interface AuthRequest extends Request {
   io?: any;
 }
 
+// ─── Unread counting ──────────────────────────────────────────────────────────
+
+// Single source of truth for a user's unread count in a chat. Must stay in sync
+// with the aggregation in chatController.getChats: system messages, announcements
+// and (in group chats) bot senders never count as unread — otherwise the live
+// 'unread_count_updated' badge disagrees with the chat-list fetch and group badges
+// get stuck on Aida transcripts that mark-as-read has no way to surface.
+export const countUnreadForUser = async (
+  chatId: any,
+  userId: any,
+  isGroupChat: boolean
+): Promise<number> => {
+  const query: any = {
+    chat: chatId,
+    sender: { $ne: userId },
+    readBy: { $ne: userId },
+    deletedFor: { $ne: userId },
+    message_type: { $ne: 'system' },
+    is_announcement: { $ne: true },
+  };
+  if (isGroupChat) {
+    const { User } = await import('../models/users');
+    const botUsers = await User.find({ is_bot: true }).select('_id').lean();
+    if (botUsers.length) query.sender = { $ne: userId, $nin: botUsers.map(b => b._id) };
+  }
+  return Message.countDocuments(query);
+};
+
 // ─── Format helpers ───────────────────────────────────────────────────────────
 
 const formatSender = async (u: any) => {
@@ -336,11 +364,7 @@ export const sendMessage = async (req: AuthRequest, res: Response): Promise<void
         const recipients = convo.users.filter((u: any) => String(u) !== String(req.user._id));
         await Promise.all(
           recipients.map(async (u: any) => {
-            const unreadCount = await Message.countDocuments({
-              chat: chatId,
-              readBy: { $ne: u },
-              deletedFor: { $ne: u },
-            });
+            const unreadCount = await countUnreadForUser(chatId, u, !!convo.isGroupChat);
             io.to(u.toString()).emit('unread_count_updated', { chatId, unreadCount });
           })
         );
@@ -689,11 +713,8 @@ export const markAsRead = async (req: AuthRequest, res: Response): Promise<void>
 
       // Keep the badge authoritative: recompute this user's unread count for the
       // chat (now zero) and push it to their personal room so every device syncs.
-      const unreadCount = await Message.countDocuments({
-        chat: chatId,
-        readBy: { $ne: userId },
-        deletedFor: { $ne: userId },
-      });
+      const convoForCount = await Conversation.findById(chatId).select('isGroupChat').lean();
+      const unreadCount = await countUnreadForUser(chatId, userId, !!convoForCount?.isGroupChat);
       io.to(String(userId)).emit('unread_count_updated', { chatId, unreadCount });
     } catch (socketErr) {
       console.error('Socket emit messages_read failed:', socketErr);

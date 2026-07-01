@@ -107,7 +107,12 @@ export const initSocket = (server: HttpServer) => {
     if (!token) {
       return next(new Error('Authentication error: Token missing'));
     }
-    const secret = process.env.JWT_KEY || 'bubble_default_key';
+    // Never verify against a hardcoded fallback secret — that would accept
+    // attacker-minted tokens whenever JWT_KEY is unset.
+    const secret = process.env.JWT_KEY;
+    if (!secret) {
+      return next(new Error('Authentication error: server JWT key not configured'));
+    }
     jwt.verify(token, secret, async (err: any, decoded: any) => {
       if (err) return next(new Error('Authentication error: Invalid token'));
       (socket as any).userId = decoded.id;

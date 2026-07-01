@@ -199,4 +199,10 @@ MessageSchema.index(
   { unique: true, partialFilterExpression: { client_id: { $type: 'string' } } }
 );
 
+// Message history pagination and delta-fetch after reconnect.
+MessageSchema.index({ chat: 1, createdAt: -1 });
+
+// Unread-count queries (readBy: { $ne: userId }) run on every send and mark-read.
+MessageSchema.index({ chat: 1, readBy: 1 });
+
 export const Message = mongoose.model<IMessage>('Message', MessageSchema);

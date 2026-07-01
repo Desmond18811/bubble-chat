@@ -11,6 +11,7 @@ type EnvSpec = {
 const CRITICAL: EnvSpec[] = [
   { name: 'MONGODB_URI', consequence: 'Mongo connection will fail' },
   { name: 'JWT_KEY', consequence: 'Token signing will fail' },
+  { name: 'JWT_REFRESH_KEY', consequence: 'Refresh-token signing will fail (no fallback secret is used)' },
 ];
 
 const FEATURE: EnvSpec[] = [
@@ -34,6 +35,11 @@ const isMissing = (name: string): boolean => {
  * In dev, logs a loud warning and continues so the team can iterate without all secrets.
  */
 export const assertCriticalEnv = (): void => {
+  // Some deploys use the legacy JWT_REFRESH_SECRET name; normalize so the
+  // CRITICAL check (and every consumer) can rely on JWT_REFRESH_KEY.
+  if (!process.env.JWT_REFRESH_KEY && process.env.JWT_REFRESH_SECRET) {
+    process.env.JWT_REFRESH_KEY = process.env.JWT_REFRESH_SECRET;
+  }
   const isProd = process.env.NODE_ENV === 'production';
   const missingCritical = CRITICAL.filter(s => isMissing(s.name));
   const missingFeature = FEATURE.filter(s => isMissing(s.name));

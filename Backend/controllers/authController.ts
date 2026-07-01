@@ -16,20 +16,27 @@ import { logActivity } from './activityLogController';
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
-const generateAccessToken = (userId: string) =>
-  jwt.sign({ id: userId }, process.env.JWT_KEY as string, { expiresIn: '7d' });
+// Signing with a hardcoded fallback secret would let anyone mint valid tokens;
+// refuse to sign/verify rather than silently degrade. envCheck enforces these at
+// boot in production — this guard covers dev and misconfigured deploys.
+export const getRefreshKey = (): string => {
+  const key = process.env.JWT_REFRESH_KEY || process.env.JWT_REFRESH_SECRET;
+  if (!key) throw new Error('JWT_REFRESH_KEY is not set — refusing to use a default secret');
+  return key;
+};
+
+const generateAccessToken = (userId: string) => {
+  if (!process.env.JWT_KEY) throw new Error('JWT_KEY is not set — refusing to use a default secret');
+  return jwt.sign({ id: userId }, process.env.JWT_KEY, { expiresIn: '7d' });
+};
 
 const generateRefreshToken = (userId: string) =>
-  jwt.sign(
-    { id: userId },
-    (process.env.JWT_REFRESH_KEY || process.env.JWT_REFRESH_SECRET || 'bubble_default_refresh_key') as string,
-    { expiresIn: '30d' }
-  );
+  jwt.sign({ id: userId }, getRefreshKey(), { expiresIn: '30d' });
 
 // ─── OTP Helper ───────────────────────────────────────────────────────────────
 
 const generateOTP = (): string =>
-  Math.floor(10000 + Math.random() * 90000).toString(); // 5-digit OTP
+  crypto.randomInt(10000, 100000).toString(); // 5-digit OTP, CSPRNG
 
 // ─── Format Helper ────────────────────────────────────────────────────────────
 
@@ -737,12 +744,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
     let decoded: any;
     try {
-      decoded = jwt.verify(
-        token,
-        (process.env.JWT_REFRESH_KEY ||
-          process.env.JWT_REFRESH_SECRET ||
-          'bubble_default_refresh_key') as string
-      );
+      decoded = jwt.verify(token, getRefreshKey());
     } catch {
       res.status(401).json({ message: 'Invalid or expired refresh token.' });
       return;
