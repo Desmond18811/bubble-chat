@@ -8,6 +8,7 @@ import {
   Modal,
   Alert,
   Switch,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../lib/theme';
@@ -39,7 +40,7 @@ import {
 import { chatCache } from '../../lib/chatCache';
 import { addContact, createGroupChat, getSecureMediaUrl, accessOrCreateChat, getOrgMembers, fetchMeetings } from '../../lib/api';
 import { startOutgoingCall } from '../../lib/callManager';
-import { useIsOnline } from '../../lib/presence';
+import { useIsOnline, useIsInMeeting } from '../../lib/presence';
 import { authStorage } from '../../lib/authStorage';
 import { getSocket } from '../../lib/socket';
 import { useNicknames, getCachedNickname } from '../../lib/nicknames';
@@ -91,6 +92,24 @@ function Avatar({
 }) {
   const isFallbackBlack = isGroup;
   const online = useIsOnline(userId, !!isOnline);
+  const inMeeting = useIsInMeeting(userId);
+
+  // Blink the dot while the user is in a live meeting (distinct from a steady
+  // online dot) so "someone is on a call right now" reads at a glance.
+  const blink = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (inMeeting && !isGroup) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blink, { toValue: 0.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [inMeeting, isGroup, blink]);
+
   return (
     <View style={{ width: size, height: size }} className="relative shrink-0">
       <SharedAvatar
@@ -101,12 +120,17 @@ function Avatar({
         imageStyle={{ borderRadius: size * 0.38 }}
         style={{ borderRadius: size * 0.38 }}
       />
-      {online && !isGroup && (
+      {inMeeting && !isGroup ? (
+        <Animated.View
+          className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 rounded-full border-2 border-white shadow-xs"
+          style={{ width: size * 0.3, height: size * 0.3, opacity: blink }}
+        />
+      ) : online && !isGroup ? (
         <View
           className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 rounded-full border-2 border-white shadow-xs"
           style={{ width: size * 0.27, height: size * 0.27 }}
         />
-      )}
+      ) : null}
     </View>
   );
 }

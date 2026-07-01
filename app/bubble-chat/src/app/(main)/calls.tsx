@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useReducer } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useReducer, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Modal, TextInput, Alert, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { Phone, Video, Users, User, MicOff, PhoneOff, Volume2, Calendar, ChevronLeft, ChevronRight, ChevronDown, Clock, Plus, X, Check, PhoneMissed, Trash2, FileText, Sparkles } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -9,11 +9,30 @@ import { startOutgoingCall } from '../../lib/callManager';
 import { subscribeTasksChanged } from '../../lib/taskListeners';
 import { Image } from 'expo-image';
 import { Avatar } from '../../components/Avatar';
-import { useIsOnline, getPresence, subscribePresence } from '../../lib/presence';
+import { useIsOnline, useIsInMeeting, getPresence, subscribePresence } from '../../lib/presence';
 
 // Live presence dot — rendered inside a list `.map`, so it owns its own hook subscription.
+// Blinks green while the user is in a live meeting; steady green when merely online.
 function StaffDot({ userId, fallback }: { userId?: string | null; fallback?: boolean }) {
   const online = useIsOnline(userId, !!fallback);
+  const inMeeting = useIsInMeeting(userId);
+  const blink = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (inMeeting) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blink, { toValue: 0.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [inMeeting, blink]);
+
+  if (inMeeting) {
+    return <Animated.View style={{ opacity: blink }} className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />;
+  }
   if (!online) return null;
   return <View className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-white bg-green-500 shadow-sm" />;
 }

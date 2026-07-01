@@ -8,6 +8,7 @@ import { useTheme } from "../../lib/theme";
 import { NicknameProvider } from "../../lib/nicknames";
 import { fetchActiveMeetings } from "../../lib/api";
 import { getSocket } from "../../lib/socket";
+import { setInMeetingUsers } from "../../lib/presence";
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const { colors, isDark } = useTheme();
@@ -20,7 +21,18 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
     const poll = async () => {
       try {
         const res = await fetchActiveMeetings();
-        if (!cancelled) setActiveRoomCount((res?.rooms || []).length);
+        const rooms = res?.rooms || [];
+        if (!cancelled) setActiveRoomCount(rooms.length);
+        // Feed the "in a meeting" registry: every host + attendee of a live room.
+        const ids: (string | null)[] = [];
+        for (const r of rooms) {
+          const host = r?.host;
+          ids.push(typeof host === 'string' ? host : (host?._id || host?.id || null));
+          for (const a of (r?.attendees || [])) {
+            ids.push(typeof a === 'string' ? a : (a?._id || a?.id || null));
+          }
+        }
+        setInMeetingUsers(ids);
       } catch { /* best-effort */ }
     };
     poll();

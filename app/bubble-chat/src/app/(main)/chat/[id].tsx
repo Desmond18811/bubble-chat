@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
   TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Clipboard, Switch, Keyboard, ActivityIndicator,
-  Animated, PanResponder,
+  Animated, PanResponder, Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,6 +56,37 @@ const INK = '#1f2030';
 const INK_SOFT = '#9a9aab';
 const BG = '#f8f7ff';
 const PURPLE_SOFT = 'rgba(108,92,231,0.10)';
+
+// Render message body text, turning URLs into tappable links. Long URLs are
+// truncated for display (the full URL still opens) so they never widen the bubble.
+// Mirrors the web's renderMentionText linkify behavior (chat-window.tsx).
+const URL_REGEX = /(https?:\/\/[^\s<>"']+)/g;
+function renderMessageText(text: string, isMe: boolean) {
+  if (!text) return text;
+  const baseColor = isMe ? '#ffffff' : INK;
+  const linkColor = isMe ? '#ffffff' : PURPLE;
+  const parts = text.split(URL_REGEX);
+  return parts.map((segment, i) => {
+    URL_REGEX.lastIndex = 0;
+    if (URL_REGEX.test(segment)) {
+      const display = segment.length > 40 ? segment.slice(0, 38) + '…' : segment;
+      return (
+        <Text
+          key={`url-${i}`}
+          style={{ color: linkColor, textDecorationLine: 'underline' }}
+          onPress={() => Linking.openURL(segment).catch(() => { })}
+        >
+          {display}
+        </Text>
+      );
+    }
+    return (
+      <Text key={`t-${i}`} style={{ color: baseColor }}>
+        {segment}
+      </Text>
+    );
+  });
+}
 
 const AVATARS = [
   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop",
@@ -2216,7 +2247,7 @@ export default function ChatScreen() {
                           />
                           {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
                             <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : colors.text, marginTop: 6 }}>
-                              {msg.text}
+                              {renderMessageText(msg.text, isMe)}
                             </Text>
                           )}
                         </View>
@@ -2234,7 +2265,7 @@ export default function ChatScreen() {
                           </View>
                           {msg.text && msg.text !== (msg.mediaUrl || msg.media_url) && (
                             <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : colors.text, marginTop: 6 }}>
-                              {msg.text}
+                              {renderMessageText(msg.text, isMe)}
                             </Text>
                           )}
                         </View>
@@ -2249,7 +2280,7 @@ export default function ChatScreen() {
                         </View>
                       ) : (
                         <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: 'Poppins_400Regular', color: isMe ? '#ffffff' : INK }}>
-                          {msg.text}
+                          {renderMessageText(msg.text, isMe)}
                         </Text>
                       )}
 

@@ -2468,3 +2468,39 @@ export const suggestRecurrence = async (
     });
     return handleResponse(res);
 };
+
+// ── Recurring-pattern detection (events repeated ≥3 times → "make it recurring?") ──
+// Backend: recurringPatternController, mounted at /api/v1/events/patterns/*.
+
+/** Run server-side pattern detection for the current user (best-effort). */
+export const detectPatterns = async () => {
+    const res = await fetch(`${BASE_URL}/events/patterns/detect`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Patterns awaiting a decision — powers the in-app "set up recurring?" banner. */
+export const getPendingPatterns = async (): Promise<{ patterns: any[] }> => {
+    const res = await fetch(`${BASE_URL}/events/patterns/pending`, { headers: getAuthHeaders() });
+    return handleResponse(res);
+};
+
+/** Confirm a detected pattern → backend marks matching events recurring. */
+export const confirmPattern = async (id: string) => {
+    const res = await fetch(`${BASE_URL}/events/patterns/${id}/confirm`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};
+
+/** Dismiss a detected pattern so the user isn't pinged again. */
+export const dismissPattern = async (id: string) => {
+    const res = await fetch(`${BASE_URL}/events/patterns/${id}/dismiss`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+};

@@ -37,3 +37,38 @@ export const useIsOnline = (userId?: string | null, fallback: boolean = false): 
   const known = getPresence(userId);
   return known === undefined ? fallback : known;
 };
+
+// ── "In a live meeting" registry ─────────────────────────────────────────────
+// Distinct from plain online: a userId is "in a meeting" if they're the host or an
+// attendee of a currently-live room. Populated from the active-meetings poll
+// (see (main)/_layout.tsx) and consumed to render a blinking green dot.
+let inMeetingSet = new Set<string>();
+let meetingListeners: (() => void)[] = [];
+
+const notifyMeeting = () => {
+  meetingListeners.forEach((l) => { try { l(); } catch {} });
+};
+
+/** Replace the set of user IDs currently in a live meeting (call from the rooms poll). */
+export const setInMeetingUsers = (userIds: (string | null | undefined)[]) => {
+  const next = new Set(userIds.filter(Boolean).map((id) => String(id)));
+  // Avoid spurious re-renders when nothing changed.
+  if (next.size === inMeetingSet.size && [...next].every((id) => inMeetingSet.has(id))) return;
+  inMeetingSet = next;
+  notifyMeeting();
+};
+
+export const isInMeeting = (userId?: string | null): boolean =>
+  userId != null && inMeetingSet.has(String(userId));
+
+export const subscribeInMeeting = (l: () => void) => {
+  meetingListeners.push(l);
+  return () => { meetingListeners = meetingListeners.filter((x) => x !== l); };
+};
+
+/** Hook: true while the given user is in a live meeting. */
+export const useIsInMeeting = (userId?: string | null): boolean => {
+  const [, force] = useReducer((x) => x + 1, 0);
+  useEffect(() => subscribeInMeeting(force), []);
+  return isInMeeting(userId);
+};

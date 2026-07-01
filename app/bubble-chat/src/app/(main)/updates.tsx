@@ -8,7 +8,7 @@ import { subscribeToPlusButton } from '../../lib/mockData';
 import Svg, { Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { fetchTasks, createTaskFull, updateTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence } from '../../lib/api';
+import { fetchTasks, createTaskFull, updateTaskFull, uploadMeetingRecording, fetchAiDescription, getCalendarEvents, getOrgMembers, suggestRecurrence, detectPatterns, getPendingPatterns, confirmPattern, dismissPattern } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import { authStorage } from '../../lib/authStorage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -128,6 +128,10 @@ export default function UpdatesScreen() {
   const [holidayEvents, setHolidayEvents] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [recSuggestion, setRecSuggestion] = useState<{ recurrence: 'daily' | 'weekly' | 'monthly'; message: string } | null>(null);
+
+  // Recurring-pattern prompts: events the backend saw ≥3 times and asks to make recurring.
+  const [pendingPatterns, setPendingPatterns] = useState<any[]>([]);
+  const [patternBusyId, setPatternBusyId] = useState<string | null>(null);
 
   // Calling states
   const [activeCall, setActiveCall] = useState<{ user: any; type: 'voice' | 'video' } | null>(null);
@@ -344,10 +348,52 @@ export default function UpdatesScreen() {
     });
   }, []);
 
+  // Load recurring-pattern prompts. Kick a fresh detection first (best-effort), then
+  // pull the pending list for the in-app banner.
+  const syncPatterns = async () => {
+    try {
+      await detectPatterns().catch(() => undefined);
+      const res = await getPendingPatterns();
+      setPendingPatterns(res?.patterns || []);
+    } catch (err) {
+      console.warn('Failed to load recurring patterns in updates.tsx:', err);
+    }
+  };
+
+  const handleConfirmPattern = async (p: any) => {
+    const id = String(p._id || p.id);
+    setPatternBusyId(id);
+    try {
+      await confirmPattern(id);
+      setPendingPatterns(prev => prev.filter(x => String(x._id || x.id) !== id));
+      await syncTasks(); // recurring flag back-filled server-side — refresh the calendar
+      Alert.alert('Set up', `"${p.exampleTitle || 'Event'}" is now a recurring event.`);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Could not set up the recurring event.');
+    } finally {
+      setPatternBusyId(null);
+    }
+  };
+
+  const handleDismissPattern = async (p: any) => {
+    const id = String(p._id || p.id);
+    setPatternBusyId(id);
+    // Optimistic: drop it immediately so the banner feels responsive.
+    setPendingPatterns(prev => prev.filter(x => String(x._id || x.id) !== id));
+    try {
+      await dismissPattern(id);
+    } catch {
+      /* best-effort — if it fails it'll reappear on next detect */
+    } finally {
+      setPatternBusyId(null);
+    }
+  };
+
   useEffect(() => {
     loadCache();
     syncTasks();
     syncAux();
+    syncPatterns();
   }, []);
 
   useEffect(() => {
@@ -663,6 +709,48 @@ export default function UpdatesScreen() {
             </View>
           </TouchableOpacity>
         )}
+
+        {/* Recurring-pattern prompts: "this happened 3+ times — make it recurring?" */}
+        {pendingPatterns.map((p: any) => {
+          const id = String(p._id || p.id);
+          const busy = patternBusyId === id;
+          return (
+            <View
+              key={id}
+              className="mx-4 mt-4 rounded-2xl p-4 border"
+              style={{ backgroundColor: '#fef9c3', borderColor: '#eab308' }}
+            >
+              <View className="flex-row items-center mb-2">
+                <Repeat color="#ca8a04" size={16} />
+                <Text style={{ color: '#854d0e' }} className="font-bold text-[11px] uppercase tracking-widest ml-2">
+                  Recurring pattern detected
+                </Text>
+              </View>
+              <Text style={{ color: '#713f12' }} className="text-sm font-sans mb-3">
+                You've had <Text className="font-bold">"{p.exampleTitle || 'this event'}"</Text>
+                {p.occurrences ? ` ${p.occurrences} times` : ' several times'}. Set it up as a recurring event?
+              </Text>
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  onPress={() => handleConfirmPattern(p)}
+                  disabled={busy}
+                  className="flex-1 rounded-xl py-2.5 items-center"
+                  style={{ backgroundColor: '#ca8a04', opacity: busy ? 0.6 : 1 }}
+                >
+                  <Text className="text-white font-bold text-xs font-sans">{busy ? 'Setting up…' : 'Set up recurring'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleDismissPattern(p)}
+                  disabled={busy}
+                  className="rounded-xl py-2.5 px-4 items-center"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.06)' }}
+                >
+                  <Text style={{ color: '#713f12' }} className="font-bold text-xs font-sans">Dismiss</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
 
         <View className="bg-purple-soft/20 p-6 border-b border-black/5 dark:border-white/10 w-full">
           <View className="flex-row justify-between items-center mb-4">

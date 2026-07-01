@@ -145,6 +145,9 @@ export const createMeeting = async (
       status: 'live',
     });
 
+    // TEMP diagnostic (remove after verifying active-rooms): confirm a live record is born.
+    console.log(`[CreateMeeting] created roomId=${meeting.roomId} status=${meeting.status} host=${userId}`);
+
     // Start the audio recording immediately so transcription always works, even
     // on clients without live captions (Safari/Firefox/mobile). Best-effort: no-ops
     // unless LIVEKIT_EGRESS_ENABLED + the egress worker are provisioned.
@@ -248,9 +251,17 @@ export const getActiveMeetings = async (
         $or: [
           { host: { $in: memberIds } },
           { attendees: { $in: memberIds } },
+          // Always include the requester's OWN live meetings regardless of org linkage,
+          // so a host/attendee never fails to see a room they're actually in (guards
+          // against org-membership mismatches between host and viewer).
+          { host: userId },
+          { attendees: userId },
         ],
       };
     }
+
+    // TEMP diagnostic (remove after verifying active-rooms): log scope + result count.
+    console.log(`[ActiveMeetings] user=${userId} orgId=${orgId || 'none'}`);
 
     const meetings = await Meeting.find(query)
       .populate('host', 'full_name username avatar')
@@ -270,6 +281,7 @@ export const getActiveMeetings = async (
       startedAt: m.startedAt,
     }));
 
+    console.log(`[ActiveMeetings] returning ${rooms.length} live room(s)`);
     res.status(200).json({ rooms });
   } catch (err: any) {
     res.status(500).json({ message: 'Failed to fetch active meetings', error: err.message });

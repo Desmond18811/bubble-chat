@@ -13,7 +13,8 @@ import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, Share, Pan
 import { Image } from "expo-image";
 import { Phone, PhoneOff, Mic, MicOff, Volume2, Video, VideoOff, Minimize2, Maximize2, UserPlus, Link2, X, Monitor, MonitorOff } from "lucide-react-native";
 import { CameraView, Camera } from "expo-camera";
-import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, inviteToCall, getLinkJoinToken, CallState } from "../lib/callManager";
+import { subscribeCallState, acceptIncomingCall, declineIncomingCall, hangUpCall, inviteToCall, getLinkJoinToken, CallState, getPersistedCall, clearPersistedCall, rejoinPersistedCall } from "../lib/callManager";
+import { fetchActiveMeetings } from "../lib/api";
 import { registerForPushNotificationsAsync } from "../lib/pushNotifications";
 import { ThemeProvider } from "../lib/theme";
 import { getLiveKitToken, createCallInviteLink } from "../lib/api";
@@ -524,6 +525,70 @@ async function checkAndTriggerAutoBackup() {
   }
 }
 
+// Cold-start rejoin: if the app was killed mid-call and that meeting is still live,
+// offer a pill to jump back in. Hidden while already in a call or once the room ends.
+function RejoinBanner() {
+  const [pending, setPending] = useState<{ roomId: string; type: 'voice' | 'video' } | null>(null);
+  const [inCall, setInCall] = useState(false);
+
+  useEffect(() => subscribeCallState((s) => setInCall(s.status !== 'idle')), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const persisted = await getPersistedCall();
+      if (!persisted?.roomId) return;
+      try {
+        const res = await fetchActiveMeetings();
+        const rooms = res?.rooms || [];
+        const stillLive = rooms.some((r: any) => String(r?.roomId) === String(persisted.roomId));
+        if (cancelled) return;
+        if (stillLive) setPending(persisted);
+        else await clearPersistedCall(); // meeting ended while we were away
+      } catch { /* best-effort */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!pending || inCall) return null;
+
+  return (
+    <View style={rejoinStyles.wrap} pointerEvents="box-none">
+      <View style={rejoinStyles.pill}>
+        <View style={rejoinStyles.dot} />
+        <Text style={rejoinStyles.label} numberOfLines={1}>Meeting in progress</Text>
+        <TouchableOpacity
+          style={rejoinStyles.btn}
+          onPress={() => { const p = pending; setPending(null); if (p) rejoinPersistedCall(p); }}
+        >
+          <Text style={rejoinStyles.btnText}>Rejoin</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={rejoinStyles.dismiss}
+          onPress={() => { setPending(null); clearPersistedCall(); }}
+        >
+          <X size={16} color={INK_SOFT} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const rejoinStyles = StyleSheet.create({
+  wrap: { position: 'absolute', top: 54, left: 0, right: 0, alignItems: 'center', zIndex: 50 },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: WHITE, borderRadius: 999, paddingVertical: 8, paddingLeft: 14, paddingRight: 8,
+    borderWidth: 1, borderColor: BORDER,
+    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8,
+  },
+  dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: GREEN },
+  label: { fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: INK, maxWidth: 160 },
+  btn: { backgroundColor: PURPLE, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 14 },
+  btnText: { color: WHITE, fontFamily: 'Poppins_700Bold', fontSize: 12 },
+  dismiss: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+});
+
 export default function RootLayout() {
   verifyInstallation();
   const [loaded, error] = useFonts({
@@ -588,6 +653,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <Stack screenOptions={{ headerShown: false }} />
+      <RejoinBanner />
       <GlobalCallOverlay />
     </ThemeProvider>
   );

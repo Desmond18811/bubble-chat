@@ -597,7 +597,9 @@ export default function ProfileScreen() {
         bio: formData.bio.trim(),
         email: formData.email.trim().toLowerCase(),
         phone_number: formData.phone_number.trim(),
+        org_role: ((formData as any).org_role || '').trim(),
         actionItemEmailMode: (formData as any).actionItemEmailMode || 'each',
+        app_background: (formData as any).app_background || undefined,
       });
       if (res?.data) {
         const u = res.data;
@@ -610,6 +612,8 @@ export default function ProfileScreen() {
           bio: u.bio || user.bio,
           email: u.email || user.email,
           phone_number: u.phone_number || user.phone_number,
+          org_role: u.org_role || user.org_role,
+          app_background: u.app_background || (user as any).app_background,
         };
         setUser(updatedUser);
       }
@@ -1319,7 +1323,18 @@ export default function ProfileScreen() {
                   keyboardType="phone-pad"
                 />
               </View>
-              
+
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Role</Text>
+                <TextInput
+                  value={(formData as any).org_role}
+                  onChangeText={(t) => setFormData({ ...formData, org_role: t } as any)}
+                  placeholder="e.g. Lead Developer"
+                  placeholderTextColor="#9a9aab"
+                  className="bg-white dark:bg-[#1a1b28] rounded-2xl p-4 text-ink dark:text-[#f4f5fb] border border-black/5 dark:border-white/10"
+                />
+              </View>
+
               {/* Action-Item Email Mode */}
               <View className="mb-4">
                 <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">Action-Item Emails</Text>
@@ -1335,6 +1350,38 @@ export default function ProfileScreen() {
                       <TouchableOpacity
                         key={opt.value}
                         onPress={() => setFormData({ ...formData, actionItemEmailMode: opt.value } as any)}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 10,
+                          borderRadius: 14,
+                          alignItems: 'center',
+                          backgroundColor: active ? '#6c5ce7' : 'rgba(108,92,231,0.07)',
+                          borderWidth: active ? 0 : 1,
+                          borderColor: 'rgba(108,92,231,0.15)',
+                        }}
+                      >
+                        <Text style={{ fontSize: 11, fontFamily: 'Poppins_700Bold', color: active ? '#fff' : '#6c5ce7' }}>{opt.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* App Background — syncs the preset used on the BubbleSpace web app. */}
+              <View className="mb-4">
+                <Text className="text-xs font-bold text-ink dark:text-[#f4f5fb] uppercase mb-1">App Background</Text>
+                <Text className="text-[11px] text-ink-soft dark:text-[#9a9bb6] mb-2 leading-tight">Used across your BubbleSpace on the web.</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {([
+                    { value: 'bubbles', label: 'Bubbles' },
+                    { value: 'light', label: 'Light' },
+                    { value: 'dark', label: 'Dark' },
+                  ] as const).map(opt => {
+                    const active = ((formData as any).app_background || 'bubbles') === opt.value;
+                    return (
+                      <TouchableOpacity
+                        key={opt.value}
+                        onPress={() => setFormData({ ...formData, app_background: opt.value } as any)}
                         style={{
                           flex: 1,
                           paddingVertical: 10,

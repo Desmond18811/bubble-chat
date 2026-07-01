@@ -1,7 +1,27 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSocket } from './socket';
 import { RingtonePlayer } from './ringtone';
 import { createMeeting, endMeeting } from './api';
 import { authStorage } from './authStorage';
+
+// Persist the active call so a cold-started app can offer to rejoin an ongoing
+// meeting (mirrors the web's `bubble_active_meeting` localStorage approach).
+const ACTIVE_CALL_KEY = 'bubble_active_call';
+
+export const getPersistedCall = async (): Promise<{ roomId: string; type: 'voice' | 'video' } | null> => {
+  try {
+    const raw = await AsyncStorage.getItem(ACTIVE_CALL_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
+export const clearPersistedCall = async () => {
+  try { await AsyncStorage.removeItem(ACTIVE_CALL_KEY); } catch { /* best-effort */ }
+};
+
+const persistCall = (roomId: string, type: 'voice' | 'video') => {
+  AsyncStorage.setItem(ACTIVE_CALL_KEY, JSON.stringify({ roomId, type })).catch(() => undefined);
+};
 
 export type CallState =
   | { status: 'idle' }
@@ -36,6 +56,12 @@ const notify = () => {
 
 export const setCallState = (newState: CallState) => {
   currentCallState = newState;
+  // Keep the persisted "active call" in sync so a killed app can offer to rejoin.
+  if (newState.status === 'in_call') {
+    persistCall(newState.roomId, newState.type);
+  } else if (newState.status === 'idle') {
+    clearPersistedCall();
+  }
   notify();
 };
 
@@ -239,6 +265,13 @@ export const joinRoomByLink = async ({ roomId, type, joinToken }: { roomId: stri
   });
 
   startDurationTimer();
+};
+
+// Rejoin an ongoing meeting after an app cold-start. Reuses the link-join path
+// (createMeeting de-dups to the existing live record). No-op if already in a call.
+export const rejoinPersistedCall = async ({ roomId, type }: { roomId: string; type: 'voice' | 'video' }) => {
+  if (currentCallState.status !== 'idle') return;
+  await joinRoomByLink({ roomId, type });
 };
 
 // Start a group call: ring every other member into one room (call_invite) and enter
